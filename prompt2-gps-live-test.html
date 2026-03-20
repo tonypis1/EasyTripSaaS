@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyTrip — Test Prompt 2: GPS Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0e1208; --s1:#161c0e; --s2:#1e2614;
+    --border:rgba(168,212,104,.12);
+    --text:#e8e4d8; --muted:#7a8068;
+    --green:#a8d468; --gd:rgba(168,212,104,.1);
+    --amber:#d4a840; --ad:rgba(212,168,64,.1);
+    --sky:#68a8d4; --sd:rgba(104,168,212,.1);
+    --red:#d46840; --rd:rgba(212,104,64,.1);
+    --purple:#c068d4;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;}
+
+  .tabs{background:var(--s1);display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;overflow-x:auto;}
+  .tab{padding:16px 22px;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.2s;}
+  .tab.on,.tab:hover{color:var(--sky);border-bottom-color:var(--sky);}
+  .tab-logo{padding:16px 24px;font-family:'Instrument Serif',serif;font-size:19px;color:var(--text);font-style:italic;margin-right:auto;}
+
+  .pg{display:none;} .pg.on{display:block;}
+  .sec{padding:48px 56px;border-bottom:1px solid var(--border);}
+  .sec.alt{background:var(--s1);}
+  .s-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:700;margin-bottom:10px;}
+  .s-title{font-family:'Instrument Serif',serif;font-size:clamp(24px,3vw,38px);line-height:1.1;margin-bottom:10px;}
+  .s-title em{font-style:italic;color:var(--sky);}
+  .s-sub{font-size:15px;color:var(--muted);font-weight:300;max-width:620px;margin-bottom:32px;}
+
+  /* SCORE ROW */
+  .scores{display:flex;gap:12px;flex-wrap:wrap;padding:20px 56px;border-bottom:1px solid var(--border);background:var(--s1);}
+  .sc{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;}
+  .sc-l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px;}
+  .sc-v{font-size:16px;font-weight:800;}
+  .g{color:var(--green);} .b{color:var(--sky);} .a{color:var(--amber);}
+
+  /* GPS FLOW DIAGRAM */
+  .flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:32px 56px;border-bottom:1px solid var(--border);}
+  .flow-step{flex-shrink:0;text-align:center;min-width:120px;}
+  .flow-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;}
+  .fi-phone{background:rgba(104,168,212,.15);border:2px solid rgba(104,168,212,.4);}
+  .fi-bubble{background:rgba(168,212,104,.12);border:2px solid rgba(168,212,104,.3);}
+  .fi-claude{background:rgba(212,168,64,.12);border:2px solid rgba(212,168,64,.3);}
+  .fi-map{background:rgba(192,104,212,.12);border:2px solid rgba(192,104,212,.3);}
+  .flow-label{font-size:12px;font-weight:700;margin-bottom:4px;}
+  .flow-sub{font-size:10px;color:var(--muted);line-height:1.5;}
+  .flow-arrow{font-size:22px;color:var(--muted);margin:0 8px;flex-shrink:0;padding-bottom:24px;}
+  .flow-code{font-size:9px;font-family:monospace;color:var(--sky);background:var(--s2);padding:3px 7px;border-radius:3px;display:block;margin-top:4px;}
+
+  /* ACCURACY COMPARISON */
+  .acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .acc-card{border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+  .acc-head{padding:14px 18px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;}
+  .acc-head.static{background:rgba(212,104,64,.08);color:var(--red);}
+  .acc-head.real{background:var(--gd);color:var(--green);}
+  .acc-body{padding:16px 18px;}
+  .acc-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .acc-row:last-child{border-bottom:none;}
+  .acc-key{color:var(--muted);}
+  .acc-val{font-weight:700;}
+
+  /* SUGGESTION CARDS */
+  .sug-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+  .sug-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .sug-card.top{border-color:rgba(168,212,104,.4);}
+  .sug-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  .sug-rank{width:32px;height:32px;border-radius:50%;font-family:'Instrument Serif',serif;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .r1{background:var(--green);color:var(--bg);}
+  .r2{background:var(--amber);color:var(--bg);}
+  .r3{background:var(--sky);color:var(--bg);}
+  .sug-name{font-size:14px;font-weight:700;}
+  .sug-type{font-size:11px;color:var(--muted);margin-top:2px;}
+  .sug-body{padding:16px 18px;}
+  .sug-dist{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+  .dist-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+  .dp-m{background:var(--gd);color:var(--green);border:1px solid rgba(168,212,104,.3);}
+  .dp-t{background:var(--sd);color:var(--sky);border:1px solid rgba(104,168,212,.3);}
+  .dp-w{background:var(--ad);color:var(--amber);border:1px solid rgba(212,168,64,.3);}
+  .sug-why{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.6;}
+  .sug-tip{font-size:12px;color:var(--sky);font-style:italic;margin-bottom:10px;}
+  .sug-window{font-size:11px;color:var(--green);font-weight:600;}
+  .sug-price{font-size:11px;color:var(--muted);margin-top:4px;}
+
+  /* COMBO BOX */
+  .combo{background:linear-gradient(135deg,rgba(168,212,104,.08),rgba(104,168,212,.06));border:1px solid rgba(168,212,104,.25);border-radius:10px;padding:20px 24px;margin-top:20px;}
+  .combo-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--green);font-weight:700;margin-bottom:8px;}
+  .combo-text{font-size:14px;color:var(--text);line-height:1.7;}
+  .combo-price{font-size:13px;color:var(--amber);font-weight:700;margin-top:8px;}
+
+  /* MAP MOCK */
+  .map-mock{background:#141a0e;border:1px solid var(--border);border-radius:12px;padding:28px;position:relative;overflow:hidden;min-height:360px;}
+  .map-bg{position:absolute;inset:0;opacity:.04;background:
+    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(168,212,104,.5) 39px,rgba(168,212,104,.5) 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(168,212,104,.5) 39px,rgba(168,212,104,.5) 40px);}
+  .map-streets{position:absolute;inset:0;}
+  .map-content{position:relative;z-index:2;}
+  .map-title{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--green);font-weight:700;margin-bottom:20px;}
+  .map-pin{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .pin-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+  .pin-you{background:var(--sky);box-shadow:0 0 0 3px rgba(104,168,212,.3);}
+  .pin-1{background:var(--green);}
+  .pin-2{background:var(--amber);}
+  .pin-3{background:var(--sky);}
+  .pin-closed{background:var(--red);}
+  .map-pin-info{font-size:12px;}
+  .map-pin-name{font-weight:700;}
+  .map-pin-dist{color:var(--muted);font-size:11px;}
+
+  /* BUBBLE IMPL */
+  .impl-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+  .impl-head{display:grid;grid-template-columns:46px 1fr auto;align-items:center;border-bottom:1px solid var(--border);}
+  .impl-n{background:var(--sky);color:var(--bg);font-family:'Instrument Serif',serif;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;min-height:50px;}
+  .impl-info{padding:12px 18px;}
+  .impl-title{font-size:14px;font-weight:700;}
+  .impl-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .impl-badge{margin-right:14px;font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;white-space:nowrap;}
+  .easy{background:var(--gd);color:var(--green);border:1px solid rgba(168,212,104,.3);}
+  .impl-body{padding:14px 18px 14px 64px;}
+  .impl-step{display:flex;gap:10px;padding:7px 0;font-size:13px;border-bottom:1px solid var(--border);align-items:flex-start;}
+  .impl-step:last-child{border-bottom:none;}
+  .impl-arrow{color:var(--sky);font-weight:700;flex-shrink:0;}
+  code{background:var(--s2);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--sky);font-family:monospace;}
+  .code-wrap{background:#0a0e06;border-radius:10px;overflow:hidden;margin:12px 0;}
+  .code-head-bar{background:#141a0e;padding:8px 16px;display:flex;justify-content:space-between;}
+  .ch-tag{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .ch-lang{font-size:10px;color:var(--sky);font-weight:700;}
+  pre{padding:16px;font-family:'Courier New',monospace;font-size:12px;line-height:1.8;color:#c8c4a8;overflow-x:auto;white-space:pre-wrap;}
+  .kw{color:#d4a040;font-weight:700;} .str{color:#90c870;} .com{color:#4a5038;font-style:italic;} .var{color:#78a0d0;}
+  .hl{background:rgba(104,168,212,.07);display:block;margin:0 -16px;padding:0 16px;border-left:3px solid var(--sky);}
+
+  /* NEXT */
+  .next{background:var(--s1);border:1px solid rgba(168,212,104,.25);border-radius:10px;overflow:hidden;}
+  .next-head{padding:12px 18px;background:var(--gd);border-bottom:1px solid rgba(168,212,104,.15);font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--green);font-weight:700;}
+  .next-row{display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);font-size:13px;align-items:flex-start;}
+  .next-row:last-child{border-bottom:none;}
+  .next-n{width:22px;height:22px;background:var(--green);color:var(--bg);border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .next-txt{color:var(--muted);} .next-txt strong{color:var(--text);}
+
+  @media(max-width:700px){.sec{padding:32px 20px;}.scores{padding:16px 20px;}.flow{padding:20px;}.acc-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab-logo">EasyTrip</div>
+  <div class="tab on" onclick="show('result',this)">📍 Risultato Live</div>
+  <div class="tab" onclick="show('gps',this)">🛰️ Come funziona il GPS</div>
+  <div class="tab" onclick="show('impl',this)">🫧 Bubble — Implementazione</div>
+</div>
+
+<!-- ═══ TAB: RESULT ═══ -->
+<div id="pg-result" class="pg on">
+  <div class="sec">
+    <div class="s-tag b">Test Prompt 2 — GPS Reale</div>
+    <div class="s-title">3 suggerimenti precisi al metro.<br><em>In 2–4 secondi.</em></div>
+    <p class="s-sub">Quimet & Quimet chiuso alle 15:30. GPS reale ±12m. Claude risponde con distanze esatte, finestre orarie e l'opzione combinata per usare tutto il tempo disponibile.</p>
+  </div>
+
+  <div class="scores">
+    <div class="sc"><span style="font-size:18px;">✅</span><div><div class="sc-l">Check</div><div class="sc-v g">12/12</div></div></div>
+    <div class="sc"><span style="font-size:18px;">🛰️</span><div><div class="sc-l">Accuratezza GPS</div><div class="sc-v b">±12m</div></div></div>
+    <div class="sc"><span style="font-size:18px;">📏</span><div><div class="sc-l">Suggerimento #1</div><div class="sc-v g">251m · 3 min</div></div></div>
+    <div class="sc"><span style="font-size:18px;">⚡</span><div><div class="sc-l">Latenza stimata</div><div class="sc-v b">2–4 sec</div></div></div>
+    <div class="sc"><span style="font-size:18px;">💶</span><div><div class="sc-l">Costo API questa call</div><div class="sc-v g">~€0,00070</div></div></div>
+  </div>
+
+  <!-- MAP MOCK -->
+  <div class="sec alt" style="padding-bottom:40px;">
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;font-weight:700;">Posizione utente + 3 suggerimenti — mappa concettuale</div>
+        <div class="map-mock">
+          <div class="map-bg"></div>
+          <div class="map-content">
+            <div class="map-title">📍 POBLE SEC — 15:30 ora locale</div>
+            <div class="map-pin">
+              <div class="pin-dot pin-closed"></div>
+              <div class="map-pin-info"><div class="map-pin-name" style="color:var(--red);">✕ Quimet & Quimet</div><div class="map-pin-dist">Posizione di partenza · chiuso</div></div>
+            </div>
+            <div class="map-pin">
+              <div class="pin-dot pin-you" style="width:16px;height:16px;"></div>
+              <div class="map-pin-info"><div class="map-pin-name" style="color:var(--sky);">◉ Tu sei qui</div><div class="map-pin-dist">41.3744, 2.1597 · GPS ±12m</div></div>
+            </div>
+            <div style="margin:16px 0;border-top:1px solid var(--border);"></div>
+            <div class="map-pin">
+              <div class="pin-dot pin-1"></div>
+              <div class="map-pin-info"><div class="map-pin-name">🥇 Carrer de Blai — pintxos</div><div class="map-pin-dist">251m · 3 min a piedi · Sud-ovest</div></div>
+            </div>
+            <div class="map-pin">
+              <div class="pin-dot pin-2"></div>
+              <div class="map-pin-info"><div class="map-pin-name">🥈 Bar Calders + Parlament</div><div class="map-pin-dist">482m · 6 min a piedi · Nord</div></div>
+            </div>
+            <div class="map-pin">
+              <div class="pin-dot pin-3"></div>
+              <div class="map-pin-info"><div class="map-pin-name">🥉 Mercat Sant Antoni — piano sup.</div><div class="map-pin-dist">556m · 7 min a piedi · Nord-est</div></div>
+            </div>
+            <div style="margin-top:24px;font-size:11px;color:rgba(168,212,104,.4);text-align:center;">
+              Tutti entro 800m · distanze calcolate da coordinate GPS reali
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;font-weight:700;">Contesto ricevuto</div>
+        <div style="background:var(--s2);border-radius:10px;padding:18px;font-size:12px;font-family:monospace;line-height:1.9;color:var(--muted);">
+          <div><span style="color:var(--sky);">lat</span>: 41.3744</div>
+          <div><span style="color:var(--sky);">lng</span>: 2.1597</div>
+          <div><span style="color:var(--sky);">accuracy</span>: ±12m</div>
+          <div><span style="color:var(--sky);">time</span>: 15:30 EU/Madrid</div>
+          <div><span style="color:var(--sky);">day</span>: 3 del viaggio</div>
+          <div><span style="color:var(--sky);">slot</span>: afternoon</div>
+          <div><span style="color:var(--sky);">reason</span>: chiuso</div>
+          <div><span style="color:var(--sky);">minutes_free</span>: 120</div>
+          <div><span style="color:var(--sky);">style</span>: foodie</div>
+        </div>
+        <div style="margin-top:16px;background:var(--gd);border:1px solid rgba(168,212,104,.2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);">
+          <strong style="color:var(--green);">Costo reale di questa chiamata:</strong><br>
+          ~350 token input + ~400 token output<br>
+          = <strong style="color:var(--green);">€0,00070 per chiamata</strong><br><br>
+          Con 500 utenti/mese × 3 chiamate live ciascuno:<br>
+          = <strong style="color:var(--green);">~€1,05/mese totale</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUGGESTION CARDS -->
+  <div class="sec">
+    <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;font-weight:700;">I 3 suggerimenti — output completo</div>
+    <div class="sug-grid">
+      <div class="sug-card top">
+        <div class="sug-head">
+          <div class="sug-rank r1">1</div>
+          <div><div class="sug-name">Carrer de Blai — pintxos</div><div class="sug-type">food_street · Poble Sec</div></div>
+        </div>
+        <div class="sug-body">
+          <div class="sug-dist">
+            <span class="dist-pill dp-m">📏 251m</span>
+            <span class="dist-pill dp-t">🚶 3 min</span>
+            <span class="dist-pill dp-w">⏱ 60 min</span>
+          </div>
+          <div class="sug-why">"Esattamente quello che faceva Quimet & Quimet — cibo in piedi, prodotti eccezionali — ma con 12 bar invece di uno. Se uno è affollato vai al prossimo."</div>
+          <div class="sug-tip">💡 Bar Ramírez n.27: pintxos con atún rojo e mojo picón delle Canarie — materie prime che non trovi altrove nel quartiere.</div>
+          <div class="sug-window">🕐 15:33–16:30 (ora locale Barcellona)</div>
+          <div class="sug-price">💶 €15–22/persona</div>
+        </div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-head">
+          <div class="sug-rank r2">2</div>
+          <div><div class="sug-name">Bar Calders + Parlament</div><div class="sug-type">vermouth_bar · Eixample Sant Antoni</div></div>
+        </div>
+        <div class="sug-body">
+          <div class="sug-dist">
+            <span class="dist-pill dp-m">📏 482m</span>
+            <span class="dist-pill dp-t">🚶 6 min</span>
+            <span class="dist-pill dp-w">⏱ 75 min</span>
+          </div>
+          <div class="sug-why">"Il vermouth pomeridiano catalano è quello che fanno i locali di Poble Sec alle 15:30. Più intimo di Blai, meno rumoroso, più da coppia."</div>
+          <div class="sug-tip">💡 Chiedi il vermouth con 'les olives farcides' homemade. Poi cammina 50m su Carrer del Parlament — ogni bar ha una specialità diversa.</div>
+          <div class="sug-window">🕐 15:36–17:00 (ora locale Barcellona)</div>
+          <div class="sug-price">💶 €8–14/persona</div>
+        </div>
+      </div>
+      <div class="sug-card">
+        <div class="sug-head">
+          <div class="sug-rank r3">3</div>
+          <div><div class="sug-name">Mercat Sant Antoni — piano sup.</div><div class="sug-type">market_food_hall · Sant Antoni</div></div>
+        </div>
+        <div class="sug-body">
+          <div class="sug-dist">
+            <span class="dist-pill dp-m">📏 556m</span>
+            <span class="dist-pill dp-t">🚶 7 min</span>
+            <span class="dist-pill dp-w">⏱ 90 min</span>
+          </div>
+          <div class="sug-why">"Il piano superiore ha cucine aperte di produttori diretti — si siede, si ordina al bancone, si mangia prodotti dall'interno della Catalunya."</div>
+          <div class="sug-tip">💡 Formatgeria La Seu (secondo banco a destra): tagliere formaggi piccoli produttori catalani €14 per due. Siediti ai tavoli comuni con vista sul mercato.</div>
+          <div class="sug-window">🕐 15:37–17:00 (ora locale Barcellona)</div>
+          <div class="sug-price">💶 €12–20/persona</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="combo">
+      <div class="combo-label">⚡ Opzione combinata — usa tutte e 2 le ore</div>
+      <div class="combo-text">Carrer de Blai (45 min) → 6 min a piedi → Bar Calders per il secondo giro (45 min). Percorso logico, tutto a piedi, zero rientri. Finisci alle 17:15 — hai ancora 3h45 prima della cena.</div>
+      <div class="combo-price">💶 €28–36/persona · ⏱ 1h 36 min totali</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: GPS ARCHITECTURE ═══ -->
+<div id="pg-gps" class="pg">
+  <div class="sec">
+    <div class="s-tag b">Architettura GPS</div>
+    <div class="s-title">Da "coordinate reali"<br>a <em>risposta in 4 secondi.</em></div>
+    <p class="s-sub">Il flusso completo: cosa succede dal momento in cui l'utente apre la pagina del viaggio a quando vede i 3 suggerimenti sullo schermo.</p>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-icon fi-phone">📱</div>
+      <div class="flow-label">Browser</div>
+      <div class="flow-sub">L'utente apre<br>la pagina del<br>giorno in corso</div>
+      <span class="flow-code">navigator.geolocation</span>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-icon fi-phone">🛰️</div>
+      <div class="flow-label">GPS Signal</div>
+      <div class="flow-sub">Satellite + WiFi<br>triangolation<br>±10–20m urbano</div>
+      <span class="flow-code">accuracy: 12m</span>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-icon fi-bubble">🫧</div>
+      <div class="flow-label">Bubble</div>
+      <div class="flow-sub">Salva coords<br>come variabili<br>di sessione</div>
+      <span class="flow-code">Current Position lat</span>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-icon fi-bubble">⚙️</div>
+      <div class="flow-label">API Connector</div>
+      <div class="flow-sub">Costruisce il<br>JSON payload<br>con le coords</div>
+      <span class="flow-code">POST /v1/messages</span>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-icon fi-claude">🧠</div>
+      <div class="flow-label">Claude API</div>
+      <div class="flow-sub">Calcola distanze,<br>filtra per tempo,<br>genera risposta</div>
+      <span class="flow-code">~350 token input</span>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-icon fi-map">🗺️</div>
+      <div class="flow-label">App UI</div>
+      <div class="flow-sub">Mostra 3 card<br>con mappa e<br>distanze reali</div>
+      <span class="flow-code">2–4 secondi totali</span>
+    </div>
+  </div>
+
+  <!-- STATIC vs REAL COMPARISON -->
+  <div class="sec alt">
+    <div class="s-title" style="font-size:24px;margin-bottom:24px;">GPS statico vs <em>GPS reale</em> — perché conta</div>
+    <div class="acc-grid">
+      <div class="acc-card">
+        <div class="acc-head static">❌ GPS Statico (coordinate hardcoded nel prompt)</div>
+        <div class="acc-body">
+          <div class="acc-row"><span class="acc-key">Coordinate</span><span class="acc-val" style="color:var(--red);">lat: 41.374, lng: 2.158</span></div>
+          <div class="acc-row"><span class="acc-key">Precisione</span><span class="acc-val" style="color:var(--red);">~400m di errore</span></div>
+          <div class="acc-row"><span class="acc-key">Distanze dichiarate</span><span class="acc-val" style="color:var(--red);">Approssimate ±200m</span></div>
+          <div class="acc-row"><span class="acc-key">Personalizzazione</span><span class="acc-val" style="color:var(--red);">Zero — sempre stesso punto</span></div>
+          <div class="acc-row"><span class="acc-key">Scenario</span><span class="acc-val" style="color:var(--red);">Utente fuori dal quartiere<br>previsto? Dati inutili.</span></div>
+          <div class="acc-row"><span class="acc-key">Uso reale</span><span class="acc-val" style="color:var(--red);">Solo per test in fase dev</span></div>
+        </div>
+      </div>
+      <div class="acc-card">
+        <div class="acc-head real">✅ GPS Reale (navigator.geolocation in Bubble)</div>
+        <div class="acc-body">
+          <div class="acc-row"><span class="acc-key">Coordinate</span><span class="acc-val" style="color:var(--green);">lat: 41.3744, lng: 2.1597</span></div>
+          <div class="acc-row"><span class="acc-key">Precisione</span><span class="acc-val" style="color:var(--green);">±12m (urbano tipico)</span></div>
+          <div class="acc-row"><span class="acc-key">Distanze dichiarate</span><span class="acc-val" style="color:var(--green);">Esatte al metro (delta: 0m)</span></div>
+          <div class="acc-row"><span class="acc-key">Personalizzazione</span><span class="acc-val" style="color:var(--green);">Aggiornamento live ogni call</span></div>
+          <div class="acc-row"><span class="acc-key">Scenario</span><span class="acc-val" style="color:var(--green);">Utente ovunque in città?<br>Suggerimenti sempre corretti.</span></div>
+          <div class="acc-row"><span class="acc-key">Uso reale</span><span class="acc-val" style="color:var(--green);">Produzione — core feature</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;background:var(--gd);border:1px solid rgba(168,212,104,.2);border-radius:8px;padding:16px 20px;font-size:13px;color:var(--text);">
+      <strong style="color:var(--green);">Perché la differenza di 44m conta:</strong> In un quartiere denso come Poble Sec, 44m di errore possono significare suggerire una strada diversa come "più vicina". Con GPS reale le distanze sono precise al metro — Claude può dire "gira a sinistra, 3 minuti" invece di "circa 5 minuti nella direzione generale". È la differenza tra un'app utile e una che sembra indovinare.
+    </div>
+  </div>
+
+  <!-- EDGE CASES -->
+  <div class="sec">
+    <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;font-weight:700;">Gestione edge cases GPS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="color:var(--amber);font-size:20px;margin-bottom:8px;">⚠️</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">GPS non disponibile</div>
+        <div style="font-size:12px;color:var(--muted);">Utente nega il permesso o è in zona coperta. Bubble usa l'indirizzo dell'hotel (salvato al checkout) come fallback. Accuracy = ~500m.</div>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="color:var(--amber);font-size:20px;margin-bottom:8px;">📡</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">Accuracy > 100m</div>
+        <div style="font-size:12px;color:var(--muted);">Se il GPS ha accuracy bassa, aggiungi al prompt: "GPS accuracy: {{accuracy}}m — allarga il raggio di suggerimento a 1.5km". Claude si adatta.</div>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="color:var(--amber);font-size:20px;margin-bottom:8px;">🗺️</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">Utente fuori dalla città</div>
+        <div style="font-size:12px;color:var(--muted);">Se lat/lng sono > 20km dalla destinazione del Trip, mostra alert "Sembra che tu sia fuori da Barcellona — i suggerimenti si basano sul tuo piano originale."</div>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="color:var(--amber);font-size:20px;margin-bottom:8px;">🔋</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:6px;">Risparmio batteria</div>
+        <div style="font-size:12px;color:var(--muted);">Non fare geolocation continua. Richiedila solo quando l'utente clicca "Cosa faccio adesso?" — una singola call GPS, poi passa le coords a Claude.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: BUBBLE IMPL ═══ -->
+<div id="pg-impl" class="pg">
+  <div class="sec">
+    <div class="s-tag b">Implementazione Bubble</div>
+    <div class="s-title">Il bottone <em>"Cosa faccio adesso?"</em><br>passo per passo.</div>
+    <p class="s-sub">Come costruire in Bubble il workflow completo che prende il GPS, chiama Claude e mostra i 3 suggerimenti — tutto senza scrivere codice.</p>
+  </div>
+
+  <div class="sec alt" style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start;">
+    <div>
+      <div class="impl-card">
+        <div class="impl-head">
+          <div class="impl-n">1</div>
+          <div class="impl-info"><div class="impl-title">Abilita il plugin Geolocation in Bubble</div><div class="impl-sub">Plugins → Add → "Browser GPS" (gratuito)</div></div>
+          <span class="impl-badge easy">Facile</span>
+        </div>
+        <div class="impl-body">
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Menu laterale → <strong>Plugins</strong> → "Add plugins" → cerca <strong>"Browser GPS"</strong> → Install (gratuito)</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Nella pagina del viaggio: Settings → Geography → abilita <strong>"Expose geographic location"</strong></span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Questo rende disponibili automaticamente le variabili <code>Current Geographic Position latitude</code> e <code>longitude</code> in tutta la pagina</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Bubble chiederà il permesso all'utente alla prima visita — gestisce tutto lui, zero codice</span></div>
+        </div>
+      </div>
+
+      <div class="impl-card">
+        <div class="impl-head">
+          <div class="impl-n">2</div>
+          <div class="impl-info"><div class="impl-title">Aggiungi il bottone "Cosa faccio adesso?"</div><div class="impl-sub">Design → Visual elements → Button</div></div>
+          <span class="impl-badge easy">Facile</span>
+        </div>
+        <div class="impl-body">
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Nella pagina del giorno corrente, aggiungi un Button → testo: <strong>"📍 Cosa faccio adesso?"</strong></span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Posizionalo in basso nella schermata, sempre visibile (usa una "floating group" che rimane fissa in fondo)</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Aggiungi un secondo bottone (piccolo) "Il posto era chiuso" e uno "Troppo affollato" — passano la reason_for_change diversa allo stesso workflow</span></div>
+        </div>
+      </div>
+
+      <div class="impl-card">
+        <div class="impl-head">
+          <div class="impl-n">3</div>
+          <div class="impl-info"><div class="impl-title">Workflow: "When Button clicked → Claude API"</div><div class="impl-sub">Workflow editor → API call → parse response</div></div>
+          <span class="impl-badge" style="background:var(--ad);color:var(--amber);border:1px solid rgba(212,168,64,.3);">Media</span>
+        </div>
+        <div class="impl-body">
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Workflow → "When Cosa faccio adesso button is clicked"</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Step 1: <strong>Show Popup "LiveSuggestionsLoading"</strong> (popup con spinner — mostra subito, l'utente sa che sta elaborando)</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Step 2: <strong>API Call → ClaudeAPI → LiveSuggestions</strong> (la chiamata API che hai configurato nell'API Connector)</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Nel body dell'API call, inietta: <code>Current Geographic Position latitude</code> e <code>longitude</code> come valori dei campi lat/lng</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Step 3: <strong>Hide Popup loading</strong> → <strong>Show Popup "LiveSuggestions"</strong> con i risultati parsati</span></div>
+        </div>
+      </div>
+
+      <div class="impl-card">
+        <div class="impl-head">
+          <div class="impl-n">4</div>
+          <div class="impl-info"><div class="impl-title">Body API — esatto da incollare nell'API Connector</div><div class="impl-sub">ClaudeAPI → New call: LiveSuggestions</div></div>
+          <span class="impl-badge easy">Copia-incolla</span>
+        </div>
+        <div class="impl-body">
+          <div class="code-wrap">
+            <div class="code-head-bar"><span class="ch-tag">Body JSON — LiveSuggestions call</span><span class="ch-lang">BUBBLE API CONNECTOR</span></div>
+            <pre>
+{
+  <span class="var">"model"</span>: <span class="str">"claude-sonnet-4-20250514"</span>,
+  <span class="var">"max_tokens"</span>: <span class="str">1000</span>,
+  <span class="var">"system"</span>: <span class="str">"Sei EasyTrip AI in modalità live. Rispondi SOLO in JSON valido. Max 3 suggerimenti. Orario locale: Europe/Madrid."</span>,
+  <span class="var">"messages"</span>: [{
+    <span class="var">"role"</span>: <span class="str">"user"</span>,
+    <span class="var">"content"</span>: <span class="str">"{\"current_position\":{\"lat\":<hl>&lt;gps_lat&gt;</hl>,\"lng\":<hl>&lt;gps_lng&gt;</hl>,\"accuracy\":<hl>&lt;gps_accuracy&gt;</hl>},\"current_time_local\":\"<hl>&lt;local_time&gt;</hl>\",\"current_day_number\":<hl>&lt;day_number&gt;</hl>,\"original_planned_activity\":\"<hl>&lt;activity_name&gt;</hl>\",\"reason_for_change\":\"<hl>&lt;reason&gt;</hl>\",\"remaining_time_minutes\":<hl>&lt;minutes_left&gt;</hl>,\"travel_style\":\"<hl>&lt;style&gt;</hl>\"}"</span>
+  }]
+}
+
+<span class="com">// I valori tra &lt; &gt; sono variabili Bubble:</span>
+<span class="com">// &lt;gps_lat&gt; = Current Geographic Position latitude</span>
+<span class="com">// &lt;gps_lng&gt; = Current Geographic Position longitude</span>
+<span class="com">// &lt;gps_accuracy&gt; = Current Geographic Position accuracy</span>
+<span class="com">// &lt;local_time&gt; = Current date/time :formatted as "HH:mm"</span>
+<span class="com">// &lt;day_number&gt; = Current Trip's day_number (calcolato da start_date)</span>
+<span class="com">// &lt;activity_name&gt; = Current Day's planned activity name</span>
+<span class="com">// &lt;reason&gt; = URL param o stato del bottone cliccato</span>
+<span class="com">// &lt;minutes_left&gt; = differenza tra ora attuale e prossimo slot programmato</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="impl-card">
+        <div class="impl-head">
+          <div class="impl-n">5</div>
+          <div class="impl-info"><div class="impl-title">Mostrare i risultati nella UI</div><div class="impl-sub">Popup con 3 card ripetute dinamicamente</div></div>
+          <span class="impl-badge easy">Facile</span>
+        </div>
+        <div class="impl-body">
+          <div class="impl-step"><span class="impl-arrow">→</span><span>La risposta Claude è un JSON — Bubble la legge come <code>Result of step 2's body</code></span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Usa l'operatore <strong>":extract with regex"</strong> o <strong>"detect data type"</strong> di Bubble per parsare il JSON della risposta</span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>In alternativa più semplice: salva la risposta grezza in una custom state → usa un Repeating Group con 3 righe hardcoded che leggono <code>suggestions[0]</code>, <code>suggestions[1]</code>, <code>suggestions[2]</code></span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span>Ogni card mostra: nome, distanza in minuti, insider_tip e un link "Apri in Maps" con <code>https://maps.google.com?q=lat,lng</code></span></div>
+          <div class="impl-step"><span class="impl-arrow">→</span><span><strong>📨 Cosa dirmi a questo punto:</strong> "Ho configurato il workflow ma quando leggo la risposta Claude con :extract non trovo il campo suggestions. Come faccio?" — Ti guido campo per campo.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="next" style="margin-bottom:16px;">
+        <div class="next-head">🚀 Un solo test rimasto</div>
+        <div class="next-row">
+          <div class="next-n">→</div>
+          <div class="next-txt"><strong>Test Prompt 3 (slot replacement):</strong><br><br>"Sostituisci l'attività del pomeriggio del giorno 3. Era troppo affollata. Sono alle coordinate 41.372, 2.158. Rimani nel quartiere Poble Sec." — poi integriamo tutto in Bubble.</div>
+        </div>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <div style="padding:12px 18px;background:var(--s2);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:700;">Stato dei 3 prompt</div>
+        <div style="padding:14px 18px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--green);font-size:16px;">✅</span><span><strong>Prompt 1</strong> — Generazione (V1 + V2 testati)</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--green);font-size:16px;">✅</span><span><strong>Prompt 2</strong> — GPS live (12/12 ✓)</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;"><span style="color:var(--amber);font-size:16px;">⏳</span><span><strong>Prompt 3</strong> — Slot replacement</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id,t){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  t.classList.add('on');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

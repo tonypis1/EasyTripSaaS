@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyTrip — Specifiche Tecniche</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2ede4;
+    --bg2: #ede7dc;
+    --ink: #1a1a14;
+    --ink2: #3d3d30;
+    --muted: #7a7a6a;
+    --border: #d4cdbf;
+    --green: #2d5a3d;
+    --green-light: #4a8a5e;
+    --green-bg: #eef4f0;
+    --amber: #b5620a;
+    --amber-bg: #fdf3e7;
+    --red: #9b2020;
+    --red-bg: #fdf0f0;
+    --blue: #1e3f6e;
+    --blue-bg: #eef2f8;
+    --white: #faf8f4;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Epilogue', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 72px 64px 64px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+  }
+  .hero-label {
+    font-size: 11px;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: #8a8a72;
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(34px, 4.5vw, 58px);
+    font-weight: 900;
+    line-height: 1.08;
+    margin-bottom: 20px;
+  }
+  .hero h1 .hl { color: #7dbf8e; }
+  .hero-sub { font-size: 16px; color: #8a8a72; max-width: 520px; font-weight: 300; }
+  .hero-decisions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 260px;
+  }
+  .decision-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .dc-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #6a6a55; margin-bottom: 4px; }
+  .dc-value { color: #7dbf8e; font-weight: 600; }
+
+  /* SECTION */
+  .section { padding: 64px; border-bottom: 1px solid var(--border); }
+  .section.alt { background: var(--bg2); }
+  .section.white { background: var(--white); }
+
+  .s-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green-light);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .s-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 3vw, 38px);
+    font-weight: 900;
+    margin-bottom: 10px;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .s-intro {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 620px;
+    margin-bottom: 40px;
+    font-weight: 300;
+    line-height: 1.8;
+  }
+
+  /* DATABASE TABLES */
+  .db-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .db-table {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .db-table-header {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .db-table-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .db-table-tag {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    background: rgba(125,191,142,0.2);
+    color: #7dbf8e;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .db-field {
+    display: grid;
+    grid-template-columns: 1fr 100px 80px;
+    gap: 8px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    align-items: center;
+  }
+  .db-field:last-child { border-bottom: none; }
+  .db-field-name { font-weight: 600; color: var(--ink2); font-family: monospace; font-size: 13px; }
+  .db-field-type { color: var(--muted); font-size: 12px; }
+  .db-field-note { font-size: 11px; color: var(--green-light); font-weight: 600; text-align: right; }
+  .db-field-note.key { color: var(--amber); }
+  .db-field-note.ref { color: var(--blue); }
+
+  /* LOGIC BLOCKS */
+  .logic-block {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .logic-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logic-icon { font-size: 24px; }
+  .logic-title { font-size: 17px; font-weight: 700; }
+  .logic-subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .logic-body { padding: 20px 24px; }
+
+  /* CODE-LIKE */
+  .pseudo-code {
+    background: #1e1e18;
+    color: #d4cfb8;
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .pc-comment { color: #6a6a52; }
+  .pc-keyword { color: #c3956e; font-weight: 700; }
+  .pc-string { color: #7dbf8e; }
+  .pc-num { color: #e0a86e; }
+  .pc-var { color: #9db8d4; }
+  .pc-fn { color: #d4a0c8; }
+
+  /* FLOW DIAGRAM */
+  .flow-h {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+  .flow-h-node {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    min-width: 160px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .flow-h-node.green { border-color: var(--green-light); background: var(--green-bg); }
+  .flow-h-node.amber { border-color: var(--amber); background: var(--amber-bg); }
+  .flow-h-node.red { border-color: var(--red); background: var(--red-bg); }
+  .flow-h-node.blue { border-color: var(--blue); background: var(--blue-bg); }
+  .flow-h-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: var(--muted);
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .fhn-label { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+  .fhn-text { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .fhn-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .fhn-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-top: 6px; }
+  .badge-g { background: rgba(45,90,61,0.12); color: var(--green); }
+  .badge-a { background: rgba(181,98,10,0.12); color: var(--amber); }
+  .badge-b { background: rgba(30,63,110,0.12); color: var(--blue); }
+
+  /* CAROUSEL REGEN */
+  .regen-track {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    align-items: stretch;
+  }
+  .regen-slot {
+    min-width: 120px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 14px;
+    text-align: center;
+    background: var(--white);
+    flex-shrink: 0;
+  }
+  .regen-slot.free { border-color: var(--green-light); background: var(--green-bg); }
+  .regen-slot.paid { border-color: var(--amber); background: var(--amber-bg); }
+  .regen-slot.active { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+  .regen-slot.cycle { border-color: var(--blue); background: var(--blue-bg); border-style: dashed; }
+  .rs-num { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+  .rs-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+  .rs-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+  .regen-slot.active .rs-sub { color: #8a8a72; }
+  .regen-arrow { display: flex; align-items: center; color: var(--muted); font-size: 20px; flex-shrink: 0; }
+
+  /* SPLIT TABLE */
+  .split-example {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .split-header {
+    padding: 16px 22px;
+    background: var(--ink2);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .split-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    align-items: center;
+  }
+  .split-row.head { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; background: var(--bg2); }
+  .split-row:last-child { border-bottom: none; }
+  .split-row.total { font-weight: 700; background: var(--green-bg); color: var(--green); }
+  .pays { color: var(--amber); font-weight: 700; }
+  .owes { color: var(--red); font-weight: 600; }
+  .settled { color: var(--green-light); font-weight: 600; }
+
+  /* CREDIT SYSTEM */
+  .credit-flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .credit-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 20px;
+  }
+  .credit-card.primary { border-color: var(--green-light); background: var(--green-bg); }
+  .credit-card.warning { border-color: var(--amber); background: var(--amber-bg); }
+  .cc-icon { font-size: 28px; margin-bottom: 12px; }
+  .cc-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .cc-desc { font-size: 13px; color: var(--muted); line-height: 1.65; }
+  .cc-rule { margin-top: 12px; font-size: 12px; font-weight: 600; }
+  .cc-rule.green { color: var(--green); }
+  .cc-rule.amber { color: var(--amber); }
+
+  /* SUPPORT */
+  .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .support-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .sc-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sc-icon { font-size: 26px; }
+  .sc-title { font-size: 16px; font-weight: 700; }
+  .sc-sub { font-size: 12px; color: var(--muted); }
+  .sc-body { padding: 18px 22px; }
+  .sc-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--ink2);
+  }
+  .sc-row:last-child { border-bottom: none; }
+  .sc-dot { color: var(--green-light); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .sc-tool {
+    background: var(--bg2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 14px;
+    font-size: 13px;
+  }
+  .sc-tool-name { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .sc-tool-cost { font-size: 11px; color: var(--green-light); font-weight: 600; }
+
+  /* BUBBLE WORKFLOWS */
+  .wf-list { display: flex; flex-direction: column; gap: 16px; }
+  .wf-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .wf-header {
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+    padding: 0;
+  }
+  .wf-num {
+    width: 48px;
+    height: 100%;
+    min-height: 56px;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .wf-info { padding: 14px 20px; }
+  .wf-name { font-size: 15px; font-weight: 700; }
+  .wf-trigger { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .wf-tag {
+    margin-right: 16px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .wft-make { background: rgba(181,98,10,0.12); color: var(--amber); }
+  .wft-bubble { background: rgba(30,63,110,0.12); color: var(--blue); }
+  .wft-stripe { background: rgba(45,90,61,0.12); color: var(--green); }
+  .wf-steps { padding: 0 20px 18px 68px; }
+  .wf-step {
+    display: flex;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+    color: var(--ink2);
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .wf-step:last-child { border-bottom: none; }
+  .wfs-i { color: var(--green-light); font-weight: 700; flex-shrink: 0; margin-top: 1px; font-size: 12px; }
+
+  /* PRIORITIES TABLE */
+  .prio-table { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .prio-table th { background: var(--ink2); color: var(--bg); padding: 12px 18px; text-align: left; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+  .prio-table td { padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  .prio-table tr:last-child td { border-bottom: none; }
+  .p1 { background: rgba(45,90,61,0.08); }
+  .p2 { background: rgba(181,98,10,0.06); }
+  .p3 { }
+  .prio-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+  .pb1 { background: rgba(45,90,61,0.15); color: var(--green); }
+  .pb2 { background: rgba(181,98,10,0.15); color: var(--amber); }
+  .pb3 { background: rgba(0,0,0,0.07); color: var(--muted); }
+  .complexity { font-size: 12px; }
+  .c-low { color: var(--green-light); }
+  .c-med { color: var(--amber); }
+  .c-high { color: var(--red); }
+
+  /* FOOTER */
+  .footer {
+    background: var(--ink);
+    color: var(--bg);
+    padding: 56px 64px;
+  }
+  .footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+  .footer-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; margin-bottom: 20px; }
+  .footer-list { list-style: none; }
+  .footer-list li {
+    display: flex; gap: 14px; padding: 11px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    font-size: 14px; color: #8a8a72; align-items: flex-start;
+  }
+  .footer-list li:last-child { border-bottom: none; }
+  .fl-n {
+    width: 22px; height: 22px; background: var(--green); color: var(--ink);
+    border-radius: 50%; font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .fl-text strong { color: var(--bg); }
+
+  @media(max-width:720px) {
+    .hero { padding: 48px 24px; }
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-decisions { display: none; }
+    .section { padding: 48px 24px; }
+    .support-grid { grid-template-columns: 1fr; }
+    .footer { padding: 48px 24px; }
+    .footer-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-label">EasyTrip — Specifiche Tecniche MVP v1.0</div>
+      <h1>5 decisioni.<br>Un'architettura <span class="hl">precisa.</span></h1>
+      <p class="hero-sub">Ogni risposta che hai dato si traduce in logica concreta su Bubble. Questo documento è il blueprint da seguire per costruire.</p>
+    </div>
+    <div class="hero-decisions">
+      <div class="decision-chip">
+        <div class="dc-label">Prezzo</div>
+        <div class="dc-value">Per viaggio, non per persona</div>
+      </div>
+      <div class="decision-chip">
+        <div class="dc-label">Gruppo</div>
+        <div class="dc-value">Organizzatore paga + split</div>
+      </div>
+      <div class="decision-chip">
+        <div class="dc-label">Rigenera</div>
+        <div class="dc-value">3 gratis → 7 max → carosello</div>
+      </div>
+      <div class="decision-chip">
+        <div class="dc-label">Cancellazione</div>
+        <div class="dc-value">Credito, mai rimborso</div>
+      </div>
+      <div class="decision-chip">
+        <div class="dc-label">Supporto</div>
+        <div class="dc-value">Chat in-app + email</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DATABASE SCHEMA -->
+<div class="section white">
+  <div class="s-label">01 — Database</div>
+  <div class="s-title">Schema Bubble completo</div>
+  <p class="s-intro">Bubble usa un database visuale a tabelle. Ecco esattamente quali tabelle creare, quali campi inserire e perché ciascuno è necessario.</p>
+
+  <div class="db-grid">
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">User</div>
+        <div class="db-table-tag">Tabella base</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">email</span><span class="db-field-type">text</span><span class="db-field-note key">PK / login</span></div>
+      <div class="db-field"><span class="db-field-name">name</span><span class="db-field-type">text</span><span class="db-field-note"></span></div>
+      <div class="db-field"><span class="db-field-name">credit_balance</span><span class="db-field-type">number</span><span class="db-field-note key">€ credito</span></div>
+      <div class="db-field"><span class="db-field-name">plan_type</span><span class="db-field-type">text</span><span class="db-field-note">free/sub</span></div>
+      <div class="db-field"><span class="db-field-name">sub_expires_at</span><span class="db-field-type">date</span><span class="db-field-note">abbonati</span></div>
+      <div class="db-field"><span class="db-field-name">stripe_customer_id</span><span class="db-field-type">text</span><span class="db-field-note ref">Stripe</span></div>
+      <div class="db-field"><span class="db-field-name">total_trips</span><span class="db-field-type">number</span><span class="db-field-note">contatore</span></div>
+      <div class="db-field"><span class="db-field-name">created_at</span><span class="db-field-type">date</span><span class="db-field-note"></span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">Trip</div>
+        <div class="db-table-tag">Nucleo centrale</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">organizer</span><span class="db-field-type">User</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">destination</span><span class="db-field-type">text</span><span class="db-field-note"></span></div>
+      <div class="db-field"><span class="db-field-name">start_date</span><span class="db-field-type">date</span><span class="db-field-note key">unlock logic</span></div>
+      <div class="db-field"><span class="db-field-name">end_date</span><span class="db-field-type">date</span><span class="db-field-note key">scadenza</span></div>
+      <div class="db-field"><span class="db-field-name">access_expires_at</span><span class="db-field-type">date</span><span class="db-field-note key">end+1gg</span></div>
+      <div class="db-field"><span class="db-field-name">trip_type</span><span class="db-field-type">text</span><span class="db-field-note">solo/coppia/gruppo</span></div>
+      <div class="db-field"><span class="db-field-name">style</span><span class="db-field-type">text</span><span class="db-field-note">foodie/cultura…</span></div>
+      <div class="db-field"><span class="db-field-name">status</span><span class="db-field-type">text</span><span class="db-field-note key">active/expired</span></div>
+      <div class="db-field"><span class="db-field-name">regen_count</span><span class="db-field-type">number</span><span class="db-field-note key">0→7</span></div>
+      <div class="db-field"><span class="db-field-name">current_version</span><span class="db-field-type">number</span><span class="db-field-note key">carosello</span></div>
+      <div class="db-field"><span class="db-field-name">payment_id</span><span class="db-field-type">text</span><span class="db-field-note ref">Stripe</span></div>
+      <div class="db-field"><span class="db-field-name">amount_paid</span><span class="db-field-type">number</span><span class="db-field-note">€</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">TripVersion</div>
+        <div class="db-table-tag">Rigenera</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">trip</span><span class="db-field-type">Trip</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">version_num</span><span class="db-field-type">number</span><span class="db-field-note key">1–7</span></div>
+      <div class="db-field"><span class="db-field-name">generated_at</span><span class="db-field-type">date</span><span class="db-field-note"></span></div>
+      <div class="db-field"><span class="db-field-name">is_active</span><span class="db-field-type">yes/no</span><span class="db-field-note key">quella mostrata</span></div>
+      <div class="db-field"><span class="db-field-name">geo_score</span><span class="db-field-type">number</span><span class="db-field-note">ottimiz. distanza</span></div>
+      <div class="db-field"><span class="db-field-name">user_rating</span><span class="db-field-type">number</span><span class="db-field-note">1–5 stelle</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">Day</div>
+        <div class="db-table-tag">Sblocco progressivo</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">trip_version</span><span class="db-field-type">TripVersion</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">day_number</span><span class="db-field-type">number</span><span class="db-field-note">1, 2, 3…</span></div>
+      <div class="db-field"><span class="db-field-name">unlock_date</span><span class="db-field-type">date</span><span class="db-field-note key">start + N-1</span></div>
+      <div class="db-field"><span class="db-field-name">title</span><span class="db-field-type">text</span><span class="db-field-note">es. "Ribeira"</span></div>
+      <div class="db-field"><span class="db-field-name">morning</span><span class="db-field-type">text</span><span class="db-field-note">JSON attività</span></div>
+      <div class="db-field"><span class="db-field-name">afternoon</span><span class="db-field-type">text</span><span class="db-field-note">JSON attività</span></div>
+      <div class="db-field"><span class="db-field-name">evening</span><span class="db-field-type">text</span><span class="db-field-note">JSON attività</span></div>
+      <div class="db-field"><span class="db-field-name">restaurants</span><span class="db-field-type">text</span><span class="db-field-note">JSON ristoranti</span></div>
+      <div class="db-field"><span class="db-field-name">map_center_lat</span><span class="db-field-type">number</span><span class="db-field-note">Maps API</span></div>
+      <div class="db-field"><span class="db-field-name">map_center_lng</span><span class="db-field-type">number</span><span class="db-field-note">Maps API</span></div>
+      <div class="db-field"><span class="db-field-name">local_gem</span><span class="db-field-type">text</span><span class="db-field-note">LocalPass</span></div>
+      <div class="db-field"><span class="db-field-name">tips</span><span class="db-field-type">text</span><span class="db-field-note">consigli pratici</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">GroupMember</div>
+        <div class="db-table-tag">PackedUp</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">trip</span><span class="db-field-type">Trip</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">user</span><span class="db-field-type">User</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">role</span><span class="db-field-type">text</span><span class="db-field-note">org/member</span></div>
+      <div class="db-field"><span class="db-field-name">joined_at</span><span class="db-field-type">date</span><span class="db-field-note"></span></div>
+      <div class="db-field"><span class="db-field-name">balance</span><span class="db-field-type">number</span><span class="db-field-note key">+ deve / - è debitore</span></div>
+      <div class="db-field"><span class="db-field-name">total_paid</span><span class="db-field-type">number</span><span class="db-field-note">ha pagato</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">Expense</div>
+        <div class="db-table-tag">Split spese</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">trip</span><span class="db-field-type">Trip</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">paid_by</span><span class="db-field-type">GroupMember</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">amount</span><span class="db-field-type">number</span><span class="db-field-note">€</span></div>
+      <div class="db-field"><span class="db-field-name">description</span><span class="db-field-type">text</span><span class="db-field-note">es. "Cena"</span></div>
+      <div class="db-field"><span class="db-field-name">split_equally</span><span class="db-field-type">yes/no</span><span class="db-field-note">default: sì</span></div>
+      <div class="db-field"><span class="db-field-name">day</span><span class="db-field-type">Day</span><span class="db-field-note ref">opzionale</span></div>
+      <div class="db-field"><span class="db-field-name">created_at</span><span class="db-field-type">date</span><span class="db-field-note"></span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">Credit</div>
+        <div class="db-table-tag">Cancellazioni</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">user</span><span class="db-field-type">User</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">amount</span><span class="db-field-type">number</span><span class="db-field-note">€ credito</span></div>
+      <div class="db-field"><span class="db-field-name">origin_trip</span><span class="db-field-type">Trip</span><span class="db-field-note ref">da quale trip</span></div>
+      <div class="db-field"><span class="db-field-name">expires_at</span><span class="db-field-type">date</span><span class="db-field-note key">+12 mesi</span></div>
+      <div class="db-field"><span class="db-field-name">used</span><span class="db-field-type">yes/no</span><span class="db-field-note"></span></div>
+      <div class="db-field"><span class="db-field-name">used_on_trip</span><span class="db-field-type">Trip</span><span class="db-field-note ref">speso dove</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-header">
+        <div class="db-table-name">SupportTicket</div>
+        <div class="db-table-tag">Supporto</div>
+      </div>
+      <div class="db-field"><span class="db-field-name">user</span><span class="db-field-type">User</span><span class="db-field-note ref">FK</span></div>
+      <div class="db-field"><span class="db-field-name">trip</span><span class="db-field-type">Trip</span><span class="db-field-note ref">opzionale</span></div>
+      <div class="db-field"><span class="db-field-name">channel</span><span class="db-field-type">text</span><span class="db-field-note">chat/email</span></div>
+      <div class="db-field"><span class="db-field-name">status</span><span class="db-field-type">text</span><span class="db-field-note">open/resolved</span></div>
+      <div class="db-field"><span class="db-field-name">messages</span><span class="db-field-type">list of text</span><span class="db-field-note">storico</span></div>
+      <div class="db-field"><span class="db-field-name">created_at</span><span class="db-field-type">date</span><span class="db-field-note"></span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RIGENERA LOGIC -->
+<div class="section">
+  <div class="s-label">02 — Logica Rigenerazione</div>
+  <div class="s-title">Il carosello degli itinerari</div>
+  <p class="s-intro">Il meccanismo che hai descritto — 3 gratuite, fino a 7, poi riparti dalla 1 — è elegante e tecnicamente semplice da implementare su Bubble. Ecco come funziona tutto.</p>
+
+  <div style="margin-bottom: 32px;">
+    <div style="font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; font-weight: 600;">Visualizzazione carosello — esempio utente che ha rigenerato 5 volte</div>
+    <div class="regen-track">
+      <div class="regen-slot free">
+        <div class="rs-num" style="color:var(--green);">1</div>
+        <div class="rs-label" style="color:var(--green-light);">Gratis</div>
+        <div class="rs-sub">★★★☆☆</div>
+      </div>
+      <div class="regen-arrow">→</div>
+      <div class="regen-slot free">
+        <div class="rs-num" style="color:var(--green);">2</div>
+        <div class="rs-label" style="color:var(--green-light);">Gratis</div>
+        <div class="rs-sub">★★★★☆</div>
+      </div>
+      <div class="regen-arrow">→</div>
+      <div class="regen-slot free">
+        <div class="rs-num" style="color:var(--green);">3</div>
+        <div class="rs-label" style="color:var(--green-light);">Gratis</div>
+        <div class="rs-sub">★★☆☆☆</div>
+      </div>
+      <div class="regen-arrow">→</div>
+      <div class="regen-slot paid">
+        <div class="rs-num" style="color:var(--amber);">4</div>
+        <div class="rs-label" style="color:var(--amber);">+€1,99</div>
+        <div class="rs-sub">★★★★★</div>
+      </div>
+      <div class="regen-arrow">→</div>
+      <div class="regen-slot active">
+        <div class="rs-num">5</div>
+        <div class="rs-label">Attuale</div>
+        <div class="rs-sub">in uso</div>
+      </div>
+      <div class="regen-arrow" style="color:#aaa;">→</div>
+      <div class="regen-slot" style="opacity:0.4;">
+        <div class="rs-num">6</div>
+        <div class="rs-label">+€1,99</div>
+        <div class="rs-sub">disponibile</div>
+      </div>
+      <div class="regen-arrow" style="color:#aaa;">→</div>
+      <div class="regen-slot" style="opacity:0.4;">
+        <div class="rs-num">7</div>
+        <div class="rs-label">+€1,99</div>
+        <div class="rs-sub">max</div>
+      </div>
+      <div class="regen-arrow">→</div>
+      <div class="regen-slot cycle">
+        <div class="rs-num" style="color:var(--blue);">↺ 1</div>
+        <div class="rs-label" style="color:var(--blue);">Carosello</div>
+        <div class="rs-sub">torna alla v1</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="logic-block">
+    <div class="logic-header">
+      <div class="logic-icon">⚙️</div>
+      <div>
+        <div class="logic-title">Logica Bubble — Pulsante "Rigenera Itinerario"</div>
+        <div class="logic-subtitle">Workflow che scatta quando l'utente clicca "Non mi piace, rigenerami"</div>
+      </div>
+    </div>
+    <div class="logic-body">
+      <div class="pseudo-code">
+<span class="pc-comment">// Workflow: Button "Rigenera" clicked</span>
+
+<span class="pc-keyword">STEP 1</span> — Controlla regen_count del Trip corrente
+  <span class="pc-keyword">IF</span> Trip.regen_count <span class="pc-num">< 3</span>  <span class="pc-comment">→ gratis</span>
+    <span class="pc-fn">GOTO</span> STEP 3
+
+  <span class="pc-keyword">ELSE IF</span> Trip.regen_count >= <span class="pc-num">3</span> AND Trip.regen_count <span class="pc-num">< 7</span>  <span class="pc-comment">→ a pagamento</span>
+    <span class="pc-fn">Show</span> popup <span class="pc-string">"Rigenerazione extra: €1,99. Confermi?"</span>
+    <span class="pc-keyword">IF</span> user confirm:
+      <span class="pc-fn">Stripe.charge</span>(€<span class="pc-num">1.99</span>, user.stripe_id)
+      <span class="pc-fn">GOTO</span> STEP 3
+    <span class="pc-keyword">ELSE</span>: annulla
+
+  <span class="pc-keyword">ELSE IF</span> Trip.regen_count = <span class="pc-num">7</span>  <span class="pc-comment">→ limite raggiunto: carosello</span>
+    <span class="pc-fn">Show</span> popup <span class="pc-string">"Hai raggiunto il limite. Riparti dalla versione 1?"</span>
+    <span class="pc-keyword">IF</span> user confirm:
+      <span class="pc-fn">Set</span> Trip.current_version = <span class="pc-num">1</span>
+      <span class="pc-fn">Set</span> TripVersion[1].is_active = <span class="pc-string">true</span>
+      <span class="pc-fn">Set</span> altri TripVersion.is_active = <span class="pc-string">false</span>
+      <span class="pc-fn">END</span>  <span class="pc-comment">// non chiama Claude, usa versione salvata</span>
+
+<span class="pc-keyword">STEP 2</span> — (solo versioni 4–7) Addebita €1,99 via Stripe
+
+<span class="pc-keyword">STEP 3</span> — Genera nuovo itinerario
+  <span class="pc-fn">API Call</span> → Claude con prompt arricchito:
+    <span class="pc-string">"Genera un itinerario DIVERSO dal precedente.
+     Ottimizza i punti di interesse per distanza geografica.
+     Destinazione: [dest], Stile: [stile], Giorni: [n]
+     VERSIONE: [regen_count+1] — sii più creativo delle versioni precedenti."</span>
+
+<span class="pc-keyword">STEP 4</span> — Salva risultato
+  <span class="pc-fn">Create</span> TripVersion (version_num = regen_count+1, is_active=true)
+  <span class="pc-fn">Create</span> Day records (uno per giorno, con unlock_date calcolato)
+  <span class="pc-fn">Update</span> Trip.regen_count += <span class="pc-num">1</span>
+  <span class="pc-fn">Update</span> Trip.current_version = regen_count
+  <span class="pc-fn">Set</span> vecchia TripVersion.is_active = <span class="pc-string">false</span>
+
+<span class="pc-keyword">STEP 5</span> — Feedback all'utente
+  <span class="pc-fn">Show</span> <span class="pc-string">"Itinerario v[N] pronto! 🎉"</span>
+  <span class="pc-comment">// Se regen_count >= 2: mostra "Punteggio ottimizzazione distanze: ★★★★☆"</span>
+  <span class="pc-comment">// Questo educa l'utente sul geo_score e crea aspettativa</span>
+      </div>
+      <div style="background: var(--amber-bg); border:1px solid var(--amber); border-radius:7px; padding:14px 18px; font-size:13px; color:var(--ink2);">
+        <strong style="color:var(--amber);">💡 Nota sul geo_score:</strong> nel prompt Claude chiedi esplicitamente di ordinare le attività per vicinanza geografica e restituire un "optimization_score" da 1–10. Salvalo nel campo <code>geo_score</code> di TripVersion. Mostralo all'utente come "Efficienza percorso ★★★★☆" — così capisce che la versione 4+ è oggettivamente migliore e smette di rigenerare.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGAMENTO GRUPPO + SPLIT -->
+<div class="section alt">
+  <div class="s-label">03 — Pagamento Gruppo</div>
+  <div class="s-title">L'organizzatore paga. Il gruppo splitta.</div>
+  <p class="s-intro">Il flusso di acquisto del trip di gruppo e la logica di divisione spese durante il viaggio.</p>
+
+  <div style="margin-bottom: 32px;">
+    <div class="flow-h">
+      <div class="flow-h-node blue">
+        <div class="fhn-label">Chi compra</div>
+        <div class="fhn-text">Organizzatore</div>
+        <div class="fhn-sub">Paga €14,99 al checkout</div>
+        <div class="fhn-badge badge-b">1 pagamento</div>
+      </div>
+      <div class="flow-h-arrow">→</div>
+      <div class="flow-h-node">
+        <div class="fhn-label">Invito gruppo</div>
+        <div class="fhn-text">Link magico</div>
+        <div class="fhn-sub">Inviato agli amici via WhatsApp/email</div>
+      </div>
+      <div class="flow-h-arrow">→</div>
+      <div class="flow-h-node green">
+        <div class="fhn-label">Accesso membri</div>
+        <div class="fhn-text">Free read-only</div>
+        <div class="fhn-sub">Vedono l'itinerario, aggiungono spese</div>
+        <div class="fhn-badge badge-g">Gratis per loro</div>
+      </div>
+      <div class="flow-h-arrow">→</div>
+      <div class="flow-h-node amber">
+        <div class="fhn-label">Split spese</div>
+        <div class="fhn-text">In-app automatico</div>
+        <div class="fhn-sub">Chi deve quanto a chi</div>
+        <div class="fhn-badge badge-a">PackedUp</div>
+      </div>
+      <div class="flow-h-arrow">→</div>
+      <div class="flow-h-node">
+        <div class="fhn-label">Post-trip</div>
+        <div class="fhn-text">Riepilogo</div>
+        <div class="fhn-sub">Pareggio dei conti. PDF non scaricabile, solo visivo.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+    <div class="logic-block" style="margin-bottom:0">
+      <div class="logic-header">
+        <div class="logic-icon">🔗</div>
+        <div>
+          <div class="logic-title">Link invito gruppo</div>
+          <div class="logic-subtitle">Come funziona su Bubble</div>
+        </div>
+      </div>
+      <div class="logic-body">
+        <div class="pseudo-code" style="font-size:12px;">
+<span class="pc-comment">// Genera link univoco per il trip</span>
+invite_url = <span class="pc-string">"easytrip.app/join/[Trip_unique_id]"</span>
+
+<span class="pc-comment">// Quando il membro clicca il link:</span>
+<span class="pc-keyword">IF</span> user NOT logged in:
+  → Registrazione rapida (solo email)
+  → Account creato automaticamente
+
+<span class="pc-keyword">IF</span> user logged in:
+  → Crea GroupMember record
+  → role = <span class="pc-string">"member"</span>
+  → Accesso immediato in sola lettura
+
+<span class="pc-comment">// L'organizzatore vede chi ha accettato</span>
+<span class="pc-comment">// I membri non possono modificare l'itinerario</span>
+<span class="pc-comment">// ma possono aggiungere spese</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; font-weight: 600;">Esempio split — Viaggio di 4 amici a Barcellona</div>
+      <div class="split-example">
+        <div class="split-header">
+          <span>💰 Riepilogo Spese — Barcellona 4 giorni</span>
+          <span style="color:#7dbf8e;">Totale: €340</span>
+        </div>
+        <div class="split-row head">
+          <span>Persona</span><span>Ha pagato</span><span>Quota giusta</span><span>Saldo</span>
+        </div>
+        <div class="split-row">
+          <span><strong>Marco</strong> (org.)</span>
+          <span class="pays">€180</span>
+          <span>€85</span>
+          <span class="settled">+ €95 da riscuotere</span>
+        </div>
+        <div class="split-row">
+          <span>Sofia</span>
+          <span class="pays">€60</span>
+          <span>€85</span>
+          <span class="owes">− €25 deve</span>
+        </div>
+        <div class="split-row">
+          <span>Luca</span>
+          <span class="pays">€70</span>
+          <span>€85</span>
+          <span class="owes">− €15 deve</span>
+        </div>
+        <div class="split-row">
+          <span>Giulia</span>
+          <span class="pays">€30</span>
+          <span>€85</span>
+          <span class="owes">− €55 deve</span>
+        </div>
+        <div class="split-row total">
+          <span>Totale gruppo</span>
+          <span>€340</span>
+          <span>€340</span>
+          <span>✓ Bilanciato</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="logic-block">
+    <div class="logic-header">
+      <div class="logic-icon">🧮</div>
+      <div>
+        <div class="logic-title">Formula split automatico in Bubble</div>
+        <div class="logic-subtitle">Workflow che si aggiorna ogni volta che viene aggiunta una spesa</div>
+      </div>
+    </div>
+    <div class="logic-body">
+      <div class="pseudo-code">
+<span class="pc-comment">// Quando viene creata una nuova Expense:</span>
+
+<span class="pc-keyword">STEP 1</span> — Calcola quota per membro
+  quota = Expense.amount / GroupMember:count(Trip = this.trip)
+
+<span class="pc-keyword">STEP 2</span> — Aggiorna balance di ogni membro
+  <span class="pc-keyword">FOR EACH</span> GroupMember in this.trip:
+    <span class="pc-keyword">IF</span> member = Expense.paid_by:
+      member.balance += (Expense.amount - quota)  <span class="pc-comment">// ha pagato più della sua quota</span>
+      member.total_paid += Expense.amount
+    <span class="pc-keyword">ELSE</span>:
+      member.balance -= quota  <span class="pc-comment">// deve la sua quota</span>
+
+<span class="pc-comment">// Il balance mostra: positivo = deve ricevere, negativo = deve dare</span>
+<span class="pc-comment">// La UI mostra sempre la situazione aggiornata in tempo reale</span>
+<span class="pc-comment">// Nessun calcolo manuale — Bubble lo fa in automatico</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREDIT SYSTEM -->
+<div class="section white">
+  <div class="s-label">04 — Sistema Crediti</div>
+  <div class="s-title">Cancellazione → Credito, mai rimborso</div>
+  <p class="s-intro">Il credito è la scelta più intelligente: trattieni il ricavo, fidelizzi il cliente, e crei un incentivo naturale a tornare. Ecco come costruirlo.</p>
+
+  <div class="credit-flow" style="margin-bottom: 28px;">
+    <div class="credit-card primary">
+      <div class="cc-icon">✅</div>
+      <div class="cc-title">Cancellazione ammessa</div>
+      <div class="cc-desc">L'utente può cancellare il viaggio in qualsiasi momento prima della data di inizio. Dopo l'inizio del viaggio, il trip è considerato "in uso" e non cancellabile.</div>
+      <div class="cc-rule green">Regola: solo pre-viaggio</div>
+    </div>
+    <div class="credit-card warning">
+      <div class="cc-icon">🪙</div>
+      <div class="cc-title">Credito emesso automaticamente</div>
+      <div class="cc-desc">Bubble crea un record Credit con l'importo pagato. Make invia un'email: "Il tuo credito di €14,99 è pronto per il prossimo viaggio".</div>
+      <div class="cc-rule amber">Scadenza: 12 mesi</div>
+    </div>
+    <div class="credit-card">
+      <div class="cc-icon">📅</div>
+      <div class="cc-title">Credito scade</div>
+      <div class="cc-desc">Se non usato entro 12 mesi, il credito scade. Email automatica a 30 giorni, 7 giorni e 1 giorno dalla scadenza. Crea urgenza positiva al riacquisto.</div>
+      <div class="cc-rule" style="color:var(--red);">Urgenza = conversione</div>
+    </div>
+    <div class="credit-card primary">
+      <div class="cc-icon">🛒</div>
+      <div class="cc-title">Uso del credito</div>
+      <div class="cc-desc">Al checkout del trip successivo, Bubble controlla se l'utente ha Credit.used=false e Credit.expires_at > oggi. Se sì, applica lo sconto automaticamente.</div>
+      <div class="cc-rule green">Zero attriti per l'utente</div>
+    </div>
+  </div>
+
+  <div class="logic-block">
+    <div class="logic-header">
+      <div class="logic-icon">🔄</div>
+      <div>
+        <div class="logic-title">Workflow cancellazione completo</div>
+        <div class="logic-subtitle">Da Bubble + Make + Brevo</div>
+      </div>
+    </div>
+    <div class="logic-body">
+      <div class="pseudo-code">
+<span class="pc-comment">// Pulsante "Cancella viaggio" premuto dall'organizzatore</span>
+
+<span class="pc-keyword">STEP 1</span> — Verifica eligibilità
+  <span class="pc-keyword">IF</span> today >= Trip.start_date:
+    <span class="pc-fn">Show</span> <span class="pc-string">"Il viaggio è già iniziato e non può essere cancellato."</span>
+    <span class="pc-fn">STOP</span>
+  <span class="pc-keyword">ELSE</span>:
+    <span class="pc-fn">Show</span> confirm dialog: <span class="pc-string">"Cancellando riceverai €[amount] di credito valido 12 mesi. Confermi?"</span>
+
+<span class="pc-keyword">STEP 2</span> — Cancella il trip
+  <span class="pc-fn">Set</span> Trip.status = <span class="pc-string">"cancelled"</span>
+  <span class="pc-fn">Set</span> Trip.access_expires_at = <span class="pc-fn">now()</span>  <span class="pc-comment">// accesso immediato revocato</span>
+  <span class="pc-comment">// Se gruppo: rimuovi anche l'accesso ai membri</span>
+
+<span class="pc-keyword">STEP 3</span> — Emetti credito
+  <span class="pc-fn">Create</span> Credit:
+    user = Trip.organizer
+    amount = Trip.amount_paid
+    origin_trip = this.trip
+    expires_at = <span class="pc-fn">now()</span> + <span class="pc-num">365</span> days
+    used = <span class="pc-string">false</span>
+  <span class="pc-fn">Update</span> User.credit_balance += Trip.amount_paid
+
+<span class="pc-keyword">STEP 4</span> — Notifica (via Make → Brevo)
+  Email: <span class="pc-string">"Il tuo credito di €[amount] è attivo! Usalo entro [expires_at]."</span>
+  <span class="pc-comment">// Schedule email reminder: -30gg, -7gg, -1gg da expires_at</span>
+
+<span class="pc-keyword">STEP 5</span> — Uso al prossimo checkout
+  <span class="pc-keyword">IF</span> User.credit_balance > <span class="pc-num">0</span> AND credit.expires_at > today:
+    <span class="pc-fn">Apply</span> credito al totale automaticamente
+    <span class="pc-fn">Set</span> Credit.used = <span class="pc-string">true</span>
+    <span class="pc-fn">Set</span> Credit.used_on_trip = new_trip
+    <span class="pc-fn">Update</span> User.credit_balance -= credit.amount
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORTO -->
+<div class="section">
+  <div class="s-label">05 — Supporto Clienti</div>
+  <div class="s-title">Chat in-app + email: la combo giusta</div>
+  <p class="s-intro">Il supporto è anche un canale di vendita. Una risposta rapida durante il viaggio vale quanto una buona recensione. Ecco come costruirlo con zero codice.</p>
+
+  <div class="support-grid">
+    <div class="support-card">
+      <div class="sc-header">
+        <div class="sc-icon">💬</div>
+        <div>
+          <div class="sc-title">Chat in-app</div>
+          <div class="sc-sub">Disponibile solo mentre il trip è attivo</div>
+        </div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-row"><span class="sc-dot">→</span><span>Widget chat visibile nell'angolo in basso a destra durante il viaggio</span></div>
+        <div class="sc-row"><span class="sc-dot">→</span><span>Risposta umana entro 4 ore (nelle prime fasi, rispondi tu manualmente)</span></div>
+        <div class="sc-row"><span class="sc-dot">→</span><span>Al click "Chat" → apre una conversazione su Crisp o Tidio direttamente nell'app</span></div>
+        <div class="sc-row"><span class="sc-dot">→</span><span>Ogni messaggio viene collegato automaticamente all'utente e al suo trip (contesto visibile a te)</span></div>
+        <div class="sc-row"><span class="sc-dot">→</span><span>Dopo la scadenza del trip, la chat è visibile in sola lettura ma non inviare nuovi messaggi</span></div>
+        <div class="sc-tool">
+          <div class="sc-tool-name">🛠 Tool: Crisp.chat</div>
+          <div style="font-size:13px;color:var(--muted);margin:4px 0;">Si integra con Bubble in 5 minuti via script embed. Gratuito fino a 2 agenti.</div>
+          <div class="sc-tool-cost">€0/mese (free tier) → €25/mese (pro)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="support-card">
+      <div class="sc-header">
+        <div class="sc-icon">📧</div>
+        <div>
+          <div class="sc-title">Email automatiche</div>
+          <div class="sc-sub">Ciclo di vita completo del cliente</div>
+        </div>
+      </div>
+      <div class="sc-body">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;font-weight:600;">Sequenza email (Brevo + Make)</div>
+        <div class="sc-row"><span class="sc-dot">1</span><span><strong>Subito dopo acquisto:</strong> "Benvenuto! Il tuo itinerario è in preparazione… 🌍"</span></div>
+        <div class="sc-row"><span class="sc-dot">2</span><span><strong>Itinerario pronto:</strong> "Il tuo piano per [città] è pronto. Accedi qui →"</span></div>
+        <div class="sc-row"><span class="sc-dot">3</span><span><strong>2 giorni prima:</strong> "Mancano 2 giorni! Ecco cosa portare per [città]"</span></div>
+        <div class="sc-row"><span class="sc-dot">4</span><span><strong>Mattino giorno 1:</strong> "Buongiorno! Il tuo viaggio inizia oggi 🎉 Apri l'app"</span></div>
+        <div class="sc-row"><span class="sc-dot">5</span><span><strong>Giorno di rientro:</strong> "Com'è andata? Lascia una recensione → [link]"</span></div>
+        <div class="sc-row"><span class="sc-dot">6</span><span><strong>+14 giorni:</strong> "Dove vai il prossimo weekend? Scopri nuove destinazioni"</span></div>
+        <div class="sc-tool">
+          <div class="sc-tool-name">🛠 Tool: Brevo (ex Sendinblue)</div>
+          <div style="font-size:13px;color:var(--muted);margin:4px 0;">Automazioni visive drag-and-drop. Integrazione Make → Brevo immediata. Trigger da eventi Bubble.</div>
+          <div class="sc-tool-cost">€0/mese fino a 300 email/giorno → €19/mese illimitato</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BUBBLE WORKFLOWS -->
+<div class="section alt">
+  <div class="s-label">06 — Workflow Bubble Principali</div>
+  <div class="s-title">I 7 automatismi da costruire</div>
+  <p class="s-intro">Bubble chiama "workflows" le automazioni. Eccoli tutti, con trigger preciso e tool coinvolto.</p>
+
+  <div class="wf-list">
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">1</div>
+        <div class="wf-info">
+          <div class="wf-name">Acquisto completato → Crea utente + Trip</div>
+          <div class="wf-trigger">Trigger: Stripe webhook "payment_intent.succeeded"</div>
+        </div>
+        <span class="wf-tag wft-make">Make</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Make riceve il webhook Stripe con email, importo, metadata (tipo trip, date)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Crea User in Bubble (se non esiste) con email + stripe_customer_id</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Crea Trip con tutti i campi (status=active, regen_count=0, access_expires_at = end_date+1)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Triggera API call Claude per generare itinerario (vedi workflow 2)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Invia email via Brevo con magic link di accesso</span></div>
+      </div>
+    </div>
+
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">2</div>
+        <div class="wf-info">
+          <div class="wf-name">Genera itinerario AI → Salva Days</div>
+          <div class="wf-trigger">Trigger: Trip creato (o pulsante "Rigenera")</div>
+        </div>
+        <span class="wf-tag wft-bubble">Bubble</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Bubble API Connector chiama Claude con prompt strutturato (destinazione, stile, giorni, versione)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Claude risponde con JSON: array di giorni con attività mattina/pomeriggio/sera, ristoranti, tips, geo_score</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Bubble crea 1 record TripVersion + N record Day (uno per giorno, unlock_date = start_date + day_number - 1)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Aggiorna Trip.regen_count, Trip.current_version, set vecchia versione is_active=false</span></div>
+      </div>
+    </div>
+
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">3</div>
+        <div class="wf-info">
+          <div class="wf-name">Sblocco giornaliero + notifica push</div>
+          <div class="wf-trigger">Trigger: Scheduled API workflow ogni giorno alle 06:00 UTC+1</div>
+        </div>
+        <span class="wf-tag wft-bubble">Bubble</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Bubble scheduled workflow: cerca tutti i Day dove unlock_date = oggi e trip.status = active</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Invia notifica push via OneSignal: "Buongiorno da [città]! Il tuo programma per oggi è pronto ☀️"</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>La UI mostra automaticamente il day corrente in highlight (Bubble: condizione "Day.unlock_date = today")</span></div>
+      </div>
+    </div>
+
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">4</div>
+        <div class="wf-info">
+          <div class="wf-name">Scadenza accesso + schermata post-trip</div>
+          <div class="wf-trigger">Trigger: Scheduled workflow giornaliero + condizione pagina</div>
+        </div>
+        <span class="wf-tag wft-bubble">Bubble</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Ogni pagina trip: IF today > Trip.access_expires_at → mostra schermata "Viaggio terminato" invece del contenuto</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Scheduled workflow: cambia Trip.status = "expired" a mezzanotte di access_expires_at</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Mostra CTA: "Riattiva per €2,90 (30 giorni)" e "Pianifica il prossimo viaggio"</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Invia email automatica (Brevo): "Il tuo viaggio è terminato. Come riattivare →"</span></div>
+      </div>
+    </div>
+
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">5</div>
+        <div class="wf-info">
+          <div class="wf-name">Riattivazione post-trip (€2,90)</div>
+          <div class="wf-trigger">Trigger: Click pulsante "Riattiva" sulla schermata scaduta</div>
+        </div>
+        <span class="wf-tag wft-stripe">Stripe</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Stripe Payment Intent per €2,90 (one-time) — carta già salvata se abbonato</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Se pagamento ok: aggiorna Trip.access_expires_at = today + 30 giorni, Trip.status = "reactivated"</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Sblocca accesso immediato a tutti i Day del trip (in sola lettura — no più unlock progressivo)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Invia email: "Accesso riattivato! Rivivi il tuo viaggio a [città] 🌟"</span></div>
+      </div>
+    </div>
+
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">6</div>
+        <div class="wf-info">
+          <div class="wf-name">Cancellazione trip → Emissione credito</div>
+          <div class="wf-trigger">Trigger: Click "Cancella viaggio" (solo organizzatore, solo pre-inizio)</div>
+        </div>
+        <span class="wf-tag wft-bubble">Bubble</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Verifica: IF today >= Trip.start_date → mostra errore "Non cancellabile dopo l'inizio"</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Crea record Credit (amount=Trip.amount_paid, expires_at=now+365d, used=false)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Aggiorna Trip.status="cancelled", rimuovi accesso a tutti i GroupMember</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Aggiorna User.credit_balance += amount</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Email Brevo: "Credito €[X] attivo — usalo entro [data]. Non scade prima!" (tono positivo)</span></div>
+      </div>
+    </div>
+
+    <div class="wf-item">
+      <div class="wf-header">
+        <div class="wf-num">7</div>
+        <div class="wf-info">
+          <div class="wf-name">Aggiunta spesa gruppo → Ricalcolo split</div>
+          <div class="wf-trigger">Trigger: Creazione nuova Expense da qualsiasi membro del gruppo</div>
+        </div>
+        <span class="wf-tag wft-bubble">Bubble</span>
+      </div>
+      <div class="wf-steps">
+        <div class="wf-step"><span class="wfs-i">→</span><span>Calcola quota: Expense.amount ÷ numero GroupMember attivi nel trip</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Loop su ogni GroupMember: aggiorna balance (+ o − quota a seconda di chi ha pagato)</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>Aggiorna GroupMember.total_paid del pagante</span></div>
+        <div class="wf-step"><span class="wfs-i">→</span><span>La tabella riepilogo si aggiorna in real-time per tutti i membri (Bubble: live data binding)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRIORITÀ COSTRUZIONE -->
+<div class="section white">
+  <div class="s-label">07 — Ordine di Costruzione</div>
+  <div class="s-title">Cosa costruire prima, cosa dopo</div>
+  <p class="s-intro">Non costruire tutto insieme. Inizia dal cuore del prodotto e aggiungi complessità solo dopo aver validato ogni livello con utenti reali.</p>
+
+  <table class="prio-table">
+    <thead>
+      <tr>
+        <th>Priorità</th>
+        <th>Feature</th>
+        <th>Perché prima</th>
+        <th>Complessità Bubble</th>
+        <th>Settimana target</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="p1">
+        <td><span class="prio-badge pb1">P1 — Must</span></td>
+        <td><strong>Pagamento Stripe → crea Trip</strong></td>
+        <td>Senza questo, niente prodotto</td>
+        <td><span class="complexity c-med">Media</span></td>
+        <td>Sett. 1–2</td>
+      </tr>
+      <tr class="p1">
+        <td><span class="prio-badge pb1">P1 — Must</span></td>
+        <td><strong>Generazione itinerario Claude API</strong></td>
+        <td>È il core value — senza non esiste l'app</td>
+        <td><span class="complexity c-med">Media</span></td>
+        <td>Sett. 3–4</td>
+      </tr>
+      <tr class="p1">
+        <td><span class="prio-badge pb1">P1 — Must</span></td>
+        <td><strong>Sblocco giornaliero + scadenza accesso</strong></td>
+        <td>È il modello di business — senza non si monetizza</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Sett. 4–5</td>
+      </tr>
+      <tr class="p1">
+        <td><span class="prio-badge pb1">P1 — Must</span></td>
+        <td><strong>Email onboarding automatiche</strong></td>
+        <td>Senza email il 60% degli utenti non rientra</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Sett. 5</td>
+      </tr>
+      <tr class="p2">
+        <td><span class="prio-badge pb2">P2 — Should</span></td>
+        <td><strong>Rigenerazione itinerario (3 gratis + carosello)</strong></td>
+        <td>Alta retention + revenue extra</td>
+        <td><span class="complexity c-med">Media</span></td>
+        <td>Sett. 6</td>
+      </tr>
+      <tr class="p2">
+        <td><span class="prio-badge pb2">P2 — Should</span></td>
+        <td><strong>Sistema crediti cancellazione</strong></td>
+        <td>Riduce churn, evita dispute Stripe</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Sett. 6–7</td>
+      </tr>
+      <tr class="p2">
+        <td><span class="prio-badge pb2">P2 — Should</span></td>
+        <td><strong>Link invito gruppo + accesso membri</strong></td>
+        <td>Sblocca il tier €14,99 (+ 50% revenue)</td>
+        <td><span class="complexity c-med">Media</span></td>
+        <td>Sett. 7</td>
+      </tr>
+      <tr class="p2">
+        <td><span class="prio-badge pb2">P2 — Should</span></td>
+        <td><strong>Chat supporto (Crisp embed)</strong></td>
+        <td>Riduce refund, aumenta soddisfazione</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Sett. 7–8</td>
+      </tr>
+      <tr class="p3">
+        <td><span class="prio-badge pb3">P3 — Nice</span></td>
+        <td><strong>Split spese gruppo (Expense table)</strong></td>
+        <td>Valore aggiunto, non critico al lancio</td>
+        <td><span class="complexity c-med">Media</span></td>
+        <td>Sett. 8–9</td>
+      </tr>
+      <tr class="p3">
+        <td><span class="prio-badge pb3">P3 — Nice</span></td>
+        <td><strong>LocalPass layer (gemme locali)</strong></td>
+        <td>Revenue add-on, costruisce su base solida</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Sett. 9</td>
+      </tr>
+      <tr class="p3">
+        <td><span class="prio-badge pb3">P3 — Nice</span></td>
+        <td><strong>Riattivazione post-trip €2,90</strong></td>
+        <td>Revenue passivo, aggiungibile in 2 ore</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Sett. 9–10</td>
+      </tr>
+      <tr class="p3">
+        <td><span class="prio-badge pb3">P3 — Nice</span></td>
+        <td><strong>Notifiche push (OneSignal)</strong></td>
+        <td>Engagement booster, non bloccante</td>
+        <td><span class="complexity c-low">Bassa</span></td>
+        <td>Post-lancio</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-grid">
+    <div>
+      <div class="footer-title">Il prossimo step concreto</div>
+      <ul class="footer-list">
+        <li>
+          <div class="fl-n">1</div>
+          <div class="fl-text"><strong>Oggi:</strong> Apri Bubble → crea una nuova app vuota → crea le 8 tabelle del database esattamente come descritte in questo documento. Ci vuole 1–2 ore.</div>
+        </li>
+        <li>
+          <div class="fl-n">2</div>
+          <div class="fl-text"><strong>Questa settimana:</strong> Configura Stripe in test mode con 2 prodotti: "Trip Solo €9,99" e "Trip Gruppo €14,99". Crea il flow Make: Stripe → Bubble → Brevo.</div>
+        </li>
+        <li>
+          <div class="fl-n">3</div>
+          <div class="fl-text"><strong>Settimana 2:</strong> Scrivi il prompt Claude master per la generazione itinerari. Testalo direttamente su claude.ai fino a quando il JSON output è esattamente quello che vuoi. Solo dopo integralo in Bubble.</div>
+        </li>
+        <li>
+          <div class="fl-n">4</div>
+          <div class="fl-text"><strong>Prima del lancio:</strong> Fai almeno 3 "viaggi test" completi tu stesso: compra, genera, simula lo sblocco giornaliero, cancella, usa il credito. Solo così trovi i bug prima degli utenti.</div>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-title">Una cosa da non dimenticare mai</div>
+      <p style="font-size:15px; color:#8a8a72; line-height:1.8; margin-bottom:20px;">
+        Il prodotto che stai costruendo non è un'app. È un <strong style="color:#f2ede4;">rituale di viaggio</strong>. Ogni volta che un utente apre EasyTrip la mattina del viaggio, stai competendo con l'ansia del "cosa facciamo oggi?". Vinci quella gara e hai un prodotto che le persone amano.
+      </p>
+      <p style="font-size:13px; color:#5a5a45;">
+        Architettura tecnica EasyTrip v1.0 — Traduzione delle 5 decisioni in logica Bubble concreta. Tutti i workflow sono implementabili senza scrivere una riga di codice.
+      </p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

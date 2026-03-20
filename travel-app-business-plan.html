@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel App — Business Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --paper: #f5f0e8;
+    --sand: #e8dfc8;
+    --terracotta: #c8603a;
+    --terra-light: #e8896a;
+    --sky: #2e5f8a;
+    --sky-light: #5a90b8;
+    --sage: #4a7c59;
+    --gold: #c4982a;
+    --cream: #faf7f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 80px 60px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '✈';
+    position: absolute;
+    font-size: 320px;
+    opacity: 0.04;
+    right: -40px;
+    top: -60px;
+    line-height: 1;
+  }
+  .hero-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--terra-light);
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 800;
+    line-height: 1.05;
+    margin-bottom: 24px;
+    max-width: 700px;
+  }
+  .hero h1 span { color: var(--terra-light); }
+  .hero-sub {
+    font-size: 17px;
+    color: #b0a898;
+    max-width: 520px;
+    font-weight: 300;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 50px;
+    margin-top: 50px;
+    flex-wrap: wrap;
+  }
+  .stat-item { }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--terra-light);
+  }
+  .stat-label {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  /* SECTION */
+  .section {
+    padding: 70px 60px;
+  }
+  .section:nth-child(even) { background: var(--cream); }
+
+  .section-tag {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(26px, 3.5vw, 40px);
+    font-weight: 800;
+    margin-bottom: 40px;
+    max-width: 620px;
+    line-height: 1.15;
+  }
+
+  /* PROBLEMS GRID */
+  .problems-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2px;
+    border: 2px solid var(--ink);
+  }
+  .problem-card {
+    padding: 30px 28px;
+    background: var(--cream);
+    border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+  .problem-card:last-child { border-right: none; }
+  .problem-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    color: var(--sand);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .problem-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .problem-desc { font-size: 14px; color: #555; line-height: 1.6; }
+  .problem-urgency {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .urgency-high { background: #fde8e0; color: var(--terracotta); }
+  .urgency-med { background: #fef3d0; color: var(--gold); }
+
+  /* APP IDEAS */
+  .ideas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+  }
+  .idea-card {
+    border: 2px solid var(--ink);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .idea-card.featured {
+    border-color: var(--terracotta);
+    border-width: 3px;
+  }
+  .idea-header {
+    padding: 28px 28px 20px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .idea-card.featured .idea-header {
+    background: var(--terracotta);
+    color: white;
+    border-bottom-color: var(--terracotta);
+  }
+  .idea-badge {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 10px;
+    opacity: 0.7;
+  }
+  .idea-card.featured .idea-badge { opacity: 1; color: rgba(255,255,255,0.8); }
+  .best-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: white;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+  .idea-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .idea-tagline { font-size: 14px; opacity: 0.75; }
+  .idea-body { padding: 24px 28px; }
+  .idea-problem { font-size: 13px; color: #666; margin-bottom: 16px; font-style: italic; }
+  .idea-solution { font-size: 14px; margin-bottom: 20px; }
+  .idea-pricing {
+    background: var(--sand);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .pricing-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #888; margin-bottom: 6px; }
+  .pricing-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--terracotta);
+  }
+  .pricing-detail { font-size: 12px; color: #666; margin-top: 4px; }
+  .revenue-target {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+    border-top: 1px solid #ddd;
+  }
+  .revenue-icon { font-size: 20px; }
+  .revenue-label { font-size: 12px; color: #666; }
+  .revenue-val { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-left: auto; }
+
+  /* APP DESIGN */
+  .app-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 2px solid var(--ink);
+  }
+  .app-feature {
+    padding: 32px 30px;
+    border-right: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+  }
+  .app-feature:nth-child(even) { border-right: none; }
+  .app-feature:nth-last-child(-n+2) { border-bottom: none; }
+  .feature-icon { font-size: 32px; margin-bottom: 14px; }
+  .feature-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feature-desc { font-size: 14px; color: #555; }
+
+  /* ROADMAP */
+  .roadmap {
+    position: relative;
+  }
+  .roadmap-track {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .phase {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 0;
+    border: 2px solid var(--ink);
+    border-bottom: none;
+  }
+  .phase:last-child { border-bottom: 2px solid var(--ink); }
+  .phase-time {
+    padding: 30px 20px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-right: 2px solid var(--ink);
+  }
+  .phase-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--terra-light);
+    line-height: 1;
+  }
+  .phase-dur { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-top: 6px; }
+  .phase-content { padding: 28px 32px; }
+  .phase-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--terracotta); margin-bottom: 6px; }
+  .phase-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .phase-tasks { list-style: none; padding: 0; }
+  .phase-tasks li {
+    font-size: 14px;
+    padding: 5px 0;
+    padding-left: 18px;
+    position: relative;
+    color: #444;
+  }
+  .phase-tasks li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--terracotta);
+    font-weight: 700;
+  }
+  .phase-goal {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--sand);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .phase-goal span { color: var(--terracotta); font-weight: 700; }
+  .phase-budget {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #777;
+  }
+
+  /* TOOLS */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .tool-card {
+    border: 2px solid var(--ink);
+    padding: 22px 20px;
+  }
+  .tool-cat { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+  .tool-name { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .tool-desc { font-size: 13px; color: #555; }
+  .tool-cost { font-size: 12px; color: var(--sage); font-weight: 600; margin-top: 10px; }
+
+  /* REVENUE SIMULATOR */
+  .revenue-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid var(--ink);
+  }
+  .revenue-table th {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 20px;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .revenue-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--sand);
+    font-size: 14px;
+  }
+  .revenue-table tr:last-child td { border-bottom: none; }
+  .revenue-table tr:nth-child(even) td { background: var(--cream); }
+  .highlight-row td {
+    font-weight: 700;
+    background: #fde8e0 !important;
+    color: var(--terracotta);
+    font-family: 'Syne', sans-serif;
+  }
+  .milestone { color: var(--sage); font-weight: 600; }
+
+  /* FOOTER */
+  .footer {
+    background: var(--ink);
+    color: #888;
+    padding: 40px 60px;
+    font-size: 13px;
+  }
+  .footer strong { color: var(--paper); }
+
+  @media (max-width: 700px) {
+    .hero, .section { padding: 50px 24px; }
+    .phase { grid-template-columns: 90px 1fr; }
+    .app-features { grid-template-columns: 1fr; }
+    .app-feature { border-right: none !important; }
+    .app-feature:last-child { border-bottom: none; }
+    .footer { padding: 40px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Piano Strategico — Nicchia Travel</div>
+  <h1>Da zero a <span>€5.000–10.000</span> al mese con un'app di viaggio</h1>
+  <p class="hero-sub">Analisi completa di problemi reali, 3 idee di business, pricing, roadmap e strumenti no-code per chi non sa programmare.</p>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Idee app concrete</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">18</div>
+      <div class="stat-label">Mesi per l'obiettivo</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">€0</div>
+      <div class="stat-label">Codice da scrivere</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">6</div>
+      <div class="stat-label">Problemi urgenti identificati</div>
+    </div>
+  </div>
+</div>
+
+<!-- TARGET PROFILE -->
+<div class="section">
+  <div class="section-tag">01 — Clienti Target</div>
+  <div class="section-title">Chi sono i tuoi futuri clienti</div>
+  <div class="problems-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+    <div class="problem-card">
+      <div class="problem-num">25–42</div>
+      <div class="problem-title">Età media</div>
+      <div class="problem-desc">Millennial e Gen Z digitali, abituati a pagare per app che semplificano la vita.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">4–10</div>
+      <div class="problem-title">Viaggi brevi l'anno</div>
+      <div class="problem-desc">3–5 giorni per viaggio. Spendono €600–1.500 a trip tra volo, hotel, cibo e attività.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">1–5</div>
+      <div class="problem-title">Persone per viaggio</div>
+      <div class="problem-desc">Solo, coppia o gruppo di amici. Ogni formato crea problemi organizzativi diversi.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">€1.200</div>
+      <div class="problem-title">Spesa media per trip</div>
+      <div class="problem-desc">Chi spende €1.200 per andare a Lisbona paga volentieri €10 per pianificarlo bene.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEMS -->
+<div class="section">
+  <div class="section-tag">02 — Problemi Reali e Urgenti</div>
+  <div class="section-title">Cosa li fa impazzire davvero</div>
+  <div class="problems-grid">
+    <div class="problem-card">
+      <div class="problem-num">01</div>
+      <div class="problem-title">La pianificazione è un lavoro</div>
+      <div class="problem-desc">Un itinerario di 4 giorni richiede 6–8 ore tra Google, TripAdvisor, Instagram, blog, YouTube. Il risultato è caotico e spesso mediocre.</div>
+      <span class="problem-urgency urgency-high">🔥 Urgentissimo</span>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">02</div>
+      <div class="problem-title">Coordinarsi con gli amici è un incubo</div>
+      <div class="problem-desc">Sondaggi su WhatsApp, Excel per le spese, discussioni infinite su cosa fare. Ogni viaggio in gruppo parte già stressante.</div>
+      <span class="problem-urgency urgency-high">🔥 Urgentissimo</span>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">03</div>
+      <div class="problem-title">TripAdvisor mostra solo posti da turista</div>
+      <div class="problem-desc">Chi viaggia spesso odia i posti "da guida". Vuole autenticità, posti locali, esperienze vere — ma sono difficili da trovare.</div>
+      <span class="problem-urgency urgency-high">🔥 Urgente</span>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">04</div>
+      <div class="problem-title">Dove andare il prossimo weekend?</div>
+      <div class="problem-desc">La paralisi della scelta. Vogliono scoprire destinazioni nuove in base alle loro preferenze, budget e stagione — ma non esiste uno strumento dedicato.</div>
+      <span class="problem-urgency urgency-med">⚡ Frequente</span>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">05</div>
+      <div class="problem-title">Le spese di gruppo diventano un casino</div>
+      <div class="problem-desc">Chi ha pagato cosa? Chi deve cosa a chi? A fine viaggio ci sono sempre tensioni. Splitwise esiste ma non è integrato con il viaggio.</div>
+      <span class="problem-urgency urgency-med">⚡ Frequente</span>
+    </div>
+    <div class="problem-card">
+      <div class="problem-num">06</div>
+      <div class="problem-title">L'itinerario salta sempre</div>
+      <div class="problem-desc">Posto chiuso, meteo brutto, stanchezza. L'itinerario rigido diventa inutile. Serve qualcosa che si adatti in tempo reale.</div>
+      <span class="problem-urgency urgency-med">⚡ Medio</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3 APP IDEAS -->
+<div class="section">
+  <div class="section-tag">03 — Le 3 Idee App</div>
+  <div class="section-title">Soluzioni concrete ai problemi reali</div>
+  <div class="ideas-grid">
+
+    <!-- IDEA 1 - BEST -->
+    <div class="idea-card featured">
+      <div class="idea-header">
+        <div class="best-badge">⭐ Consigliata</div>
+        <div class="idea-badge">Idea 01 — AI + SaaS</div>
+        <div class="idea-name">TripGenius</div>
+        <div class="idea-tagline">Il tuo pianificatore di viaggio AI personale</div>
+      </div>
+      <div class="idea-body">
+        <div class="idea-problem">❝ Perdo 8 ore a pianificare ogni viaggio. Voglio solo dirle dove vado e avere un piano perfetto ❞</div>
+        <div class="idea-solution">Inserisci città + date + stile di viaggio (foodie, cultura, natura, nightlife) + budget. L'AI genera in 30 secondi un itinerario completo, ottimizzato geograficamente, con orari, ristoranti, attività, consigli pratici e alternative per ogni slot.</div>
+        <div class="idea-pricing">
+          <div class="pricing-label">Modello di prezzo</div>
+          <div class="pricing-value">€9,99/mese</div>
+          <div class="pricing-detail">oppure €79/anno • piano free limitato a 1 trip</div>
+        </div>
+        <div class="revenue-target">
+          <div class="revenue-icon">🎯</div>
+          <div>
+            <div class="revenue-label">Per arrivare a €10k/mese</div>
+            <div style="font-size:12px;color:#888;">1.000 abbonati mensili</div>
+          </div>
+          <div class="revenue-val" style="color:var(--terracotta);">~18 mesi</div>
+        </div>
+        <div style="margin-top:14px;font-size:13px;color:#555;"><strong>Perché è la migliore:</strong> problema universale, AI la rende davvero unica, mercato enorme, si costruisce con no-code in 4–6 settimane.</div>
+      </div>
+    </div>
+
+    <!-- IDEA 2 -->
+    <div class="idea-card">
+      <div class="idea-header">
+        <div class="idea-badge">Idea 02 — Group Tool</div>
+        <div class="idea-name">PackedUp</div>
+        <div class="idea-tagline">Organizza il viaggio di gruppo senza stress</div>
+      </div>
+      <div class="idea-body">
+        <div class="idea-problem">❝ Organizzare un viaggio con 5 amici è peggio che lavorare. Votazioni, spese, chi prenota cosa... ❞</div>
+        <div class="idea-solution">App dedicata a gruppi di 2–5 persone. Votazione sulla destinazione, itinerario condiviso modificabile da tutti, split automatico delle spese, lista bagaglio condivisa, chat integrata con il piano.</div>
+        <div class="idea-pricing">
+          <div class="pricing-label">Modello di prezzo</div>
+          <div class="pricing-value">€14,99/mese</div>
+          <div class="pricing-detail">per gruppo • = €3/persona su 5 persone</div>
+        </div>
+        <div class="revenue-target">
+          <div class="revenue-icon">🎯</div>
+          <div>
+            <div class="revenue-label">Per arrivare a €10k/mese</div>
+            <div style="font-size:12px;color:#888;">670 gruppi attivi</div>
+          </div>
+          <div class="revenue-val">~20 mesi</div>
+        </div>
+        <div style="margin-top:14px;font-size:13px;color:#555;"><strong>Punto di forza:</strong> virale by design — ogni utente invita altri 4 amici. Ogni gruppo diventa canale di acquisizione.</div>
+      </div>
+    </div>
+
+    <!-- IDEA 3 -->
+    <div class="idea-card">
+      <div class="idea-header">
+        <div class="idea-badge">Idea 03 — Content + Community</div>
+        <div class="idea-name">LocalPass</div>
+        <div class="idea-tagline">Le gemme nascoste, non i posti da guida</div>
+      </div>
+      <div class="idea-body">
+        <div class="idea-problem">❝ TripAdvisor mi porta sempre nelle trappole per turisti. Voglio sapere dove vanno i locali ❞</div>
+        <div class="idea-solution">"City Packs" curati da insider locali: itinerari autentici per 30–40 città europee. Community di travel lover che condivide scoperte. AI che filtra i consigli in base al tuo stile.</div>
+        <div class="idea-pricing">
+          <div class="pricing-label">Modello di prezzo</div>
+          <div class="pricing-value">€7,99/mese</div>
+          <div class="pricing-detail">accesso illimitato • oppure €12,99 per singolo city pack</div>
+        </div>
+        <div class="revenue-target">
+          <div class="revenue-icon">🎯</div>
+          <div>
+            <div class="revenue-label">Per arrivare a €10k/mese</div>
+            <div style="font-size:12px;color:#888;">1.250 abbonati mensili</div>
+          </div>
+          <div class="revenue-val">~22 mesi</div>
+        </div>
+        <div style="margin-top:14px;font-size:13px;color:#555;"><strong>Punto di forza:</strong> contenuto evergreen, basso costo operativo, forte differenziazione da competitor generalisti.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- IDEAL APP DESIGN -->
+<div class="section">
+  <div class="section-tag">04 — L'App Ideale</div>
+  <div class="section-title">Come dovrebbe funzionare TripGenius</div>
+  <p style="max-width:620px;margin-bottom:36px;font-size:16px;color:#444;">Un'app che sembra un assistente personale di viaggio, non un altro aggregatore. Semplice da usare come mandare un messaggio su WhatsApp.</p>
+  <div class="app-features">
+    <div class="app-feature">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-name">Generazione itinerario AI</div>
+      <div class="feature-desc">L'utente dice: "4 giorni a Lisbona, sono in coppia, adoriamo il cibo locale, budget medio". In 30 secondi ottiene un piano giorno per giorno con orari, posti, mappe e tips pratici.</div>
+    </div>
+    <div class="app-feature">
+      <div class="feature-icon">🗺️</div>
+      <div class="feature-name">Mappa interattiva integrata</div>
+      <div class="feature-desc">Ogni attività visualizzata su mappa. Percorsi ottimizzati per minimizzare gli spostamenti. Un click per aprire su Google Maps o Waze.</div>
+    </div>
+    <div class="app-feature">
+      <div class="feature-icon">✏️</div>
+      <div class="feature-name">Itinerario modificabile</div>
+      <div class="feature-desc">Trascina le attività, sostituisci un ristorante, aggiungi una tappa. L'AI ri-ottimizza in tempo reale. Piano sempre perfetto, anche dopo le modifiche.</div>
+    </div>
+    <div class="app-feature">
+      <div class="feature-icon">👥</div>
+      <div class="feature-name">Condivisione gruppo</div>
+      <div class="feature-desc">Condividi il piano con gli amici con un link. Tutti vedono lo stesso itinerario, possono votare o suggerire modifiche. Niente più screenshot su WhatsApp.</div>
+    </div>
+    <div class="app-feature">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-name">Adattamento in tempo reale</div>
+      <div class="feature-desc">"Questo museo è chiuso lunedì" → l'AI suggerisce automaticamente alternative nelle vicinanze. Piano flessibile senza dover ricominciare da zero.</div>
+    </div>
+    <div class="app-feature">
+      <div class="feature-icon">💾</div>
+      <div class="feature-name">Archivio viaggi + link utili</div>
+      <div class="feature-desc">Tutti i tuoi itinerari salvati. Link diretti a Booking, Airbnb, GetYourGuide integrati nelle attività — e commissioni di affiliazione per te.</div>
+    </div>
+  </div>
+</div>
+
+<!-- REVENUE SIMULATOR -->
+<div class="section">
+  <div class="section-tag">05 — Simulatore di Revenue</div>
+  <div class="section-title">La matematica per arrivare a €10k/mese</div>
+  <p style="max-width:580px;margin-bottom:32px;font-size:15px;color:#555;">Con TripGenius a €9,99/mese + entrate affiliate (Booking, GetYourGuide).</p>
+  <table class="revenue-table">
+    <thead>
+      <tr>
+        <th>Mese</th>
+        <th>Abbonati paganti</th>
+        <th>Revenue abbonamenti</th>
+        <th>+ Affiliate (est.)</th>
+        <th>Totale mensile</th>
+        <th>Milestone</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Mese 3</td><td>20</td><td>€200</td><td>€50</td><td>€250</td><td class="milestone">Primo euro online 🎉</td></tr>
+      <tr><td>Mese 6</td><td>100</td><td>€999</td><td>€300</td><td>€1.300</td><td class="milestone">Validazione confermata</td></tr>
+      <tr><td>Mese 9</td><td>300</td><td>€2.997</td><td>€800</td><td>€3.800</td><td class="milestone">Reddito part-time</td></tr>
+      <tr><td>Mese 12</td><td>600</td><td>€5.994</td><td>€1.500</td><td>€7.500</td><td class="milestone">Quasi obiettivo</td></tr>
+      <tr class="highlight-row"><td>Mese 15–18</td><td>900–1.100</td><td>€8.991–10.989</td><td>€2.000+</td><td>€11.000+</td><td>🏆 OBIETTIVO RAGGIUNTO</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:16px;font-size:12px;color:#888;">* Le entrate da affiliazione arrivano integrando link a Booking.com (~6%), GetYourGuide (~8%), Airbnb (~3%). Su 1.000 utenti attivi generano facilmente €1.500–2.500/mese extra.</p>
+</div>
+
+<!-- ROADMAP -->
+<div class="section">
+  <div class="section-tag">06 — Roadmap Precisa</div>
+  <div class="section-title">18 mesi, passo dopo passo</div>
+  <div class="roadmap-track">
+
+    <div class="phase">
+      <div class="phase-time">
+        <div class="phase-num">0</div>
+        <div class="phase-dur">Sett. 1–4</div>
+      </div>
+      <div class="phase-content">
+        <div class="phase-label">Fase Zero — Validazione</div>
+        <div class="phase-title">Prima di costruire, dimostrate che il problema esiste</div>
+        <ul class="phase-tasks">
+          <li>Crea profilo TikTok/Instagram travel con contenuti sulla tua nicchia</li>
+          <li>Fai 20 interviste a viaggiatori frequenti (amici, gruppi Facebook, Reddit)</li>
+          <li>Crea una landing page semplice con Carrd.co (€19/anno) e raccogli email</li>
+          <li>Obiettivo: 200 iscritti alla waitlist prima di costruire qualsiasi cosa</li>
+        </ul>
+        <div class="phase-goal">Obiettivo: <span>200 email raccolte</span> che confermano l'interesse reale</div>
+        <div class="phase-budget">💰 Budget: €0–50</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        <div class="phase-num">1</div>
+        <div class="phase-dur">Mesi 2–4</div>
+      </div>
+      <div class="phase-content">
+        <div class="phase-label">Fase Uno — MVP</div>
+        <div class="phase-title">Costruisci la versione base con no-code</div>
+        <ul class="phase-tasks">
+          <li>Impara Bubble.io (corso gratuito su YouTube, 2–3 settimane)</li>
+          <li>Integra l'API di Claude/OpenAI per la generazione itinerari</li>
+          <li>Funzionalità minima: input preferenze → output itinerario testuale</li>
+          <li>Aggiungi Stripe per i pagamenti (gratuito da configurare)</li>
+          <li>Beta test con 50 utenti gratuiti dalla tua waitlist</li>
+          <li>Raccogli feedback ogni settimana, itera rapidamente</li>
+        </ul>
+        <div class="phase-goal">Obiettivo: <span>50 beta tester</span> che usano l'app almeno 2 volte</div>
+        <div class="phase-budget">💰 Budget: €100–300/mese (hosting + API)</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        <div class="phase-num">2</div>
+        <div class="phase-dur">Mesi 4–6</div>
+      </div>
+      <div class="phase-content">
+        <div class="phase-label">Fase Due — Lancio</div>
+        <div class="phase-title">Prima versione a pagamento, primi euro</div>
+        <ul class="phase-tasks">
+          <li>Lancia con piano free (1 trip) + premium €9,99/mese</li>
+          <li>Email ai 200 iscritti della waitlist con offerta lancio (30% sconto per 3 mesi)</li>
+          <li>Crea contenuti su TikTok/Instagram: "come pianificato 4 giorni a Barcellona in 30 secondi"</li>
+          <li>Posta su Reddit (r/solotravel, r/travel, r/digitalnomad) — senza spam, con valore</li>
+          <li>Contatta 5 micro-influencer travel (10–50k followers) per collaborazione</li>
+        </ul>
+        <div class="phase-goal">Obiettivo: <span>€500–1.000/mese</span> entro il mese 6</div>
+        <div class="phase-budget">💰 Budget: €200–400/mese (marketing + tools)</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        <div class="phase-num">3</div>
+        <div class="phase-dur">Mesi 7–12</div>
+      </div>
+      <div class="phase-content">
+        <div class="phase-label">Fase Tre — Crescita</div>
+        <div class="phase-title">Aggiungi features, aumenta la retention</div>
+        <ul class="phase-tasks">
+          <li>Aggiungi mappe interattive e condivisione itinerario via link</li>
+          <li>Integra link affiliate (Booking.com, GetYourGuide) per revenue extra</li>
+          <li>Lancia piano annuale €79 (equivale a 13 mesi) per aumentare LTV</li>
+          <li>Crea un blog SEO su viaggi brevi → traffico organico gratuito</li>
+          <li>Lancia programma referral: 1 mese gratis per ogni amico invitato</li>
+          <li>Raccogli testimonianze e case study per la pagina marketing</li>
+        </ul>
+        <div class="phase-goal">Obiettivo: <span>€3.000–5.000/mese</span> entro il mese 12</div>
+        <div class="phase-budget">💰 Budget: €400–600/mese</div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        <div class="phase-num">4</div>
+        <div class="phase-dur">Mesi 13–18</div>
+      </div>
+      <div class="phase-content">
+        <div class="phase-label">Fase Quattro — Scale</div>
+        <div class="phase-title">Dai €5k ai €10k+, aggiunta app mobile</div>
+        <ul class="phase-tasks">
+          <li>Sviluppa l'app mobile su FlutterFlow (no-code) per iOS e Android</li>
+          <li>Lancia piano team/gruppi a €14,99 per catturare anche quel segmento</li>
+          <li>Attiva Google Ads mirate su keyword ad alta intenzione (es. "pianificare viaggio Praga")</li>
+          <li>Partnership con agenzie di viaggio o host Airbnb per inserirsi in pacchetti</li>
+          <li>Valuta se aggiungere un secondo mercato: UK o Francia</li>
+        </ul>
+        <div class="phase-goal">Obiettivo: <span>€8.000–12.000/mese</span> entro il mese 18</div>
+        <div class="phase-budget">💰 Budget: €600–1.000/mese (paid ads inclusi)</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOOLS -->
+<div class="section">
+  <div class="section-tag">07 — Strumenti No-Code</div>
+  <div class="section-title">Il tuo stack tecnico senza scrivere codice</div>
+  <div class="tools-grid">
+    <div class="tool-card">
+      <div class="tool-cat">App Builder</div>
+      <div class="tool-name">Bubble.io</div>
+      <div class="tool-desc">Costruisci l'intera web app visualmente. Database, logica, UI — tutto senza codice.</div>
+      <div class="tool-cost">€29–115/mese</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">Intelligenza Artificiale</div>
+      <div class="tool-name">Claude API</div>
+      <div class="tool-desc">Il motore AI che genera gli itinerari. Integrazione diretta con Bubble tramite API.</div>
+      <div class="tool-cost">~€50–150/mese su volume</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">Pagamenti</div>
+      <div class="tool-name">Stripe</div>
+      <div class="tool-desc">Abbonamenti mensili/annuali, fatturazione automatica, gestione rimborsi.</div>
+      <div class="tool-cost">2.9% + €0.30/transazione</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">Landing Page</div>
+      <div class="tool-name">Framer</div>
+      <div class="tool-desc">Pagina marketing bellissima e veloce. Template professionale, zero codice.</div>
+      <div class="tool-cost">€0–14/mese</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">Email Marketing</div>
+      <div class="tool-name">Brevo</div>
+      <div class="tool-desc">Email onboarding, newsletter, notifiche automatiche. Gratuito fino a 300 email/giorno.</div>
+      <div class="tool-cost">€0–19/mese</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">Automazioni</div>
+      <div class="tool-name">Make (Integromat)</div>
+      <div class="tool-desc">Connette tutte le app tra loro. Automatizza onboarding, reminder, report.</div>
+      <div class="tool-cost">€9–16/mese</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">Analytics</div>
+      <div class="tool-name">PostHog</div>
+      <div class="tool-desc">Traccia come gli utenti usano l'app, dove abbandonano, cosa funziona.</div>
+      <div class="tool-cost">Gratis fino a 1M eventi</div>
+    </div>
+    <div class="tool-card">
+      <div class="tool-cat">App Mobile</div>
+      <div class="tool-name">FlutterFlow</div>
+      <div class="tool-desc">Quando sei pronto per iOS/Android — app mobile no-code con design professionale.</div>
+      <div class="tool-cost">€30–70/mese</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <strong>Prossimi 3 passi concreti questa settimana:</strong>
+  <p style="margin-top:12px;line-height:1.8;">
+    1. Crea un profilo Instagram sul tema "viaggi brevi Europa" e pubblica il primo contenuto.<br>
+    2. Apri Bubble.io e fai il tutorial base (2 ore) per capire se ti piace.<br>
+    3. Scrivi 5 domande e intervista 5 persone che conosci che viaggiano spesso — ascolta i loro problemi reali.
+  </p>
+  <p style="margin-top:20px;color:#555;font-size:12px;">Piano elaborato su misura per nicchia travel short trips • Tutti i numeri sono stime basate su benchmark SaaS simili</p>
+</div>
+
+</body>
+</html>

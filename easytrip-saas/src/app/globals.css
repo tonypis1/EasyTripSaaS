@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+  EasyTrip — "Nocturnal editorial travel"
+  DFII: forte impatto + fit viaggi/Europa, fattibile con CSS-only, performance ok.
+  Ancora di differenziazione: serif display + fondo caldo profondo + accento lime-sage + grain.
+*/
+
+:root {
+  --et-bg-deep: #080705;
+  --et-bg-raised: #100e0a;
+  --et-bg-card: rgba(255, 248, 230, 0.035);
+  --et-ink: #f4f0e6;
+  --et-ink-muted: rgba(244, 240, 230, 0.58);
+  --et-accent: #b6e36b;
+  --et-accent-ink: #0c0b08;
+  --et-accent-soft: rgba(182, 227, 107, 0.14);
+  --et-border: rgba(232, 220, 190, 0.11);
+  --et-glow: rgba(182, 227, 107, 0.09);
+}
+
+@theme inline {
+  --color-background: var(--et-bg-deep);
+  --color-foreground: var(--et-ink);
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-et-deep: var(--et-bg-deep);
+  --color-et-raised: var(--et-bg-raised);
+  --color-et-card: var(--et-bg-card);
+  --color-et-ink: var(--et-ink);
+  --color-et-muted: var(--et-ink-muted);
+  --color-et-accent: var(--et-accent);
+  --color-et-accent-ink: var(--et-accent-ink);
+  --color-et-border: var(--et-border);
+}
+
+/* Display: solo titoli — Instrument ha un solo peso, evitiamo "font-black" finto */
+.font-display {
+  font-family: var(--font-instrument), ui-serif, Georgia, "Times New Roman", serif;
+}
+
+/* Grain leggero: profondità senza animazioni costose */
+.et-grain {
+  position: relative;
+  isolation: isolate;
+}
+.et-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.et-grain > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mesh hero: una sola “firma” visiva memorabile */
+.et-hero-mesh {
+  background:
+    radial-gradient(ellipse 100% 80% at 12% -20%, var(--et-glow), transparent 50%),
+    radial-gradient(ellipse 70% 50% at 92% 8%, rgba(232, 197, 71, 0.06), transparent 45%),
+    var(--et-bg-deep);
+}
+
+body {
+  background: var(--et-bg-deep);
+  color: var(--et-ink);
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Focus visibile: accessibilità */
+:focus-visible {
+  outline: 2px solid var(--et-accent);
+  outline-offset: 2px;
+}

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyTrip — Test Rigenera V2 + Prompt Aggiornato</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1208;
+    --s1: #161c0e;
+    --s2: #1e2614;
+    --border: rgba(168,212,104,0.12);
+    --text: #e8e4d8;
+    --muted: #7a8068;
+    --green: #a8d468;
+    --green-dim: rgba(168,212,104,0.1);
+    --amber: #d4a840;
+    --amber-dim: rgba(212,168,64,0.1);
+    --sky: #68a8d4;
+    --sky-dim: rgba(104,168,212,0.1);
+    --red: #d46840;
+    --red-dim: rgba(212,104,64,0.1);
+    --purple: #c068d4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Manrope',sans-serif; background:var(--bg); color:var(--text); line-height:1.65; }
+
+  /* NAV */
+  .tabs { background:var(--s1); display:flex; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; overflow-x:auto; }
+  .tab { padding:16px 24px; font-size:11px; letter-spacing:2px; text-transform:uppercase; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; transition:.2s; }
+  .tab.on, .tab:hover { color:var(--green); border-bottom-color:var(--green); }
+  .tab-logo { padding:16px 24px; font-family:'Instrument Serif',serif; font-size:19px; color:var(--text); font-style:italic; margin-right:auto; }
+
+  .pg { display:none; } .pg.on { display:block; }
+
+  /* SHARED */
+  .sec { padding:48px 56px; border-bottom:1px solid var(--border); }
+  .sec.alt { background:var(--s1); }
+  .s-tag { font-size:10px; letter-spacing:3px; text-transform:uppercase; font-weight:700; margin-bottom:10px; }
+  .s-title { font-family:'Instrument Serif',serif; font-size:clamp(24px,3vw,40px); line-height:1.1; margin-bottom:10px; }
+  .s-title em { font-style:italic; color:var(--green); }
+  .s-sub { font-size:15px; color:var(--muted); font-weight:300; max-width:620px; margin-bottom:36px; }
+
+  /* SCORE ROW */
+  .scores { display:flex; gap:14px; flex-wrap:wrap; padding:24px 56px; border-bottom:1px solid var(--border); background:var(--s1); }
+  .sc { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 18px; display:flex; align-items:center; gap:10px; }
+  .sc-ico { font-size:18px; }
+  .sc-l { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:2px; }
+  .sc-v { font-size:17px; font-weight:800; }
+  .g { color:var(--green); } .a { color:var(--amber); } .b { color:var(--sky); }
+
+  /* COMPARISON TABLE */
+  .cmp { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .cmp-col { background:var(--s1); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .cmp-head { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+  .cmp-v { font-family:'Instrument Serif',serif; font-size:28px; font-weight:700; }
+  .v1-col .cmp-v { color:var(--muted); }
+  .v2-col .cmp-v { color:var(--green); }
+  .cmp-title { font-size:14px; font-weight:700; }
+  .cmp-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .cmp-row { display:grid; grid-template-columns:50px 1fr; gap:0; border-bottom:1px solid var(--border); }
+  .cmp-row:last-child { border-bottom:none; }
+  .cmp-day { background:var(--s2); display:flex; align-items:center; justify-content:center; font-family:'Instrument Serif',serif; font-size:18px; font-weight:700; color:var(--muted); border-right:1px solid var(--border); }
+  .v2-col .cmp-day { color:var(--green); }
+  .cmp-content { padding:14px 18px; }
+  .cmp-zone { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .cmp-highlight { font-size:12px; color:var(--muted); }
+  .cmp-highlight em { color:var(--amber); font-style:normal; }
+  .dist-badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; margin-top:6px; background:var(--green-dim); color:var(--green); border:1px solid rgba(168,212,104,.25); }
+
+  /* DISTANCE MAP */
+  .dist-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:20px; }
+  .dist-cell { background:var(--s1); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+  .dist-cell.strong { border-color:rgba(168,212,104,.3); background:var(--green-dim); }
+  .dc-label { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:6px; font-weight:700; }
+  .dc-dist { font-family:'Instrument Serif',serif; font-size:24px; font-weight:700; color:var(--green); }
+  .dc-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+
+  /* DAY CARDS V2 */
+  .day-card { background:var(--s1); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+  .dc-header { display:grid; grid-template-columns:52px 1fr auto; align-items:center; border-bottom:1px solid var(--border); }
+  .dc-num { background:var(--green); color:var(--bg); font-family:'Instrument Serif',serif; font-size:22px; font-weight:700; display:flex; align-items:center; justify-content:center; min-height:54px; }
+  .dc-info { padding:12px 18px; }
+  .dc-title { font-size:15px; font-weight:700; }
+  .dc-zone { font-size:12px; color:var(--muted); }
+  .dc-geo { margin-right:16px; font-size:11px; background:var(--green-dim); color:var(--green); padding:3px 10px; border-radius:20px; border:1px solid rgba(168,212,104,.25); font-weight:700; white-space:nowrap; }
+  .dc-body { padding:18px 20px; }
+  .act { display:grid; grid-template-columns:72px 1fr; gap:0; margin-bottom:2px; }
+  .act-t { background:var(--s2); padding:10px; text-align:right; border-right:2px solid var(--border); }
+  .act-slot { font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:var(--green); font-weight:700; margin-bottom:2px; }
+  .act-time-txt { font-size:11px; color:var(--muted); }
+  .act-c { padding:10px 14px; border-bottom:1px solid var(--border); }
+  .act-name { font-size:13px; font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .gem-b { font-size:9px; background:var(--amber-dim); color:var(--amber); padding:2px 7px; border-radius:20px; border:1px solid rgba(212,168,64,.3); font-weight:700; }
+  .act-desc { font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .act-tip { font-size:11px; color:var(--sky); font-style:italic; }
+  .dow-note { font-size:11px; color:var(--amber); background:var(--amber-dim); border:1px solid rgba(212,168,64,.2); border-radius:4px; padding:4px 8px; margin-top:5px; }
+  .meal { display:grid; grid-template-columns:72px 1fr; gap:0; margin-bottom:2px; }
+  .meal-t { background:var(--s2); padding:10px; text-align:right; border-right:2px solid var(--border); display:flex; align-items:center; justify-content:flex-end; }
+  .meal-type-txt { font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:var(--amber); font-weight:700; }
+  .meal-c { padding:10px 14px; border-bottom:1px solid var(--border); }
+  .meal-name { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .meal-info { font-size:11px; color:var(--muted); }
+  .meal-why { font-size:11px; color:var(--sky); font-style:italic; margin-top:3px; }
+  .gem-sec { background:rgba(212,168,64,.06); border:1px solid rgba(212,168,64,.2); border-radius:7px; padding:12px 14px; margin:10px 0; }
+  .gem-label { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--amber); font-weight:700; margin-bottom:5px; }
+  .gem-name-txt { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .gem-desc-txt { font-size:11px; color:var(--muted); }
+  .route-box { background:var(--s2); border-radius:6px; padding:10px 14px; margin-top:10px; font-size:11px; color:var(--muted); }
+  .route-label { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--green); font-weight:700; margin-bottom:4px; }
+
+  /* PROMPT SECTION */
+  .code-wrap { background:#0a0e06; border-radius:10px; overflow:hidden; margin:16px 0; }
+  .code-head { background:#141a0e; padding:10px 18px; display:flex; justify-content:space-between; }
+  .code-tag { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  .code-lang { font-size:10px; color:var(--green); font-weight:700; }
+  pre { padding:20px; font-family:'Courier New',monospace; font-size:12.5px; line-height:1.85; color:#c8c4a8; overflow-x:auto; white-space:pre-wrap; }
+  .kw { color:#d4a040; font-weight:700; }
+  .str { color:#90c870; }
+  .com { color:#4a5038; font-style:italic; }
+  .var { color:#78a0d0; }
+  .hl { background:rgba(168,212,104,.07); display:block; margin:0 -20px; padding:0 20px; border-left:3px solid var(--green); }
+
+  /* BUBBLE DOW */
+  .bubble-card { background:var(--s1); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:14px; }
+  .bc-head { display:grid; grid-template-columns:46px 1fr auto; align-items:center; }
+  .bc-n { background:var(--sky); color:var(--bg); font-family:'Instrument Serif',serif; font-size:20px; font-weight:700; display:flex; align-items:center; justify-content:center; min-height:52px; }
+  .bc-info { padding:12px 18px; }
+  .bc-title { font-size:14px; font-weight:700; }
+  .bc-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .bc-badge { margin-right:14px; font-size:10px; letter-spacing:1px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:700; }
+  .easy { background:var(--green-dim); color:var(--green); border:1px solid rgba(168,212,104,.3); }
+  .bc-body { padding:16px 18px 16px 64px; border-top:1px solid var(--border); }
+  .bc-step { display:flex; gap:10px; padding:7px 0; font-size:13px; color:var(--text); border-bottom:1px solid var(--border); align-items:flex-start; }
+  .bc-step:last-child { border-bottom:none; }
+  .bc-arrow { color:var(--green); font-weight:700; flex-shrink:0; }
+  code { background:var(--s2); padding:2px 6px; border-radius:4px; font-size:11px; color:var(--sky); font-family:monospace; }
+
+  /* CHECKLIST */
+  .checks { background:var(--s1); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .ch-head { padding:12px 18px; background:var(--s2); border-bottom:1px solid var(--border); font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--green); font-weight:700; }
+  .ch-row { display:flex; gap:10px; padding:9px 18px; border-bottom:1px solid var(--border); font-size:13px; align-items:center; }
+  .ch-row:last-child { border-bottom:none; }
+
+  /* NEXT */
+  .next { background:var(--s1); border:1px solid rgba(168,212,104,.25); border-radius:10px; overflow:hidden; }
+  .next-head { padding:12px 18px; background:var(--green-dim); border-bottom:1px solid rgba(168,212,104,.15); font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--green); font-weight:700; }
+  .next-row { display:flex; gap:12px; padding:12px 18px; border-bottom:1px solid var(--border); font-size:13px; align-items:flex-start; }
+  .next-row:last-child { border-bottom:none; }
+  .next-n { width:22px; height:22px; background:var(--green); color:var(--bg); border-radius:50%; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .next-txt { color:var(--muted); }
+  .next-txt strong { color:var(--text); }
+
+  @media(max-width:800px){
+    .sec{padding:40px 20px;} .scores{padding:20px;} .cmp{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab-logo">EasyTrip</div>
+  <div class="tab on" onclick="show('diff',this)">📊 V1 vs V2</div>
+  <div class="tab" onclick="show('v2',this)">🗺️ Itinerario V2</div>
+  <div class="tab" onclick="show('prompt',this)">🧠 Prompt Aggiornato</div>
+  <div class="tab" onclick="show('bubble',this)">🫧 Bubble DOW</div>
+</div>
+
+<!-- ═══ TAB: DIFF ═══ -->
+<div id="pg-diff" class="pg on">
+  <div class="sec">
+    <div class="s-tag g">Rigenera — Versione 2</div>
+    <div class="s-title">V1 vs V2: <em>zero sovrapposizioni.</em></div>
+    <p class="s-sub">Tutti e 9 i confronti tra quartieri V1 e V2 superano i 2 km di distanza. Il sistema di rigenerazione funziona correttamente.</p>
+  </div>
+
+  <div class="scores">
+    <div class="sc"><div class="sc-ico">✅</div><div><div class="sc-l">Check totali</div><div class="sc-v g">13/13</div></div></div>
+    <div class="sc"><div class="sc-ico">🗺️</div><div><div class="sc-l">geo_score V2</div><div class="sc-v g">8 / 10</div></div></div>
+    <div class="sc"><div class="sc-ico">📏</div><div><div class="sc-l">Distanza min V1↔V2</div><div class="sc-v g">2.23 km</div></div></div>
+    <div class="sc"><div class="sc-ico">📅</div><div><div class="sc-l">DOW logic</div><div class="sc-v g">✓ integrata</div></div></div>
+    <div class="sc"><div class="sc-ico">🔄</div><div><div class="sc-l">Differenziazione</div><div class="sc-v g">9/9 confronti ✅</div></div></div>
+  </div>
+
+  <div class="sec alt">
+    <div class="cmp">
+      <div class="cmp-col v1-col">
+        <div class="cmp-head">
+          <div class="cmp-v">V1</div>
+          <div><div class="cmp-title">Barcellona da mangiare</div><div class="cmp-sub">Centro storico e quartieri classici</div></div>
+        </div>
+        <div class="cmp-row"><div class="cmp-day">1</div><div class="cmp-content"><div class="cmp-zone">El Born / Sant Pere / Barceloneta</div><div class="cmp-highlight">Mercat Santa Caterina · El Xampanyet · <em>La Cova Fumada</em></div></div></div>
+        <div class="cmp-row"><div class="cmp-day">2</div><div class="cmp-content"><div class="cmp-zone">Vila de Gràcia / Eixample Esquerra</div><div class="cmp-highlight">Vermouth bar · Pintxos baschi · <em>Bodega Cañete</em></div></div></div>
+        <div class="cmp-row"><div class="cmp-day">3</div><div class="cmp-content"><div class="cmp-zone">Poble Sec / Sant Antoni</div><div class="cmp-highlight">Quimet & Quimet · Jardins Montjuïc · <em>Bodega 1900</em></div></div></div>
+      </div>
+      <div class="cmp-col v2-col">
+        <div class="cmp-head">
+          <div class="cmp-v">V2</div>
+          <div><div class="cmp-title">Barcellona oltre il centro</div><div class="cmp-sub">Waterfront e periferia creativa</div></div>
+        </div>
+        <div class="cmp-row"><div class="cmp-day">1</div><div class="cmp-content"><div class="cmp-zone">Poblenou / Rambla del Poblenou / 22@</div><div class="cmp-highlight">Chef district · Palo Alto Market · <em>Xiringuito Escribà</em><div class="dist-badge">↔ V1.G1: 2.23 km</div></div></div></div>
+        <div class="cmp-row"><div class="cmp-day">2</div><div class="cmp-content"><div class="cmp-zone">Sarrià-Sant Gervasi / Pedralbes Alta</div><div class="cmp-highlight">Borgo medievale · Picnic panoramico · <em>Via Veneto</em><div class="dist-badge">↔ V1.G2: 3.25 km</div></div></div></div>
+        <div class="cmp-row"><div class="cmp-day">3</div><div class="cmp-content"><div class="cmp-zone">Diagonal Mar / El Fòrum / Maresme Coast</div><div class="cmp-highlight">Asta del pesce all'alba · Fòrum · <em>Els Pescadors</em><div class="dist-badge">↔ V1.G3: 6.29 km</div></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;font-weight:700;">Mappa delle distanze — ogni confronto V1↔V2</div>
+    <div class="dist-grid">
+      <div class="dist-cell"><div class="dc-label">V1.G1 ↔ V2.G1</div><div class="dc-dist">2.23</div><div class="dc-sub">km · Born ↔ Poblenou</div></div>
+      <div class="dist-cell"><div class="dc-label">V1.G1 ↔ V2.G2</div><div class="dc-dist">5.60</div><div class="dc-sub">km · Born ↔ Sarrià</div></div>
+      <div class="dist-cell"><div class="dc-label">V1.G1 ↔ V2.G3</div><div class="dc-dist">4.03</div><div class="dc-sub">km · Born ↔ Fòrum</div></div>
+      <div class="dist-cell"><div class="dc-label">V1.G2 ↔ V2.G1</div><div class="dc-dist">3.37</div><div class="dc-sub">km · Gràcia ↔ Poblenou</div></div>
+      <div class="dist-cell strong"><div class="dc-label">V1.G2 ↔ V2.G2</div><div class="dc-dist">3.25</div><div class="dc-sub">km · Gràcia ↔ Sarrià</div></div>
+      <div class="dist-cell"><div class="dc-label">V1.G2 ↔ V2.G3</div><div class="dc-dist">5.11</div><div class="dc-sub">km · Gràcia ↔ Fòrum</div></div>
+      <div class="dist-cell"><div class="dc-label">V1.G3 ↔ V2.G1</div><div class="dc-dist">4.44</div><div class="dc-sub">km · Poble Sec ↔ Poblenou</div></div>
+      <div class="dist-cell"><div class="dc-label">V1.G3 ↔ V2.G2</div><div class="dc-dist">4.51</div><div class="dc-sub">km · Poble Sec ↔ Sarrià</div></div>
+      <div class="dist-cell strong"><div class="dc-label">V1.G3 ↔ V2.G3</div><div class="dc-dist">6.29</div><div class="dc-sub">km · Poble Sec ↔ Fòrum</div></div>
+    </div>
+    <div style="margin-top:16px;background:var(--green-dim);border:1px solid rgba(168,212,104,.25);border-radius:8px;padding:14px 18px;font-size:13px;color:var(--text);">
+      ✅ <strong>Tutti e 9 i confronti > 2 km.</strong> La soglia minima è superata di almeno il 50% in ogni caso. Il prompt di rigenerazione funziona correttamente — Claude sceglie quartieri genuinamente diversi senza bisogno di memorizzare la versione precedente.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: V2 ITINERARY ═══ -->
+<div id="pg-v2" class="pg">
+  <div class="sec">
+    <div class="s-tag g">Versione 2 — Output completo</div>
+    <div class="s-title">Barcellona oltre il centro:<br><em>waterfront e periferia creativa</em></div>
+    <p class="s-sub">geo_score 8/10 · Dispersione max 2.14 km · 3 gemme nascoste · Day-of-week logic integrata</p>
+  </div>
+
+  <div style="padding:0 56px 40px;">
+
+    <!-- DAY 1 -->
+    <div class="day-card">
+      <div class="dc-header">
+        <div class="dc-num">1</div>
+        <div class="dc-info"><div class="dc-title">Poblenou & 22@: dove gli chef barcelonesi abitano davvero</div><div class="dc-zone">Poblenou / Rambla del Poblenou / 22@</div></div>
+        <div class="dc-geo">📍 1.35 km ✅</div>
+      </div>
+      <div class="dc-body">
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Morning</div><div class="act-time-txt">09:00→11:00</div></div>
+          <div class="act-c">
+            <div class="act-name">Rambla del Poblenou — colazione nel quartiere degli chef</div>
+            <div class="act-desc">La Rambla autentica: alberata, anziani e famiglie. I migliori baristi di Barcellona hanno aperto qui, stanchi dei prezzi del centro.</div>
+            <div class="act-tip">💡 Cafè Federal n.12 — flat white con latte d'avena locale + toast 'ou ferrat'. Arriva alle 9:00 prima della fila. €7,50.</div>
+          </div>
+        </div>
+        <div class="meal"><div class="meal-t"><div class="meal-type-txt">Pranzo 13:30</div></div><div class="meal-c"><div class="meal-name">La Pepita</div><div class="meal-info">Montaditos creativi · €16–24/pers · Prenotare</div><div class="meal-why">"Menu settimanale basato sul Mercat de Sant Martí. La lista vini naturali è la più curata del 22@."</div><div class="dow-note">⚠️ Chiuso lunedì → alternativa: Café de la Industria a 400m</div></div></div>
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Afternoon</div><div class="act-time-txt">15:30→17:30</div></div>
+          <div class="act-c">
+            <div class="act-name">Palo Alto Market <span class="gem-b">💎 GEMMA</span></div>
+            <div class="act-desc">Mercato di design e food artigianale — produttori diretti di tutta la Catalunya. Prodotti impossibili altrove.</div>
+            <div class="act-tip">💡 Banco Mas Viola: orange wine biologico del Priorat a €9 — non venduto online. Comprarne due.</div>
+            <div class="dow-note">⚠️ Solo primo weekend del mese → altri giorni: Can Framis Museum (stesso indirizzo)</div>
+          </div>
+        </div>
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Evening</div><div class="act-time-txt">18:30→20:30</div></div>
+          <div class="act-c">
+            <div class="act-name">Spiaggia Mar Bella — aperitivo locale</div>
+            <div class="act-desc">2 km a nord di Barceloneta. Stessa acqua, zero turisti. I residenti di Poblenou ci vengono il pomeriggio.</div>
+            <div class="act-tip">💡 Chiringuito Base Nàutica (aprile–ottobre): Estrella gelata + bravas vista mare.</div>
+            <div class="dow-note">⚠️ Chiringuito chiuso novembre–marzo → porta bottiglia dal Palo Alto</div>
+          </div>
+        </div>
+        <div class="meal"><div class="meal-t"><div class="meal-type-txt">Cena 21:00</div></div><div class="meal-c"><div class="meal-name">Xiringuito Escribà</div><div class="meal-info">Pesce fresco Llotja del Mar · €35–50/pers · Prenotare</div><div class="meal-why">"Famiglia Escribà (pasticceri storici). Solo pescato del giorno. Arròs negre tra i migliori della città."</div></div></div>
+        <div class="gem-sec"><div class="gem-label">💎 Gemma</div><div class="gem-name-txt">Bar Olimpia — l'ultimo bar operaio di Poblenou (dal 1968)</div><div class="gem-desc-txt">Vermouth della casa a €1,80. TV sempre sulla Liga. Un museo vivente della Barcellona operaia.</div></div>
+        <div class="route-box"><div class="route-label">🗺️ Percorso</div>Rambla Poblenou → 6 min → La Pepita (pranzo) → 8 min → Palo Alto/Can Framis → 12 min → Mar Bella → 15 min → Xiringuito Escribà</div>
+      </div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div class="day-card">
+      <div class="dc-header">
+        <div class="dc-num">2</div>
+        <div class="dc-info"><div class="dc-title">Sarrià & Sant Gervasi: la Barcellona in salita che non ti aspetti</div><div class="dc-zone">Sarrià-Sant Gervasi / Pedralbes Alta</div></div>
+        <div class="dc-geo">📍 2.14 km ✅</div>
+      </div>
+      <div class="dc-body">
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Morning</div><div class="act-time-txt">09:30→11:30</div></div>
+          <div class="act-c">
+            <div class="act-name">Mercat de Sarrià + il borgo antico</div>
+            <div class="act-desc">Sarrià sembra un paese autonomo: strade strette, campanile, piazza centrale. Aggiunto a Barcellona solo nel 1921.</div>
+            <div class="act-tip">💡 Formatges Muset banco 8: chiedi il 'curat 6 mesos' — stagionato 6 mesi, perfetto per il picnic del pomeriggio.</div>
+            <div class="dow-note">⚠️ Mercat chiuso dom/lun → vai alla Pastisseria Foix de Sarrià (dal 1886)</div>
+          </div>
+        </div>
+        <div class="meal"><div class="meal-t"><div class="meal-type-txt">Pranzo 13:30</div></div><div class="meal-c"><div class="meal-name">Fragments Café</div><div class="meal-info">Brunch catalano · €14–22/pers · Plaça de la Concòrdia</div><div class="meal-why">"La piazza più bella e meno nota di Barcellona. Tavolini all'ombra, zero turisti, cucina del mattino."</div><div class="dow-note">⚠️ Chiuso lunedì → alternativa: El Japonès de Sarrià a 200m</div></div></div>
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Afternoon</div><div class="act-time-txt">15:30→18:00</div></div>
+          <div class="act-c">
+            <div class="act-name">Carretera de les Aigues — picnic panoramico <span class="gem-b">💎 GEMMA</span></div>
+            <div class="act-desc">Sentiero poco frequentato (usato da jogger locali) con vista a 360° su Barcellona. Nessun turista in settimana.</div>
+            <div class="act-tip">💡 Belvedere a km 2.1: rocce piatte perfette per picnic con formaggio di Sarrià + vino del Palo Alto. Porta un cavatappi.</div>
+          </div>
+        </div>
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Evening</div><div class="act-time-txt">19:30→21:00</div></div>
+          <div class="act-c">
+            <div class="act-name">Discesa verso Gràcia Alta + La Bodegueta del Putxet</div>
+            <div class="act-desc">25 minuti di discesa a piedi tra palazzi liberty. Si finisce in una cantina con 200 etichette di sherry e vini dolci iberici.</div>
+            <div class="act-tip">💡 Il fino en rama è tra i migliori sherry di Barcellona. Mezz'ora di aperitivo insolito prima di cena.</div>
+          </div>
+        </div>
+        <div class="meal"><div class="meal-t"><div class="meal-type-txt">Cena 21:30</div></div><div class="meal-c"><div class="meal-name">Via Veneto</div><div class="meal-info">Cucina catalana classica alta · €55–80/pers · Prenotare</div><div class="meal-why">"I barcelonesi ricchi che non vogliono essere visti. Cucina catalana senza compromessi. 900 etichette in carta."</div><div class="dow-note">⚠️ Chiuso domenica sera → prenota al momento dell'acquisto del trip</div></div></div>
+        <div class="gem-sec"><div class="gem-label">💎 Gemma della notte</div><div class="gem-name-txt">Plaça de Sarrià alle 22:00 — gli anziani a petanque</div><div class="gem-desc-txt">In estate la piazza si riempie di anziani con luci al neon improvvisate. Spettacolo involontario di vita autentica.</div></div>
+        <div class="route-box"><div class="route-label">🗺️ Percorso</div>Metro L6 → Sarrià. Mercat → 4 min → Fragments Café → 12 min salita → Carretera de les Aigues → 25 min discesa → Bodegueta Putxet → 10 min → Via Veneto</div>
+      </div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div class="day-card">
+      <div class="dc-header">
+        <div class="dc-num">3</div>
+        <div class="dc-info"><div class="dc-title">Diagonal Mar & El Fòrum: la Barcellona del futuro</div><div class="dc-zone">Diagonal Mar / El Fòrum / Maresme Coast</div></div>
+        <div class="dc-geo">📍 1.01 km ✅</div>
+      </div>
+      <div class="dc-body">
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Morning</div><div class="act-time-txt">07:30→10:00</div></div>
+          <div class="act-c">
+            <div class="act-name">Llotja del Mar — asta del pesce all'alba <span class="gem-b">💎 GEMMA</span></div>
+            <div class="act-desc">L'asta dei ristoratori ogni mattina dalle 7:30. Dal bancone esterno si compra direttamente dai pescatori.</div>
+            <div class="act-tip">💡 Moll de Pescadors, lato nord: 1kg gamberi freschi €12, cozze vive €3/kg. Porta contanti — niente carte.</div>
+            <div class="dow-note">⚠️ Sab pomeriggio/dom/festivi: no asta → arriva comunque alle 8:30, i pescatori vendono ugualmente</div>
+          </div>
+        </div>
+        <div class="meal"><div class="meal-t"><div class="meal-type-txt">Pranzo 13:30</div></div><div class="meal-c"><div class="meal-name">La Ceba</div><div class="meal-info">Cucina km0 · €14–20/pers · Aperto solo a pranzo</div><div class="meal-why">"La chef compra ogni mattina al Mercat de Sant Martí. Menu variabile. Chiude quando finisce il cibo."</div><div class="dow-note">⚠️ Chiuso sab/dom → alternativa: Tragaluz del Mar a 500m</div></div></div>
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Afternoon</div><div class="act-time-txt">15:00→17:30</div></div>
+          <div class="act-c">
+            <div class="act-name">Parc del Fòrum — architettura e kitesurf</div>
+            <div class="act-desc">Grande piazza di cemento sul mare (Forum 2004). Di pomeriggio è quasi metafisica. Alle 16:00 arrivano i kite.</div>
+            <div class="act-tip">💡 Guarda i kitesurf da terra con un gelato. Il vento costante rende questo lo spot migliore della costa catalana.</div>
+          </div>
+        </div>
+        <div class="act">
+          <div class="act-t"><div class="act-slot">Evening</div><div class="act-time-txt">19:00→21:00</div></div>
+          <div class="act-c">
+            <div class="act-name">Rambla del Prim — il quartiere che diventa</div>
+            <div class="act-desc">La nuova rambla del 2019, non ancora su nessuna guida. Cooperative alimentari, caffè specialty, vinerie artigianali.</div>
+            <div class="act-tip">💡 Cantina Cervecera n.12: IPA con luppolo del Maresme alla spina. €3,50 a pinta. Produzione in loco.</div>
+          </div>
+        </div>
+        <div class="meal"><div class="meal-t"><div class="meal-type-txt">Cena 21:00</div></div><div class="meal-c"><div class="meal-name">Els Pescadors</div><div class="meal-info">Pesce catalano · €38–55/pers · Prenotare (3gg anticipo)</div><div class="meal-why">"Nascosto in Plaça de Prim. Il 'fideuà negra' è considerato il migliore di Barcellona dai professionisti."</div></div></div>
+        <div class="gem-sec"><div class="gem-label">💎 Gemma della notte</div><div class="gem-name-txt">Piscina olimpica pubblica sul mare — €5, aperta fino alle 23:00</div><div class="gem-desc-txt">I barcelonesi vengono a nuotare le vasche la sera dopo il lavoro con vista Mediterraneo. Completamente sconosciuto ai turisti.</div></div>
+        <div class="route-box"><div class="route-label">🗺️ Percorso</div>Llotja del Mar (alba) → 20 min lungomare → La Ceba (pranzo) → 8 min → Parc del Fòrum → 12 min → Rambla del Prim → 18 min → Els Pescadors</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: PROMPT ═══ -->
+<div id="pg-prompt" class="pg">
+  <div class="sec">
+    <div class="s-tag" style="color:var(--amber);">System Prompt — Versione Aggiornata</div>
+    <div class="s-title">Prompt con <em style="color:var(--amber);">day-of-week logic</em> integrata</div>
+    <p class="s-sub">La nuova sezione da aggiungere al prompt esistente + i nuovi parametri nel user message. Le righe evidenziate in verde sono le aggiunte rispetto alla versione precedente.</p>
+  </div>
+
+  <div class="sec alt">
+    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;font-weight:700;">Sezione da aggiungere — dopo "AUTENTICITÀ"</div>
+    <div class="code-wrap">
+      <div class="code-head"><span class="code-tag">System Prompt — Nuova sezione</span><span class="code-lang">AGGIUNTA</span></div>
+      <pre>
+<span class="hl"><span class="kw">LOGICA GIORNO DELLA SETTIMANA (obbligatorio):</span></span>
+<span class="hl">— Ricevi start_date e il giorno della settimana per ogni giorno del trip</span>
+<span class="hl">— Per ogni attività, ristorante o mercato che ha restrizioni di apertura:</span>
+<span class="hl">  • Aggiungi il campo "day_of_week_note" con la restrizione SPECIFICA</span>
+<span class="hl">  • Aggiungi SEMPRE un'alternativa concreta entro 500m per i giorni di chiusura</span>
+<span class="hl">  • Se il posto è aperto senza restrizioni: "day_of_week_note": null</span>
+<span class="hl"></span>
+<span class="hl">— Regole Barcellona da applicare sempre:</span>
+<span class="hl">  • Lunedì: molti ristoranti indipendenti chiusi — verifica e dai alternativa</span>
+<span class="hl">  • Domenica mattina: mercati coperti chiusi, usa solo banchi esterni</span>
+<span class="hl">  • Domenica sera: ristoranti haute cuisine spesso chiusi</span>
+<span class="hl">  • Sabato/domenica: aste del pesce non operative la domenica</span>
+<span class="hl">  • Primo weekend del mese: mercati artigianali aperti (Palo Alto, etc.)</span>
+<span class="hl">  • Agosto (1–31): fino al 40% dei ristoranti locali chiusi per ferie</span>
+<span class="hl">    → in agosto privilegia posti con staff fisso o catene artigianali</span>
+<span class="hl"></span>
+<span class="hl">— Aggiungi al JSON root il campo "day_of_week_warnings" con:</span>
+<span class="hl">  • Lista di avvisi specifici per il periodo del viaggio</span>
+<span class="hl">  • Campo "note" che spiega la logica</span>
+
+<span class="com">// Stile della nota al campo "day_of_week_note":</span>
+<span class="com">// ✅ Corretto: "Chiuso lunedì. Se lunedì: alternativa Bar XYZ a 300m (stesso stile)"</span>
+<span class="com">// ❌ Sbagliato: "Verificare gli orari di apertura" (troppo vago, non utile)</span>
+</pre>
+    </div>
+
+    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin:24px 0 16px;font-weight:700;">Nuovi parametri nel User Message</div>
+    <div class="code-wrap">
+      <div class="code-head"><span class="code-tag">User Message — Parametri aggiuntivi</span><span class="code-lang">AGGIUNTA</span></div>
+      <pre>
+<span class="com">// Aggiungere questi campi al content del user message</span>
+<span class="com">// (insieme a destination, duration, style, etc.)</span>
+
+<span class="hl">Start date: <span class="var">{{start_date}}</span>                     <span class="com">// es. "2025-06-13"</span></span>
+<span class="hl">Giorni della settimana del viaggio:</span>
+<span class="hl">  Giorno 1 = <span class="var">{{day_1_weekday}}</span>                <span class="com">// es. "venerdì"</span></span>
+<span class="hl">  Giorno 2 = <span class="var">{{day_2_weekday}}</span>                <span class="com">// es. "sabato"</span></span>
+<span class="hl">  Giorno 3 = <span class="var">{{day_3_weekday}}</span>                <span class="com">// es. "domenica"</span></span>
+<span class="hl">  Giorno N = <span class="var">{{day_N_weekday}}</span></span>
+<span class="hl">Stagione: <span class="var">{{season}}</span>                         <span class="com">// "estate" | "inverno" | "primavera" | "autunno"</span></span>
+<span class="hl">È agosto: <span class="var">{{is_august}}</span>                      <span class="com">// "sì" | "no" — trigger speciale per chiusure ferie</span></span>
+
+<span class="com">// Questi valori Bubble li calcola automaticamente da start_date</span>
+<span class="com">// (vedi tab "Bubble DOW" per la configurazione)</span>
+</pre>
+    </div>
+
+    <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin:24px 0 16px;font-weight:700;">Prompt di rigenera aggiornato (versione 2+)</div>
+    <div class="code-wrap">
+      <div class="code-head"><span class="code-tag">Istruzione rigenera — aggiunta al user message quando version >= 2</span><span class="code-lang">AGGIUNTA</span></div>
+      <pre>
+<span class="com">// Aggiungere in fondo al user message quando regen_count >= 1</span>
+
+<span class="hl">IMPORTANTE — Questa è la versione <span class="var">{{version_number}}</span> dell'itinerario.</span>
+<span class="hl">Versioni precedenti usavano questi quartieri (NON ripetere):</span>
+<span class="hl"><span class="var">{{previous_zones}}</span>  <span class="com">// es. "El Born, Gràcia, Poble Sec"</span></span>
+<span class="hl">Scegli quartieri a distanza minima 2km da quelli elencati.</span>
+<span class="hl">geo_score minimo richiesto: <span class="str">7</span>/10.</span>
+<span class="hl">Sii più creativo e insolito rispetto alle versioni precedenti.</span>
+
+<span class="com">// Come salvare i quartieri usati in Bubble:</span>
+<span class="com">// Dopo ogni generazione, leggi il campo "zone_focus" di ogni Day</span>
+<span class="com">// e salvalo in Trip.used_zones (tipo: text, concatena con virgola)</span>
+<span class="com">// Es: Trip.used_zones = "El Born, Gràcia, Poble Sec"</span>
+</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: BUBBLE DOW ═══ -->
+<div id="pg-bubble" class="pg">
+  <div class="sec">
+    <div class="s-tag b">Bubble — Day of Week Configuration</div>
+    <div class="s-title">Come calcolare i <em style="color:var(--sky);">giorni della settimana</em> in Bubble</div>
+    <p class="s-sub">Bubble ha operatori nativi per formattare le date. Zero plugin, zero codice. Ecco la configurazione esatta campo per campo.</p>
+  </div>
+
+  <div class="sec alt" style="display:grid;grid-template-columns:1fr 340px;gap:28px;align-items:start;">
+    <div>
+      <div class="bubble-card">
+        <div class="bc-head">
+          <div class="bc-n">1</div>
+          <div class="bc-info"><div class="bc-title">Aggiungi campo "used_zones" alla tabella Trip</div><div class="bc-sub">Data → Trip → Create a new field</div></div>
+          <span class="bc-badge easy">Facile</span>
+        </div>
+        <div class="bc-body">
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Data → Trip → Create a new field → Nome: <code>used_zones</code> → Tipo: <strong>text</strong> → Save</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Questo campo accumula i quartieri usati ad ogni rigenera: <code>"El Born, Gràcia, Poble Sec"</code></span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Dopo ogni generazione: workflow Step → Make changes to Trip → <code>used_zones</code> = usato_prima + ", " + nuovo_zone_focus</span></div>
+        </div>
+      </div>
+
+      <div class="bubble-card">
+        <div class="bc-head">
+          <div class="bc-n">2</div>
+          <div class="bc-info"><div class="bc-title">Calcolare il giorno della settimana da start_date</div><div class="bc-sub">Nessun plugin — usa l'operatore :formatted as</div></div>
+          <span class="bc-badge easy">Facile</span>
+        </div>
+        <div class="bc-body">
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Nel workflow di generazione itinerario, quando costruisci il body della API call:</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Per il Giorno 1: usa <code>Trip's start_date:formatted as "dddd"</code> → restituisce <code>"Friday"</code></span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Per il Giorno 2: <code>Trip's start_date + 1 day:formatted as "dddd"</code> → <code>"Saturday"</code></span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Per il Giorno N: <code>Trip's start_date + N-1 days:formatted as "dddd"</code></span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Bubble restituisce l'inglese → traducilo in italiano nella stringa del prompt: sostituisci <code>"Friday"</code> con <code>"venerdì"</code> ecc.</span></div>
+        </div>
+      </div>
+
+      <div class="bubble-card">
+        <div class="bc-head">
+          <div class="bc-n">3</div>
+          <div class="bc-info"><div class="bc-title">Calcolare la stagione da start_date</div><div class="bc-sub">Conditional expression in Bubble</div></div>
+          <span class="bc-badge easy">Facile</span>
+        </div>
+        <div class="bc-body">
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Nel body JSON dell'API call, per il campo "season" usa questa logica Bubble:</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Se <code>start_date:month is 12 or 1 or 2</code> → "inverno"</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Se <code>start_date:month is 3 or 4 or 5</code> → "primavera"</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Se <code>start_date:month is 6 or 7 or 8</code> → "estate"</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Se <code>start_date:month is 9 or 10 or 11</code> → "autunno"</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>In Bubble usa un "Conditional" su un campo Text invisibile nella pagina, oppure usa l'operatore <code>:is</code> direttamente nel testo del body JSON</span></div>
+        </div>
+      </div>
+
+      <div class="bubble-card">
+        <div class="bc-head">
+          <div class="bc-n">4</div>
+          <div class="bc-info"><div class="bc-title">Leggere day_of_week_note dal JSON e mostrarlo in app</div><div class="bc-sub">Bubble JSON extraction + UI</div></div>
+          <span class="bc-badge easy">Facile</span>
+        </div>
+        <div class="bc-body">
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Claude restituisce <code>day_of_week_note</code> per ogni attività nel JSON</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Quando crei i record Day in Bubble, aggiungi campo <code>dow_warning</code> (tipo: text) e salvaci questo valore</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Nella UI: aggiungi un elemento Text con condizione <code>Day's dow_warning is not empty</code> → mostra il testo con sfondo ambra</span></div>
+          <div class="bc-step"><span class="bc-arrow">→</span><span>Apparirà automaticamente solo per le attività che hanno restrizioni — zero noise per quelle senza problemi</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="checks" style="margin-bottom:16px;">
+        <div class="ch-head">📋 Body JSON finale — esempio completo</div>
+        <div style="padding:16px 18px;">
+          <div class="code-wrap" style="margin:0;">
+            <pre style="font-size:11px;padding:14px;">{
+  <span class="var">"model"</span>: <span class="str">"claude-sonnet-4-20250514"</span>,
+  <span class="var">"max_tokens"</span>: <span class="str">4000</span>,
+  <span class="var">"system"</span>: <span class="str">"[system prompt completo]"</span>,
+  <span class="var">"messages"</span>: [{
+    <span class="var">"role"</span>: <span class="str">"user"</span>,
+    <span class="var">"content"</span>: <span class="str">"Destinazione: [dest]
+Durata: [N] giorni
+Start date: [start_date]
+Giorno 1: [day_1_weekday]
+Giorno 2: [day_2_weekday]
+Stagione: [season]
+È agosto: [is_august]
+Stile: [style]
+Budget: [budget]
+Versione: [N]
+Zone precedenti: [used_zones]"</span>
+  }]
+}</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="next">
+        <div class="next-head">🚀 Prossimi test</div>
+        <div class="next-row">
+          <div class="next-n">1</div>
+          <div class="next-txt"><strong>Test Prompt 2 (GPS live):</strong> "Sono a Barcellona, coordinate 41.374, 2.158, ore 15:30. Quimet era chiuso. 2 ore libere."</div>
+        </div>
+        <div class="next-row">
+          <div class="next-n">2</div>
+          <div class="next-txt"><strong>Test Prompt 3 (sostituzione):</strong> "Sostituisci pomeriggio giorno 3. Troppo affollato. Rimani a Poble Sec."</div>
+        </div>
+        <div class="next-row">
+          <div class="next-n">3</div>
+          <div class="next-txt"><strong>Quando pronti:</strong> Bubble API Connector → incolla il System Prompt → Initialize call → testa con i parametri reali.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id, t) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  t.classList.add('on');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>

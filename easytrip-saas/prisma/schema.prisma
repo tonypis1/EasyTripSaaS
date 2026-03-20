@@ -1,0 +1,151 @@
+// EasyTrip — Schema database Prisma
+// Generato dalle specifiche tecniche MVP
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== ENUM ==========
+enum TripStatus {
+  pending   // in attesa di pagamento/generazione
+  active    // accessibile
+  expired   // access_expires_at superato
+  cancelled
+}
+
+enum TripType {
+  solo
+  coppia
+  gruppo
+}
+
+enum PaymentType {
+  purchase  // acquisto viaggio
+  regen     // rigenerazione extra (€1,99)
+}
+
+// ========== MODELLI ==========
+
+model User {
+  id                String    @id @default(cuid())
+  clerkUserId       String    @unique @map("clerk_user_id")
+  email             String
+  name              String?
+  creditBalance     Decimal   @default(0) @map("credit_balance") @db.Decimal(10, 2)
+  planType          String?   @map("plan_type") // free | sub
+  subExpiresAt      DateTime? @map("sub_expires_at")
+  stripeCustomerId  String?   @map("stripe_customer_id")
+  totalTrips        Int       @default(0) @map("total_trips")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tripsAsOrganizer  Trip[]         @relation("OrganizerTrips")
+  tripMembers       TripMember[]
+  credits           Credit[]
+  payments          Payment[]
+}
+
+model Trip {
+  id              String     @id @default(cuid())
+  organizerId     String     @map("organizer_id")
+  destination     String
+  startDate       DateTime   @map("start_date") @db.Date
+  endDate         DateTime   @map("end_date") @db.Date
+  accessExpiresAt DateTime   @map("access_expires_at") @db.Date
+  tripType        TripType   @map("trip_type")
+  style           String?    // foodie, cultura, ecc.
+  status          TripStatus @default(pending)
+  regenCount      Int        @default(0) @map("regen_count") // 0..7
+  currentVersion  Int        @default(1) @map("current_version") // carosello
+  usedZones       String?   @map("used_zones") // zone_focus concatenate per rigenera
+  paymentId       String?   @map("payment_id") // Stripe payment/session
+  amountPaid      Decimal?  @map("amount_paid") @db.Decimal(10, 2)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organizer       User         @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
+  versions        TripVersion[]
+  members         TripMember[]
+  credits         Credit[]     @relation("CreditOrigin")
+  creditsUsed     Credit[]     @relation("CreditUsed")
+  payments        Payment[]
+}
+
+model TripVersion {
+  id          String   @id @default(cuid())
+  tripId      String   @map("trip_id")
+  versionNum  Int      @map("version_num") // 1..7
+  generatedAt DateTime @default(now()) @map("generated_at")
+  isActive    Boolean  @default(false) @map("is_active")
+  geoScore    Decimal? @map("geo_score") @db.Decimal(3, 1) // 1-10
+  userRating  Int?     @map("user_rating") // 1-5
+
+  trip  Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  days  Day[]
+}
+
+model Day {
+  id             String   @id @default(cuid())
+  tripVersionId  String   @map("trip_version_id")
+  dayNumber      Int      @map("day_number")
+  unlockDate     DateTime @map("unlock_date") @db.Date
+  title          String?
+  morning        String?  // JSON attività
+  afternoon      String?
+  evening        String?
+  restaurants    String?  // JSON
+  mapCenterLat   Decimal? @map("map_center_lat") @db.Decimal(10, 7)
+  mapCenterLng   Decimal? @map("map_center_lng") @db.Decimal(10, 7)
+  zoneFocus      String?  @map("zone_focus") // per used_zones rigenera
+  dowWarning     String?  @map("dow_warning") // day-of-week avvisi
+  localGem       String?  @map("local_gem")
+  tips           String?
+
+  tripVersion TripVersion @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+}
+
+model TripMember {
+  id        String   @id @default(cuid())
+  tripId    String   @map("trip_id")
+  userId    String   @map("user_id")
+  role      String   // org | member
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  userId        String      @map("user_id")
+  tripId        String?     @map("trip_id")
+  type          PaymentType
+  stripePaymentId String?  @map("stripe_payment_id")
+  amount        Decimal     @db.Decimal(10, 2)
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id])
+  trip Trip? @relation(fields: [tripId], references: [id])
+}
+
+model Credit {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  amount       Decimal   @db.Decimal(10, 2)
+  originTripId  String?   @map("origin_trip_id")
+  expiresAt     DateTime  @map("expires_at")
+  used          Boolean   @default(false)
+  usedOnTripId  String?   @map("used_on_trip_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originTrip  Trip? @relation("CreditOrigin", fields: [originTripId], references: [id])
+  usedOnTrip  Trip? @relation("CreditUsed", fields: [usedOnTripId], references: [id])
+}
