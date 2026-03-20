@@ -36,3 +36,29 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## E2E tests (Playwright)
+
+Install browser binaries:
+
+```bash
+npm run playwright:install
+```
+
+Run tests:
+
+```bash
+npm run test:e2e
+```
+
+Run with headed browser:
+
+```bash
+npm run test:e2e:headed
+```
+
+### Env for checkout E2E
+
+- `E2E_AUTH_STORAGE_STATE`: path to Playwright storage state with logged-in user
+- `E2E_TRIP_ID`: trip id to open in `/app/trips/:tripId`
+- `E2E_BASE_URL` (optional): defaults to `http://127.0.0.1:3000`
