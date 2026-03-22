@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
     "dev": "next dev",
+    "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -13,7 +16,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6",
-    "@prisma/client": "^6",
+    "@prisma/client": "6.19.0",
     "inngest": "^4",
     "next": "16.1.7",
     "react": "19.2.3",
@@ -29,7 +32,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
-    "prisma": "^7.5.0",
+    "prisma": "6.19.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

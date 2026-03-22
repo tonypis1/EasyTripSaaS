@@ -180,6 +180,14 @@ export function TripDetailClient({
               >
                 {busy === "gen" ? "Invio…" : "Avvia generazione (dev)"}
               </button>
+              <p className="mt-3 max-w-md text-xs leading-relaxed text-et-ink/45">
+                Serve un secondo terminale con il server Inngest locale (
+                <code className="rounded bg-et-deep px-1 py-0.5 text-et-ink/70">
+                  npm run inngest:dev
+                </code>
+                ) mentre gira <code className="rounded bg-et-deep px-1">npm run dev</code>
+                . Senza di quello l&apos;evento parte ma il job non viene eseguito.
+              </p>
             </div>
           ) : null}
         </section>
