@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { fetchTripsForDashboard } from "@/lib/trips-data";
 import { CreateTripForm } from "./create-trip-form";
+import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 import { formatStatus, formatTripType } from "@/lib/day-unlock";
 
 function toDateLabel(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return toDateOnlyIsoUtc(d);
 }
 
 export default async function TripsPage() {

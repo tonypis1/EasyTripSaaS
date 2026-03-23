@@ -1,5 +1,9 @@
 import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
+import {
+  addCalendarDaysUtc,
+  inclusiveCalendarDaysBetweenUtc,
+} from "@/lib/calendar-date";
 
 export const generateItinerary = inngest.createFunction(
   {
@@ -37,13 +41,13 @@ export const generateItinerary = inngest.createFunction(
       },
     });
 
-    const numDays = Math.ceil(
-      (trip.endDate.getTime() - trip.startDate.getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1;
+    const numDays = inclusiveCalendarDaysBetweenUtc(
+      trip.startDate,
+      trip.endDate
+    );
 
     for (let d = 1; d <= numDays; d++) {
-      const unlockDate = new Date(trip.startDate);
-      unlockDate.setDate(unlockDate.getDate() + d - 1);
+      const unlockDate = addCalendarDaysUtc(trip.startDate, d - 1);
 
       await prisma.day.create({
         data: {

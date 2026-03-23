@@ -222,7 +222,10 @@ export function TripDetailClient({
         <section>
           <h2 className="font-display text-xl text-et-ink">Itinerario</h2>
           <p className="mt-1 text-sm text-et-ink/55">
-            Ogni giorno si sblocca alla data indicata (fuso orario del browser).
+            Sblocco in base alla <strong>data di calendario del tuo PC</strong> (browser):
+            conta solo giorno/mese/anno locali, non l’ora esatta — es. il 23 marzo 2026
+            alle 21:49 il giorno con sblocco 24 marzo resta ancora bloccato fino al 24
+            (sempre nel tuo fuso).
           </p>
           <ul className="mt-6 space-y-4">
             {trip.days.map((day) => {

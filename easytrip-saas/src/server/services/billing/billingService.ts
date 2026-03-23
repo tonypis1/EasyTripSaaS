@@ -6,6 +6,8 @@ import { AppError } from "@/server/errors/AppError";
 import { AuthService } from "@/server/services/auth/authService";
 import { TripRepository } from "@/server/repositories/TripRepository";
 import { PaymentRepository } from "@/server/repositories/PaymentRepository";
+import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
+import { logger } from "@/lib/observability";
 
 type CheckoutInput = {
   tripId: string;
@@ -58,7 +60,7 @@ export class BillingService {
                 trip.tripType === "gruppo"
                   ? "EasyTrip — Viaggio Gruppo"
                   : "EasyTrip — Viaggio Solo/Coppia",
-              description: `${trip.destination} (${trip.startDate.toISOString().slice(0, 10)} - ${trip.endDate.toISOString().slice(0, 10)})`,
+              description: `${trip.destination} (${toDateOnlyIsoUtc(trip.startDate)} - ${toDateOnlyIsoUtc(trip.endDate)})`,
             },
           },
         },
@@ -104,6 +106,7 @@ export class BillingService {
       const session = event.data.object as Stripe.Checkout.Session;
       const tripId = session.metadata?.tripId;
       const appUserId = session.metadata?.appUserId;
+      /** Preferiamo il Payment Intent come riferimento pagamento; altrimenti l’id sessione checkout. */
       const stripePaymentId =
         typeof session.payment_intent === "string"
           ? session.payment_intent
@@ -115,6 +118,23 @@ export class BillingService {
           400,
           "INVALID_METADATA"
         );
+      }
+
+      const trip = await this.tripRepository.findById(tripId);
+      if (!trip) {
+        throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+      }
+
+      /**
+       * Idempotenza: Stripe può inviare lo stesso evento più volte (retry).
+       * Se il viaggio risulta già pagato, non duplichiamo Payment né reinviiamo Inngest.
+       */
+      if (trip.paymentId != null && trip.amountPaid != null) {
+        logger.info("Webhook checkout già elaborato (idempotente)", {
+          tripId,
+          stripeEventId: event.id,
+        });
+        return { received: true, skipped: "already_paid" as const };
       }
 
       const amount = (session.amount_total ?? 0) / 100;

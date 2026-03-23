@@ -1,5 +1,8 @@
-/** Confronto solo sulla data di calendario (locale), coerente con unlock_date nel DB */
-
+/**
+ * Confronto solo sulla **data di calendario nel fuso del browser** (cioè del tuo PC),
+ * non sull’ora esatta: alle 23:59 del 23 marzo conta ancora come “23 marzo”.
+ * La stringa `unlockDateStr` è `YYYY-MM-DD` allineata al calendario salvato nel DB.
+ */
 export function isDayUnlocked(unlockDateStr: string, now = new Date()): boolean {
   const [y, m, d] = unlockDateStr.split("-").map(Number);
   if (!y || !m || !d) return false;

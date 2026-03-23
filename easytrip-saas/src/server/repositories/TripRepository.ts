@@ -37,6 +37,13 @@ export class TripRepository {
     });
   }
 
+  /** Per webhook Stripe (nessun utente in sessione): solo verifica esistenza / idempotenza */
+  async findById(tripId: string) {
+    return prisma.trip.findUnique({
+      where: { id: tripId },
+    });
+  }
+
   async findByIdAndOrganizer(tripId: string, organizerId: string) {
     return prisma.trip.findFirst({
       where: {

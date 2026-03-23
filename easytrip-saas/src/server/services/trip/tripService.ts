@@ -2,10 +2,7 @@ import { AuthService } from "@/server/services/auth/authService";
 import { TripRepository } from "@/server/repositories/TripRepository";
 import { CreateTripInput } from "@/server/validators/trip.schema";
 import { AppError } from "@/server/errors/AppError";
-
-function toDateOnlyIso(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
+import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 
 export type TripDayDto = {
   id: string;
@@ -128,9 +125,9 @@ export class TripService {
     return {
       id: trip.id,
       destination: trip.destination,
-      startDate: toDateOnlyIso(trip.startDate),
-      endDate: toDateOnlyIso(trip.endDate),
-      accessExpiresAt: toDateOnlyIso(trip.accessExpiresAt),
+      startDate: toDateOnlyIsoUtc(trip.startDate),
+      endDate: toDateOnlyIsoUtc(trip.endDate),
+      accessExpiresAt: toDateOnlyIsoUtc(trip.accessExpiresAt),
       tripType: trip.tripType,
       style: trip.style,
       status: trip.status,
@@ -149,7 +146,7 @@ export class TripService {
         }) => ({
           id: d.id,
           dayNumber: d.dayNumber,
-          unlockDate: toDateOnlyIso(d.unlockDate),
+          unlockDate: toDateOnlyIsoUtc(d.unlockDate),
           title: d.title,
           morning: d.morning,
           afternoon: d.afternoon,
