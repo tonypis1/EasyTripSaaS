@@ -26,7 +26,7 @@ export class TripRepository {
 
   async listByOrganizer(organizerId: string) {
     return prisma.trip.findMany({
-      where: { organizerId },
+      where: { organizerId, deletedAt: null },
       orderBy: { createdAt: "desc" },
       include: {
         versions: {
@@ -49,6 +49,7 @@ export class TripRepository {
       where: {
         id: tripId,
         organizerId,
+        deletedAt: null,
       },
     });
   }
@@ -56,7 +57,7 @@ export class TripRepository {
   /** Dettaglio per UI: versione attiva + giorni ordinati */
   async findDetailForOrganizer(tripId: string, organizerId: string) {
     return prisma.trip.findFirst({
-      where: { id: tripId, organizerId },
+      where: { id: tripId, organizerId, deletedAt: null },
       include: {
         versions: {
           where: { isActive: true },
@@ -80,6 +81,23 @@ export class TripRepository {
         amountPaid: payload.amountPaid,
       },
     });
+  }
+
+  /**
+   * Nasconde il viaggio all’utente (soft delete). Il record Trip, Payment, TripVersion, Day
+   * restano in DB per storico, contabilità e futuri export fiscali.
+   */
+  async softDeleteByIdForOrganizer(tripId: string, organizerId: string) {
+    const result = await prisma.trip.updateMany({
+      where: {
+        id: tripId,
+        organizerId,
+        deletedAt: null,
+      },
+      data: { deletedAt: new Date() },
+    });
+    if (result.count === 0) return { deleted: false as const };
+    return { deleted: true as const };
   }
 }
 

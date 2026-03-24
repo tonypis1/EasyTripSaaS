@@ -15,6 +15,7 @@
     "playwright:install": "playwright install"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@clerk/nextjs": "^6",
     "@prisma/client": "6.19.0",
     "inngest": "^4",

@@ -42,5 +42,14 @@ export class TripController extends BaseController {
       return this.fail(error, "TripController.getById");
     }
   }
+
+  async deleteById(tripId: string) {
+    try {
+      await this.tripService.deleteMyTrip(tripId);
+      return this.ok({ deleted: true });
+    } catch (error) {
+      return this.fail(error, "TripController.deleteById");
+    }
+  }
 }
 

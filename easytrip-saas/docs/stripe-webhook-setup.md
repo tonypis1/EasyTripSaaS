@@ -91,6 +91,8 @@ Stripe non può raggiungere `localhost` senza un tunnel. Il metodo ufficiale è 
 | Metadata mancanti | Il checkout è creato solo da `createCheckoutSession` (include `tripId`, `appUserId` nei metadata). |
 | Pagamento ok ma niente generazione | Inngest: in locale serve `npm run inngest:dev`; in cloud l’app deve essere collegata a Inngest con lo stesso evento. |
 | Redirect sbagliato dopo pagamento | `APP_BASE_URL` errato o non impostato. |
+| Stripe Checkout: *«token di conferma» / rifare login CLI* | La sessione **Stripe CLI** è scaduta. Chiudi `stripe listen`, esegui di nuovo `stripe login` (o `stripe login --interactive`), poi rilancia `stripe listen --forward-to ...`. Aggiorna `STRIPE_WEBHOOK_SECRET` se `listen` stampa un `whsec_` nuovo. |
+| Inngest run **Failed** dopo ~2 min (Claude) | Di solito **timeout** sulla singola richiesta verso Next: assicurati di avere l’ultima `generate-itinerary` con **`step.run`** e `timeouts.finish` lunghi; riavvia `npm run dev` e `npm run inngest:dev`. In alternativa imposta `ANTHROPIC_MODEL` esplicito nel `.env`. |
 
 ---
 

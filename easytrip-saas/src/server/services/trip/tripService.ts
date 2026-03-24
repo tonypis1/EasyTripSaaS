@@ -155,5 +155,17 @@ export class TripService {
       ),
     };
   }
+
+  async deleteMyTrip(tripId: string): Promise<{ deleted: boolean }> {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const result = await this.tripRepository.softDeleteByIdForOrganizer(
+      tripId,
+      user.id
+    );
+    if (!result.deleted) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+    return { deleted: true };
+  }
 }
 

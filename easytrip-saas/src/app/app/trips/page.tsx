@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fetchTripsForDashboard } from "@/lib/trips-data";
 import { CreateTripForm } from "./create-trip-form";
+import { DeleteTripButton } from "./delete-trip-button";
 import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 import { formatStatus, formatTripType } from "@/lib/day-unlock";
 
@@ -37,10 +38,13 @@ export default async function TripsPage() {
         ) : (
           <ul className="mt-4 space-y-3">
             {trips.map((t) => (
-              <li key={t.id}>
+              <li
+                key={t.id}
+                className="relative rounded-2xl border border-et-border bg-et-card transition hover:border-et-accent/30 hover:bg-et-accent/5"
+              >
                 <Link
                   href={`/app/trips/${t.id}`}
-                  className="block rounded-2xl border border-et-border bg-et-card px-5 py-4 transition hover:border-et-accent/30 hover:bg-et-accent/5"
+                  className="block px-5 py-4 pr-[9.5rem] sm:pr-40"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-display text-lg text-et-ink">
@@ -73,6 +77,9 @@ export default async function TripsPage() {
                     ) : null}
                   </div>
                 </Link>
+                <div className="absolute right-3 top-3 sm:top-1/2 sm:-translate-y-1/2">
+                  <DeleteTripButton tripId={t.id} destination={t.destination} />
+                </div>
               </li>
             ))}
           </ul>

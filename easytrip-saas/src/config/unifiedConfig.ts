@@ -15,6 +15,12 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   STRIPE_PRICE_SOLO_COUPLE_CENTS: z.coerce.number().int().positive().default(999),
   STRIPE_PRICE_GROUP_CENTS: z.coerce.number().int().positive().default(1499),
+  ANTHROPIC_API_KEY: z.string().min(1),
+  /**
+   * ID esatto del modello (gli snapshot datati vengono ritirati: se ricevi 404 su "model", aggiorna qui).
+   * Riferimento: https://docs.anthropic.com/en/docs/about-claude/models
+   */
+  ANTHROPIC_MODEL: z.string().min(1).optional(),
 
   WAITLIST_INITIAL_COUNT: z.coerce.number().int().nonnegative().default(847),
   WAITLIST_CAPACITY: z.coerce.number().int().positive().default(200),
@@ -50,6 +56,12 @@ export const config = {
     priceSoloCoupleCents: env.STRIPE_PRICE_SOLO_COUPLE_CENTS,
     priceGroupCents: env.STRIPE_PRICE_GROUP_CENTS,
     currency: "eur" as const,
+  },
+  ai: {
+    anthropicApiKey: env.ANTHROPIC_API_KEY,
+    /** Default: Sonnet 4 (sostituisce snapshot 3.5 spesso deprecati / non trovati). */
+    anthropicModel:
+      env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
   },
   waitlist: {
     initialCount: env.WAITLIST_INITIAL_COUNT,
