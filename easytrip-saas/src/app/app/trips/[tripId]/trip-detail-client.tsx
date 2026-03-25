@@ -6,6 +6,7 @@ import {
   formatTripType,
   isDayUnlocked,
 } from "@/lib/day-unlock";
+import { DEV_PREVIEW_UNLOCK_CONTENT } from "@/lib/dev-flags";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -16,21 +17,105 @@ type Props = {
   showDevShortcut: boolean;
 };
 
-function snippetFromJson(raw: string | null) {
+type Slot = {
+  title: string;
+  place: string;
+  why: string;
+  startTime: string;
+  endTime: string;
+  tips: string[];
+};
+
+function googleSearchUrl(query: string) {
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+
+/**
+ * Prima parte della destinazione (es. "Salerno" da "Salerno, Italia") per query e confronti.
+ */
+function destinationPrimary(destination: string): string {
+  const s = destination.trim();
+  if (!s) return "";
+  const i = s.indexOf(",");
+  return (i === -1 ? s : s.slice(0, i)).trim();
+}
+
+/**
+ * Query di ricerca per il POI: usa la destinazione del viaggio e, se serve, `place`
+ * (solo per l’URL, non come etichetta cliccabile) per disambiguare su Google.
+ */
+function buildGoogleSearchQuery(
+  title: string,
+  place: string,
+  destination: string
+): string {
+  const t = title.trim();
+  const p = place.trim();
+  const d = destination.trim();
+  const city = destinationPrimary(d) || d;
+  if (!t && !p) return d || "";
+  if (!city) return t || p;
+
+  const tL = t.toLowerCase();
+  const pL = p.toLowerCase();
+  const cityL = city.toLowerCase();
+  const fullDestL = d.toLowerCase();
+
+  // Titolo già ancorato alla destinazione (es. "Duomo di Salerno" o contiene "Salerno")
+  if (tL.includes(cityL) || (fullDestL.length > 0 && tL.includes(fullDestL))) {
+    return t;
+  }
+
+  // `place` spesso ripete il POI con città completa — utile solo per precisione URL
+  if (p && (pL.includes(cityL) || pL.includes(fullDestL)) && (pL.includes(tL) || tL.length <= 3)) {
+    return p;
+  }
+
+  if (/^centro storico$/i.test(t)) return `centro storico di ${city}`;
+  if (/^centro città$/i.test(t)) return `centro città di ${city}`;
+
+  const titleHasOtherPlaceName =
+    /\b(di|del|della|all’|all'|a|in|presso)\s+/i.test(t) && t.length > 18;
+
+  if (titleHasOtherPlaceName) {
+    return `${t} ${city}`;
+  }
+
+  if (
+    /^(museo|chiesa|duomo|cattedrale|basilica|cappella|piazza|parco|castello|teatro|galleria|pinacoteca|palazzo|villa|fontana|mercato|borgo|anfiteatro|sito|lungomare|porto)\b/i.test(
+      t
+    )
+  ) {
+    return `${t} di ${city}`;
+  }
+
+  return `${t} ${city}`;
+}
+
+function parseSlot(raw: string | null): Slot | null {
   if (!raw || raw === "{}" || raw === "null") return null;
   try {
-    const o = JSON.parse(raw) as unknown;
-    if (typeof o === "object" && o !== null && !Array.isArray(o)) {
-      const entries = Object.entries(o as Record<string, unknown>);
-      if (entries.length === 0) return null;
-      return entries
-        .map(([k, v]) => `${k}: ${String(v)}`)
-        .slice(0, 4)
-        .join(" · ");
-    }
-    return String(o).slice(0, 120);
+    const o = JSON.parse(raw) as Partial<Slot> | null;
+    if (!o || typeof o !== "object") return null;
+    if (
+      typeof o.title !== "string" ||
+      typeof o.place !== "string" ||
+      typeof o.why !== "string" ||
+      typeof o.startTime !== "string" ||
+      typeof o.endTime !== "string" ||
+      !Array.isArray(o.tips)
+    )
+      return null;
+    return {
+      title: o.title,
+      place: o.place,
+      why: o.why,
+      startTime: o.startTime,
+      endTime: o.endTime,
+      tips: o.tips.filter((t) => typeof t === "string"),
+    };
   } catch {
-    return raw.slice(0, 160);
+    return null;
   }
 }
 
@@ -222,14 +307,32 @@ export function TripDetailClient({
         <section>
           <h2 className="font-display text-xl text-et-ink">Itinerario</h2>
           <p className="mt-1 text-sm text-et-ink/55">
-            Sblocco in base alla <strong>data di calendario del tuo PC</strong> (browser):
-            conta solo giorno/mese/anno locali, non l’ora esatta — es. il 23 marzo 2026
-            alle 21:49 il giorno con sblocco 24 marzo resta ancora bloccato fino al 24
-            (sempre nel tuo fuso).
+            Sblocco in base alla <strong>data di calendario del tuo device (PC-tablet-mobile)</strong>:
+            <br />
+            il primo giorno si sblocca solo alle ore 00:01 del primo giorno. Il secondo giorno si sblocca
+            solo alle ore 00:01 del secondo giorno… e così via.
           </p>
+          {DEV_PREVIEW_UNLOCK_CONTENT ? (
+            <p
+              className="mt-3 rounded-xl border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90"
+              role="status"
+            >
+              <strong className="font-semibold">Anteprima sviluppo:</strong> vedi i contenuti anche se il
+              giorno non è ancora sbloccato (flag{" "}
+              <code className="rounded bg-black/25 px-1 py-0.5 font-mono text-[0.7rem]">
+                NEXT_PUBLIC_DEV_PREVIEW_UNLOCKED=true
+              </code>
+              ). In produzione il comportamento resta quello dello sblocco reale.
+            </p>
+          ) : null}
           <ul className="mt-6 space-y-4">
             {trip.days.map((day) => {
-              const open = isDayUnlocked(day.unlockDate);
+              const reallyUnlocked = isDayUnlocked(day.unlockDate);
+              const open = DEV_PREVIEW_UNLOCK_CONTENT || reallyUnlocked;
+              const morning = parseSlot(day.morning);
+              const afternoon = parseSlot(day.afternoon);
+              const evening = parseSlot(day.evening);
+              const hasAnySlot = Boolean(morning || afternoon || evening);
               return (
                 <li
                   key={day.id}
@@ -245,10 +348,16 @@ export function TripDetailClient({
                     </div>
                     <div className="text-xs text-et-ink/50">
                       Sblocco: {day.unlockDate}
-                      {!open ? (
-                        <span className="ml-2 rounded-full border border-et-border px-2 py-0.5 text-et-accent/88">
-                          Bloccato
-                        </span>
+                      {!reallyUnlocked ? (
+                        DEV_PREVIEW_UNLOCK_CONTENT ? (
+                          <span className="ml-2 rounded-full border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-amber-100/90">
+                            Anteprima dev
+                          </span>
+                        ) : (
+                          <span className="ml-2 rounded-full border border-et-border px-2 py-0.5 text-et-accent/88">
+                            Bloccato
+                          </span>
+                        )
                       ) : (
                         <span className="ml-2 rounded-full border border-et-accent/30 bg-et-accent/10 px-2 py-0.5 text-et-accent">
                           Aperto
@@ -258,27 +367,106 @@ export function TripDetailClient({
                   </div>
                   {open ? (
                     <div className="mt-4 space-y-2 text-sm text-et-ink/75">
-                      {["morning", "afternoon", "evening"].map((slot) => {
-                        const key = slot as "morning" | "afternoon" | "evening";
-                        const text = snippetFromJson(day[key]);
-                        if (!text) return null;
-                        return (
-                          <p key={key}>
+                      {morning ? (
+                        <div className="space-y-1">
+                          <p>
                             <span className="font-semibold capitalize text-et-ink/90">
-                              {key === "morning"
-                                ? "Mattina"
-                                : key === "afternoon"
-                                  ? "Pomeriggio"
-                                  : "Sera"}
-                              :{" "}
+                              Mattina:{" "}
                             </span>
-                            {text}
+                            <a
+                              href={googleSearchUrl(
+                                buildGoogleSearchQuery(
+                                  morning.title,
+                                  morning.place,
+                                  trip.destination
+                                )
+                              )}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-et-accent underline underline-offset-4 hover:decoration-et-accent/80"
+                            >
+                              {morning.title}
+                            </a>{" "}
+                            · {morning.place} · {morning.why} ·{" "}
+                            <span className="text-et-ink/55">
+                              {morning.startTime}-{morning.endTime}
+                            </span>
                           </p>
-                        );
-                      })}
-                      {!snippetFromJson(day.morning) &&
-                      !snippetFromJson(day.afternoon) &&
-                      !snippetFromJson(day.evening) ? (
+                          {morning.tips.length > 0 ? (
+                            <p className="text-xs text-et-ink/55">
+                              {morning.tips.slice(0, 3).join(" · ")}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {afternoon ? (
+                        <div className="space-y-1">
+                          <p>
+                            <span className="font-semibold capitalize text-et-ink/90">
+                              Pomeriggio:{" "}
+                            </span>
+                            <a
+                              href={googleSearchUrl(
+                                buildGoogleSearchQuery(
+                                  afternoon.title,
+                                  afternoon.place,
+                                  trip.destination
+                                )
+                              )}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-et-accent underline underline-offset-4 hover:decoration-et-accent/80"
+                            >
+                              {afternoon.title}
+                            </a>{" "}
+                            · {afternoon.place} · {afternoon.why} ·{" "}
+                            <span className="text-et-ink/55">
+                              {afternoon.startTime}-{afternoon.endTime}
+                            </span>
+                          </p>
+                          {afternoon.tips.length > 0 ? (
+                            <p className="text-xs text-et-ink/55">
+                              {afternoon.tips.slice(0, 3).join(" · ")}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {evening ? (
+                        <div className="space-y-1">
+                          <p>
+                            <span className="font-semibold capitalize text-et-ink/90">
+                              Sera:{" "}
+                            </span>
+                            <a
+                              href={googleSearchUrl(
+                                buildGoogleSearchQuery(
+                                  evening.title,
+                                  evening.place,
+                                  trip.destination
+                                )
+                              )}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-et-accent underline underline-offset-4 hover:decoration-et-accent/80"
+                            >
+                              {evening.title}
+                            </a>{" "}
+                            · {evening.place} · {evening.why} ·{" "}
+                            <span className="text-et-ink/55">
+                              {evening.startTime}-{evening.endTime}
+                            </span>
+                          </p>
+                          {evening.tips.length > 0 ? (
+                            <p className="text-xs text-et-ink/55">
+                              {evening.tips.slice(0, 3).join(" · ")}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {!hasAnySlot ? (
                         <p className="text-et-ink/50">
                           Contenuto strutturato in arrivo (stub AI).
                         </p>

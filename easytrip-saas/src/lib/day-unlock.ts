@@ -1,14 +1,12 @@
 /**
- * Confronto solo sulla **data di calendario nel fuso del browser** (cioè del tuo PC),
- * non sull’ora esatta: alle 23:59 del 23 marzo conta ancora come “23 marzo”.
- * La stringa `unlockDateStr` è `YYYY-MM-DD` allineata al calendario salvato nel DB.
+ * Sblocco “a minuti”: ogni giorno si sblocca solo dopo le 00:01 locali del device.
+ * La stringa `unlockDateStr` è `YYYY-MM-DD` (data di calendario).
  */
 export function isDayUnlocked(unlockDateStr: string, now = new Date()): boolean {
   const [y, m, d] = unlockDateStr.split("-").map(Number);
   if (!y || !m || !d) return false;
-  const unlock = new Date(y, m - 1, d);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return today >= unlock;
+  const unlockAt = new Date(y, m - 1, d, 0, 1, 0, 0); // 00:01:00.000 del giorno locale
+  return now >= unlockAt;
 }
 
 export function formatTripType(t: string) {

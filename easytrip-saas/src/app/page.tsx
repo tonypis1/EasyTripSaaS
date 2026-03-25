@@ -28,6 +28,25 @@ export const metadata: Metadata = {
 
 type LandingHeroVariant = "atlas" | "minimal";
 
+function IconGlobe(props: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={props.className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
 function IconSparkles(props: { className?: string }) {
   return (
     <svg
@@ -349,8 +368,9 @@ function Nav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link
           href="/"
-          className="font-display text-xl font-normal tracking-tight text-et-accent"
+          className="inline-flex items-center gap-2 font-display text-xl font-normal tracking-tight text-et-accent"
         >
+          <IconGlobe className="h-7 w-7 shrink-0 text-et-accent" />
           EasyTrip
         </Link>
         <nav className="hidden items-center gap-6 text-sm text-et-ink/70 md:flex">
@@ -871,10 +891,11 @@ function Footer() {
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: { waitlist?: string };
+  searchParams?: Promise<{ waitlist?: string }>;
 }) {
   const stats = await getWaitlistStats();
-  const success = searchParams?.waitlist === "ok";
+  const sp = (await searchParams) ?? {};
+  const success = sp.waitlist === "ok";
   const waitlistCount = stats.count;
   const waitlistCapacity = stats.capacity;
 

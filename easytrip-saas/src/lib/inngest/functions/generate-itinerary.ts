@@ -6,6 +6,7 @@ import {
 } from "@/lib/calendar-date";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
+import { z } from "zod";
 
 type DaySlot = {
   title: string;
@@ -78,9 +79,14 @@ Rispondi SOLO con JSON valido (niente testo extra), con questa forma:
 REGOLE
 - Crea esattamente ${args.numDays} elementi in "days".
 - dayNumber progressivo da 1 a ${args.numDays}.
-- Orari realistici e non sovrapposti (formato HH:mm).
+- Per ogni slot (morning/afternoon/evening): "title" = nome breve e riconoscibile del punto di interesse nella destinazione (es. "Duomo", "Museo Diocesano", "centro storico"); "place" = zona, quartiere o dettaglio geografico (strada/quartiere), senza sostituire il nome del POI che sta in "title".
+- Orari realistici e non sovrapposti (formato HH:mm). Inserisci un buffer di trasferimento (10-30 minuti) tra luogo e luogo.
 - Suggerisci luoghi realmente plausibili per ${args.destination}.
-- Testi in italiano semplice, utile e concreto.
+- Indoor/Outdoor: almeno 1 slot per giorno deve includere un'opzione al coperto (pioggia) e un'opzione outdoor (se bel tempo).
+- Metti in "tips" almeno:
+  1) un consiglio meteo (pioggia/caldo) per quello slot,
+  2) un micro-budget (es. "economico: ...", "media spesa: ...") senza prezzi numerici inventati.
+- Testi in italiano semplice, utili e concreti (niente descrizioni vaghe).
 `.trim();
 }
 
@@ -93,19 +99,98 @@ function extractJsonText(raw: string): string {
   return trimmed;
 }
 
-function parseModelJson(raw: string): { days: DayPlan[] } {
+const DaySlotSchema = z.object({
+  title: z.string().min(1),
+  place: z.string().min(1),
+  why: z.string().min(1),
+  startTime: z
+    .string()
+    .regex(/^\d{1,2}:\d{2}$/)
+    .transform((s) => {
+      const [h, m] = s.split(":");
+      return `${String(h).padStart(2, "0")}:${m}`;
+    }),
+  endTime: z
+    .string()
+    .regex(/^\d{1,2}:\d{2}$/)
+    .transform((s) => {
+      const [h, m] = s.split(":");
+      return `${String(h).padStart(2, "0")}:${m}`;
+    }),
+  tips: z.array(z.string().min(1)).min(1).max(6),
+});
+
+const DayPlanSchema = z.object({
+  dayNumber: z.coerce.number().int().min(1),
+  title: z.string().min(1),
+  morning: DaySlotSchema,
+  afternoon: DaySlotSchema,
+  evening: DaySlotSchema,
+});
+
+const ModelResponseSchema = z.object({
+  days: z.array(DayPlanSchema),
+});
+
+function parseAndValidateModelJson(
+  raw: string,
+  numDays: number
+): { days: DayPlan[] } {
   const text = extractJsonText(raw);
+  let parsed: unknown;
   try {
-    const parsed = JSON.parse(text) as { days?: DayPlan[] };
-    if (!Array.isArray(parsed.days)) {
-      throw new Error("Formato risposta AI non valido: days assente");
-    }
-    return { days: parsed.days };
-  } catch (e) {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new Error("JSON non valido (parse fallita)");
+  }
+
+  const check = ModelResponseSchema.safeParse(parsed);
+  if (!check.success) {
     throw new Error(
-      `Impossibile parsare JSON da Claude: ${e instanceof Error ? e.message : "errore sconosciuto"}`
+      `Schema non valido: ${check.error.issues
+        .map((i) => i.message)
+        .slice(0, 3)
+        .join("; ")}`
     );
   }
+
+  const days = check.data.days as unknown as DayPlan[];
+  if (days.length !== numDays) {
+    throw new Error(
+      `Numero giorni non valido: attesi ${numDays}, ottenuti ${days.length}`
+    );
+  }
+
+  const byNum = new Map<number, DayPlan>();
+  for (const d of days) byNum.set(d.dayNumber, d);
+  for (let i = 1; i <= numDays; i++) {
+    if (!byNum.has(i)) throw new Error(`Manca dayNumber=${i}`);
+  }
+
+  return {
+    days: Array.from(
+      { length: numDays },
+      (_, idx) => byNum.get(idx + 1)!
+    ),
+  };
+}
+
+function buildRepairPrompt(
+  basePrompt: string,
+  previousRaw: string,
+  reason: string
+) {
+  return `
+Il tuo JSON non ha superato la validazione.
+Motivo: ${reason}
+
+Rigenera SOLO JSON valido che rispetta esattamente il formato richiesto.
+
+${basePrompt}
+
+RISPOSTA PRECEDENTE (da correggere):
+${previousRaw}
+`.trim();
 }
 
 function fallbackSlot(label: string): DaySlot {
@@ -157,45 +242,89 @@ export const generateItinerary = inngest.createFunction(
     const endDate = new Date(trip.endDateIso);
     const numDays = inclusiveCalendarDaysBetweenUtc(startDate, endDate);
 
-    const days = await step.run("genera-con-claude", async (): Promise<DayPlan[]> => {
-      const prompt = buildPrompt({
-        destination: trip.destination,
-        startDate: startDate.toISOString().slice(0, 10),
-        endDate: endDate.toISOString().slice(0, 10),
-        tripType: trip.tripType,
-        style: trip.style,
-        numDays,
-      });
+    const days = await step.run(
+      "genera-con-claude",
+      async (): Promise<DayPlan[]> => {
+        const basePrompt = buildPrompt({
+          destination: trip.destination,
+          startDate: startDate.toISOString().slice(0, 10),
+          endDate: endDate.toISOString().slice(0, 10),
+          tripType: trip.tripType,
+          style: trip.style,
+          numDays,
+        });
 
-      const response = await anthropic.messages.create({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 8192,
-        temperature: 0.4,
-        system:
-          "Rispondi sempre solo con JSON valido, senza markdown e senza testo extra.",
-        messages: [{ role: "user", content: prompt }],
-      });
+        const maxAttempts = 3;
+        let lastErr: unknown = null;
+        let lastRaw = "";
 
-      const textBlock = response.content.find((c) => c.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        throw new Error("Claude non ha restituito un blocco testuale");
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          const response = await anthropic.messages.create({
+            model: ANTHROPIC_MODEL,
+            max_tokens: 10000,
+            temperature: attempt === 1 ? 0.35 : 0.2,
+            system:
+              "Rispondi sempre solo con JSON valido, senza markdown e senza testo extra.",
+            messages: [{ role: "user", content: basePrompt }],
+          });
+
+          const textBlock = response.content.find((c) => c.type === "text");
+          if (!textBlock || textBlock.type !== "text") {
+            throw new Error("Claude non ha restituito un blocco testuale");
+          }
+
+          lastRaw = textBlock.text;
+
+          try {
+            const ai = parseAndValidateModelJson(lastRaw, numDays);
+            return ai.days;
+          } catch (e) {
+            lastErr = e;
+            if (attempt === maxAttempts) break;
+
+            const reason = e instanceof Error ? e.message : "errore sconosciuto";
+            const repairPrompt = buildRepairPrompt(
+              basePrompt,
+              lastRaw,
+              reason
+            );
+
+            // Secondo tentativo: usiamo un prompt di correzione
+            const repairResponse = await anthropic.messages.create({
+              model: ANTHROPIC_MODEL,
+              max_tokens: 10000,
+              temperature: 0.2,
+              system:
+                "Rispondi sempre solo con JSON valido, senza markdown e senza testo extra.",
+              messages: [{ role: "user", content: repairPrompt }],
+            });
+
+            const repairTextBlock = repairResponse.content.find(
+              (c) => c.type === "text"
+            );
+            if (!repairTextBlock || repairTextBlock.type !== "text") {
+              throw new Error(
+                "Claude non ha restituito un blocco testuale (riparazione)"
+              );
+            }
+
+            lastRaw = repairTextBlock.text;
+            try {
+              const ai = parseAndValidateModelJson(lastRaw, numDays);
+              return ai.days;
+            } catch (e2) {
+              lastErr = e2;
+              continue;
+            }
+          }
+        }
+
+        const msg = lastErr instanceof Error ? lastErr.message : "errore sconosciuto";
+        throw new Error(
+          `Claude JSON non valido dopo ${maxAttempts} tentativi: ${msg}`
+        );
       }
-
-      const ai = parseModelJson(textBlock.text);
-
-      return Array.from({ length: numDays }, (_, idx) => {
-        const dayNumber = idx + 1;
-        const fromModel = ai.days.find((d) => d.dayNumber === dayNumber);
-        if (fromModel) return fromModel;
-        return {
-          dayNumber,
-          title: `Giorno ${dayNumber}`,
-          morning: fallbackSlot("Mattina libera"),
-          afternoon: fallbackSlot("Pomeriggio libero"),
-          evening: fallbackSlot("Serata libera"),
-        };
-      });
-    });
+    );
 
     const result = await step.run("salva-versione-e-giorni", async () => {
       const versionNum = trip.regenCount + 1;
