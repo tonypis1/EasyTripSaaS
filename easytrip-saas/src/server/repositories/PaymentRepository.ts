@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 type CreatePaymentInput = {
   userId: string;
   tripId: string;
-  type: "purchase" | "regen";
+  type: "purchase" | "regen" | "reactivate";
   stripePaymentId: string;
   amount: number;
 };
@@ -20,5 +20,10 @@ export class PaymentRepository {
       },
     });
   }
-}
 
+  async findByStripePaymentId(stripePaymentId: string) {
+    return prisma.payment.findFirst({
+      where: { stripePaymentId },
+    });
+  }
+}

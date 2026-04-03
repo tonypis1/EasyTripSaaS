@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist_Mono, Instrument_Serif, Manrope } from "next/font/google";
+import PostHogProvider from "./posthog-provider";
 import "./globals.css";
 
 const instrument = Instrument_Serif({
@@ -37,7 +39,9 @@ export default function RootLayout({
         <body
           className={`${manrope.className} ${instrument.variable} ${manrope.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
+          <Suspense fallback={null}>
+            <PostHogProvider>{children}</PostHogProvider>
+          </Suspense>
         </body>
       </html>
     </ClerkProvider>

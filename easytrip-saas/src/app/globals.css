@@ -80,3 +80,18 @@ body {
   outline: 2px solid var(--et-accent);
   outline-offset: 2px;
 }
+
+/* Protezione contenuti itinerario: scoraggia copia/incolla del prodotto generato */
+.et-protected {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.et-protected input,
+.et-protected textarea,
+.et-protected select,
+.et-protected a,
+.et-protected button {
+  -webkit-user-select: auto;
+  user-select: auto;
+}

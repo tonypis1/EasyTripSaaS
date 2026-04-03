@@ -32,3 +32,18 @@ export function addCalendarDaysUtc(d: Date, deltaDays: number): Date {
   const day = d.getUTCDate();
   return new Date(Date.UTC(y, m, day + deltaDays));
 }
+
+const DOW_IT = [
+  "domenica",
+  "lunedì",
+  "martedì",
+  "mercoledì",
+  "giovedì",
+  "venerdì",
+  "sabato",
+] as const;
+
+/** Restituisce il nome italiano del giorno della settimana (calendario UTC). */
+export function dayOfWeekItalian(d: Date): string {
+  return DOW_IT[d.getUTCDay()];
+}

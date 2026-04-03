@@ -1,5 +1,5 @@
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import { UserButtonClient } from "./user-button-client";
 
 export default function AppLayout({
   children,
@@ -23,7 +23,7 @@ export default function AppLayout({
             >
               I miei viaggi
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            <UserButtonClient />
           </nav>
         </div>
       </header>

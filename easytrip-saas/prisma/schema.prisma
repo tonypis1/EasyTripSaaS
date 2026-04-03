@@ -25,8 +25,9 @@ enum TripType {
 }
 
 enum PaymentType {
-  purchase  // acquisto viaggio
-  regen     // rigenerazione extra (€1,99)
+  purchase    // acquisto viaggio
+  regen       // rigenerazione extra (€1,99)
+  reactivate  // riattivazione accesso post-trip (€2,90)
 }
 
 // ========== MODELLI ==========
@@ -59,10 +60,12 @@ model Trip {
   accessExpiresAt DateTime   @map("access_expires_at") @db.Date
   tripType        TripType   @map("trip_type")
   style           String?    // foodie, cultura, ecc.
+  budgetLevel     String     @default("moderate") @map("budget_level") // economy | moderate | premium
   status          TripStatus @default(pending)
   regenCount      Int        @default(0) @map("regen_count") // 0..7
   currentVersion  Int        @default(1) @map("current_version") // carosello
   usedZones       String?   @map("used_zones") // zone_focus concatenate per rigenera
+  prefChangedAfterGen Boolean @default(false) @map("pref_changed_after_gen") // true se l'utente ha modificato preferenze dopo la prima generazione
   paymentId       String?   @map("payment_id") // Stripe payment/session
   amountPaid      Decimal?  @map("amount_paid") @db.Decimal(10, 2)
   /// Soft-delete lato utente: il record resta in DB (pagamenti, versioni, audit / fiscale).

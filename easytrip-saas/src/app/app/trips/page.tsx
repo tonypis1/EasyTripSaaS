@@ -77,8 +77,14 @@ export default async function TripsPage() {
                     ) : null}
                   </div>
                 </Link>
-                <div className="absolute right-3 top-3 sm:top-1/2 sm:-translate-y-1/2">
-                  <DeleteTripButton tripId={t.id} destination={t.destination} />
+                <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5 sm:top-1/2 sm:-translate-y-1/2">
+                  <DeleteTripButton
+                    tripId={t.id}
+                    destination={t.destination}
+                    isPaid={t.isPaid}
+                    startDate={toDateLabel(t.startDate)}
+                    status={t.status}
+                  />
                 </div>
               </li>
             ))}

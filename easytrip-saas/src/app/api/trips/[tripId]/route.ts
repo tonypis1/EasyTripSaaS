@@ -1,7 +1,6 @@
 import { container } from "@/server/di/container";
-import { TripController } from "@/server/controllers/TripController";
 
-const tripController = new TripController(container.services.tripService);
+const tripController = container.controllers.tripController;
 
 export async function GET(
   _req: Request,

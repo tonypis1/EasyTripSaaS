@@ -4,11 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 const tripController = container.controllers.tripController;
 
 /**
- * POST /api/trips/[tripId]/generate
- * Avvia generazione / rigenerazione gratuita (Inngest). Per versioni a pagamento usare checkout rigenerazione.
+ * POST /api/trips/[tripId]/active-version
+ * Body: { "versionNum": 1 }
+ * Carosello: attiva una versione salvata senza nuova generazione.
  */
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ tripId: string }> }
 ) {
   const { tripId } = await params;
@@ -18,12 +19,5 @@ export async function POST(
     return Response.json({ ok: false, error: { message: "Non autenticato" } }, { status: 401 });
   }
 
-  if (!tripId) {
-    return Response.json(
-      { ok: false, error: { message: "tripId richiesto" } },
-      { status: 400 }
-    );
-  }
-
-  return tripController.requestGeneration(tripId);
+  return tripController.setActiveVersion(tripId, req);
 }

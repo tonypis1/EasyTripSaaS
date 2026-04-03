@@ -1,70 +1,69 @@
 # EasyTrip SaaS
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Applicazione [Next.js](https://nextjs.org) con **Prisma**, **PostgreSQL**, **Clerk**, **Stripe**, **Inngest** e **Anthropic** per generare itinerari strutturati (JSON), con rigenerazioni, carosello versioni, email transazionali (opzionali) e sostituzione slot con supporto GPS opzionale.
 
-## Getting Started
+## Documentazione HTML (visione prodotto)
 
-First, run the development server:
+Nel repository, cartella **`docs/desktop-html/`**:
+
+- `easytrip-index-documentazione-nextjs.html` — indice
+- `easytrip-mvp-architecture-nextjs.html` — architettura MVP (stack attuale)
+- `easytrip-technical-spec-nextjs.html` — specifiche tecniche e API
+
+Puoi copiare questi file sul Desktop o aprirli direttamente dal disco. Sostituiscono i vecchi documenti basati su Bubble/Make/Brevo.
+
+Il file **`CATALOG.md`** (catalogo skill Cursor) è incluso nella root del progetto: se usi un altro clone, copialo dalla stessa posizione o rigenera l’indice skill da Cursor.
+
+## Variabili d’ambiente
+
+Oltre a `DATABASE_URL`, chiavi Clerk, Stripe e `ANTHROPIC_API_KEY`, sono supportate:
+
+| Variabile | Descrizione |
+|-----------|-------------|
+| `STRIPE_PRICE_REGEN_CENTS` | Prezzo rigenerazione (default `199` = €1,99) |
+| `RESEND_API_KEY` | API key [Resend](https://resend.com) per email transazionali |
+| `EMAIL_FROM` | Mittente verificato su Resend (es. `onboarding@tuo-dominio.com`) |
+
+Senza Resend, le email sono solo loggate lato server (utile in sviluppo).
+
+## Sviluppo
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-After `npm install` or changes to `prisma/schema.prisma`, the Prisma Client is regenerated via `postinstall`. If you see **"@prisma/client did not initialize"**, run:
+Dopo modifiche a `prisma/schema.prisma`:
 
 ```bash
 npm run db:generate
 ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Se compare **"@prisma/client did not initialize"**:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run db:generate
+```
 
-## Learn More
+Per la generazione itinerario in locale serve il **dev server Inngest** in un secondo terminale:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run inngest:dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Generazione in sviluppo senza Stripe
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+In `development`, `POST /api/trips/:id/generate` può avviare la generazione anche senza pagamento (utile con il pulsante «Avvia generazione (dev)»). In produzione il pagamento è obbligatorio.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## E2E tests (Playwright)
-
-Install browser binaries:
+## E2E (Playwright)
 
 ```bash
 npm run playwright:install
-```
-
-Run tests:
-
-```bash
 npm run test:e2e
 ```
 
-Run with headed browser:
+Variabili: `E2E_AUTH_STORAGE_STATE`, `E2E_TRIP_ID`, opzionale `E2E_BASE_URL`.
 
-```bash
-npm run test:e2e:headed
-```
+## Deploy
 
-### Env for checkout E2E
-
-- `E2E_AUTH_STORAGE_STATE`: path to Playwright storage state with logged-in user
-- `E2E_TRIP_ID`: trip id to open in `/app/trips/:tripId`
-- `E2E_BASE_URL` (optional): defaults to `http://127.0.0.1:3000`
+Vedi [documentazione Next.js](https://nextjs.org/docs/app/building-your-application/deploying) (es. Vercel). Configura webhook Stripe verso `https://tuodominio.com/api/webhooks/stripe`.

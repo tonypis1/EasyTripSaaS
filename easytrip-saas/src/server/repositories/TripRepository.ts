@@ -19,6 +19,7 @@ export class TripRepository {
         accessExpiresAt,
         tripType: input.tripType,
         style: input.style,
+        budgetLevel: input.budgetLevel ?? "moderate",
         status: "pending",
       },
     });
@@ -54,20 +55,64 @@ export class TripRepository {
     });
   }
 
-  /** Dettaglio per UI: versione attiva + giorni ordinati */
+  /** Dettaglio per UI: tutte le versioni (carosello) + giorni della versione attiva */
   async findDetailForOrganizer(tripId: string, organizerId: string) {
     return prisma.trip.findFirst({
       where: { id: tripId, organizerId, deletedAt: null },
       include: {
         versions: {
-          where: { isActive: true },
-          take: 1,
+          orderBy: { versionNum: "asc" },
           include: {
             days: { orderBy: { dayNumber: "asc" } },
           },
         },
       },
     });
+  }
+
+  /** Solo giorni della versione attiva (per replace-slot e query mirate). */
+  async findActiveVersionWithDays(tripId: string, organizerId: string) {
+    return prisma.trip.findFirst({
+      where: { id: tripId, organizerId, deletedAt: null },
+      include: {
+        versions: {
+          where: { isActive: true },
+          take: 1,
+          include: { days: { orderBy: { dayNumber: "asc" } } },
+        },
+      },
+    });
+  }
+
+  /**
+   * Imposta la versione attiva (carosello, senza nuova generazione).
+   */
+  async setActiveVersion(tripId: string, organizerId: string, versionNum: number) {
+    const trip = await prisma.trip.findFirst({
+      where: { id: tripId, organizerId, deletedAt: null },
+      include: { versions: { select: { id: true, versionNum: true } } },
+    });
+    if (!trip) return { ok: false as const, reason: "not_found" as const };
+
+    const target = trip.versions.find((v) => v.versionNum === versionNum);
+    if (!target) return { ok: false as const, reason: "version_not_found" as const };
+
+    await prisma.$transaction([
+      prisma.tripVersion.updateMany({
+        where: { tripId },
+        data: { isActive: false },
+      }),
+      prisma.tripVersion.update({
+        where: { id: target.id },
+        data: { isActive: true },
+      }),
+      prisma.trip.update({
+        where: { id: tripId },
+        data: { currentVersion: versionNum },
+      }),
+    ]);
+
+    return { ok: true as const };
   }
 
   async markAsPaid(
@@ -83,8 +128,139 @@ export class TripRepository {
     });
   }
 
+  async updatePreferences(
+    tripId: string,
+    organizerId: string,
+    data: { style?: string | null; budgetLevel: string },
+  ) {
+    const result = await prisma.trip.updateMany({
+      where: { id: tripId, organizerId, deletedAt: null },
+      data: {
+        style: data.style,
+        budgetLevel: data.budgetLevel,
+        prefChangedAfterGen: true,
+      },
+    });
+    return { updated: result.count > 0 };
+  }
+
   /**
-   * Nasconde il viaggio all’utente (soft delete). Il record Trip, Payment, TripVersion, Day
+   * Estende l'accesso al viaggio di N giorni (riattivazione post-trip).
+   * Il nuovo `accessExpiresAt` parte da oggi (se già scaduto) o dalla data attuale di scadenza.
+   */
+  async extendAccess(tripId: string, extraDays: number) {
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      select: { accessExpiresAt: true },
+    });
+    if (!trip) return null;
+
+    const base =
+      trip.accessExpiresAt > new Date() ? trip.accessExpiresAt : new Date();
+    const newExpiry = new Date(base);
+    newExpiry.setDate(newExpiry.getDate() + extraDays);
+
+    return prisma.trip.update({
+      where: { id: tripId },
+      data: { accessExpiresAt: newExpiry, status: "active" },
+    });
+  }
+
+  /**
+   * Trova tutti i trip attivi con accesso scaduto, li marca "expired" e
+   * ritorna le info necessarie per inviare le email di notifica.
+   * Idempotente: trip già "expired" non vengono selezionati.
+   */
+  async findAndExpireOverdue() {
+    const now = new Date();
+
+    const overdue = await prisma.trip.findMany({
+      where: {
+        status: "active",
+        accessExpiresAt: { lt: now },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        destination: true,
+        organizer: { select: { email: true } },
+      },
+    });
+
+    if (overdue.length === 0) return [];
+
+    await prisma.trip.updateMany({
+      where: { id: { in: overdue.map((t) => t.id) } },
+      data: { status: "expired" },
+    });
+
+    return overdue.map((t) => ({
+      tripId: t.id,
+      destination: t.destination,
+      organizerEmail: t.organizer.email,
+    }));
+  }
+
+  /**
+   * Cancella il trip (solo se non ancora iniziato), genera un Credit pari
+   * all'importo pagato con scadenza 365 giorni, e incrementa creditBalance.
+   * Tutto in un'unica transazione atomica.
+   */
+  async cancelWithCredit(tripId: string, organizerId: string) {
+    const trip = await prisma.trip.findFirst({
+      where: { id: tripId, organizerId, deletedAt: null },
+    });
+
+    if (!trip) return { ok: false as const, reason: "not_found" as const };
+
+    if (trip.startDate <= new Date()) {
+      return { ok: false as const, reason: "already_started" as const };
+    }
+
+    if (trip.status === "cancelled") {
+      return { ok: false as const, reason: "already_cancelled" as const };
+    }
+
+    const paid = trip.amountPaid
+      ? Number(trip.amountPaid)
+      : 0;
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 365);
+
+    await prisma.$transaction(async (tx) => {
+      await tx.trip.update({
+        where: { id: tripId },
+        data: { status: "cancelled", deletedAt: new Date() },
+      });
+
+      if (paid > 0) {
+        await tx.credit.create({
+          data: {
+            userId: organizerId,
+            amount: paid,
+            originTripId: tripId,
+            expiresAt,
+          },
+        });
+
+        await tx.user.update({
+          where: { id: organizerId },
+          data: { creditBalance: { increment: paid } },
+        });
+      }
+    });
+
+    return {
+      ok: true as const,
+      creditAmount: paid,
+      creditExpiresAt: expiresAt,
+      destination: trip.destination,
+    };
+  }
+
+  /**
+   * Nasconde il viaggio all'utente (soft delete). Il record Trip, Payment, TripVersion, Day
    * restano in DB per storico, contabilità e futuri export fiscali.
    */
   async softDeleteByIdForOrganizer(tripId: string, organizerId: string) {
@@ -100,4 +276,3 @@ export class TripRepository {
     return { deleted: true as const };
   }
 }
-

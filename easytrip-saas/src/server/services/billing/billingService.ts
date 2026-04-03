@@ -8,8 +8,26 @@ import { TripRepository } from "@/server/repositories/TripRepository";
 import { PaymentRepository } from "@/server/repositories/PaymentRepository";
 import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 import { logger } from "@/lib/observability";
+import { prisma } from "@/lib/prisma";
+import {
+  purchaseConfirmedHtml,
+  sendTransactionalEmail,
+} from "@/lib/email/transactional";
+import { isPaidRegeneration } from "@/lib/trip-regen-rules";
 
 type CheckoutInput = {
+  tripId: string;
+  successUrl?: string;
+  cancelUrl?: string;
+};
+
+type RegenCheckoutInput = {
+  tripId: string;
+  successUrl?: string;
+  cancelUrl?: string;
+};
+
+type ReactivateCheckoutInput = {
   tripId: string;
   successUrl?: string;
   cancelUrl?: string;
@@ -22,6 +40,63 @@ export class BillingService {
     private readonly paymentRepository: PaymentRepository
   ) {}
 
+  /**
+   * Trova i crediti non usati e non scaduti dell'utente,
+   * ordinati per scadenza più vicina (FIFO — usa quelli che scadono prima).
+   */
+  private async getAvailableCredits(userId: string) {
+    return prisma.credit.findMany({
+      where: {
+        userId,
+        used: false,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { expiresAt: "asc" },
+    });
+  }
+
+  /**
+   * Consuma crediti in una transazione atomica (FIFO per scadenza).
+   * Restituisce il totale in centesimi effettivamente applicato.
+   */
+  private async applyCredits(
+    userId: string,
+    tripId: string,
+    maxCents: number,
+  ): Promise<number> {
+    const credits = await this.getAvailableCredits(userId);
+    if (credits.length === 0) return 0;
+
+    let remaining = maxCents;
+    let totalApplied = 0;
+
+    await prisma.$transaction(async (tx) => {
+      for (const credit of credits) {
+        if (remaining <= 0) break;
+        const creditCents = Math.round(Number(credit.amount) * 100);
+        const apply = Math.min(creditCents, remaining);
+
+        await tx.credit.update({
+          where: { id: credit.id },
+          data: { used: true, usedOnTripId: tripId },
+        });
+
+        totalApplied += apply;
+        remaining -= apply;
+      }
+
+      if (totalApplied > 0) {
+        const appliedEuros = totalApplied / 100;
+        await tx.user.update({
+          where: { id: userId },
+          data: { creditBalance: { decrement: appliedEuros } },
+        });
+      }
+    });
+
+    return totalApplied;
+  }
+
   async createCheckoutSession(input: CheckoutInput) {
     const user = await this.authService.getOrCreateCurrentUser();
     const trip = await this.tripRepository.findByIdAndOrganizer(input.tripId, user.id);
@@ -30,11 +105,80 @@ export class BillingService {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
     }
 
-    const amount =
+    const fullAmountCents =
       trip.tripType === "gruppo"
         ? config.billing.priceGroupCents
         : config.billing.priceSoloCoupleCents;
 
+    const availableCredits = await this.getAvailableCredits(user.id);
+    const totalCreditCents = availableCredits.reduce(
+      (sum, c) => sum + Math.round(Number(c.amount) * 100),
+      0,
+    );
+    const creditToApplyCents = Math.min(totalCreditCents, fullAmountCents);
+    const stripeAmountCents = fullAmountCents - creditToApplyCents;
+
+    const productName =
+      trip.tripType === "gruppo"
+        ? "EasyTrip — Viaggio Gruppo"
+        : "EasyTrip — Viaggio Solo/Coppia";
+    const description = `${trip.destination} (${toDateOnlyIsoUtc(trip.startDate)} - ${toDateOnlyIsoUtc(trip.endDate)})`;
+
+    /* ── SCENARIO A: crediti coprono TUTTO ── */
+    if (stripeAmountCents <= 0) {
+      const applied = await this.applyCredits(
+        user.id,
+        trip.id,
+        fullAmountCents,
+      );
+
+      const creditPaymentId = `credit_full_${trip.id}_${Date.now()}`;
+      await this.paymentRepository.create({
+        userId: user.id,
+        tripId: trip.id,
+        type: "purchase",
+        stripePaymentId: creditPaymentId,
+        amount: 0,
+      });
+
+      await this.tripRepository.markAsPaid(trip.id, {
+        paymentId: creditPaymentId,
+        amountPaid: 0,
+      });
+
+      try {
+        const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
+        await sendTransactionalEmail({
+          to: user.email,
+          subject: `Viaggio attivato con crediti — ${trip.destination}`,
+          html: purchaseConfirmedHtml({
+            destination: trip.destination,
+            tripUrl,
+          }),
+        });
+      } catch {
+        /* email failure does not block */
+      }
+
+      await inngest.send({
+        name: "trip/generate.requested",
+        data: { tripId: trip.id, userId: user.id },
+      });
+
+      logger.info("Acquisto completato con crediti (nessun Stripe)", {
+        tripId: trip.id,
+        creditAppliedCents: applied,
+      });
+
+      return {
+        fullyPaidByCredit: true as const,
+        creditAppliedCents: applied,
+        originalAmountCents: fullAmountCents,
+        amountCents: 0,
+      };
+    }
+
+    /* ── SCENARIO B/C: Stripe (con eventuale sconto crediti) ── */
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       success_url:
@@ -48,19 +192,22 @@ export class BillingService {
         tripId: trip.id,
         appUserId: user.id,
         paymentType: "purchase",
+        ...(creditToApplyCents > 0
+          ? { creditApplyCents: String(creditToApplyCents) }
+          : {}),
       },
       line_items: [
         {
           quantity: 1,
           price_data: {
             currency: config.billing.currency,
-            unit_amount: amount,
+            unit_amount: stripeAmountCents,
             product_data: {
-              name:
-                trip.tripType === "gruppo"
-                  ? "EasyTrip — Viaggio Gruppo"
-                  : "EasyTrip — Viaggio Solo/Coppia",
-              description: `${trip.destination} (${toDateOnlyIsoUtc(trip.startDate)} - ${toDateOnlyIsoUtc(trip.endDate)})`,
+              name: productName,
+              description:
+                creditToApplyCents > 0
+                  ? `${description} — sconto crediti €${(creditToApplyCents / 100).toFixed(2)}`
+                  : description,
             },
           },
         },
@@ -72,6 +219,146 @@ export class BillingService {
         "Checkout URL non disponibile",
         500,
         "CHECKOUT_URL_MISSING"
+      );
+    }
+
+    return {
+      checkoutUrl: session.url,
+      sessionId: session.id,
+      amountCents: stripeAmountCents,
+      creditAppliedCents: creditToApplyCents,
+      originalAmountCents: fullAmountCents,
+    };
+  }
+
+  /**
+   * Checkout €1,99 per rigenerazioni versione 5–7 (dopo le 3 gratuite).
+   */
+  async createRegenCheckoutSession(input: RegenCheckoutInput) {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const trip = await this.tripRepository.findByIdAndOrganizer(input.tripId, user.id);
+
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    if (trip.amountPaid == null) {
+      throw new AppError(
+        "Acquista prima il viaggio principale",
+        400,
+        "TRIP_NOT_PAID"
+      );
+    }
+
+    if (!isPaidRegeneration(trip.regenCount)) {
+      throw new AppError(
+        "Questa rigenerazione è gratuita: usa il pulsante «Rigenera» senza pagamento.",
+        400,
+        "REGEN_NOT_PAID_TIER"
+      );
+    }
+
+    const amount = config.billing.priceRegenCents;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      success_url:
+        input.successUrl ??
+        `${config.app.baseUrl}/app/trips/${trip.id}?regen=success`,
+      cancel_url:
+        input.cancelUrl ??
+        `${config.app.baseUrl}/app/trips/${trip.id}?regen=cancel`,
+      customer_email: user.email,
+      metadata: {
+        tripId: trip.id,
+        appUserId: user.id,
+        paymentType: "regen",
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: config.billing.currency,
+            unit_amount: amount,
+            product_data: {
+              name: "EasyTrip — Rigenerazione itinerario",
+              description: `Rigenerazione a pagamento — ${trip.destination}`,
+            },
+          },
+        },
+      ],
+    });
+
+    if (!session.url) {
+      throw new AppError(
+        "Checkout URL non disponibile",
+        500,
+        "CHECKOUT_URL_MISSING"
+      );
+    }
+
+    return {
+      checkoutUrl: session.url,
+      sessionId: session.id,
+      amountCents: amount,
+    };
+  }
+
+  /**
+   * Checkout €2,90 per riattivare l'accesso post-trip (estende di 30 giorni).
+   */
+  async createReactivateCheckoutSession(input: ReactivateCheckoutInput) {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const trip = await this.tripRepository.findByIdAndOrganizer(input.tripId, user.id);
+
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    if (trip.accessExpiresAt > new Date()) {
+      throw new AppError(
+        "L'accesso è ancora attivo, non serve la riattivazione.",
+        400,
+        "ACCESS_STILL_ACTIVE",
+      );
+    }
+
+    const amount = config.billing.priceReactivateCents;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      success_url:
+        input.successUrl ??
+        `${config.app.baseUrl}/app/trips/${trip.id}?reactivate=success`,
+      cancel_url:
+        input.cancelUrl ??
+        `${config.app.baseUrl}/app/trips/${trip.id}?reactivate=cancel`,
+      customer_email: user.email,
+      metadata: {
+        tripId: trip.id,
+        appUserId: user.id,
+        paymentType: "reactivate",
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: config.billing.currency,
+            unit_amount: amount,
+            product_data: {
+              name: "EasyTrip — Riattivazione accesso",
+              description: `Rileggi i ricordi di ${trip.destination} (30 giorni extra)`,
+            },
+          },
+        },
+      ],
+    });
+
+    if (!session.url) {
+      throw new AppError(
+        "Checkout URL non disponibile",
+        500,
+        "CHECKOUT_URL_MISSING",
       );
     }
 
@@ -106,7 +393,8 @@ export class BillingService {
       const session = event.data.object as Stripe.Checkout.Session;
       const tripId = session.metadata?.tripId;
       const appUserId = session.metadata?.appUserId;
-      /** Preferiamo il Payment Intent come riferimento pagamento; altrimenti l’id sessione checkout. */
+      const paymentType = session.metadata?.paymentType ?? "purchase";
+
       const stripePaymentId =
         typeof session.payment_intent === "string"
           ? session.payment_intent
@@ -120,36 +408,117 @@ export class BillingService {
         );
       }
 
+      const existingPayment =
+        await this.paymentRepository.findByStripePaymentId(stripePaymentId);
+      if (existingPayment) {
+        logger.info("Webhook Stripe idempotente (pagamento già registrato)", {
+          tripId,
+          stripeEventId: event.id,
+        });
+        return { received: true, skipped: "duplicate_payment" as const };
+      }
+
       const trip = await this.tripRepository.findById(tripId);
       if (!trip) {
         throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
       }
 
+      if (paymentType === "regen") {
+        if (trip.amountPaid == null) {
+          throw new AppError("Trip non acquistato", 400, "TRIP_NOT_PAID");
+        }
+
+        const amount = (session.amount_total ?? 0) / 100;
+        await this.paymentRepository.create({
+          userId: appUserId,
+          tripId,
+          type: "regen",
+          stripePaymentId,
+          amount,
+        });
+
+        await inngest.send({
+          name: "trip/generate.requested",
+          data: { tripId, userId: appUserId },
+        });
+
+        return { received: true };
+      }
+
+      if (paymentType === "reactivate") {
+        const amount = (session.amount_total ?? 0) / 100;
+        await this.paymentRepository.create({
+          userId: appUserId,
+          tripId,
+          type: "reactivate",
+          stripePaymentId,
+          amount,
+        });
+
+        await this.tripRepository.extendAccess(tripId, 30);
+
+        logger.info("Accesso riattivato (+30 giorni)", { tripId });
+        return { received: true };
+      }
+
       /**
-       * Idempotenza: Stripe può inviare lo stesso evento più volte (retry).
-       * Se il viaggio risulta già pagato, non duplichiamo Payment né reinviiamo Inngest.
+       * Acquisto iniziale viaggio
        */
       if (trip.paymentId != null && trip.amountPaid != null) {
-        logger.info("Webhook checkout già elaborato (idempotente)", {
+        logger.info("Webhook acquisto già elaborato (idempotente)", {
           tripId,
           stripeEventId: event.id,
         });
         return { received: true, skipped: "already_paid" as const };
       }
 
-      const amount = (session.amount_total ?? 0) / 100;
+      /* ── Applica crediti parziali se presenti nei metadata ── */
+      const creditApplyCents = parseInt(
+        session.metadata?.creditApplyCents ?? "0",
+        10,
+      );
+      if (creditApplyCents > 0) {
+        const applied = await this.applyCredits(
+          appUserId,
+          tripId,
+          creditApplyCents,
+        );
+        logger.info("Crediti applicati al checkout (parziale)", {
+          tripId,
+          requestedCents: creditApplyCents,
+          appliedCents: applied,
+        });
+      }
+
+      const stripeAmount = (session.amount_total ?? 0) / 100;
       await this.paymentRepository.create({
         userId: appUserId,
         tripId,
         type: "purchase",
         stripePaymentId,
-        amount,
+        amount: stripeAmount,
       });
 
       await this.tripRepository.markAsPaid(tripId, {
         paymentId: stripePaymentId,
-        amountPaid: amount,
+        amountPaid: stripeAmount,
       });
+
+      const organizer = await prisma.user.findUnique({
+        where: { id: appUserId },
+        select: { email: true },
+      });
+      if (organizer?.email) {
+        const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
+        await sendTransactionalEmail({
+          to: organizer.email,
+          subject: `Pagamento ricevuto — ${trip.destination}`,
+          html: purchaseConfirmedHtml({
+            destination: trip.destination,
+            tripUrl,
+          }),
+        });
+      }
 
       await inngest.send({
         name: "trip/generate.requested",
@@ -160,4 +529,3 @@ export class BillingService {
     return { received: true };
   }
 }
-

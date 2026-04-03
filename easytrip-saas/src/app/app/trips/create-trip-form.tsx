@@ -1,14 +1,23 @@
 "use client";
 
+import posthog from "posthog-js";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 type TripType = "solo" | "coppia" | "gruppo";
+type BudgetLevel = "economy" | "moderate" | "premium";
+
+const BUDGET_OPTIONS: { value: BudgetLevel; label: string; hint: string }[] = [
+  { value: "economy", label: "Economico", hint: "Street food, musei gratis, trasporti pubblici" },
+  { value: "moderate", label: "Standard", hint: "Equilibrio qualit\u00e0/prezzo, mix esperienze" },
+  { value: "premium", label: "Premium", hint: "Ristoranti top, tour privati, esperienze VIP" },
+];
 
 export function CreateTripForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [budgetLevel, setBudgetLevel] = useState<BudgetLevel>("moderate");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,6 +41,7 @@ export function CreateTripForm() {
           startDate,
           endDate,
           tripType,
+          budgetLevel,
           ...(styleRaw.length >= 2 ? { style: styleRaw } : {}),
         }),
       });
@@ -40,6 +50,13 @@ export function CreateTripForm() {
         setError(json.error?.message ?? "Impossibile creare il viaggio");
         return;
       }
+      posthog.capture("trip_created", {
+        destination,
+        tripType,
+        budgetLevel,
+        startDate,
+        endDate,
+      });
       form.reset();
       router.push(`/app/trips/${json.data.id}`);
       router.refresh();
@@ -129,6 +146,37 @@ export function CreateTripForm() {
             className="mt-1.5 w-full rounded-xl border border-et-border bg-et-deep px-3 py-2.5 text-sm text-et-ink placeholder:text-et-ink/40 outline-none focus:border-et-accent/50"
           />
         </div>
+
+        <fieldset className="sm:col-span-2">
+          <legend className="block text-xs font-semibold uppercase tracking-wider text-et-accent/88">
+            Budget
+          </legend>
+          <div className="mt-1.5 flex gap-2">
+            {BUDGET_OPTIONS.map((opt) => {
+              const active = budgetLevel === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setBudgetLevel(opt.value)}
+                  title={opt.hint}
+                  className={[
+                    "min-h-[44px] flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer",
+                    "focus:outline-none focus:ring-2 focus:ring-et-accent/50 focus:ring-offset-1 focus:ring-offset-et-deep",
+                    active
+                      ? "border-et-accent bg-et-accent/15 text-et-accent"
+                      : "border-et-border bg-et-deep text-et-ink/60 hover:border-et-accent/30 hover:text-et-ink/80",
+                  ].join(" ")}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-xs text-et-ink/45">
+            {BUDGET_OPTIONS.find((o) => o.value === budgetLevel)?.hint}
+          </p>
+        </fieldset>
       </div>
 
       {error ? (

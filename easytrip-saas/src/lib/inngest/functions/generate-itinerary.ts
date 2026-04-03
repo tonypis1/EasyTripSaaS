@@ -2,11 +2,19 @@ import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
 import {
   addCalendarDaysUtc,
+  dayOfWeekItalian,
   inclusiveCalendarDaysBetweenUtc,
+  toDateOnlyIsoUtc,
 } from "@/lib/calendar-date";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
 import { z } from "zod";
+import {
+  itineraryReadyHtml,
+  sendTransactionalEmail,
+} from "@/lib/email/transactional";
+import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
+import { config } from "@/config/unifiedConfig";
 
 type DaySlot = {
   title: string;
@@ -14,15 +22,38 @@ type DaySlot = {
   why: string;
   startTime: string;
   endTime: string;
+  durationMin: number;
+  googleMapsQuery: string;
+  bookingLink: string | null;
   tips: string[];
+  lat: number | null;
+  lng: number | null;
 };
 
-type DayPlan = {
+type RestaurantEntry = {
+  meal: "pranzo" | "cena";
+  name: string;
+  cuisine: string;
+  why: string;
+  budgetHint: string;
+  distance: string;
+  reservationNeeded: boolean;
+  reservationTip: string;
+};
+
+type DayPlanExtended = {
   dayNumber: number;
   title: string;
   morning: DaySlot;
   afternoon: DaySlot;
   evening: DaySlot;
+  zoneFocus: string;
+  dowWarning: string;
+  localGem: string;
+  tips: string;
+  mapCenterLat: number | null;
+  mapCenterLng: number | null;
+  restaurants: RestaurantEntry[];
 };
 
 /** Dati trip serializzabili tra gli step Inngest (JSON). */
@@ -33,60 +64,132 @@ type TripSnapshot = {
   endDateIso: string;
   tripType: string;
   style: string | null;
+  budgetLevel: string;
   regenCount: number;
+  usedZones: string | null;
 };
 
-function buildPrompt(args: {
+function buildSystemPrompt(): string {
+  return [
+    "Sei un travel planner locale esperto.",
+    "Rispondi sempre e solo con JSON valido, senza markdown e senza testo fuori dal JSON.",
+  ].join(" ");
+}
+
+/**
+ * Genera la riga di calendario per ogni giorno del viaggio.
+ * Es: "  Giorno 1 (2026-03-30): lunedì"
+ */
+function buildDayCalendar(startDate: Date, numDays: number): string {
+  const lines: string[] = [];
+  for (let i = 0; i < numDays; i++) {
+    const d = addCalendarDaysUtc(startDate, i);
+    const iso = toDateOnlyIsoUtc(d);
+    const dow = dayOfWeekItalian(d);
+    lines.push(`  Giorno ${i + 1} (${iso}): ${dow}`);
+  }
+  return lines.join("\n");
+}
+
+const BUDGET_PROMPT_MAP: Record<string, string> = {
+  economy:
+    "BUDGET BASSO — Privilegia: street food, mercati locali, musei gratuiti o a basso costo, trasporti pubblici, parchi. Nei ristoranti suggerisci opzioni economiche. Evita esperienze costose.",
+  moderate:
+    "BUDGET MEDIO — Equilibrio qualità/prezzo: mix di ristoranti mid-range e trattorie locali, attrazioni principali con biglietto, qualche esperienza speciale. Non serve risparmiare su tutto.",
+  premium:
+    "BUDGET ALTO — Privilegia: ristoranti rinomati, tour privati o con guida, esperienze esclusive, ingressi VIP/salta-fila, cocktail bar, roof-top. L'utente vuole il meglio.",
+};
+
+function buildUserPrompt(args: {
   destination: string;
   startDate: string;
   endDate: string;
   tripType: string;
   style: string | null;
+  budgetLevel: string;
   numDays: number;
-}) {
+  dayCalendar: string;
+  usedZones: string | null;
+}): string {
+  const usedBlock =
+    args.usedZones && args.usedZones.trim().length > 0
+      ? `
+CONTESTO — ZONE GIÀ USATE (rigenerazione)
+Evita di ripetere le stesse combinazioni di quartieri; varia rispetto a:
+${args.usedZones}
+`
+      : "";
+
+  const budgetInstruction =
+    BUDGET_PROMPT_MAP[args.budgetLevel] ?? BUDGET_PROMPT_MAP.moderate;
+
   return `
-Sei un travel planner locale esperto della destinazione.
-Genera un itinerario pratico, realistico e geograficamente coerente.
+SEZIONE — CONTESTO
+Pianifica un itinerario realistico e geograficamente coerente per la destinazione indicata.
 
-INPUT
+SEZIONE — INPUT
 - Destinazione: ${args.destination}
-- Date: ${args.startDate} -> ${args.endDate}
-- Numero giorni: ${args.numDays}
+- Intervallo date: ${args.startDate} → ${args.endDate}
+- Numero giorni calendario: ${args.numDays}
 - Tipologia viaggio: ${args.tripType}
-- Stile: ${args.style ?? "non specificato"}
+- Stile preferenze: ${args.style ?? "non specificato"}
+- Livello budget: ${args.budgetLevel}
 
-OUTPUT RICHIESTO
-Rispondi SOLO con JSON valido (niente testo extra), con questa forma:
-{
-  "days": [
-    {
-      "dayNumber": 1,
-      "title": "Titolo sintetico giorno",
-      "morning": {
-        "title": "Attivita mattina",
-        "place": "Zona/indirizzo sintetico",
-        "why": "Perche e adatta al profilo utente",
-        "startTime": "09:00",
-        "endTime": "12:00",
-        "tips": ["Tip 1", "Tip 2"]
-      },
-      "afternoon": { ...stessa forma... },
-      "evening": { ...stessa forma... }
-    }
-  ]
-}
+CALENDARIO GIORNALIERO (giorno della settimana per ogni data):
+${args.dayCalendar}
 
-REGOLE
-- Crea esattamente ${args.numDays} elementi in "days".
-- dayNumber progressivo da 1 a ${args.numDays}.
-- Per ogni slot (morning/afternoon/evening): "title" = nome breve e riconoscibile del punto di interesse nella destinazione (es. "Duomo", "Museo Diocesano", "centro storico"); "place" = zona, quartiere o dettaglio geografico (strada/quartiere), senza sostituire il nome del POI che sta in "title".
-- Orari realistici e non sovrapposti (formato HH:mm). Inserisci un buffer di trasferimento (10-30 minuti) tra luogo e luogo.
-- Suggerisci luoghi realmente plausibili per ${args.destination}.
-- Indoor/Outdoor: almeno 1 slot per giorno deve includere un'opzione al coperto (pioggia) e un'opzione outdoor (se bel tempo).
-- Metti in "tips" almeno:
-  1) un consiglio meteo (pioggia/caldo) per quello slot,
-  2) un micro-budget (es. "economico: ...", "media spesa: ...") senza prezzi numerici inventati.
-- Testi in italiano semplice, utili e concreti (niente descrizioni vaghe).
+SEZIONE — ISTRUZIONI BUDGET
+${budgetInstruction}
+${usedBlock}
+
+SEZIONE — OUTPUT ATTESO
+Rispondi con un unico oggetto JSON con:
+- "optimizationScore": numero da 1 a 10 (quanto l'itinerario è ottimizzato per ridurre spostamenti inutili tra mattina, pomeriggio e sera nello stesso giorno).
+- "days": array di esattamente ${args.numDays} oggetti giorno.
+
+Ogni elemento di "days" deve contenere:
+- "dayNumber", "title"
+- "zoneFocus": quartiere/zona principale del giorno (per tracciare diversità tra rigenerazioni)
+- "dowWarning": usa il CALENDARIO GIORNALIERO sopra per verificare il giorno della settimana effettivo. Se quel giorno cade di lunedì, domenica o festivo e un POI scelto potrebbe essere chiuso, scrivi un avviso specifico (es. "Lunedì: molti musei chiusi, verifica orari"). Se non ci sono rischi, stringa vuota "".
+- "localGem": un suggerimento "da locale" (piccolo luogo o consiglio non ovvio)
+- "tips": stringa con consigli trasversali al giorno (non duplicare i singoli slot)
+- "mapCenterLat", "mapCenterLng": coordinate approssimative del centro della zona giornata (decimali WGS84; stima plausibile)
+- "restaurants": array di esattamente 2–4 oggetti ristorante, con pranzo e cena SEPARATI. Ogni oggetto ha questi campi:
+  - "meal": "pranzo" oppure "cena" (almeno 1 pranzo e almeno 1 cena per giorno)
+  - "name": nome reale del ristorante/trattoria/locale
+  - "cuisine": tipo di cucina in poche parole (es. "trattoria romana", "sushi fusion", "pizza napoletana")
+  - "why": perché è consigliato, specifico e concreto (non generico)
+  - "budgetHint": fascia di prezzo per persona (es. "€12-18/persona", "€25-35/persona")
+  - "distance": distanza approssimativa dalla zona delle attività del giorno (es. "150m dal Pantheon", "5 min a piedi da Piazza Navona")
+  - "reservationNeeded": booleano true/false — true se il locale è popolare, piccolo, o chiude presto; false se accetta walk-in facilmente
+  - "reservationTip": se reservationNeeded=true, scrivi come prenotare (es. "Prenota su TheFork 1-2gg prima", "Chiama al mattino"); se false, stringa vuota ""
+  Esempio di un singolo oggetto ristorante:
+  { "meal": "pranzo", "name": "Trattoria Da Enzo", "cuisine": "cucina romana tradizionale", "why": "Cacio e pepe tra i migliori di Trastevere, porzioni generose", "budgetHint": "€12-16/persona", "distance": "100m da Piazza Santa Maria", "reservationNeeded": true, "reservationTip": "Arriva prima delle 12:30 o fila di 20+ min" }
+  NON inventare ristoranti inesistenti: usa solo nomi di locali reali e noti della destinazione. Se non sei sicuro di un nome specifico, descrivi il tipo di locale e la zona.
+- "morning", "afternoon", "evening": ogni slot deve contenere:
+  - "title": nome breve del POI
+  - "place": quartiere/strada
+  - "why": perché è consigliato
+  - "startTime": orario inizio HH:mm
+  - "endTime": orario fine HH:mm
+  - "durationMin": durata attività in minuti (intero). Calcolalo da startTime/endTime. Es: startTime="09:00" endTime="11:30" → durationMin=150
+  - "googleMapsQuery": query di ricerca pronta per Google Maps. Include il nome specifico del POI + città/quartiere. Es: "Colosseo Roma", "Museu Picasso Barcelona El Born", "Mercato di San Lorenzo Firenze". NON coordinate, solo nome leggibile + località.
+  - "bookingLink": URL diretto per prenotare o acquistare biglietti (sito ufficiale, GetYourGuide, Tiqets, TheFork, ecc.). Se il POI non richiede prenotazione o biglietto (passeggiata, piazza, parco), usa null. IMPORTANTE: usa SOLO URL reali. Se non sei sicuro, usa null.
+  - "tips": array di stringhe con consigli
+  - "lat": latitudine WGS84 del POI (decimale, es. 41.9029). Usa coordinate reali e precise del luogo specifico, NON del centro città.
+  - "lng": longitudine WGS84 del POI (decimale, es. 12.4534). Usa coordinate reali e precise del luogo specifico, NON del centro città.
+  IMPORTANTE per le coordinate: ogni slot DEVE avere "lat" e "lng" con le coordinate reali del POI. Se non conosci le coordinate esatte, stima la posizione nel quartiere corretto. NON usare null e NON usare le stesse coordinate per tutti gli slot.
+  Esempio completo di un singolo slot:
+  { "title": "Colosseo", "place": "Rione Monti", "why": "Simbolo di Roma, imperdibile al mattino prima della folla", "startTime": "09:00", "endTime": "11:30", "durationMin": 150, "googleMapsQuery": "Colosseo Roma", "bookingLink": null, "tips": ["Arrivo ore 8:45 per evitare la coda", "Porta acqua"], "lat": 41.8902, "lng": 12.4922 }
+
+SEZIONE — REGOLE
+- "dayNumber" progressivo da 1 a ${args.numDays}.
+- Per ogni slot: "title" = nome breve del POI; "place" = quartiere/strada senza sostituire il nome in "title".
+- Orari HH:mm, non sovrapposti, con buffer di spostamento 10–30 minuti tra slot consecutivi.
+- Indoor/outdoor: in ogni giorno almeno uno slot adatto alla pioggia e uno all'aperto.
+- In "tips" di ogni slot includi almeno un accenno meteo e un micro-budget qualitativo (senza prezzi inventati).
+- IMPORTANTE: consulta il CALENDARIO GIORNALIERO per sapere il giorno della settimana di ogni giornata. NON calcolare i giorni da solo. Usa questa informazione per: (a) evitare di suggerire POI chiusi quel giorno; (b) compilare "dowWarning" con avvisi concreti; (c) preferire attività adatte al weekend se il giorno cade di sabato o domenica.
+- Testi in italiano chiaro e concreto.
 `.trim();
 }
 
@@ -98,6 +201,17 @@ function extractJsonText(raw: string): string {
   if (m) return m[1].trim();
   return trimmed;
 }
+
+const RestaurantEntrySchema = z.object({
+  meal: z.enum(["pranzo", "cena"]),
+  name: z.string().min(1),
+  cuisine: z.string().min(1),
+  why: z.string().min(1),
+  budgetHint: z.string().min(1),
+  distance: z.string().min(1),
+  reservationNeeded: z.boolean(),
+  reservationTip: z.string().default(""),
+});
 
 const DaySlotSchema = z.object({
   title: z.string().min(1),
@@ -117,25 +231,38 @@ const DaySlotSchema = z.object({
       const [h, m] = s.split(":");
       return `${String(h).padStart(2, "0")}:${m}`;
     }),
+  durationMin: z.coerce.number().int().min(10).max(600),
+  googleMapsQuery: z.string().min(3),
+  bookingLink: z.union([z.string().url(), z.null()]).default(null),
   tips: z.array(z.string().min(1)).min(1).max(6),
+  lat: z.union([z.number(), z.null()]).default(null),
+  lng: z.union([z.number(), z.null()]).default(null),
 });
 
-const DayPlanSchema = z.object({
+const DayPlanExtendedSchema = z.object({
   dayNumber: z.coerce.number().int().min(1),
   title: z.string().min(1),
   morning: DaySlotSchema,
   afternoon: DaySlotSchema,
   evening: DaySlotSchema,
+  zoneFocus: z.string().min(1),
+  dowWarning: z.string().default(""),
+  localGem: z.string().default(""),
+  tips: z.string().default(""),
+  mapCenterLat: z.union([z.number(), z.null()]),
+  mapCenterLng: z.union([z.number(), z.null()]),
+  restaurants: z.array(RestaurantEntrySchema).min(2).max(4),
 });
 
 const ModelResponseSchema = z.object({
-  days: z.array(DayPlanSchema),
+  optimizationScore: z.coerce.number().min(1).max(10),
+  days: z.array(DayPlanExtendedSchema),
 });
 
 function parseAndValidateModelJson(
   raw: string,
   numDays: number
-): { days: DayPlan[] } {
+): { optimizationScore: number; days: DayPlanExtended[] } {
   const text = extractJsonText(raw);
   let parsed: unknown;
   try {
@@ -149,34 +276,32 @@ function parseAndValidateModelJson(
     throw new Error(
       `Schema non valido: ${check.error.issues
         .map((i) => i.message)
-        .slice(0, 3)
+        .slice(0, 4)
         .join("; ")}`
     );
   }
 
-  const days = check.data.days as unknown as DayPlan[];
+  const { optimizationScore, days } = check.data;
   if (days.length !== numDays) {
     throw new Error(
       `Numero giorni non valido: attesi ${numDays}, ottenuti ${days.length}`
     );
   }
 
-  const byNum = new Map<number, DayPlan>();
-  for (const d of days) byNum.set(d.dayNumber, d);
+  const byNum = new Map<number, DayPlanExtended>();
+  for (const d of days) byNum.set(d.dayNumber, d as DayPlanExtended);
   for (let i = 1; i <= numDays; i++) {
     if (!byNum.has(i)) throw new Error(`Manca dayNumber=${i}`);
   }
 
   return {
-    days: Array.from(
-      { length: numDays },
-      (_, idx) => byNum.get(idx + 1)!
-    ),
+    optimizationScore,
+    days: Array.from({ length: numDays }, (_, idx) => byNum.get(idx + 1)!),
   };
 }
 
 function buildRepairPrompt(
-  basePrompt: string,
+  baseUserPrompt: string,
   previousRaw: string,
   reason: string
 ) {
@@ -186,7 +311,7 @@ Motivo: ${reason}
 
 Rigenera SOLO JSON valido che rispetta esattamente il formato richiesto.
 
-${basePrompt}
+${baseUserPrompt}
 
 RISPOSTA PRECEDENTE (da correggere):
 ${previousRaw}
@@ -200,7 +325,12 @@ function fallbackSlot(label: string): DaySlot {
     why: "Contenuto in rigenerazione",
     startTime: "09:00",
     endTime: "11:00",
+    durationMin: 120,
+    googleMapsQuery: label,
+    bookingLink: null,
     tips: ["Riprova la generazione tra poco"],
+    lat: null,
+    lng: null,
   };
 }
 
@@ -210,11 +340,6 @@ export const generateItinerary = inngest.createFunction(
     name: "Genera itinerario EasyTrip",
     retries: 3,
     triggers: [{ event: "trip/generate.requested" }],
-    /**
-     * Il Dev Server locale e spesso le piattaforme hanno limiti stretti sul tempo
-     * di una singola richiesta HTTP verso /api/inngest: usare step.run spezza il lavoro.
-     * finish evita che run lunghe vengano annullate prima del completamento.
-     */
     timeouts: { finish: "15m" },
   },
   async ({ event, events, step }) => {
@@ -234,7 +359,9 @@ export const generateItinerary = inngest.createFunction(
         endDateIso: t.endDate.toISOString(),
         tripType: t.tripType,
         style: t.style,
+        budgetLevel: t.budgetLevel ?? "moderate",
         regenCount: t.regenCount ?? 0,
+        usedZones: t.usedZones,
       };
     });
 
@@ -242,16 +369,22 @@ export const generateItinerary = inngest.createFunction(
     const endDate = new Date(trip.endDateIso);
     const numDays = inclusiveCalendarDaysBetweenUtc(startDate, endDate);
 
-    const days = await step.run(
+    const gen = await step.run(
       "genera-con-claude",
-      async (): Promise<DayPlan[]> => {
-        const basePrompt = buildPrompt({
+      async (): Promise<{
+        optimizationScore: number;
+        days: DayPlanExtended[];
+      }> => {
+        const userPrompt = buildUserPrompt({
           destination: trip.destination,
           startDate: startDate.toISOString().slice(0, 10),
           endDate: endDate.toISOString().slice(0, 10),
           tripType: trip.tripType,
           style: trip.style,
+          budgetLevel: trip.budgetLevel,
           numDays,
+          dayCalendar: buildDayCalendar(startDate, numDays),
+          usedZones: trip.usedZones,
         });
 
         const maxAttempts = 3;
@@ -261,11 +394,10 @@ export const generateItinerary = inngest.createFunction(
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
           const response = await anthropic.messages.create({
             model: ANTHROPIC_MODEL,
-            max_tokens: 10000,
+            max_tokens: 12000,
             temperature: attempt === 1 ? 0.35 : 0.2,
-            system:
-              "Rispondi sempre solo con JSON valido, senza markdown e senza testo extra.",
-            messages: [{ role: "user", content: basePrompt }],
+            system: buildSystemPrompt(),
+            messages: [{ role: "user", content: userPrompt }],
           });
 
           const textBlock = response.content.find((c) => c.type === "text");
@@ -276,26 +408,19 @@ export const generateItinerary = inngest.createFunction(
           lastRaw = textBlock.text;
 
           try {
-            const ai = parseAndValidateModelJson(lastRaw, numDays);
-            return ai.days;
+            return parseAndValidateModelJson(lastRaw, numDays);
           } catch (e) {
             lastErr = e;
             if (attempt === maxAttempts) break;
 
             const reason = e instanceof Error ? e.message : "errore sconosciuto";
-            const repairPrompt = buildRepairPrompt(
-              basePrompt,
-              lastRaw,
-              reason
-            );
+            const repairPrompt = buildRepairPrompt(userPrompt, lastRaw, reason);
 
-            // Secondo tentativo: usiamo un prompt di correzione
             const repairResponse = await anthropic.messages.create({
               model: ANTHROPIC_MODEL,
-              max_tokens: 10000,
+              max_tokens: 12000,
               temperature: 0.2,
-              system:
-                "Rispondi sempre solo con JSON valido, senza markdown e senza testo extra.",
+              system: buildSystemPrompt(),
               messages: [{ role: "user", content: repairPrompt }],
             });
 
@@ -310,8 +435,7 @@ export const generateItinerary = inngest.createFunction(
 
             lastRaw = repairTextBlock.text;
             try {
-              const ai = parseAndValidateModelJson(lastRaw, numDays);
-              return ai.days;
+              return parseAndValidateModelJson(lastRaw, numDays);
             } catch (e2) {
               lastErr = e2;
               continue;
@@ -328,6 +452,7 @@ export const generateItinerary = inngest.createFunction(
 
     const result = await step.run("salva-versione-e-giorni", async () => {
       const versionNum = trip.regenCount + 1;
+      const { optimizationScore, days } = gen;
 
       await prisma.tripVersion.updateMany({
         where: { tripId: trip.id },
@@ -339,11 +464,15 @@ export const generateItinerary = inngest.createFunction(
           tripId: trip.id,
           versionNum,
           isActive: true,
+          geoScore: optimizationScore,
         },
       });
 
+      const zoneParts: string[] = [];
+
       for (const day of days) {
         const unlockDate = addCalendarDaysUtc(startDate, day.dayNumber - 1);
+        if (day.zoneFocus?.trim()) zoneParts.push(day.zoneFocus.trim());
 
         await prisma.day.create({
           data: {
@@ -360,9 +489,26 @@ export const generateItinerary = inngest.createFunction(
             evening: JSON.stringify(
               day.evening ?? fallbackSlot("Serata libera")
             ),
+            restaurants:
+              day.restaurants && day.restaurants.length > 0
+                ? JSON.stringify(day.restaurants)
+                : null,
+            mapCenterLat:
+              day.mapCenterLat != null ? day.mapCenterLat : null,
+            mapCenterLng:
+              day.mapCenterLng != null ? day.mapCenterLng : null,
+            zoneFocus: day.zoneFocus || null,
+            dowWarning: day.dowWarning || null,
+            localGem: day.localGem || null,
+            tips: day.tips || null,
           },
         });
       }
+
+      const usedZonesMerged = Array.from(new Set(zoneParts)).join(" | ");
+      const usedZonesCombined = [trip.usedZones, usedZonesMerged]
+        .filter((s) => s != null && String(s).trim().length > 0)
+        .join(" | ");
 
       await prisma.trip.update({
         where: { id: trip.id },
@@ -370,10 +516,32 @@ export const generateItinerary = inngest.createFunction(
           regenCount: versionNum,
           currentVersion: versionNum,
           status: "active",
+          usedZones: usedZonesCombined.length > 0 ? usedZonesCombined : null,
         },
       });
 
-      return { versionNum, daysCreated: numDays };
+      return { versionNum, daysCreated: numDays, optimizationScore };
+    });
+
+    await step.run("email-itinerario-pronto", async () => {
+      const full = await prisma.trip.findUnique({
+        where: { id: trip.id },
+        include: { organizer: { select: { email: true } } },
+      });
+      if (!full?.organizer?.email) return;
+
+      const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
+      const label = formatGeoScoreLabel(result.optimizationScore);
+
+      await sendTransactionalEmail({
+        to: full.organizer.email,
+        subject: `Itinerario pronto — ${full.destination}`,
+        html: itineraryReadyHtml({
+          destination: full.destination,
+          tripUrl,
+          geoScoreLabel: label,
+        }),
+      });
     });
 
     return { tripId: trip.id, ...result };

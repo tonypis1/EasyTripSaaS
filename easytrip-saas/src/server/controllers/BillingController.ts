@@ -1,6 +1,10 @@
 import { BaseController } from "@/server/controllers/BaseController";
 import { BillingService } from "@/server/services/billing/billingService";
-import { createCheckoutSchema } from "@/server/validators/billing.schema";
+import {
+  createCheckoutSchema,
+  createRegenCheckoutSchema,
+  createReactivateCheckoutSchema,
+} from "@/server/validators/billing.schema";
 import { AppError } from "@/server/errors/AppError";
 
 export class BillingController extends BaseController {
@@ -25,6 +29,41 @@ export class BillingController extends BaseController {
     }
   }
 
+  async createRegenCheckout(req: Request) {
+    try {
+      const body = await req.json();
+      const input = createRegenCheckoutSchema.parse(body);
+      const session = await this.billingService.createRegenCheckoutSession(input);
+      return this.ok(session, 201);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return this.fail(
+          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
+          "BillingController.createRegenCheckout"
+        );
+      }
+      return this.fail(error, "BillingController.createRegenCheckout");
+    }
+  }
+
+  async createReactivateCheckout(req: Request) {
+    try {
+      const body = await req.json();
+      const input = createReactivateCheckoutSchema.parse(body);
+      const session =
+        await this.billingService.createReactivateCheckoutSession(input);
+      return this.ok(session, 201);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return this.fail(
+          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
+          "BillingController.createReactivateCheckout",
+        );
+      }
+      return this.fail(error, "BillingController.createReactivateCheckout");
+    }
+  }
+
   async handleStripeWebhook(req: Request) {
     try {
       const rawBody = await req.text();
@@ -39,4 +78,3 @@ export class BillingController extends BaseController {
     }
   }
 }
-
