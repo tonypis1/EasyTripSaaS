@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { CreateTripInput } from "@/server/validators/trip.schema";
 
@@ -5,10 +6,16 @@ type CreateTripDbInput = CreateTripInput & {
   organizerId: string;
 };
 
+function generateToken(): string {
+  return randomBytes(16).toString("hex");
+}
+
 export class TripRepository {
   async create(input: CreateTripDbInput) {
     const accessExpiresAt = new Date(input.endDate);
     accessExpiresAt.setDate(accessExpiresAt.getDate() + 1);
+
+    const isGroup = input.tripType === "gruppo" || input.tripType === "coppia";
 
     return prisma.trip.create({
       data: {
@@ -21,6 +28,13 @@ export class TripRepository {
         style: input.style,
         budgetLevel: input.budgetLevel ?? "moderate",
         status: "pending",
+        inviteToken: isGroup ? generateToken() : null,
+        members: {
+          create: {
+            userId: input.organizerId,
+            role: "org",
+          },
+        },
       },
     });
   }
@@ -65,6 +79,10 @@ export class TripRepository {
           include: {
             days: { orderBy: { dayNumber: "asc" } },
           },
+        },
+        members: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+          orderBy: { joinedAt: "asc" },
         },
       },
     });
@@ -274,5 +292,71 @@ export class TripRepository {
     });
     if (result.count === 0) return { deleted: false as const };
     return { deleted: true as const };
+  }
+
+  async findByInviteToken(token: string) {
+    return prisma.trip.findUnique({
+      where: { inviteToken: token },
+      include: {
+        organizer: { select: { name: true, email: true } },
+        members: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+        },
+      },
+    });
+  }
+
+  async addMember(tripId: string, userId: string) {
+    return prisma.tripMember.create({
+      data: { tripId, userId, role: "member" },
+    });
+  }
+
+  async isMember(tripId: string, userId: string) {
+    const m = await prisma.tripMember.findUnique({
+      where: { tripId_userId: { tripId, userId } },
+    });
+    return Boolean(m);
+  }
+
+  async getMembers(tripId: string) {
+    return prisma.tripMember.findMany({
+      where: { tripId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { joinedAt: "asc" },
+    });
+  }
+
+  async findDetailForMember(tripId: string, userId: string) {
+    const membership = await prisma.tripMember.findUnique({
+      where: { tripId_userId: { tripId, userId } },
+    });
+    if (!membership) return null;
+
+    return prisma.trip.findFirst({
+      where: { id: tripId, deletedAt: null },
+      include: {
+        versions: {
+          orderBy: { versionNum: "asc" },
+          include: {
+            days: { orderBy: { dayNumber: "asc" } },
+          },
+        },
+        members: {
+          include: { user: { select: { id: true, name: true, email: true } } },
+          orderBy: { joinedAt: "asc" },
+        },
+      },
+    });
+  }
+
+  async generateInviteToken(tripId: string, organizerId: string) {
+    const token = generateToken();
+    const result = await prisma.trip.updateMany({
+      where: { id: tripId, organizerId, deletedAt: null },
+      data: { inviteToken: token },
+    });
+    if (result.count === 0) return null;
+    return token;
   }
 }

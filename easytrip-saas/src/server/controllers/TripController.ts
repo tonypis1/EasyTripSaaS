@@ -1,12 +1,14 @@
 import { BaseController } from "@/server/controllers/BaseController";
 import { TripService } from "@/server/services/trip/tripService";
 import { SlotReplaceService } from "@/server/services/trip/slotReplaceService";
+import { LiveSuggestService } from "@/server/services/trip/liveSuggestService";
 import { AuthService } from "@/server/services/auth/authService";
-import { createTripSchema } from "@/server/validators/trip.schema";
 import {
+  createTripSchema,
   replaceSlotSchema,
   setActiveVersionSchema,
   updatePreferencesSchema,
+  liveSuggestSchema,
 } from "@/server/validators/trip.schema";
 import { AppError } from "@/server/errors/AppError";
 
@@ -14,7 +16,8 @@ export class TripController extends BaseController {
   constructor(
     private readonly tripService: TripService,
     private readonly authService: AuthService,
-    private readonly slotReplaceService: SlotReplaceService
+    private readonly slotReplaceService: SlotReplaceService,
+    private readonly liveSuggestService: LiveSuggestService,
   ) {
     super();
   }
@@ -131,6 +134,32 @@ export class TripController extends BaseController {
     }
   }
 
+  async liveSuggest(tripId: string, req: Request) {
+    try {
+      const body = await req.json();
+      const parsed = liveSuggestSchema.parse(body);
+      const user = await this.authService.getOrCreateCurrentUser();
+      const result = await this.liveSuggestService.suggest({
+        organizerId: user.id,
+        tripId,
+        dayId: parsed.dayId,
+        lat: parsed.lat,
+        lng: parsed.lng,
+        reason: parsed.reason,
+        currentSlot: parsed.currentSlot ?? null,
+      });
+      return this.ok(result);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return this.fail(
+          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
+          "TripController.liveSuggest",
+        );
+      }
+      return this.fail(error, "TripController.liveSuggest");
+    }
+  }
+
   async updatePreferences(tripId: string, req: Request) {
     try {
       const body = await req.json();
@@ -145,6 +174,33 @@ export class TripController extends BaseController {
         );
       }
       return this.fail(error, "TripController.updatePreferences");
+    }
+  }
+
+  async getInviteLink(tripId: string) {
+    try {
+      const result = await this.tripService.getInviteLink(tripId);
+      return this.ok(result);
+    } catch (error) {
+      return this.fail(error, "TripController.getInviteLink");
+    }
+  }
+
+  async getTripByToken(token: string) {
+    try {
+      const result = await this.tripService.getTripByToken(token);
+      return this.ok(result);
+    } catch (error) {
+      return this.fail(error, "TripController.getTripByToken");
+    }
+  }
+
+  async joinTripByToken(token: string) {
+    try {
+      const result = await this.tripService.joinTripByToken(token);
+      return this.ok(result);
+    } catch (error) {
+      return this.fail(error, "TripController.joinTripByToken");
     }
   }
 }

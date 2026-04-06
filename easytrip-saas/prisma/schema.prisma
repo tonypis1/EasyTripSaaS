@@ -38,6 +38,8 @@ model User {
   email             String
   name              String?
   creditBalance     Decimal   @default(0) @map("credit_balance") @db.Decimal(10, 2)
+  referralCode      String?   @unique @map("referral_code") // codice univoco per referral (es. ref_a7b3c9)
+  referredBy        String?   @map("referred_by") // referralCode di chi lo ha invitato
   planType          String?   @map("plan_type") // free | sub
   subExpiresAt      DateTime? @map("sub_expires_at")
   stripeCustomerId  String?   @map("stripe_customer_id")
@@ -45,10 +47,13 @@ model User {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  tripsAsOrganizer  Trip[]         @relation("OrganizerTrips")
+  tripsAsOrganizer  Trip[]           @relation("OrganizerTrips")
   tripMembers       TripMember[]
   credits           Credit[]
   payments          Payment[]
+  supportTickets    SupportTicket[]
+  referralsSent     Referral[]       @relation("ReferrerUser")
+  referralsReceived Referral[]       @relation("ReferredUser")
 }
 
 model Trip {
@@ -65,7 +70,8 @@ model Trip {
   regenCount      Int        @default(0) @map("regen_count") // 0..7
   currentVersion  Int        @default(1) @map("current_version") // carosello
   usedZones       String?   @map("used_zones") // zone_focus concatenate per rigenera
-  prefChangedAfterGen Boolean @default(false) @map("pref_changed_after_gen") // true se l'utente ha modificato preferenze dopo la prima generazione
+  prefChangedAfterGen Boolean @default(false) @map("pref_changed_after_gen")
+  inviteToken     String?   @unique @map("invite_token") // token unico per link invito gruppo
   paymentId       String?   @map("payment_id") // Stripe payment/session
   amountPaid      Decimal?  @map("amount_paid") @db.Decimal(10, 2)
   /// Soft-delete lato utente: il record resta in DB (pagamenti, versioni, audit / fiscale).
@@ -73,12 +79,14 @@ model Trip {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  organizer       User         @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
+  organizer       User            @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
   versions        TripVersion[]
   members         TripMember[]
-  credits         Credit[]     @relation("CreditOrigin")
-  creditsUsed     Credit[]     @relation("CreditUsed")
+  expenses        Expense[]
+  credits         Credit[]        @relation("CreditOrigin")
+  creditsUsed     Credit[]        @relation("CreditUsed")
   payments        Payment[]
+  supportTickets  SupportTicket[]
 }
 
 model TripVersion {
@@ -119,12 +127,38 @@ model TripMember {
   tripId    String   @map("trip_id")
   userId    String   @map("user_id")
   role      String   // org | member
+  balance   Decimal  @default(0) @db.Decimal(10, 2) // positivo = deve ricevere, negativo = deve dare
+  totalPaid Decimal  @default(0) @map("total_paid") @db.Decimal(10, 2) // totale pagato per spese condivise
   joinedAt  DateTime @default(now()) @map("joined_at")
 
-  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[] @relation("ExpensePaidBy")
 
   @@unique([tripId, userId])
+}
+
+enum ExpenseCategory {
+  cibo
+  trasporti
+  attivita
+  alloggio
+  altro
+}
+
+model Expense {
+  id           String          @id @default(cuid())
+  tripId       String          @map("trip_id")
+  paidById     String          @map("paid_by_id")
+  amount       Decimal         @db.Decimal(10, 2)
+  description  String
+  category     ExpenseCategory @default(altro)
+  splitEqually Boolean         @default(true) @map("split_equally")
+  dayNumber    Int?            @map("day_number")
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  trip   Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  paidBy TripMember @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
 }
 
 model Payment {
@@ -150,7 +184,92 @@ model Credit {
   usedOnTripId  String?   @map("used_on_trip_id")
   createdAt    DateTime  @default(now()) @map("created_at")
 
-  user        User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  originTrip  Trip? @relation("CreditOrigin", fields: [originTripId], references: [id])
-  usedOnTrip  Trip? @relation("CreditUsed", fields: [usedOnTripId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originTrip  Trip?      @relation("CreditOrigin", fields: [originTripId], references: [id])
+  usedOnTrip  Trip?      @relation("CreditUsed", fields: [usedOnTripId], references: [id])
+  referrals   Referral[]
+}
+
+// ========== SUPPORTO ==========
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum TicketChannel {
+  chat
+  email
+  in_app
+}
+
+model SupportTicket {
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  tripId      String?      @map("trip_id")
+  channel     TicketChannel @default(in_app)
+  status      TicketStatus  @default(open)
+  subject     String
+  crispSessionId String?   @map("crisp_session_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  resolvedAt  DateTime?    @map("resolved_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip     Trip?            @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  messages SupportMessage[]
+
+  @@map("support_ticket")
+}
+
+model SupportMessage {
+  id        String   @id @default(cuid())
+  ticketId  String   @map("ticket_id")
+  sender    String   // "user" | "agent" | "system"
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("support_message")
+}
+
+// ========== WAITLIST ==========
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  dripSent  Int      @default(0) @map("drip_sent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("waitlist_entry")
+}
+
+// ========== REFERRAL ==========
+
+enum ReferralStatus {
+  pending     // link condiviso, nessuna azione
+  signed_up   // l'invitato si è registrato
+  converted   // l'invitato ha pagato il primo trip
+}
+
+model Referral {
+  id              String         @id @default(cuid())
+  referrerId      String         @map("referrer_id")
+  referredUserId  String?        @map("referred_user_id")
+  referredEmail   String         @map("referred_email")
+  status          ReferralStatus @default(pending)
+  rewardGranted   Boolean        @default(false) @map("reward_granted")
+  rewardCreditId  String?        @map("reward_credit_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  convertedAt     DateTime?      @map("converted_at")
+
+  referrer     User    @relation("ReferrerUser", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser User?   @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: SetNull)
+  rewardCredit Credit? @relation(fields: [rewardCreditId], references: [id], onDelete: SetNull)
+
+  @@unique([referrerId, referredEmail])
+  @@map("referral")
 }

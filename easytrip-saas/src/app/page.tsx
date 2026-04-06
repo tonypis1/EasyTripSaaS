@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { getWaitlistStats } from "@/lib/waitlist-store";
+import { ReferralCapture } from "@/app/referral-tracker";
 
 export const metadata: Metadata = {
   title:
@@ -901,6 +903,9 @@ export default async function Home({
 
   return (
     <div className={`min-h-screen bg-et-deep text-et-ink`}>
+      <Suspense fallback={null}>
+        <ReferralCapture />
+      </Suspense>
       <Nav />
       {success ? (
         <div className="mx-auto max-w-6xl px-4 pt-4">

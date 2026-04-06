@@ -524,6 +524,13 @@ export class BillingService {
         name: "trip/generate.requested",
         data: { tripId, userId: appUserId },
       });
+
+      try {
+        const { container } = await import("@/server/di/container");
+        await container.services.referralService.tryGrantReward(appUserId);
+      } catch {
+        logger.warn("Referral reward check failed (non-blocking)", { appUserId });
+      }
     }
 
     return { received: true };

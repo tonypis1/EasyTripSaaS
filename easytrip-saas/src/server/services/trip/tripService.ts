@@ -51,6 +51,16 @@ export type TripVersionSummaryDto = {
   isActive: boolean;
 };
 
+export type TripMemberDto = {
+  id: string;
+  userId: string;
+  name: string | null;
+  email: string;
+  role: string;
+  balance: number;
+  totalPaid: number;
+};
+
 export type TripDetailDto = {
   id: string;
   destination: string;
@@ -66,6 +76,9 @@ export type TripDetailDto = {
   isPaid: boolean;
   userCreditBalanceCents: number;
   tripPriceCents: number;
+  inviteToken: string | null;
+  isOrganizer: boolean;
+  members: TripMemberDto[];
   days: TripDayDto[];
   versions: TripVersionSummaryDto[];
   activeGeoScore: number | null;
@@ -223,29 +236,20 @@ export class TripService {
   }
 
   async listMyTrips(): Promise<TripListItemDto[]> {
-    const user = await this.authService.getOrCreateCurrentUser();
-    const trips = await this.tripRepository.listByOrganizer(user.id);
-    return trips.map((trip: TripListItemDb) => ({
-      id: trip.id,
-      destination: trip.destination,
-      tripType: trip.tripType,
-      status: trip.status,
-      startDate: trip.startDate,
-      endDate: trip.endDate,
-      accessExpiresAt: trip.accessExpiresAt,
-      regenCount: trip.regenCount,
-      currentVersion: trip.currentVersion,
-      activeDays: trip.versions[0]?.days.length ?? 0,
-      isPaid: trip.amountPaid != null,
-    }));
+    return this.listMyTripsAndShared();
   }
 
   async getTripDetail(tripId: string): Promise<TripDetailDto> {
     const user = await this.authService.getOrCreateCurrentUser();
-    const trip = await this.tripRepository.findDetailForOrganizer(
+
+    let trip = await this.tripRepository.findDetailForOrganizer(
       tripId,
       user.id
     );
+
+    if (!trip) {
+      trip = await this.tripRepository.findDetailForMember(tripId, user.id);
+    }
 
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
@@ -277,6 +281,22 @@ export class TripService {
     const creditBalanceEuros = Number(availableCredits._sum.amount ?? 0);
     const userCreditBalanceCents = Math.round(creditBalanceEuros * 100);
 
+    const isOrganizer = trip.organizerId === user.id;
+
+    const membersRaw = "members" in trip && Array.isArray(trip.members)
+      ? (trip.members as { id: string; role: string; balance: unknown; totalPaid: unknown; user: { id: string; name: string | null; email: string } }[])
+      : [];
+
+    const membersDto: TripMemberDto[] = membersRaw.map((m) => ({
+      id: m.id,
+      userId: m.user.id,
+      name: m.user.name,
+      email: m.user.email,
+      role: m.role,
+      balance: decToNumber(m.balance) ?? 0,
+      totalPaid: decToNumber(m.totalPaid) ?? 0,
+    }));
+
     return {
       id: trip.id,
       destination: trip.destination,
@@ -295,6 +315,9 @@ export class TripService {
         trip.tripType === "gruppo"
           ? config.billing.priceGroupCents
           : config.billing.priceSoloCoupleCents,
+      inviteToken: isOrganizer ? (trip.inviteToken ?? null) : null,
+      isOrganizer,
+      members: membersDto,
       prefChangedAfterGen: prefChanged,
       isAccessExpired: trip.accessExpiresAt < new Date(),
       days: days.map(
@@ -435,6 +458,132 @@ export class TripService {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
     }
     return { deleted: true };
+  }
+
+  async getInviteLink(tripId: string): Promise<{ inviteUrl: string }> {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const trip = await this.tripRepository.findByIdAndOrganizer(tripId, user.id);
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+    if (trip.tripType !== "gruppo" && trip.tripType !== "coppia") {
+      throw new AppError(
+        "Gli inviti sono disponibili solo per viaggi di coppia o gruppo",
+        400,
+        "INVITE_NOT_ALLOWED",
+      );
+    }
+
+    let token = trip.inviteToken;
+    if (!token) {
+      token = await this.tripRepository.generateInviteToken(tripId, user.id);
+      if (!token) {
+        throw new AppError("Impossibile generare il link", 500, "TOKEN_ERROR");
+      }
+    }
+
+    return { inviteUrl: `${config.app.baseUrl}/join/${token}` };
+  }
+
+  async getTripByToken(token: string) {
+    const trip = await this.tripRepository.findByInviteToken(token);
+    if (!trip) {
+      throw new AppError("Link non valido o scaduto", 404, "INVITE_NOT_FOUND");
+    }
+    return {
+      id: trip.id,
+      destination: trip.destination,
+      startDate: toDateOnlyIsoUtc(trip.startDate),
+      endDate: toDateOnlyIsoUtc(trip.endDate),
+      tripType: trip.tripType,
+      style: trip.style,
+      organizerName: trip.organizer.name ?? "Organizzatore",
+      memberCount: trip.members.length,
+      maxMembers: trip.tripType === "coppia" ? 2 : 5,
+    };
+  }
+
+  async joinTripByToken(token: string) {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const trip = await this.tripRepository.findByInviteToken(token);
+
+    if (!trip) {
+      throw new AppError("Link non valido o scaduto", 404, "INVITE_NOT_FOUND");
+    }
+
+    const alreadyMember = await this.tripRepository.isMember(trip.id, user.id);
+    if (alreadyMember) {
+      return { tripId: trip.id, alreadyMember: true };
+    }
+
+    const maxMembers = trip.tripType === "coppia" ? 2 : 5;
+    if (trip.members.length >= maxMembers) {
+      throw new AppError(
+        `Il viaggio ha già raggiunto il massimo di ${maxMembers} partecipanti`,
+        400,
+        "GROUP_FULL",
+      );
+    }
+
+    await this.tripRepository.addMember(trip.id, user.id);
+    return { tripId: trip.id, alreadyMember: false };
+  }
+
+  async listMyTripsAndShared(): Promise<TripListItemDto[]> {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const ownTrips = await this.tripRepository.listByOrganizer(user.id);
+
+    const sharedMemberships = await prisma.tripMember.findMany({
+      where: { userId: user.id, role: "member" },
+      include: {
+        trip: {
+          include: {
+            versions: {
+              where: { isActive: true },
+              include: { days: { select: { id: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    const ownList = ownTrips.map((trip: TripListItemDb) => ({
+      id: trip.id,
+      destination: trip.destination,
+      tripType: trip.tripType,
+      status: trip.status,
+      startDate: trip.startDate,
+      endDate: trip.endDate,
+      accessExpiresAt: trip.accessExpiresAt,
+      regenCount: trip.regenCount,
+      currentVersion: trip.currentVersion,
+      activeDays: trip.versions[0]?.days.length ?? 0,
+      isPaid: trip.amountPaid != null,
+    }));
+
+    const sharedList = sharedMemberships
+      .filter((m) => m.trip.deletedAt === null)
+      .map((m) => ({
+        id: m.trip.id,
+        destination: m.trip.destination,
+        tripType: m.trip.tripType,
+        status: m.trip.status,
+        startDate: m.trip.startDate,
+        endDate: m.trip.endDate,
+        accessExpiresAt: m.trip.accessExpiresAt,
+        regenCount: m.trip.regenCount,
+        currentVersion: m.trip.currentVersion,
+        activeDays: m.trip.versions[0]?.days.length ?? 0,
+        isPaid: m.trip.amountPaid != null,
+      }));
+
+    const seen = new Set(ownList.map((t) => t.id));
+    const merged = [...ownList];
+    for (const s of sharedList) {
+      if (!seen.has(s.id)) merged.push(s);
+    }
+
+    return merged;
   }
 
   async cancelTripWithCredit(

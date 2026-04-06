@@ -33,3 +33,16 @@ export const updatePreferencesSchema = z.object({
   style: z.string().min(2).max(120).optional().nullable(),
   budgetLevel: z.enum(BUDGET_LEVELS),
 });
+
+export const liveSuggestSchema = z.object({
+  dayId: z.string().min(1),
+  lat: z.number().finite(),
+  lng: z.number().finite(),
+  reason: z
+    .enum(["closed", "crowded", "weather", "bored", "early", "other"])
+    .default("other"),
+  currentSlot: z
+    .enum(["morning", "afternoon", "evening"])
+    .optional()
+    .nullable(),
+});

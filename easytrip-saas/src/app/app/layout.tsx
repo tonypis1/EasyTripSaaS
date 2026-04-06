@@ -1,5 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { UserButtonClient } from "./user-button-client";
+import { CrispChat } from "./crisp-chat";
+import { ReferralTracker } from "@/app/referral-tracker";
 
 export default function AppLayout({
   children,
@@ -23,11 +26,21 @@ export default function AppLayout({
             >
               I miei viaggi
             </Link>
+            <Link
+              href="/app/referral"
+              className="text-sm text-et-ink/65 transition-colors duration-200 hover:text-et-accent"
+            >
+              Invita amici
+            </Link>
             <UserButtonClient />
           </nav>
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-4 py-12">{children}</main>
+      <Suspense fallback={null}>
+        <ReferralTracker />
+      </Suspense>
+      <CrispChat />
     </div>
   );
 }

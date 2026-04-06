@@ -21,7 +21,12 @@ const DayRouteMap = dynamic(() => import("./day-route-map"), { ssr: false });
 import {
   ArrowLeft,
   ArrowRight,
+  BedDouble,
   ChevronDown,
+  Copy,
+  HelpCircle,
+  Link2,
+  MessageCircle,
   ChevronUp,
   Compass,
   Gem,
@@ -29,6 +34,7 @@ import {
   Loader2,
   MapPin,
   Navigation,
+  Receipt,
   RefreshCw,
   Replace,
   Route,
@@ -37,6 +43,9 @@ import {
   Sunrise,
   Sun,
   Moon,
+  Ticket,
+  UserPlus,
+  Users,
   UtensilsCrossed,
   Lightbulb,
   ExternalLink,
@@ -50,6 +59,17 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import {
+  bookingSearchUrl,
+  getYourGuideUrl,
+  theForkUrl,
+  viatorUrl,
+} from "@/lib/affiliate";
+import {
+  openCrispChat,
+  isCrispEnabled,
+} from "@/app/app/crisp-chat";
+import { ExpensePanel } from "./expense-panel";
 
 type Props = {
   initialTrip: TripDetailDto;
@@ -78,6 +98,27 @@ type SlotReplaceResult = {
   geoContinuityNote: string;
   dayRouteUpdated: string;
   alternatives: { name: string; distance: string; note: string }[];
+};
+
+type LiveSuggestion = {
+  name: string;
+  type: string;
+  distance: string;
+  walkMin: number;
+  why: string;
+  durationMin: number;
+  googleMapsQuery: string;
+  bookingLink: string | null;
+  indoor: boolean;
+  budgetHint: string;
+  tips: string[];
+  lat: number | null;
+  lng: number | null;
+};
+
+type LiveSuggestResult = {
+  suggestions: LiveSuggestion[];
+  contextNote: string;
 };
 
 /* ---------- helpers ---------- */
@@ -229,6 +270,12 @@ export function TripDetailClient({
     key: string;
     data: SlotReplaceResult;
   } | null>(null);
+  const [liveSuggest, setLiveSuggest] = useState<{
+    dayId: string;
+    data: LiveSuggestResult;
+  } | null>(null);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => setTrip(initialTrip), [initialTrip]);
 
@@ -448,6 +495,62 @@ export function TripDetailClient({
     }
   }
 
+  async function onLiveSuggest(dayId: string) {
+    setBusy(`live-${dayId}`);
+    setMsg(null);
+    setLiveSuggest(null);
+
+    const getPos = (): Promise<{ lat: number; lng: number }> =>
+      new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocalizzazione non supportata"));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) =>
+            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          () => reject(new Error("Impossibile ottenere la posizione GPS")),
+          { enableHighAccuracy: true, timeout: 15_000 },
+        );
+      });
+
+    try {
+      const coords = await getPos();
+      const res = await fetch(`/api/trips/${trip.id}/live-suggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dayId,
+          lat: coords.lat,
+          lng: coords.lng,
+          reason: "other",
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setMsg(apiMsg(json));
+        return;
+      }
+      posthog.capture("live_suggest_used", {
+        tripId: trip.id,
+        destination: trip.destination,
+        dayId,
+        lat: coords.lat,
+        lng: coords.lng,
+      });
+      const d = json.data as LiveSuggestResult | undefined;
+      if (d && Array.isArray(d.suggestions)) {
+        setLiveSuggest({ dayId, data: d });
+      }
+    } catch (err) {
+      setMsg(
+        err instanceof Error ? err.message : "Errore durante il suggerimento",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function onSavePreferences() {
     setBusy("pref");
     setMsg(null);
@@ -605,6 +708,46 @@ export function TripDetailClient({
         )
       ) : null}
 
+      {/* ── Affiliate: Prenota alloggio ── */}
+      {hasDays && trip.isPaid ? (() => {
+        const bookingUrl = bookingSearchUrl({
+          destination: trip.destination,
+          checkin: trip.startDate,
+          checkout: trip.endDate,
+        });
+
+        if (!bookingUrl) return null;
+
+        return (
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() =>
+              posthog.capture("affiliate_click", {
+                partner: "booking",
+                destination: trip.destination,
+                tripId: trip.id,
+              })
+            }
+            className="group flex items-center gap-4 rounded-2xl border border-blue-400/20 bg-gradient-to-r from-blue-500/8 via-blue-400/5 to-transparent px-5 py-4 transition-all duration-200 hover:border-blue-400/40 hover:from-blue-500/15"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15">
+              <BedDouble className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-blue-300">
+                Prenota l&apos;alloggio a {destinationPrimary(trip.destination) || trip.destination}
+              </p>
+              <p className="mt-0.5 text-xs text-blue-400/60">
+                Cerca hotel, B&amp;B e appartamenti su Booking.com
+              </p>
+            </div>
+            <ExternalLink className="h-4 w-4 shrink-0 text-blue-400/50 transition-colors duration-200 group-hover:text-blue-400" />
+          </a>
+        );
+      })() : null}
+
       {/* ── Flash messages ── */}
       {checkoutFlash === "success" ? (
         <Flash variant="success">
@@ -682,7 +825,9 @@ export function TripDetailClient({
             </div>
           ) : null}
 
-          {/* Rigenera + GPS — divisi in due righe */}
+          {/* Rigenera + GPS — divisi in due righe (solo organizzatore) */}
+          {trip.isOrganizer ? (
+          <>
           <div className="flex flex-wrap items-center gap-3 border-t border-et-border pt-4">
             {trip.regen.atMax ? (
               <p className="text-sm text-et-ink/60">
@@ -753,8 +898,10 @@ export function TripDetailClient({
               </span>
             )}
           </div>
+          </>) : null}
 
-          {/* Modifica preferenze */}
+          {/* Modifica preferenze (solo organizzatore) */}
+          {trip.isOrganizer ? (
           <div className="border-t border-et-border pt-4">
             <button
               type="button"
@@ -848,11 +995,12 @@ export function TripDetailClient({
               </div>
             ) : null}
           </div>
+          ) : null}
         </section>
       ) : null}
 
-      {/* ── Pagamento ── */}
-      {!trip.isPaid ? (() => {
+      {/* ── Pagamento (solo organizzatore) ── */}
+      {!trip.isPaid && trip.isOrganizer ? (() => {
         const priceCents = trip.tripPriceCents;
         const creditCents = trip.userCreditBalanceCents;
         const discountCents = Math.min(creditCents, priceCents);
@@ -1144,21 +1292,76 @@ export function TripDetailClient({
                                   <p className="mt-1 text-sm leading-relaxed text-et-ink/70">
                                     {slot.why}
                                   </p>
-                                  {slot.bookingLink ? (
-                                    <a
-                                      href={slot.bookingLink}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="mt-1.5 inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                      Prenota / Biglietti
-                                    </a>
-                                  ) : null}
+                                  {/* Affiliate + booking links */}
+                                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                    {slot.bookingLink ? (
+                                      <a
+                                        href={slot.bookingLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={() =>
+                                          posthog.capture("affiliate_click", {
+                                            partner: "direct",
+                                            activity: slot.title,
+                                            tripId: trip.id,
+                                          })
+                                        }
+                                        className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
+                                      >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Prenota / Biglietti
+                                      </a>
+                                    ) : null}
+                                    {(() => {
+                                      const gygUrl = getYourGuideUrl(slot.title, trip.destination);
+                                      if (!gygUrl) return null;
+                                      return (
+                                        <a
+                                          href={gygUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          onClick={() =>
+                                            posthog.capture("affiliate_click", {
+                                              partner: "gyg",
+                                              activity: slot.title,
+                                              tripId: trip.id,
+                                            })
+                                          }
+                                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-orange-400/25 bg-orange-500/8 px-2.5 py-1 text-xs font-medium text-orange-300 transition-colors duration-200 hover:border-orange-400/40 hover:bg-orange-500/15"
+                                        >
+                                          <Ticket className="h-3 w-3" />
+                                          Tour e biglietti
+                                        </a>
+                                      );
+                                    })()}
+                                    {(() => {
+                                      const vUrl = viatorUrl(slot.title, trip.destination);
+                                      if (!vUrl) return null;
+                                      return (
+                                        <a
+                                          href={vUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          onClick={() =>
+                                            posthog.capture("affiliate_click", {
+                                              partner: "viator",
+                                              activity: slot.title,
+                                              tripId: trip.id,
+                                            })
+                                          }
+                                          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-teal-400/25 bg-teal-500/8 px-2.5 py-1 text-xs font-medium text-teal-300 transition-colors duration-200 hover:border-teal-400/40 hover:bg-teal-500/15"
+                                        >
+                                          <Ticket className="h-3 w-3" />
+                                          Viator
+                                        </a>
+                                      );
+                                    })()}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Cambia slot */}
+                              {/* Cambia slot (solo organizzatore) */}
+                              {trip.isOrganizer && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1174,6 +1377,7 @@ export function TripDetailClient({
                                   <Replace className="h-4 w-4" />
                                 )}
                               </button>
+                              )}
                             </div>
 
                             {/* Tips collapsible */}
@@ -1410,6 +1614,30 @@ export function TripDetailClient({
                                           {r.reservationTip}
                                         </div>
                                       ) : null}
+
+                                      {/* TheFork affiliate */}
+                                      {(() => {
+                                        const tfUrl = theForkUrl(r.name, destinationPrimary(trip.destination));
+                                        if (!tfUrl) return null;
+                                        return (
+                                          <a
+                                            href={tfUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            onClick={() =>
+                                              posthog.capture("affiliate_click", {
+                                                partner: "thefork",
+                                                restaurant: r.name,
+                                                tripId: trip.id,
+                                              })
+                                            }
+                                            className="mt-2 inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-green-400/25 bg-green-500/8 px-2.5 py-1 text-xs font-medium text-green-300 transition-colors duration-200 hover:border-green-400/40 hover:bg-green-500/15"
+                                          >
+                                            <UtensilsCrossed className="h-3 w-3" />
+                                            Prenota su TheFork
+                                          </a>
+                                        );
+                                      })()}
                                     </li>
                                   ))}
                                 </ul>
@@ -1494,6 +1722,156 @@ export function TripDetailClient({
                           </div>
                         );
                       })()}
+
+                      {/* ── Live Suggest: "Cosa faccio adesso?" ── */}
+                      {reallyUnlocked ? (
+                        <div className="space-y-3">
+                          <button
+                            type="button"
+                            onClick={() => void onLiveSuggest(day.id)}
+                            disabled={busy !== null}
+                            className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-purple-400/30 bg-gradient-to-r from-purple-500/8 via-et-accent/5 to-purple-500/8 px-5 py-3 text-sm font-semibold text-purple-300 transition-all duration-200 hover:border-purple-400/50 hover:from-purple-500/15 hover:via-et-accent/10 hover:to-purple-500/15 disabled:opacity-50"
+                          >
+                            {busy === `live-${day.id}` ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Cerco suggerimenti vicini…
+                              </>
+                            ) : (
+                              <>
+                                <Navigation className="h-4 w-4" />
+                                Cosa faccio adesso?
+                              </>
+                            )}
+                          </button>
+
+                          {liveSuggest?.dayId === day.id ? (
+                            <div className="space-y-3 rounded-2xl border-2 border-purple-400/25 bg-gradient-to-br from-purple-500/6 via-et-deep to-et-accent/4 p-4">
+                              <div className="flex items-center justify-between">
+                                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-purple-300">
+                                  <Navigation className="h-3.5 w-3.5" />
+                                  Suggerimenti live
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => setLiveSuggest(null)}
+                                  aria-label="Chiudi suggerimenti"
+                                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-et-ink/40 transition-colors hover:bg-et-deep hover:text-et-ink/70"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                              <p className="text-sm leading-relaxed text-et-ink/70">
+                                {liveSuggest.data.contextNote}
+                              </p>
+                              <div className="space-y-2.5">
+                                {liveSuggest.data.suggestions.map(
+                                  (sug, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="rounded-xl border border-et-border/60 bg-et-deep/50 p-3.5 transition-colors duration-200 hover:border-purple-400/25"
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <a
+                                              href={googleMapsUrl(
+                                                sug.googleMapsQuery,
+                                              )}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="text-sm font-semibold text-et-accent transition-colors hover:underline"
+                                            >
+                                              {sug.name}
+                                              <MapPin className="ml-1 inline h-3 w-3 opacity-50" />
+                                            </a>
+                                            <span className="rounded-full border border-et-border px-2 py-0.5 text-[10px] text-et-ink/50">
+                                              {sug.type}
+                                            </span>
+                                            {sug.indoor ? (
+                                              <span className="rounded-full border border-sky-400/20 bg-sky-500/8 px-2 py-0.5 text-[10px] text-sky-400">
+                                                Indoor
+                                              </span>
+                                            ) : (
+                                              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/8 px-2 py-0.5 text-[10px] text-emerald-400">
+                                                Outdoor
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-et-ink/50">
+                                            <span className="flex items-center gap-1">
+                                              <MapPin className="h-3 w-3" />
+                                              {sug.distance}
+                                            </span>
+                                            <span>
+                                              ~{formatDuration(sug.durationMin)}
+                                            </span>
+                                            <span>{sug.budgetHint}</span>
+                                          </div>
+                                          <p className="mt-1.5 text-sm leading-relaxed text-et-ink/65">
+                                            {sug.why}
+                                          </p>
+                                          {sug.tips.length > 0 ? (
+                                            <p className="mt-1 text-xs text-et-ink/40">
+                                              <Lightbulb className="mr-1 inline h-3 w-3 align-[-2px]" />
+                                              {sug.tips.join(" · ")}
+                                            </p>
+                                          ) : null}
+                                        </div>
+                                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-sm font-bold text-purple-300">
+                                          {idx + 1}
+                                        </span>
+                                      </div>
+                                      <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {sug.bookingLink ? (
+                                          <a
+                                            href={sug.bookingLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            onClick={() =>
+                                              posthog.capture("affiliate_click", {
+                                                partner: "direct",
+                                                activity: sug.name,
+                                                tripId: trip.id,
+                                              })
+                                            }
+                                            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
+                                          >
+                                            <ExternalLink className="h-3 w-3" />
+                                            Prenota / Biglietti
+                                          </a>
+                                        ) : null}
+                                        {(() => {
+                                          const gygUrl = getYourGuideUrl(sug.name, trip.destination);
+                                          if (!gygUrl) return null;
+                                          return (
+                                            <a
+                                              href={gygUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              onClick={() =>
+                                                posthog.capture("affiliate_click", {
+                                                  partner: "gyg",
+                                                  activity: sug.name,
+                                                  tripId: trip.id,
+                                                })
+                                              }
+                                              className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-orange-400/25 bg-orange-500/8 px-2.5 py-1 text-xs font-medium text-orange-300 transition-colors duration-200 hover:border-orange-400/40 hover:bg-orange-500/15"
+                                            >
+                                              <Ticket className="h-3 w-3" />
+                                              Tour e biglietti
+                                            </a>
+                                          );
+                                        })()}
+                                      </div>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   ) : (() => {
                     const daysLeft = daysUntilUnlock(day.unlockDate);
@@ -1527,6 +1905,266 @@ export function TripDetailClient({
               );
             })}
           </ul>
+        </section>
+      ) : null}
+
+      {/* ── Gruppo & Membri ── */}
+      {(trip.tripType === "gruppo" || trip.tripType === "coppia") &&
+        trip.isPaid &&
+        hasDays ? (
+        <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10">
+                <Users className="h-5 w-5 text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="font-display text-base text-et-ink">Gruppo</h3>
+                <p className="text-sm text-et-ink/55">
+                  {trip.members.length} partecipant{trip.members.length === 1 ? "e" : "i"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => void refreshTrip()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
+                         text-et-ink/50 hover:text-et-accent hover:bg-et-accent/5
+                         transition-colors cursor-pointer min-h-[44px]"
+              title="Aggiorna lista membri"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Aggiorna
+            </button>
+          </div>
+
+          {/* Lista membri */}
+          <div className="space-y-2 mb-4">
+            {trip.members.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center justify-between rounded-xl bg-et-bg/60 px-4 py-2.5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 text-sm font-bold">
+                    {(m.name ?? m.email).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-et-ink">
+                      {m.name ?? m.email.split("@")[0]}
+                    </p>
+                    <p className="text-xs text-et-ink/50">{m.email}</p>
+                  </div>
+                </div>
+                <span
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                    m.role === "org"
+                      ? "bg-amber-500/10 text-amber-500"
+                      : "bg-blue-500/10 text-blue-500"
+                  }`}
+                >
+                  {m.role === "org" ? "Organizzatore" : "Membro"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Link invito (solo organizzatore) */}
+          {trip.isOrganizer && (
+            <div className="border-t border-et-border pt-4">
+              {inviteUrl ? (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-et-ink/55 uppercase tracking-wide">
+                    Link di invito
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-lg bg-et-bg/60 px-3 py-2 text-sm text-et-ink/70 font-mono truncate border border-et-border">
+                      {inviteUrl}
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(inviteUrl);
+                        setCopiedLink(true);
+                        setTimeout(() => setCopiedLink(false), 2000);
+                        posthog.capture("invite_link_copied", {
+                          tripId: trip.id,
+                          tripType: trip.tripType,
+                        });
+                      }}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
+                                 bg-blue-600 text-white hover:bg-blue-700
+                                 transition-colors cursor-pointer min-h-[44px] min-w-[44px]"
+                      title="Copia link"
+                    >
+                      {copiedLink ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {copiedLink && (
+                    <p className="text-xs text-green-500 font-medium">
+                      Link copiato!
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch(
+                        `/api/trips/${trip.id}/invite`
+                      );
+                      const json = await res.json();
+                      if (res.ok && json.data?.inviteUrl) {
+                        setInviteUrl(json.data.inviteUrl);
+                      }
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                             bg-indigo-600 text-white text-sm font-semibold
+                             hover:bg-indigo-700 transition-colors cursor-pointer
+                             min-h-[44px]"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Genera link di invito
+                </button>
+              )}
+              <p className="mt-2 text-xs text-et-ink/40">
+                Condividi il link con chi vuoi invitare. Il membro avrà accesso
+                in sola lettura all&apos;itinerario e potrà partecipare allo split spese.
+              </p>
+            </div>
+          )}
+
+          {/* Membro read-only: nota */}
+          {!trip.isOrganizer && (
+            <div className="bg-blue-500/5 rounded-lg px-4 py-3 text-sm text-blue-400">
+              <Link2 className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+              Accesso in sola lettura. Solo l&apos;organizzatore può modificare
+              l&apos;itinerario.
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      {/* ── Split Spese (solo gruppo/coppia) ── */}
+      {(trip.tripType === "gruppo" || trip.tripType === "coppia") &&
+        trip.isPaid &&
+        trip.members.length >= 2 &&
+        hasDays ? (
+        <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10">
+              <Receipt className="h-5 w-5 text-green-400" />
+            </div>
+            <div>
+              <h3 className="font-display text-base text-et-ink">
+                Split spese
+              </h3>
+              <p className="text-sm text-et-ink/55">
+                Registra le spese e scopri chi deve cosa a chi
+              </p>
+            </div>
+          </div>
+          <ExpensePanel tripId={trip.id} totalDays={trip.days.length} />
+        </section>
+      ) : null}
+
+      {/* ── Supporto: Hai bisogno di aiuto? ── */}
+      {hasDays && trip.isPaid ? (
+        <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10">
+              <HelpCircle className="h-5 w-5 text-purple-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-display text-base text-et-ink">
+                Hai bisogno di aiuto?
+              </h3>
+              <p className="mt-1 text-sm text-et-ink/55">
+                Qualcosa non funziona? Un giorno non si sblocca? Hai dubbi
+                sull&apos;itinerario? Siamo qui per te.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {isCrispEnabled() ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      posthog.capture("support_chat_opened", {
+                        tripId: trip.id,
+                        destination: trip.destination,
+                      });
+                      openCrispChat(
+                        `Ciao! Ho bisogno di aiuto con il mio viaggio a ${trip.destination} (ID: ${trip.id})`,
+                      );
+                    }}
+                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-purple-500/15 px-5 py-2.5 text-sm font-semibold text-purple-300 transition-colors duration-200 hover:bg-purple-500/25"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Chat live
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={async () => {
+                    const subject = window.prompt(
+                      "Descrivi brevemente il problema:",
+                    );
+                    if (!subject || subject.trim().length < 3) return;
+                    const message = window.prompt(
+                      "Dettagli aggiuntivi (opzionale):",
+                    );
+                    setBusy("support");
+                    setMsg(null);
+                    try {
+                      const res = await fetch("/api/support", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          tripId: trip.id,
+                          subject: subject.trim(),
+                          message:
+                            message?.trim() || subject.trim(),
+                          channel: "in_app",
+                        }),
+                      });
+                      const json = await res.json();
+                      if (res.ok && json.ok) {
+                        posthog.capture("support_ticket_created", {
+                          tripId: trip.id,
+                          destination: trip.destination,
+                          ticketId: json.data?.id,
+                        });
+                        setMsg(
+                          "Ticket inviato! Ti risponderemo il prima possibile.",
+                        );
+                      } else {
+                        setMsg(
+                          json.error?.message ?? "Errore nell'invio del ticket",
+                        );
+                      }
+                    } catch {
+                      setMsg("Errore di rete. Riprova.");
+                    } finally {
+                      setBusy(null);
+                    }
+                  }}
+                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-et-border px-5 py-2.5 text-sm font-medium text-et-ink/70 transition-colors duration-200 hover:border-et-accent/40 hover:text-et-accent disabled:opacity-50"
+                >
+                  {busy === "support" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <HelpCircle className="h-4 w-4" />
+                  )}
+                  {busy === "support" ? "Invio…" : "Apri ticket"}
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
       ) : null}
     </div>

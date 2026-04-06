@@ -26,7 +26,13 @@ async function ensureStoreFile() {
 export async function getWaitlistStats(): Promise<WaitlistStats> {
   await ensureStoreFile();
   const raw = await fs.readFile(STORE_PATH, "utf-8");
-  const parsed = JSON.parse(raw) as Partial<WaitlistStats>;
+
+  let parsed: Partial<WaitlistStats> = {};
+  try {
+    parsed = (raw.trim() ? JSON.parse(raw) : {}) as Partial<WaitlistStats>;
+  } catch {
+    parsed = {};
+  }
 
   return {
     count:

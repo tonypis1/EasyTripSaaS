@@ -5,7 +5,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest",
     "build": "next build",
     "start": "next start",

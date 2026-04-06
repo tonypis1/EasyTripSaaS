@@ -34,11 +34,20 @@ export function PostTripScreen({ trip }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId: trip.id }),
       });
-      const data = await res.json();
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      const json = (await res.json()) as {
+        ok?: boolean;
+        data?: { checkoutUrl?: string };
+        error?: { message?: string };
+      };
+      const url = json.data?.checkoutUrl;
+      if (res.ok && url) {
+        window.location.href = url;
+        return;
       }
+      window.alert(json.error?.message ?? "Errore durante la riattivazione");
     } catch {
+      window.alert("Errore di rete. Riprova.");
+    } finally {
       setLoading(false);
     }
   }

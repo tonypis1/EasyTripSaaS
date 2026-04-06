@@ -3,7 +3,7 @@
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PH_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
 const PH_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
@@ -29,6 +29,8 @@ export default function PostHogProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
     if (!PH_KEY) return;
     posthog.init(PH_KEY, {
@@ -37,9 +39,10 @@ export default function PostHogProvider({
       capture_pageview: false,
       capture_pageleave: true,
     });
+    setReady(true);
   }, []);
 
-  if (!PH_KEY) return <>{children}</>;
+  if (!PH_KEY || !ready) return <>{children}</>;
 
   return (
     <PHProvider client={posthog}>

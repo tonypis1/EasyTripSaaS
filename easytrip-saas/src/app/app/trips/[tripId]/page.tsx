@@ -1,6 +1,8 @@
 import { TripDetailClient } from "./trip-detail-client";
 import { fetchTripDetailForDashboard } from "@/lib/trips-data";
 
+export const dynamic = "force-dynamic";
+
 type Search = { checkout?: string; regen?: string; reactivate?: string };
 
 export default async function TripDetailPage({
