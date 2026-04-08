@@ -64,6 +64,38 @@ npm run test:e2e
 
 Variabili: `E2E_AUTH_STORAGE_STATE`, `E2E_TRIP_ID`, opzionale `E2E_BASE_URL`.
 
+### Screenshot per `presentation.html`
+
+```bash
+npm run screenshots:presentation
+```
+
+- **Memoria (Windows / “Zone Allocation failed” / out of memory)**  
+  Gli script `screenshots:*` usano già Node con `--max-old-space-size=8192`. In più: avvia **`npm run dev` in un terminale separato** e aspetta che sia pronto, *poi* lancia gli screenshot. Così Playwright riusa il server (`reuseExistingServer`) e **non** avvia una seconda copia di Next.js, che consuma molta RAM.
+
+- Senza variabili extra: genera `01-landing.png` e `02-auth-clerk.png`.
+- Per le immagini **autenticate** (`03`–`05`) serve un file `e2e/.auth/user.json`.
+
+#### Perché Google “browser non sicuro” con Playwright
+
+Se usi **Accedi con Google** nella finestra di `playwright codegen`, Google spesso mostra *“Questo browser o questa app potrebbero non essere sicuri”*: è una **difesa di Google contro i browser controllati da automazione**, non un errore di Clerk o dell’app. **Non si risolve** affidandosi a OAuth Google dentro Playwright.
+
+**Percorsi consigliati:**
+
+1. **Script Clerk (consigliato)** — niente Google nel browser di test:
+   - In `.env.local` servono le chiavi **di sviluppo** Clerk (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `pk_test_…` e `CLERK_SECRET_KEY` / `sk_test_…`). `@clerk/testing` **rifiuta** chiavi di produzione.
+   - Imposta l’email dell’account: `E2E_CLERK_USER_EMAIL=tua@email.com`
+   - Opzionale: `E2E_CLERK_USER_PASSWORD=…` se preferisci login a password invece del ticket via email (vedi [test helpers Clerk](https://clerk.com/docs/guides/development/testing/playwright/test-helpers)).
+   - Esegui: `npm run screenshots:clerk-session`  
+     Crea/aggiorna `e2e/.auth/user.json` (cartella in `.gitignore`).
+   - Poi:  
+     `E2E_AUTH_STORAGE_STATE=e2e/.auth/user.json` e opzionale `E2E_TRIP_ID=…` → `npm run screenshots:presentation`.
+   - Usa lo **stesso host** per tutto (default `http://127.0.0.1:3000`): se generi la sessione con `127.0.0.1` e poi apri `localhost` (o viceversa), i cookie non combaciano e il login risulta assente.
+
+2. **Codegen solo se eviti Google** — `npx playwright codegen http://127.0.0.1:3000 --save-storage=e2e/.auth/user.json` e accedi con **email + password** Clerk (stesso utente che possiede i trip), **non** con il pulsante Google.
+
+- Opzionale `E2E_TRIP_ID=<id prisma/cuid del trip>`: genera anche `05-trip-detail.png` (pagina dettaglio reale).
+
 ## Deploy
 
 Vedi [documentazione Next.js](https://nextjs.org/docs/app/building-your-application/deploying) (es. Vercel). Configura webhook Stripe verso `https://tuodominio.com/api/webhooks/stripe`.

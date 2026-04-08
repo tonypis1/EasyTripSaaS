@@ -12,7 +12,10 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "playwright:install": "playwright install"
+    "playwright:install": "playwright install",
+    "screenshots:presentation": "node --max-old-space-size=8192 ./node_modules/@playwright/test/cli.js test -c playwright.presentation.config.ts",
+    "screenshots:clerk-session": "node --max-old-space-size=8192 ./node_modules/@playwright/test/cli.js test -c playwright.clerk-session.config.ts",
+    "presentation:pdf": "node scripts/export-presentation-pdf.cjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
@@ -31,11 +34,13 @@
     "zod": "^3"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.0.11",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
     "prisma": "6.19.0",
