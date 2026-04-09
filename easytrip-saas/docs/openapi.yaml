@@ -1,0 +1,551 @@
+openapi: 3.0.3
+info:
+  title: EasyTrip API
+  description: |
+    REST API dell'app EasyTrip (Next.js App Router). Le route vivono sotto `/api`.
+    Autenticazione: la maggior parte delle route richiede sessione Clerk (cookie o header secondo configurazione `@clerk/nextjs`).
+    Eccezioni pubbliche o semi-pubbliche: webhook Stripe, join con token, waitlist, alcune GET di invito.
+  version: 1.0.0
+  contact:
+    name: EasyTrip
+
+servers:
+  - url: /
+    description: Origine dell'applicazione (es. https://app.example.com)
+
+tags:
+  - name: trips
+    description: Gestione viaggi e contenuti itinerario
+  - name: billing
+    description: Checkout Stripe e pagamenti collegati ai trip
+  - name: join
+    description: Ingresso al gruppo tramite token
+  - name: support
+    description: Ticket di supporto
+  - name: referral
+    description: Programma referral
+  - name: waitlist
+    description: Iscrizione waitlist
+  - name: webhooks
+    description: Webhook esterni (Stripe)
+  - name: inngest
+    description: Endpoint Inngest (sync funzioni, non per client finali)
+
+paths:
+  /api/trips:
+    get:
+      tags: [trips]
+      summary: Elenco viaggi dell'utente corrente
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Lista trip
+        "401":
+          description: Non autenticato
+    post:
+      tags: [trips]
+      summary: Crea un nuovo viaggio
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripBody"
+      responses:
+        "201":
+          description: Trip creato
+        "400":
+          description: Validazione fallita
+        "401":
+          description: Non autenticato
+
+  /api/trips/{tripId}:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    get:
+      tags: [trips]
+      summary: Dettaglio viaggio
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Trip
+        "404":
+          description: Non trovato
+    delete:
+      tags: [trips]
+      summary: Elimina (soft-delete) viaggio
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Eliminato
+        "403":
+          description: Non autorizzato
+        "404":
+          description: Non trovato
+
+  /api/trips/{tripId}/generate:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    post:
+      tags: [trips]
+      summary: Richiede generazione itinerario (Inngest + Anthropic)
+      security: [{ clerkSession: [] }]
+      responses:
+        "202":
+          description: Generazione avviata o in coda
+        "402":
+          description: Pagamento richiesto (produzione)
+        "403":
+          description: Non autorizzato
+
+  /api/trips/{tripId}/preferences:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    patch:
+      tags: [trips]
+      summary: Aggiorna preferenze (stile, budget)
+      security: [{ clerkSession: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePreferencesBody"
+      responses:
+        "200":
+          description: Aggiornato
+        "400":
+          description: Validazione fallita
+
+  /api/trips/{tripId}/active-version:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    post:
+      tags: [trips]
+      summary: Imposta versione attiva del itinerario
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versionNum]
+              properties:
+                versionNum:
+                  type: integer
+                  minimum: 1
+                  maximum: 7
+      responses:
+        "200":
+          description: Versione attiva aggiornata
+
+  /api/trips/{tripId}/archive:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    post:
+      tags: [trips]
+      summary: Archivia viaggio
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Archiviato
+
+  /api/trips/{tripId}/invite:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    get:
+      tags: [trips]
+      summary: Dati invito / link gruppo
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Token invito
+
+  /api/trips/{tripId}/replace-slot:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    post:
+      tags: [trips]
+      summary: Sostituisce uno slot giornaliero
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceSlotBody"
+      responses:
+        "200":
+          description: Slot aggiornato
+        "400":
+          description: Validazione fallita
+
+  /api/trips/{tripId}/live-suggest:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    post:
+      tags: [trips]
+      summary: Suggerimenti contestuali (posizione / motivo)
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveSuggestBody"
+      responses:
+        "200":
+          description: Suggerimenti
+        "400":
+          description: Validazione fallita
+
+  /api/trips/{tripId}/expenses:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    get:
+      tags: [trips]
+      summary: Elenco spese del viaggio
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Lista spese
+    post:
+      tags: [trips]
+      summary: Aggiunge una spesa
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseBody"
+      responses:
+        "201":
+          description: Spesa creata
+
+  /api/trips/{tripId}/expenses/{expenseId}:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+      - name: expenseId
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      tags: [trips]
+      summary: Elimina spesa
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Eliminata
+        "404":
+          description: Non trovata
+
+  /api/trips/{tripId}/balances:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+    get:
+      tags: [trips]
+      summary: Saldi tra membri del gruppo
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Saldi
+
+  /api/join/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [join]
+      summary: Verifica token e metadati join
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Token non valido
+    post:
+      tags: [join]
+      summary: Completa join al viaggio (utente autenticato)
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Aggiunto al gruppo
+        "401":
+          description: Login richiesto
+
+  /api/billing/checkout:
+    post:
+      tags: [billing]
+      summary: Crea sessione Stripe Checkout (acquisto trip)
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: URL sessione o dati checkout
+        "400":
+          description: Errore business / validazione
+
+  /api/billing/regen-checkout:
+    post:
+      tags: [billing]
+      summary: Checkout per rigenerazione a pagamento
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Sessione creata
+
+  /api/billing/reactivate-checkout:
+    post:
+      tags: [billing]
+      summary: Checkout per riattivazione accesso post-trip
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Sessione creata
+
+  /api/webhooks/stripe:
+    post:
+      tags: [webhooks]
+      summary: Webhook Stripe (firma Stripe-Signature)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Evento elaborato
+        "400":
+          description: Payload o firma non validi
+
+  /api/support:
+    get:
+      tags: [support]
+      summary: Elenco ticket supporto
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Ticket
+    post:
+      tags: [support]
+      summary: Crea ticket
+      security: [{ clerkSession: [] }]
+      responses:
+        "201":
+          description: Creato
+
+  /api/support/{ticketId}:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [support]
+      summary: Dettaglio ticket e messaggi
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Ticket
+    post:
+      tags: [support]
+      summary: Aggiunge messaggio al ticket
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Messaggio salvato
+
+  /api/support/{ticketId}/resolve:
+    parameters:
+      - name: ticketId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [support]
+      summary: Risolve ticket
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Risolto
+
+  /api/referral:
+    get:
+      tags: [referral]
+      summary: Stato / codice referral utente
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Dati referral
+
+  /api/referral/track:
+    post:
+      tags: [referral]
+      summary: Traccia referral (es. da link)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Tracciato
+
+  /api/waitlist:
+    post:
+      tags: [waitlist]
+      summary: Iscrizione email waitlist
+      description: |
+        Il form della landing invia `multipart/form-data` o `application/x-www-form-urlencoded` con campo `email`.
+        Risposta tipica redirect HTTP verso `/` con query `waitlist=ok` o `waitlist=error`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "302":
+          description: Redirect verso homepage con esito in query string
+        "400":
+          description: Email non valida
+
+  /api/inngest:
+    get:
+      tags: [inngest]
+      summary: Inngest — introspection / sync (dev server)
+      responses:
+        "200":
+          description: OK
+    post:
+      tags: [inngest]
+      summary: Inngest — esecuzione funzioni
+      responses:
+        "200":
+          description: OK
+    put:
+      tags: [inngest]
+      summary: Inngest — registrazione (SDK)
+      responses:
+        "200":
+          description: OK
+
+components:
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
+      description: |
+        Sessione Clerk (tipicamente cookie). In ambienti API-first può essere usato anche il Bearer token secondo documentazione Clerk.
+
+  parameters:
+    tripId:
+      name: tripId
+      in: path
+      required: true
+      schema:
+        type: string
+        description: ID Prisma (cuid) del viaggio
+
+  schemas:
+    CreateTripBody:
+      type: object
+      required: [destination, startDate, endDate, tripType]
+      properties:
+        destination:
+          type: string
+          minLength: 2
+          maxLength: 120
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        tripType:
+          type: string
+          enum: [solo, coppia, gruppo]
+        style:
+          type: string
+          minLength: 2
+          maxLength: 120
+        budgetLevel:
+          type: string
+          enum: [economy, moderate, premium]
+          default: moderate
+
+    UpdatePreferencesBody:
+      type: object
+      properties:
+        style:
+          type: string
+          nullable: true
+        budgetLevel:
+          type: string
+          enum: [economy, moderate, premium]
+
+    ReplaceSlotBody:
+      type: object
+      required: [dayId, slot]
+      properties:
+        dayId:
+          type: string
+        slot:
+          type: string
+          enum: [morning, afternoon, evening]
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+
+    LiveSuggestBody:
+      type: object
+      required: [dayId, lat, lng]
+      properties:
+        dayId:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        reason:
+          type: string
+          enum: [closed, crowded, weather, bored, early, other]
+        currentSlot:
+          type: string
+          enum: [morning, afternoon, evening]
+          nullable: true
+
+    CreateExpenseBody:
+      type: object
+      required: [description, amount]
+      properties:
+        description:
+          type: string
+          maxLength: 200
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        category:
+          type: string
+          enum: [cibo, trasporti, attivita, alloggio, altro]
+        splitEqually:
+          type: boolean
+        dayNumber:
+          type: integer
+          nullable: true

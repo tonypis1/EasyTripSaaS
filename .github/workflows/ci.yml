@@ -1,0 +1,35 @@
+# CI per easytrip-saas — lint e test unitari.
+# La build di produzione (`npm run build`) va eseguita in locale o su Vercel con `.env`
+# complete: Clerk valida le chiavi durante il prerender.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+defaults:
+  run:
+    working-directory: easytrip-saas
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: easytrip-saas/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit

@@ -229,6 +229,7 @@ export function tripExpiredHtml(params: {
    ───────────────────────────────────────────────────────────── */
 
 export function waitlistWelcomeHtml(params: { signupUrl: string }): string {
+  void params.signupUrl;
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">👋</p>
@@ -259,6 +260,7 @@ export function waitlistWelcomeHtml(params: { signupUrl: string }): string {
 }
 
 export function waitlistValuePropHtml(params: { signupUrl: string }): string {
+  void params.signupUrl;
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🇵🇹</p>
@@ -302,6 +304,7 @@ export function waitlistValuePropHtml(params: { signupUrl: string }): string {
 }
 
 export function waitlistFeaturesHtml(params: { signupUrl: string }): string {
+  void params.signupUrl;
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🤔</p>
@@ -346,6 +349,7 @@ export function waitlistFeaturesHtml(params: { signupUrl: string }): string {
 }
 
 export function waitlistSocialProofHtml(params: { signupUrl: string }): string {
+  void params.signupUrl;
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🎁</p>

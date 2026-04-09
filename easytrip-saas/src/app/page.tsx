@@ -28,8 +28,6 @@ export const metadata: Metadata = {
   },
 };
 
-type LandingHeroVariant = "atlas" | "minimal";
-
 function IconGlobe(props: { className?: string }) {
   return (
     <svg
@@ -135,169 +133,6 @@ function Form() {
         Beta in arrivo — posti limitati. Solo email.
       </p>
     </form>
-  );
-}
-
-function HeroAtlas(props: { waitlistCount: number; waitlistCapacity: number }) {
-  return (
-    <section className="relative overflow-hidden bg-et-deep">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(132,204,22,0.18),transparent_55%),radial-gradient(ellipse_at_bottom,rgba(250,204,21,0.08),transparent_50%)]" />
-      <div className="relative mx-auto max-w-6xl px-4 pb-14 pt-10 sm:pb-20">
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          <div className="inline-flex items-center gap-3 rounded-full border border-et-accent/22 bg-et-accent/10 px-4 py-2 text-xs font-semibold text-et-accent/88">
-            <IconSparkles className="h-4 w-4 text-et-accent" />
-            🧪 Beta in arrivo — Posti limitati
-          </div>
-          <div className="text-xs text-et-ink/60">
-            Accesso scontato a €4,99 per i primi <strong className="text-et-ink">{props.waitlistCapacity}</strong>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h1
-              className="font-display text-4xl font-normal leading-[1.06] tracking-[-0.02em] text-et-ink sm:text-5xl md:text-6xl"
-            >
-              Pianifica 4 giorni a Lisbona
-              <br />
-              in <span className="italic text-et-accent">30 secondi.</span>
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-et-ink/70">
-              L&apos;AI pianifica il tuo viaggio breve ottimizzando percorsi,
-              ristoranti locali e gemme nascoste — giorno per giorno.
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span className="rounded-full border border-et-border bg-et-card px-3 py-1 text-xs text-et-ink/70">
-                🎨 4 stili analizzati
-              </span>
-              <span className="rounded-full border border-et-border bg-et-card px-3 py-1 text-xs text-et-ink/70">
-                40% conversion rate
-              </span>
-              <span className="rounded-full border border-et-border bg-et-card px-3 py-1 text-xs text-et-ink/70">
-                📧 Email + referral
-              </span>
-              <span className="rounded-full border border-et-border bg-et-card px-3 py-1 text-xs text-et-ink/70">
-                Framer no-code
-              </span>
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-et-border bg-et-card p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-sm text-et-ink/80">
-                  🔥 <strong className="text-et-ink">{props.waitlistCount}</strong>{" "}
-                  persone già in lista
-                </div>
-                <div className="inline-flex items-center rounded-full bg-et-accent/15 px-3 py-1 text-xs font-semibold text-et-accent/88">
-                  Sblocco giornaliero
-                </div>
-              </div>
-              <div className="mt-4">
-                <Form />
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-3 text-xs text-et-ink/60">
-              <div className="flex -space-x-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-et-ink/14 bg-et-card text-sm"
-                    aria-hidden="true"
-                  >
-                    👤
-                  </div>
-                ))}
-              </div>
-              <div>
-                Accesso scontato a €4,99 per i primi <strong className="text-et-ink">{props.waitlistCapacity}</strong>.{" "}
-                {props.waitlistCount} già iscritti.
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:pl-6">
-            <div className="rounded-3xl border border-et-border bg-et-card p-5 backdrop-blur">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-semibold text-et-ink/90">
-                  👁 Anteprima — Lisbona 4 giorni (AI generato)
-                </div>
-                <div className="rounded-full bg-et-accent/15 px-3 py-1 text-xs font-semibold text-et-accent/88">
-                  Sbloccato dal viaggio
-                </div>
-              </div>
-              <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border-et-border bg-black/10 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold text-et-accent/88">1</div>
-                    <div className="text-xs text-et-ink/60">Giorno</div>
-                  </div>
-                  <div className="mt-1 text-sm text-et-ink/80">
-                    Ribeira &amp; Alfama: Mercado, Castelo, cena in osteria locale
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-et-border bg-black/10 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold text-et-accent/88">2</div>
-                    <div className="text-xs text-et-ink/60">Giorno</div>
-                  </div>
-                  <div className="mt-1 text-sm text-et-ink/80">
-                    Belém &amp; LX Factory: pastéis, street art, aperitivo sul Tago
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-et-border bg-black/10 p-4 opacity-70 blur-[1.2px]">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold text-et-accent/88">3</div>
-                    <div className="text-xs text-et-ink/60">Giorno</div>
-                  </div>
-                  <div className="mt-1 text-sm text-et-ink/80">
-                    Chiado &amp; Príncipe Real: gallerie, vinho verde, fado autentico
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-et-border bg-black/10 p-4 opacity-70 blur-[1.2px]">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold text-et-accent/88">4</div>
-                    <div className="text-xs text-et-ink/60">Giorno</div>
-                  </div>
-                  <div className="mt-1 text-sm text-et-ink/80">
-                    Sintra day-trip o Mouraria: scegli il tuo stile
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-et-border bg-black/20 px-4 py-3 text-xs text-et-ink/60">
-                🔒 Giorni 3–4 sbloccati dopo l'acquisto • Accesso esclusivo dal
-                giorno del viaggio
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-et-border bg-et-card p-4">
-                <div className="text-xl">🧠</div>
-                <div className="mt-2 text-sm font-semibold">AI Personalizzata</div>
-                <div className="mt-1 text-xs text-et-ink/60">
-                  Stile tuo: foodie, cultura o nightlife
-                </div>
-              </div>
-              <div className="rounded-2xl border border-et-border bg-et-card p-4">
-                <div className="text-xl">📍</div>
-                <div className="mt-2 text-sm font-semibold">Mappe Live</div>
-                <div className="mt-1 text-xs text-et-ink/60">
-                  Si adattano mentre sei lì
-                </div>
-              </div>
-              <div className="rounded-2xl border border-et-border bg-et-card p-4">
-                <div className="text-xl">👥</div>
-                <div className="mt-2 text-sm font-semibold">Gruppo</div>
-                <div className="mt-1 text-xs text-et-ink/60">
-                  Split spese incluso
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -744,7 +579,6 @@ function FAQSection() {
 
           <script
             type="application/ld+json"
-            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
           />
         </div>

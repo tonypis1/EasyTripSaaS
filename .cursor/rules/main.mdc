@@ -1,0 +1,58 @@
+---
+description: Main project context for EasyTrip (easytrip-saas) — Next.js full-stack SaaS
+globs:
+alwaysApply: true
+---
+
+# EasyTrip — Cursor Rules (main)
+
+> **Workspace layout:** L’applicazione vive in `easytrip-saas/`. La root `EasyTrip program_00` può contenere altri file; per comandi npm, Prisma e Next usa sempre `easytrip-saas/` come directory di lavoro.
+
+## Quick context
+
+**Project type:** Full-stack SaaS (Next.js App Router + API Routes + Prisma)
+
+**Primary language:** TypeScript
+
+**Frameworks:** Next.js 16.x, React 19.x
+
+**Tech stack (rilevato dal codice):**
+
+- **UI:** Tailwind CSS v4, Lucide React, Leaflet / react-leaflet (mappe)
+- **Auth:** Clerk (`@clerk/nextjs`)
+- **Database:** PostgreSQL via Prisma 6
+- **Pagamenti:** Stripe
+- **Job / eventi:** Inngest (`src/lib/inngest/`, route `api/inngest`)
+- **AI:** Anthropic SDK (generazione trip / contenuti)
+- **Analytics:** PostHog (client)
+- **Email:** Resend (variabili in `.env.example`)
+- **Supporto chat:** Crisp (ID pubblico)
+
+**Architecture:** Monolite Next.js con separazione **server** (controllers → services → repositories), **validazione Zod**, **DI container** in `src/server/di/container.ts`, UI in `src/app/`.
+
+## Comandi tipici (da `easytrip-saas/`)
+
+- `npm run dev` — Next dev (`--webpack` nello script)
+- `npm run build` / `npm start`
+- `npm run lint`
+- `npm run test:e2e` — Playwright
+- `npx prisma migrate` / `db:generate` come da README del progetto
+
+## Regole modulari
+
+- Architettura e cartelle: `.cursor/rules/architecture.mdc`
+- Stile codice: `.cursor/rules/code-style.mdc`
+- Git: `.cursor/rules/git-workflow.mdc`
+- Test: `.cursor/rules/testing.mdc`
+- Sicurezza: `.cursor/rules/security.mdc`
+- Comandi / percorsi rapidi: `.cursor/quick-reference.mdc`
+
+## Prompt per ruolo
+
+`.cursor/prompts/README.mdc` e i file in `.cursor/prompts/` (frontend, backend, review, QA, ecc.).
+
+---
+
+**Approach:** Hybrid (analisi codebase `easytrip-saas` + best practice)
+
+**Generated / curated:** 2026-04-08

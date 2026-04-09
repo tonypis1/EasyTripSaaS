@@ -4,8 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/observability";
 import { AppError } from "@/server/errors/AppError";
+import {
+  enforceRateLimit,
+  getClientIp,
+  waitlistLimiter,
+} from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rl = await enforceRateLimit(
+    waitlistLimiter,
+    `waitlist:${getClientIp(req)}`,
+  );
+  if (rl) return rl;
+
   try {
     const formData = await req.formData();
     const emailRaw = formData.get("email");

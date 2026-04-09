@@ -1,6 +1,5 @@
 import { AuthService } from "@/server/services/auth/authService";
 import { ReferralRepository } from "@/server/repositories/ReferralRepository";
-import { AppError } from "@/server/errors/AppError";
 import { config } from "@/config/unifiedConfig";
 import { sendTransactionalEmail } from "@/lib/email/transactional";
 import {

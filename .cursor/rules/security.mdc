@@ -1,0 +1,70 @@
+---
+description: Security best practices for authentication, input validation, API security, and data protection
+globs:
+alwaysApply: false
+---
+
+# Security Best Practices
+
+## Environment Variables
+
+**Environment Files Detected:** .env.example, .env
+**Variables:** 45 defined
+
+⚠️ **Secrets detected** - Ensure these are never committed to version control
+
+## Authentication & Authorization
+
+- Use industry-standard authentication (JWT, OAuth 2.0)
+- Never store passwords in plain text
+- Implement rate limiting on authentication endpoints
+- Use HTTPS in production
+- Validate tokens on every protected request
+
+## Input Validation
+
+- Validate all user inputs
+- Sanitize data before database queries
+- Use parameterized queries to prevent SQL injection
+- Validate file uploads (type, size, content)
+- Implement proper error handling without exposing sensitive data
+
+## API Security
+
+- Use API keys/tokens for authentication
+- Implement CORS properly
+- Rate limit all public endpoints
+- Log security events
+- Never expose internal error details to users
+
+## Data Protection
+
+- Never log sensitive data (passwords, tokens, PII)
+- Use environment variables for secrets
+- Never commit secrets to version control
+- Encrypt sensitive data at rest
+- Use secure session management
+
+## Dependencies
+
+- Keep dependencies updated
+- Audit dependencies regularly
+- Use lock files (package-lock.json, poetry.lock)
+- Review security advisories
+
+## Security Checklist
+
+Before deployment:
+- [ ] All secrets in environment variables
+- [ ] No sensitive data in version control
+- [ ] Dependencies audited and updated
+- [ ] HTTPS enabled
+- [ ] Input validation implemented
+- [ ] Authentication/authorization working
+- [ ] Rate limiting configured
+- [ ] Error messages don't expose internals
+- [ ] Security headers configured
+- [ ] Logs don't contain sensitive data
+
+---
+**Generated based on:** hybrid

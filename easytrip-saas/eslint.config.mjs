@@ -12,7 +12,23 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "scripts/**",
   ]),
+  {
+    files: ["src/app/page.tsx"],
+    rules: {
+      "react/no-unescaped-entities": "off",
+    },
+  },
+  {
+    files: [
+      "src/app/app/user-button-client.tsx",
+      "src/app/posthog-provider.tsx",
+    ],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

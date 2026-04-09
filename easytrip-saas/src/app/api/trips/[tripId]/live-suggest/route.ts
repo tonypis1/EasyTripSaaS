@@ -1,5 +1,6 @@
 import { container } from "@/server/di/container";
 import { auth } from "@clerk/nextjs/server";
+import { enforceRateLimit, liveSuggestLimiter } from "@/lib/rate-limit";
 
 const tripController = container.controllers.tripController;
 
@@ -16,6 +17,12 @@ export async function POST(
       { status: 401 },
     );
   }
+
+  const rl = await enforceRateLimit(
+    liveSuggestLimiter,
+    `live:${userId}:${tripId}`,
+  );
+  if (rl) return rl;
 
   return tripController.liveSuggest(tripId, req);
 }

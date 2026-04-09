@@ -1,0 +1,40 @@
+---
+description: Code style guidelines including naming conventions, documentation standards, and error handling patterns for TypeScript
+globs:
+alwaysApply: false
+---
+
+# Code Style Guidelines
+
+## Naming Conventions
+
+**Best Practices:**
+- Functions: camelCase (`getUserData`, `isValid`)
+- Variables: camelCase (`userName`, `isActive`)
+- Constants: UPPER_SNAKE_CASE (`API_BASE_URL`, `MAX_RETRIES`)
+- Classes: PascalCase (`UserProfile`, `DataTable`)
+- Files: kebab-case (`user-profile.ts`, `data-table.tsx`)
+
+## Function Documentation
+
+**Required for all public functions:**
+```javascript
+/**
+ * Brief description of function
+ * @param {string} param1 - Description
+ * @returns {Promise<Type>} Description
+ */
+```
+
+## Error Handling
+
+**Current Coverage:** 3% of functions
+**Logging Approach:** none
+
+## Code Patterns
+
+**Async/Await Usage:** 41%
+**Arrow Functions:** 0%
+
+---
+**Generated based on:** Industry best practices

@@ -1,7 +1,18 @@
 import { container } from "@/server/di/container";
 import { NextResponse } from "next/server";
+import {
+  enforceRateLimit,
+  getClientIp,
+  referralTrackLimiter,
+} from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const rl = await enforceRateLimit(
+    referralTrackLimiter,
+    `ref_track:${getClientIp(req)}`,
+  );
+  if (rl) return rl;
+
   try {
     const body = await req.json();
     const referralCode = typeof body.referralCode === "string" ? body.referralCode.trim() : "";

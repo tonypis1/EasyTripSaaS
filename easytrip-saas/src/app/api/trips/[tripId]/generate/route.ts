@@ -1,5 +1,6 @@
 import { container } from "@/server/di/container";
 import { auth } from "@clerk/nextjs/server";
+import { enforceRateLimit, tripGenerateLimiter } from "@/lib/rate-limit";
 
 const tripController = container.controllers.tripController;
 
@@ -17,6 +18,12 @@ export async function POST(
   if (!userId) {
     return Response.json({ ok: false, error: { message: "Non autenticato" } }, { status: 401 });
   }
+
+  const rl = await enforceRateLimit(
+    tripGenerateLimiter,
+    `gen:${userId}:${tripId}`,
+  );
+  if (rl) return rl;
 
   if (!tripId) {
     return Response.json(

@@ -2,6 +2,17 @@
 
 Applicazione [Next.js](https://nextjs.org) con **Prisma**, **PostgreSQL**, **Clerk**, **Stripe**, **Inngest** e **Anthropic** per generare itinerari strutturati (JSON), con rigenerazioni, carosello versioni, email transazionali (opzionali) e sostituzione slot con supporto GPS opzionale.
 
+## Documentazione operativa e prodotto
+
+| Documento | Contenuto |
+|-----------|-----------|
+| [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) | Specifica prodotto: problema, target, personas, business, metriche, user stories, MVP |
+| [`docs/openapi.yaml`](docs/openapi.yaml) | Specifica OpenAPI 3.x delle route `/api` |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploy, variabili d’ambiente, go-live |
+| [`docs/security-review.md`](docs/security-review.md) | Checklist sicurezza |
+| [`docs/observability.md`](docs/observability.md) | Logging, metriche, strumenti consigliati |
+| [`presentation.html`](presentation.html) | Pitch HTML con screenshot e stack (root progetto) |
+
 ## Documentazione HTML (visione prodotto)
 
 Nel repository, cartella **`docs/desktop-html/`**:
@@ -98,4 +109,10 @@ Se usi **Accedi con Google** nella finestra di `playwright codegen`, Google spes
 
 ## Deploy
 
-Vedi [documentazione Next.js](https://nextjs.org/docs/app/building-your-application/deploying) (es. Vercel). Configura webhook Stripe verso `https://tuodominio.com/api/webhooks/stripe`.
+Guida operativa: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (ordine setup env, go-live checklist, CI).
+
+Deploy standard: [documentazione Next.js](https://nextjs.org/docs/app/building-your-application/deploying) (es. Vercel). Webhook Stripe: `https://tuodominio.com/api/webhooks/stripe`.
+
+### CI (GitHub Actions)
+
+Su push/PR: **ESLint** + **test unitari** (`npm run test:unit`). La build di produzione si esegue in locale o sulla piattaforma di deploy con variabili complete (Clerk valida le chiavi durante `next build`).

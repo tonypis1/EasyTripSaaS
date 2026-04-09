@@ -1,5 +1,6 @@
 import { container } from "@/server/di/container";
 import { auth } from "@clerk/nextjs/server";
+import { enforceRateLimit, replaceSlotLimiter } from "@/lib/rate-limit";
 
 const tripController = container.controllers.tripController;
 
@@ -17,6 +18,12 @@ export async function POST(
   if (!userId) {
     return Response.json({ ok: false, error: { message: "Non autenticato" } }, { status: 401 });
   }
+
+  const rl = await enforceRateLimit(
+    replaceSlotLimiter,
+    `slot:${userId}:${tripId}`,
+  );
+  if (rl) return rl;
 
   return tripController.replaceSlot(tripId, req);
 }

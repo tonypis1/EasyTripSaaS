@@ -27,10 +27,10 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"]],
   use: {
+    ...devices["Desktop Firefox"],
     baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
     trace: "off",
     viewport: { width: 1440, height: 900 },
-    ...devices["Desktop Firefox"],
   },
   webServer: {
     command: "npm run dev",
