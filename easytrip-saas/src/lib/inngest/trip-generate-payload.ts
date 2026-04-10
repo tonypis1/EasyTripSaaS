@@ -61,7 +61,7 @@ export function resolveTripGeneratePayload(
       `Trigger ricevuto: "${event?.name ?? "sconosciuto"}".`,
       "Se nell'UI Inngest hai usato «Invoke» sulla funzione, non viene passato il payload:",
       `usa «Send event» con nome "${TRIP_GENERATE_EVENT}" e corpo JSON, ad es.:`,
-      '{ "name": "trip/generate.requested", "data": { "tripId": "ID_VIAGGIO", "userId": "clerk_..." } }',
+      '{ "name": "trip/generate.requested", "data": { "tripId": "ID_VIAGGIO" } }',
     ].join(" ")
   );
 }

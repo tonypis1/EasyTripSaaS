@@ -28,6 +28,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Solo severità critical blocca la CI (high/modernate restano visibili in report npm).
+      - name: Dependency audit (production)
+        run: npm audit --omit=dev --audit-level=critical
+
       - name: Lint
         run: npm run lint
 

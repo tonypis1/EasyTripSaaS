@@ -1,3 +1,4 @@
+import { roundCoordForAi } from "@/lib/geo-privacy";
 import { prisma } from "@/lib/prisma";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
 import { AppError } from "@/server/errors/AppError";
@@ -240,7 +241,7 @@ export class SlotReplaceService {
 
     const gpsHint =
       input.lat != null && input.lng != null
-        ? `GPS utente: lat ${input.lat.toFixed(5)}, lng ${input.lng.toFixed(5)}. Preferisci luoghi raggiungibili da questa posizione. Calcola le distanze da questo punto.`
+        ? `Area approssimativa utente (precisione ridotta): lat ${roundCoordForAi(input.lat)}, lng ${roundCoordForAi(input.lng)}. Preferisci luoghi raggiungibili da questa zona. Calcola le distanze da questo punto.`
         : `GPS non fornito. Scegli alternative coerenti con il percorso della giornata nella zona "${day.zoneFocus ?? trip.destination}".`;
 
     const prompt = buildUserPrompt({

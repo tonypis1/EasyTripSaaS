@@ -32,6 +32,11 @@ const envSchema = z.object({
 
   WAITLIST_INITIAL_COUNT: z.coerce.number().int().nonnegative().default(847),
   WAITLIST_CAPACITY: z.coerce.number().int().positive().default(200),
+
+  /** Giorni dopo cui eliminare versioni itinerario non attive (solo storico carosello). */
+  RETENTION_INACTIVE_TRIP_VERSION_DAYS: z.coerce.number().int().positive().default(365),
+  /** Giorni dopo soft-delete prima di rimuovere definitivamente il trip dal DB. */
+  RETENTION_SOFT_DELETED_TRIP_DAYS: z.coerce.number().int().positive().default(90),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -80,5 +85,9 @@ export const config = {
   waitlist: {
     initialCount: env.WAITLIST_INITIAL_COUNT,
     capacity: env.WAITLIST_CAPACITY,
+  },
+  retention: {
+    inactiveTripVersionDays: env.RETENTION_INACTIVE_TRIP_VERSION_DAYS,
+    softDeletedTripDays: env.RETENTION_SOFT_DELETED_TRIP_DAYS,
   },
 } as const;

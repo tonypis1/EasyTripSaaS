@@ -1,5 +1,6 @@
 import { config } from "@/config/unifiedConfig";
 import { logger } from "@/lib/observability";
+import { redactEmail } from "@/lib/redact-pii";
 
 type SendArgs = {
   to: string;
@@ -15,7 +16,7 @@ export async function sendTransactionalEmail(args: SendArgs): Promise<void> {
   const from = config.email.from;
   if (!key || !from) {
     logger.info("Email transazionale (mock — configura RESEND_API_KEY e EMAIL_FROM)", {
-      to: args.to,
+      to: redactEmail(args.to),
       subject: args.subject,
     });
     return;

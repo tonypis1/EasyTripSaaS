@@ -162,7 +162,7 @@ export class BillingService {
 
       await inngest.send({
         name: "trip/generate.requested",
-        data: { tripId: trip.id, userId: user.id },
+        data: { tripId: trip.id },
       });
 
       logger.info("Acquisto completato con crediti (nessun Stripe)", {
@@ -439,7 +439,7 @@ export class BillingService {
 
         await inngest.send({
           name: "trip/generate.requested",
-          data: { tripId, userId: appUserId },
+          data: { tripId },
         });
 
         return { received: true };
@@ -522,7 +522,7 @@ export class BillingService {
 
       await inngest.send({
         name: "trip/generate.requested",
-        data: { tripId, userId: appUserId },
+        data: { tripId },
       });
 
       try {

@@ -12,6 +12,7 @@ import { BillingService } from "@/server/services/billing/billingService";
 import { SupportService } from "@/server/services/support/supportService";
 import { ExpenseService } from "@/server/services/expense/expenseService";
 import { ReferralService } from "@/server/services/referral/referralService";
+import { UserDataService } from "@/server/services/privacy/userDataService";
 import { TripController } from "@/server/controllers/TripController";
 import { BillingController } from "@/server/controllers/BillingController";
 import { SupportController } from "@/server/controllers/SupportController";
@@ -37,6 +38,7 @@ const billingService = new BillingService(
 const supportService = new SupportService(authService, supportRepository);
 const expenseService = new ExpenseService(authService, expenseRepository, tripRepository);
 const referralService = new ReferralService(authService, referralRepository);
+const userDataService = new UserDataService();
 
 const tripController = new TripController(
   tripService,
@@ -67,6 +69,7 @@ export const container = {
     supportService,
     expenseService,
     referralService,
+    userDataService,
   },
   controllers: {
     tripController,

@@ -2,6 +2,7 @@ import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
 import { config } from "@/config/unifiedConfig";
 import { logger } from "@/lib/observability";
+import { redactEmail } from "@/lib/redact-pii";
 import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 import {
   creditExpiryReminderHtml,
@@ -75,7 +76,7 @@ export const creditExpiryReminders = inngest.createFunction(
             count++;
           } catch (err) {
             logger.error("Errore invio promemoria credito", err as Error, {
-              email: c.user.email,
+              email: redactEmail(c.user.email),
               daysLeft,
             });
           }

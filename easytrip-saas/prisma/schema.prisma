@@ -31,7 +31,10 @@ enum PaymentType {
 }
 
 // ========== MODELLI ==========
+// RoPA: commenti `/// purpose:` e `/// retention:` alimentano `npm run privacy:ropa`
 
+/// purpose: account, fatturazione e referral
+/// retention: vita dell’account; cancellazione su richiesta (export API) o retention legale pagamenti
 model User {
   id                String    @id @default(cuid())
   clerkUserId       String    @unique @map("clerk_user_id")
@@ -56,6 +59,8 @@ model User {
   referralsReceived Referral[]       @relation("ReferredUser")
 }
 
+/// purpose: generazione e consultazione itinerari, spese di gruppo
+/// retention: soft-delete + hard-delete dopo RETENTION_SOFT_DELETED_TRIP_DAYS; versioni non attive secondo policy Inngest
 model Trip {
   id              String     @id @default(cuid())
   organizerId     String     @map("organizer_id")
@@ -170,8 +175,8 @@ model Payment {
   amount        Decimal     @db.Decimal(10, 2)
   createdAt     DateTime    @default(now()) @map("created_at")
 
-  user User  @relation(fields: [userId], references: [id])
-  trip Trip? @relation(fields: [tripId], references: [id])
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip? @relation(fields: [tripId], references: [id], onDelete: SetNull)
 }
 
 model Credit {
@@ -185,8 +190,8 @@ model Credit {
   createdAt    DateTime  @default(now()) @map("created_at")
 
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  originTrip  Trip?      @relation("CreditOrigin", fields: [originTripId], references: [id])
-  usedOnTrip  Trip?      @relation("CreditUsed", fields: [usedOnTripId], references: [id])
+  originTrip  Trip?      @relation("CreditOrigin", fields: [originTripId], references: [id], onDelete: SetNull)
+  usedOnTrip  Trip?      @relation("CreditUsed", fields: [usedOnTripId], references: [id], onDelete: SetNull)
   referrals   Referral[]
 }
 
@@ -238,6 +243,8 @@ model SupportMessage {
 
 // ========== WAITLIST ==========
 
+/// purpose: notifiche marketing waitlist (email)
+/// retention: fino a cancellazione o opt-out; coerente con finalità raccolta
 model WaitlistEntry {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -273,3 +280,5 @@ model Referral {
   @@unique([referrerId, referredEmail])
   @@map("referral")
 }
+
+// --- Nota GDPR: finalità e tempi di conservazione per modello sono documentati con /// sopra ogni model. ---

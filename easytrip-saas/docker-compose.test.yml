@@ -1,0 +1,13 @@
+# Postgres dedicato ai test di integrazione locali.
+# Avvio: docker compose -f docker-compose.test.yml up -d
+# DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/easytrip_test
+# Poi: npx prisma db push
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: easytrip_test

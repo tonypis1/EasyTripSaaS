@@ -6,6 +6,7 @@ import { creditExpiryReminders } from "@/lib/inngest/functions/credit-expiry-rem
 import { waitlistDrip } from "@/lib/inngest/functions/waitlist-drip";
 import { preTripReminders } from "@/lib/inngest/functions/pre-trip-reminders";
 import { postTripFollowup } from "@/lib/inngest/functions/post-trip-followup";
+import { dataRetentionPurge } from "@/lib/inngest/functions/data-retention";
 
 /** Evita risposte GET cached: la sync del Dev Server deve sempre vedere le funzioni aggiornate. */
 export const dynamic = "force-dynamic";
@@ -20,5 +21,6 @@ export const { GET, POST, PUT } = serve({
     waitlistDrip,
     preTripReminders,
     postTripFollowup,
+    dataRetentionPurge,
   ],
 });

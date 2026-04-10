@@ -3,6 +3,7 @@ import { incrementWaitlistCount } from "@/lib/waitlist-store";
 import { prisma } from "@/lib/prisma";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/observability";
+import { redactEmail } from "@/lib/redact-pii";
 import { AppError } from "@/server/errors/AppError";
 import {
   enforceRateLimit,
@@ -38,14 +39,18 @@ export async function POST(req: Request) {
       try {
         await inngest.send({
           name: "waitlist/signup",
-          data: { email, waitlistEntryId: entry.id },
+          // Solo ID: l'email resta nel DB; evita PII nel payload Inngest (Privacy by Design).
+          data: { waitlistEntryId: entry.id },
         });
       } catch (inngestErr) {
         logger.error("Inngest event send failed (drip will not start)", inngestErr);
       }
     }
 
-    logger.info("Waitlist signup received", { email, entryId: entry.id });
+    logger.info("Waitlist signup received", {
+      email: redactEmail(email),
+      entryId: entry.id,
+    });
 
     const redirectUrl = new URL("/", req.url);
     redirectUrl.searchParams.set("waitlist", "ok");

@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "coverage/**",
     "next-env.d.ts",
     "scripts/**",
   ]),
@@ -27,6 +28,20 @@ const eslintConfig = defineConfig([
     ],
     rules: {
       "react-hooks/set-state-in-effect": "off",
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      eqeqeq: ["warn", "always", { null: "ignore" }],
+      "no-console": ["warn", { allow: ["warn", "error", "info"] }],
+      "prefer-const": "warn",
+    },
+  },
+  {
+    files: ["tests/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    rules: {
+      "no-console": "off",
     },
   },
 ]);

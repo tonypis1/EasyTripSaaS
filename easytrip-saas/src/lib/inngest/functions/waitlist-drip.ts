@@ -2,6 +2,7 @@ import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
 import { config } from "@/config/unifiedConfig";
 import { logger } from "@/lib/observability";
+import { redactEmail } from "@/lib/redact-pii";
 import {
   sendTransactionalEmail,
   waitlistWelcomeHtml,
@@ -61,10 +62,15 @@ export const waitlistDrip = inngest.createFunction(
     triggers: [{ event: "waitlist/signup" }],
   },
   async ({ event, step }) => {
-    const { email, waitlistEntryId } = event.data as {
-      email: string;
-      waitlistEntryId: string;
+    const raw = event.data as {
+      waitlistEntryId?: string;
+      /** @deprecated Solo eventi legacy; l'email non va più inviata a Inngest. */
+      email?: string;
     };
+    const waitlistEntryId = raw.waitlistEntryId;
+    if (!waitlistEntryId) {
+      throw new Error("waitlist/signup: waitlistEntryId mancante in event.data");
+    }
     const signupUrl = `${config.app.baseUrl}/app/trips?new=1`;
     let sent = 0;
 
@@ -79,15 +85,17 @@ export const waitlistDrip = inngest.createFunction(
         });
         if (!entry || entry.dripSent >= drip.num) return;
 
+        const toEmail = entry.email;
+
         try {
           await sendTransactionalEmail({
-            to: email,
+            to: toEmail,
             subject: drip.subject,
             html: drip.html(signupUrl),
           });
         } catch (err) {
           logger.error("Waitlist drip email failed", err as Error, {
-            email,
+            email: redactEmail(toEmail),
             step: drip.num,
           });
           return;
@@ -102,6 +110,13 @@ export const waitlistDrip = inngest.createFunction(
       sent++;
     }
 
-    return { email, sent };
+    const lastEntry = await prisma.waitlistEntry.findUnique({
+      where: { id: waitlistEntryId },
+      select: { email: true },
+    });
+    return {
+      emailRedacted: lastEntry ? redactEmail(lastEntry.email) : "[unknown]",
+      sent,
+    };
   },
 );

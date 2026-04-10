@@ -407,7 +407,7 @@ export class TripService {
 
     await inngest.send({
       name: "trip/generate.requested",
-      data: { tripId, userId: user.id },
+      data: { tripId },
     });
 
     return { ok: true };

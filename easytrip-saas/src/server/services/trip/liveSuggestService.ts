@@ -1,3 +1,4 @@
+import { roundCoordForAi } from "@/lib/geo-privacy";
 import { prisma } from "@/lib/prisma";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
 import { AppError } from "@/server/errors/AppError";
@@ -28,10 +29,31 @@ const SuggestionSchema = z.object({
   lng: z.union([z.number(), z.null()]).default(null),
 });
 
-const LiveResponseSchema = z.object({
+export const LiveResponseSchema = z.object({
   suggestions: z.array(SuggestionSchema).min(3).max(3),
   contextNote: z.string().min(1),
 });
+
+/** Parsing/validazione risposta AI (test e diagnostica). */
+export function parseLiveSuggestModelJson(raw: string): LiveSuggestResult {
+  const text = extractJsonText(raw);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new Error("LIVE_SUGGEST_JSON_PARSE");
+  }
+  const check = LiveResponseSchema.safeParse(parsed);
+  if (!check.success) {
+    throw new Error(
+      `Schema live suggest: ${check.error.issues.map((i) => i.message).slice(0, 4).join("; ")}`
+    );
+  }
+  return {
+    suggestions: check.data.suggestions,
+    contextNote: check.data.contextNote,
+  };
+}
 
 export type LiveSuggestion = z.infer<typeof SuggestionSchema>;
 
@@ -85,7 +107,7 @@ function buildUserPrompt(args: {
   return `
 SITUAZIONE LIVE
 L'utente è in viaggio a ${args.destination}, giorno ${args.dayNumber}.
-Posizione GPS attuale: lat ${args.lat.toFixed(6)}, lng ${args.lng.toFixed(6)}
+Posizione approssimativa (precisione ridotta): lat ${args.lat}, lng ${args.lng}
 Momento della giornata: ${args.timeOfDay}
 Motivo della richiesta: ${args.reasonDetail}
 
@@ -198,8 +220,8 @@ export class LiveSuggestService {
     const prompt = buildUserPrompt({
       destination: trip.destination,
       dayNumber: day.dayNumber,
-      lat: input.lat,
-      lng: input.lng,
+      lat: roundCoordForAi(input.lat),
+      lng: roundCoordForAi(input.lng),
       reason: input.reason,
       reasonDetail,
       currentSlotSummary,
@@ -222,26 +244,23 @@ export class LiveSuggestService {
       throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
     }
 
-    const text = extractJsonText(textBlock.text);
-    let parsed: unknown;
+    const rawText = extractJsonText(textBlock.text);
     try {
-      parsed = JSON.parse(text) as unknown;
-    } catch {
-      throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
+      return parseLiveSuggestModelJson(rawText);
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e.message === "LIVE_SUGGEST_JSON_PARSE") {
+          throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
+        }
+        if (e.message.startsWith("Schema live suggest:")) {
+          throw new AppError(
+            `Schema non conforme: ${e.message.replace(/^Schema live suggest:\s*/, "")}`,
+            502,
+            "AI_SCHEMA",
+          );
+        }
+      }
+      throw e;
     }
-
-    const check = LiveResponseSchema.safeParse(parsed);
-    if (!check.success) {
-      throw new AppError(
-        `Schema non conforme: ${check.error.issues.map((i) => i.message).slice(0, 3).join("; ")}`,
-        502,
-        "AI_SCHEMA",
-      );
-    }
-
-    return {
-      suggestions: check.data.suggestions,
-      contextNote: check.data.contextNote,
-    };
   }
 }

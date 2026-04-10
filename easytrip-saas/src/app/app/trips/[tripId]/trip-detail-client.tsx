@@ -70,6 +70,26 @@ import {
   isCrispEnabled,
 } from "@/app/app/crisp-chat";
 import { ExpensePanel } from "./expense-panel";
+import { roundCoordForAi } from "@/lib/geo-privacy";
+
+const GPS_AI_CONSENT_KEY = "easytrip_gps_ai_consent_v1";
+
+function readGpsAiConsent(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(GPS_AI_CONSENT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function grantGpsAiConsent(): void {
+  try {
+    sessionStorage.setItem(GPS_AI_CONSENT_KEY, "1");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
 
 type Props = {
   initialTrip: TripDetailDto;
@@ -276,6 +296,9 @@ export function TripDetailClient({
   } | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [gpsConsentModal, setGpsConsentModal] = useState<
+    null | { kind: "geo" } | { kind: "live"; dayId: string }
+  >(null);
 
   useEffect(() => setTrip(initialTrip), [initialTrip]);
 
@@ -423,6 +446,14 @@ export function TripDetailClient({
   }
 
   function requestGeo() {
+    if (!readGpsAiConsent()) {
+      setGpsConsentModal({ kind: "geo" });
+      return;
+    }
+    doRequestGeo();
+  }
+
+  function doRequestGeo() {
     if (!navigator.geolocation) {
       setMsg("Geolocalizzazione non supportata dal browser.");
       return;
@@ -430,10 +461,10 @@ export function TripDetailClient({
     setBusy("geo");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGeoLat(pos.coords.latitude);
-        setGeoLng(pos.coords.longitude);
+        setGeoLat(roundCoordForAi(pos.coords.latitude));
+        setGeoLng(roundCoordForAi(pos.coords.longitude));
         setBusy(null);
-        setMsg("Posizione acquisita.");
+        setMsg("Posizione acquisita (precisione ridotta per la privacy).");
       },
       () => {
         setBusy(null);
@@ -496,6 +527,14 @@ export function TripDetailClient({
   }
 
   async function onLiveSuggest(dayId: string) {
+    if (!readGpsAiConsent()) {
+      setGpsConsentModal({ kind: "live", dayId });
+      return;
+    }
+    await executeLiveSuggest(dayId);
+  }
+
+  async function executeLiveSuggest(dayId: string) {
     setBusy(`live-${dayId}`);
     setMsg(null);
     setLiveSuggest(null);
@@ -508,7 +547,10 @@ export function TripDetailClient({
         }
         navigator.geolocation.getCurrentPosition(
           (pos) =>
-            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            resolve({
+              lat: roundCoordForAi(pos.coords.latitude),
+              lng: roundCoordForAi(pos.coords.longitude),
+            }),
           () => reject(new Error("Impossibile ottenere la posizione GPS")),
           { enableHighAccuracy: true, timeout: 15_000 },
         );
@@ -535,8 +577,7 @@ export function TripDetailClient({
         tripId: trip.id,
         destination: trip.destination,
         dayId,
-        lat: coords.lat,
-        lng: coords.lng,
+        hadGps: true,
       });
       const d = json.data as LiveSuggestResult | undefined;
       if (d && Array.isArray(d.suggestions)) {
@@ -549,6 +590,22 @@ export function TripDetailClient({
     } finally {
       setBusy(null);
     }
+  }
+
+  function onGpsConsentAccept() {
+    const pending = gpsConsentModal;
+    setGpsConsentModal(null);
+    grantGpsAiConsent();
+    if (!pending) return;
+    if (pending.kind === "geo") {
+      doRequestGeo();
+      return;
+    }
+    void executeLiveSuggest(pending.dayId);
+  }
+
+  function onGpsConsentDismiss() {
+    setGpsConsentModal(null);
   }
 
   async function onSavePreferences() {
@@ -783,6 +840,47 @@ export function TripDetailClient({
       ) : null}
       {msg ? <Flash variant="neutral">{msg}</Flash> : null}
 
+      {gpsConsentModal ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gps-consent-title"
+        >
+          <div className="max-w-md rounded-2xl border border-et-border bg-et-card p-6 shadow-xl">
+            <h2
+              id="gps-consent-title"
+              className="text-lg font-semibold text-et-ink"
+            >
+              Posizione e suggerimenti AI
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-et-ink/75">
+              La posizione viene usata solo quando lo chiedi (non in background)
+              per &laquo;Cambia slot&raquo; e suggerimenti live. Viene inviata al
+              nostro server con precisione ridotta e al fornitore AI per
+              calcolare alternative vicine. Puoi negare il permesso del browser
+              in qualsiasi momento.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                className="rounded-xl border border-et-border px-4 py-2 text-sm text-et-ink/80 hover:bg-et-deep"
+                onClick={onGpsConsentDismiss}
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-et-accent px-4 py-2 text-sm font-semibold text-et-accent-ink hover:bg-et-accent/90"
+                onClick={onGpsConsentAccept}
+              >
+                Acconsenti e continua
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* ── Controlli: Carosello + Rigenera + GPS ── */}
       {showControls ? (
         <section className="space-y-5 rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
@@ -792,7 +890,10 @@ export function TripDetailClient({
               <p className="text-xs font-semibold uppercase tracking-wider text-et-ink/45">
                 Versioni generate
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div
+                className="flex flex-wrap gap-2"
+                data-testid="trip-version-pills"
+              >
                 {trip.versions.map((v) => {
                   const active = v.isActive;
                   return (
@@ -890,7 +991,7 @@ export function TripDetailClient({
             {geoLat != null && geoLng != null ? (
               <span className="flex items-center gap-1 text-xs text-et-accent/80">
                 <MapPin className="h-3 w-3" />
-                {geoLat.toFixed(4)}, {geoLng.toFixed(4)}
+                {geoLat.toFixed(3)}, {geoLng.toFixed(3)}
               </span>
             ) : (
               <span className="text-xs text-et-ink/40">

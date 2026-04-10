@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("signup guard redirects anonymous user", async ({ page }) => {
+test("signup guard redirects anonymous user @smoke", async ({ page }) => {
   await page.goto("/app/trips");
 
   // Clerk protegge /app: ci aspettiamo redirect verso signin/signup
