@@ -17,9 +17,14 @@ npm run dev          # Next.js dev (--webpack)
 npm run build        # Production build
 npm start            # Production server
 npm run lint         # ESLint
+npm run format:check # Prettier (stesso check della CI)
+npm run typecheck    # tsc --noEmit (stesso check della CI)
+npm run test:unit    # Vitest unit
 npm run test:e2e     # Playwright E2E
 npm run inngest:dev  # Inngest dev server (vedi package.json)
 ```
+
+**CI su GitHub:** vedi [`docs/DEPLOYMENT.md`](../easytrip-saas/docs/DEPLOYMENT.md) (sezione CI) — workflow `.github/workflows/ci.yml`.
 
 ## File Locations (in `easytrip-saas/`)
 
@@ -37,10 +42,9 @@ npm run inngest:dev  # Inngest dev server (vedi package.json)
 
 ## Environment Variables
 
-**Files:** .env.example, .env
-**Variables:** 45 defined
+**Riferimento:** `src/config/unifiedConfig.ts` e [`docs/DEPLOYMENT.md`](../easytrip-saas/docs/DEPLOYMENT.md). File locali tipici: `.env` / `.env.local` (mai in git).
 
-⚠️ Contains secrets - never commit actual values
+⚠️ Non committare valori reali di secret.
 
 ## Tech Stack Summary
 

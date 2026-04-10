@@ -18,15 +18,12 @@ async function waitForAppOriginPath(
   pathname: string,
   timeout = 90_000,
 ) {
-  const base = new URL(
-    process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
-  );
+  const base = new URL(process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000");
   await page.waitForURL(
     (url) => {
       try {
         const u = new URL(url);
-        const hostOk =
-          u.hostname === base.hostname && u.port === base.port;
+        const hostOk = u.hostname === base.hostname && u.port === base.port;
         const p = u.pathname.replace(/\/$/, "") || "/";
         return hostOk && p === pathname;
       } catch {

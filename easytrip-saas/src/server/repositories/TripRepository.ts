@@ -105,7 +105,11 @@ export class TripRepository {
   /**
    * Imposta la versione attiva (carosello, senza nuova generazione).
    */
-  async setActiveVersion(tripId: string, organizerId: string, versionNum: number) {
+  async setActiveVersion(
+    tripId: string,
+    organizerId: string,
+    versionNum: number,
+  ) {
     const trip = await prisma.trip.findFirst({
       where: { id: tripId, organizerId, deletedAt: null },
       include: { versions: { select: { id: true, versionNum: true } } },
@@ -113,7 +117,8 @@ export class TripRepository {
     if (!trip) return { ok: false as const, reason: "not_found" as const };
 
     const target = trip.versions.find((v) => v.versionNum === versionNum);
-    if (!target) return { ok: false as const, reason: "version_not_found" as const };
+    if (!target)
+      return { ok: false as const, reason: "version_not_found" as const };
 
     await prisma.$transaction([
       prisma.tripVersion.updateMany({
@@ -135,7 +140,7 @@ export class TripRepository {
 
   async markAsPaid(
     tripId: string,
-    payload: { paymentId: string; amountPaid: number }
+    payload: { paymentId: string; amountPaid: number },
   ) {
     return prisma.trip.update({
       where: { id: tripId },
@@ -239,9 +244,7 @@ export class TripRepository {
       return { ok: false as const, reason: "already_cancelled" as const };
     }
 
-    const paid = trip.amountPaid
-      ? Number(trip.amountPaid)
-      : 0;
+    const paid = trip.amountPaid ? Number(trip.amountPaid) : 0;
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 365);

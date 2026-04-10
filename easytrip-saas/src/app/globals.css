@@ -37,7 +37,8 @@
 
 /* Display: solo titoli — Instrument ha un solo peso, evitiamo "font-black" finto */
 .font-display {
-  font-family: var(--font-instrument), ui-serif, Georgia, "Times New Roman", serif;
+  font-family:
+    var(--font-instrument), ui-serif, Georgia, "Times New Roman", serif;
 }
 
 /* Grain leggero: profondità senza animazioni costose */
@@ -64,8 +65,16 @@
 /* Mesh hero: una sola “firma” visiva memorabile */
 .et-hero-mesh {
   background:
-    radial-gradient(ellipse 100% 80% at 12% -20%, var(--et-glow), transparent 50%),
-    radial-gradient(ellipse 70% 50% at 92% 8%, rgba(232, 197, 71, 0.06), transparent 45%),
+    radial-gradient(
+      ellipse 100% 80% at 12% -20%,
+      var(--et-glow),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 92% 8%,
+      rgba(232, 197, 71, 0.06),
+      transparent 45%
+    ),
     var(--et-bg-deep);
 }
 

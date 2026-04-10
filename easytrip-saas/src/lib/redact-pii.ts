@@ -11,7 +11,6 @@ export function redactEmail(email: string): string {
   }
   const local = trimmed.slice(0, at);
   const domain = trimmed.slice(at + 1);
-  const maskedLocal =
-    local.length <= 1 ? "*" : `${local[0]}***`;
+  const maskedLocal = local.length <= 1 ? "*" : `${local[0]}***`;
   return `${maskedLocal}@${domain}`;
 }

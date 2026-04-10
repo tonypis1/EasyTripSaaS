@@ -282,7 +282,10 @@ export class SlotReplaceService {
     const check = EnrichedResponseSchema.safeParse(parsed);
     if (!check.success) {
       throw new AppError(
-        `Schema non conforme: ${check.error.issues.map((i) => i.message).slice(0, 3).join("; ")}`,
+        `Schema non conforme: ${check.error.issues
+          .map((i) => i.message)
+          .slice(0, 3)
+          .join("; ")}`,
         502,
         "AI_SCHEMA",
       );

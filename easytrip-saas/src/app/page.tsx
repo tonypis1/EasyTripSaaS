@@ -119,51 +119,56 @@ function Form() {
             required
             autoComplete="email"
             placeholder="la-tua@email.com"
-            className="w-full rounded-xl border border-et-ink/14 bg-et-card px-4 py-3 text-sm text-et-ink placeholder:text-et-ink/45 outline-none transition focus:border-et-accent/55"
+            className="border-et-ink/14 bg-et-card text-et-ink placeholder:text-et-ink/45 focus:border-et-accent/55 w-full rounded-xl border px-4 py-3 text-sm transition outline-none"
           />
         </div>
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-et-accent px-5 py-3 text-sm font-semibold text-et-accent-ink transition hover:bg-et-accent/88 active:scale-[0.99] sm:w-auto"
+          className="bg-et-accent text-et-accent-ink hover:bg-et-accent/88 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition active:scale-[0.99] sm:w-auto"
         >
           Voglio l'accesso →
         </button>
       </div>
-      <p className="mt-3 text-xs text-et-ink/60">
+      <p className="text-et-ink/60 mt-3 text-xs">
         Beta in arrivo — posti limitati. Solo email.
       </p>
     </form>
   );
 }
 
-function HeroMinimal(props: { waitlistCount: number; waitlistCapacity: number }) {
+function HeroMinimal(props: {
+  waitlistCount: number;
+  waitlistCapacity: number;
+}) {
   return (
     <section className="et-grain et-hero-mesh relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:py-20">
-        <div className="inline-flex items-center gap-2 rounded-full border border-et-accent/22 bg-et-accent/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-et-accent/88">
-          <IconSparkles className="h-4 w-4 text-et-accent" />
+        <div className="border-et-accent/22 bg-et-accent/10 text-et-accent/88 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold tracking-[0.14em] uppercase">
+          <IconSparkles className="text-et-accent h-4 w-4" />
           Beta · posti limitati
         </div>
-        <div className="mt-8 border-l-2 border-et-accent/35 pl-6 sm:pl-8">
-          <h1 className="font-display text-4xl font-normal leading-[1.06] tracking-[-0.02em] text-et-ink sm:text-5xl md:text-[2.75rem]">
+        <div className="border-et-accent/35 mt-8 border-l-2 pl-6 sm:pl-8">
+          <h1 className="font-display text-et-ink text-4xl leading-[1.06] font-normal tracking-[-0.02em] sm:text-5xl md:text-[2.75rem]">
             Itinerari AI per viaggi brevi.
             <br />
-            <span className="italic text-et-accent">Pianifica in 30 secondi.</span>
+            <span className="text-et-accent italic">
+              Pianifica in 30 secondi.
+            </span>
           </h1>
         </div>
-        <p className="mt-6 max-w-2xl text-base leading-relaxed text-et-ink/70">
-          L&apos;AI crea un piano giorno per giorno, ottimizzato geograficamente,
-          con ristoranti locali e gemme nascoste. Accesso temporaneo: il giorno
-          2 si sblocca il giorno 2.
+        <p className="text-et-ink/70 mt-6 max-w-2xl text-base leading-relaxed">
+          L&apos;AI crea un piano giorno per giorno, ottimizzato
+          geograficamente, con ristoranti locali e gemme nascoste. Accesso
+          temporaneo: il giorno 2 si sblocca il giorno 2.
         </p>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(300px,400px)] lg:items-start lg:gap-10">
-          <div className="rounded-3xl border border-et-border bg-et-card p-6 shadow-[0_24px_80px_-48px_rgba(0,0,0,0.85)]">
-            <div className="text-sm text-et-ink/80">
+          <div className="border-et-border bg-et-card rounded-3xl border p-6 shadow-[0_24px_80px_-48px_rgba(0,0,0,0.85)]">
+            <div className="text-et-ink/80 text-sm">
               🔥 <strong className="text-et-ink">{props.waitlistCount}</strong>{" "}
               persone già in lista
             </div>
-            <div className="mt-2 text-xs text-et-ink/60">
+            <div className="text-et-ink/60 mt-2 text-xs">
               Accesso scontato a €4,99 per i primi{" "}
               <strong className="text-et-ink">{props.waitlistCapacity}</strong>.
             </div>
@@ -171,25 +176,27 @@ function HeroMinimal(props: { waitlistCount: number; waitlistCapacity: number })
               <Form />
             </div>
           </div>
-          <div className="rounded-3xl border border-et-border bg-et-card p-6 lg:-translate-y-3 lg:shadow-[0_32px_90px_-40px_rgba(182,227,107,0.12)]">
-            <div className="text-sm font-semibold text-et-ink/90">
+          <div className="border-et-border bg-et-card rounded-3xl border p-6 lg:-translate-y-3 lg:shadow-[0_32px_90px_-40px_rgba(182,227,107,0.12)]">
+            <div className="text-et-ink/90 text-sm font-semibold">
               Cosa ottieni subito
             </div>
-            <ul className="mt-4 space-y-3 text-sm text-et-ink/70">
+            <ul className="text-et-ink/70 mt-4 space-y-3 text-sm">
               <li className="flex gap-3">
-                <span className="mt-0.5 text-et-accent">✓</span>
+                <span className="text-et-accent mt-0.5">✓</span>
                 <span>Generazione itinerario AI per 2–5 o più giorni</span>
               </li>
               <li className="flex gap-3">
-                <span className="mt-0.5 text-et-accent">✓</span>
-                <span>Mappe e percorsi ottimizzati (minimizza spostamenti)</span>
+                <span className="text-et-accent mt-0.5">✓</span>
+                <span>
+                  Mappe e percorsi ottimizzati (minimizza spostamenti)
+                </span>
               </li>
               <li className="flex gap-3">
-                <span className="mt-0.5 text-et-accent">✓</span>
+                <span className="text-et-accent mt-0.5">✓</span>
                 <span>Rigenera: 3 gratis → 7 max → carosello</span>
               </li>
             </ul>
-            <div className="mt-5 rounded-2xl border border-et-border bg-black/20 p-4 text-xs text-et-ink/60">
+            <div className="border-et-border text-et-ink/60 mt-5 rounded-2xl border bg-black/20 p-4 text-xs">
               Cancellazione: credito, mai rimborso.
             </div>
           </div>
@@ -201,16 +208,16 @@ function HeroMinimal(props: { waitlistCount: number; waitlistCapacity: number })
 
 function Nav() {
   return (
-    <header className="sticky top-0 z-50 border-b border-et-border bg-et-deep/80 backdrop-blur">
+    <header className="border-et-border bg-et-deep/80 sticky top-0 z-50 border-b backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 font-display text-xl font-normal tracking-tight text-et-accent"
+          className="font-display text-et-accent inline-flex items-center gap-2 text-xl font-normal tracking-tight"
         >
-          <IconGlobe className="h-7 w-7 shrink-0 text-et-accent" />
+          <IconGlobe className="text-et-accent h-7 w-7 shrink-0" />
           EasyTrip
         </Link>
-        <nav className="hidden items-center gap-6 text-sm text-et-ink/70 md:flex">
+        <nav className="text-et-ink/70 hidden items-center gap-6 text-sm md:flex">
           <a href="#come-funziona" className="hover:text-et-ink">
             Come funziona
           </a>
@@ -226,7 +233,10 @@ function Nav() {
   );
 }
 
-function SectionContainer(props: { children: React.ReactNode; className?: string }) {
+function SectionContainer(props: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <section
       className={`mx-auto max-w-6xl px-4 py-14 sm:py-20 ${
@@ -243,85 +253,87 @@ function FeaturesSection() {
     <SectionContainer className="text-et-ink">
       <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-et-accent/88">
+          <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
             01 — Struttura & valore
           </p>
-          <h2
-            className="font-display mt-3 text-3xl font-normal leading-tight tracking-[-0.02em] sm:text-4xl"
-          >
+          <h2 className="font-display mt-3 text-3xl leading-tight font-normal tracking-[-0.02em] sm:text-4xl">
             Non acquisti un prodotto. Acquisti un'esperienza nel tempo.
           </h2>
-          <p className={`mt-4 max-w-xl text-base leading-relaxed text-et-ink/70`}>
+          <p
+            className={`text-et-ink/70 mt-4 max-w-xl text-base leading-relaxed`}
+          >
             La scadenza è il prodotto stesso: il fatto che il giorno 2 si
-            sblocchi solo il giorno 2 significa che l'utente apre l'app
-            ogni mattina del viaggio. Questo crea un engagement altissimo che
-            nessun PDF può replicare.
+            sblocchi solo il giorno 2 significa che l'utente apre l'app ogni
+            mattina del viaggio. Questo crea un engagement altissimo che nessun
+            PDF può replicare.
           </p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-et-border bg-et-card p-5">
+            <div className="border-et-border bg-et-card rounded-2xl border p-5">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📅</span>
                 <div className="font-semibold">Sblocco progressivo</div>
               </div>
-              <p className="mt-2 text-sm text-et-ink/65">
-                Il giorno 1 si vede solo il giorno 1. Il giorno 2 si sblocca
-                il giorno 2.
+              <p className="text-et-ink/65 mt-2 text-sm">
+                Il giorno 1 si vede solo il giorno 1. Il giorno 2 si sblocca il
+                giorno 2.
               </p>
             </div>
-            <div className="rounded-2xl border border-et-border bg-et-card p-5">
+            <div className="border-et-border bg-et-card rounded-2xl border p-5">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">⏳</span>
                 <div className="font-semibold">Accesso ≠ File</div>
               </div>
-              <p className="mt-2 text-sm text-et-ink/65">
-                Non acquisti un PDF. Acquisti l'accesso a un sistema dinamico che sa
-                dove sei e cosa succede oggi.
+              <p className="text-et-ink/65 mt-2 text-sm">
+                Non acquisti un PDF. Acquisti l'accesso a un sistema dinamico
+                che sa dove sei e cosa succede oggi.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-et-border bg-et-card p-6">
-          <p className="text-sm font-semibold text-et-ink/90">I 3 punti che contano</p>
+        <div className="border-et-border bg-et-card rounded-3xl border p-6">
+          <p className="text-et-ink/90 text-sm font-semibold">
+            I 3 punti che contano
+          </p>
           <div className="mt-5 space-y-4">
-            <div className="flex gap-4 rounded-2xl border border-et-border bg-black/10 p-4">
-              <div className="mt-0.5 text-et-accent" aria-hidden="true">
+            <div className="border-et-border flex gap-4 rounded-2xl border bg-black/10 p-4">
+              <div className="text-et-accent mt-0.5" aria-hidden="true">
                 <IconSparkles className="h-6 w-6" />
               </div>
               <div>
                 <div className="font-semibold">Generazione itinerario AI</div>
-                <div className="mt-1 text-sm text-et-ink/65">
+                <div className="text-et-ink/65 mt-1 text-sm">
                   Input: destinazione + date + stile. Output: piano giorno per
                   giorno sbloccato progressivamente.
                 </div>
               </div>
             </div>
-            <div className="flex gap-4 rounded-2xl border border-et-border bg-black/10 p-4">
-              <div className="mt-0.5 text-et-accent" aria-hidden="true">
+            <div className="border-et-border flex gap-4 rounded-2xl border bg-black/10 p-4">
+              <div className="text-et-accent mt-0.5" aria-hidden="true">
                 <IconMap className="h-6 w-6" />
               </div>
               <div>
                 <div className="font-semibold">Mappe Live</div>
-                <div className="mt-1 text-sm text-et-ink/65">
-                  Percorsi ottimizzati per minimizzare gli spostamenti. Un
-                  click per aprire su Google Maps o Waze.
+                <div className="text-et-ink/65 mt-1 text-sm">
+                  Percorsi ottimizzati per minimizzare gli spostamenti. Un click
+                  per aprire su Google Maps o Waze.
                 </div>
               </div>
             </div>
-            <div className="flex gap-4 rounded-2xl border border-et-border bg-black/10 p-4">
-              <div className="mt-0.5 text-et-accent" aria-hidden="true">
+            <div className="border-et-border flex gap-4 rounded-2xl border bg-black/10 p-4">
+              <div className="text-et-accent mt-0.5" aria-hidden="true">
                 <IconUsers className="h-6 w-6" />
               </div>
               <div>
                 <div className="font-semibold">PackedUp (gruppo)</div>
-                <div className="mt-1 text-sm text-et-ink/65">
+                <div className="text-et-ink/65 mt-1 text-sm">
                   Itinerario condiviso, votazioni in-app e split spese
                   integrato.
                 </div>
               </div>
             </div>
           </div>
-          <div className="mt-5 rounded-2xl border border-et-border bg-black/20 p-4 text-xs text-et-ink/60">
+          <div className="border-et-border text-et-ink/60 mt-5 rounded-2xl border bg-black/20 p-4 text-xs">
             Rigenera: 3 gratis → 7 max → carosello. Così smetti di cambiare
             continuamente e inizi a goderti il viaggio.
           </div>
@@ -392,23 +404,23 @@ function PricingSection(props: { waitlistCapacity: number }) {
   ];
 
   return (
-    <SectionContainer className="border-y border-et-border bg-et-raised">
+    <SectionContainer className="border-et-border bg-et-raised border-y">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-et-accent/88">
+          <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
             02 — Prezzi chiari
           </p>
-          <h2
-            className="font-display mt-3 text-3xl font-normal leading-tight tracking-[-0.02em] sm:text-4xl"
-          >
+          <h2 className="font-display mt-3 text-3xl leading-tight font-normal tracking-[-0.02em] sm:text-4xl">
             Prezzo semplice. Valore immediato.
           </h2>
-          <p className={`mt-3 max-w-xl text-base leading-relaxed text-et-ink/70`}>
-            Beta in arrivo — posti limitati. Accesso scontato a €4,99 per i primi{" "}
-            {props.waitlistCapacity}.
+          <p
+            className={`text-et-ink/70 mt-3 max-w-xl text-base leading-relaxed`}
+          >
+            Beta in arrivo — posti limitati. Accesso scontato a €4,99 per i
+            primi {props.waitlistCapacity}.
           </p>
         </div>
-        <div className="rounded-2xl border border-et-border bg-et-card px-4 py-3 text-sm text-et-ink/65">
+        <div className="border-et-border bg-et-card text-et-ink/65 rounded-2xl border px-4 py-3 text-sm">
           Beta: <span className="text-et-accent">€4,99</span> invece di{" "}
           <span className="text-et-ink/80">€9,99</span>
         </div>
@@ -427,40 +439,40 @@ function PricingSection(props: { waitlistCapacity: number }) {
               }`}
             >
               <div className="flex items-center justify-between gap-4">
-                <div className="inline-flex items-center rounded-full border border-et-border bg-black/20 px-3 py-1 text-xs font-semibold text-et-ink/70">
+                <div className="border-et-border text-et-ink/70 inline-flex items-center rounded-full border bg-black/20 px-3 py-1 text-xs font-semibold">
                   {plan.badge}
                 </div>
               </div>
 
-              <h3 className="mt-4 text-xl font-bold text-et-ink">
+              <h3 className="text-et-ink mt-4 text-xl font-bold">
                 {plan.name}
               </h3>
-              <p className="mt-1 text-sm text-et-ink/65">{plan.desc}</p>
+              <p className="text-et-ink/65 mt-1 text-sm">{plan.desc}</p>
 
               <div className="mt-5">
                 {plan.priceBeta ? (
                   <div className="flex flex-wrap items-baseline gap-2">
-                    <div className="text-3xl font-bold text-et-accent/88">
+                    <div className="text-et-accent/88 text-3xl font-bold">
                       {plan.priceBeta}
                     </div>
-                    <div className="text-xs font-semibold text-et-ink/60">
+                    <div className="text-et-ink/60 text-xs font-semibold">
                       {plan.priceBetaLabel}
                     </div>
-                    <div className="ml-auto text-sm text-et-ink/60 line-through">
+                    <div className="text-et-ink/60 ml-auto text-sm line-through">
                       {plan.priceMain}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-3xl font-bold text-et-ink">
+                  <div className="text-et-ink text-3xl font-bold">
                     {plan.priceMain}
                   </div>
                 )}
               </div>
 
-              <ul className="mt-5 space-y-3 text-sm text-et-ink/70">
+              <ul className="text-et-ink/70 mt-5 space-y-3 text-sm">
                 {plan.features.map((f) => (
                   <li key={f} className="flex gap-3">
-                    <span className="mt-0.5 text-et-accent">✓</span>
+                    <span className="text-et-accent mt-0.5">✓</span>
                     <span>{f}</span>
                   </li>
                 ))}
@@ -472,7 +484,7 @@ function PricingSection(props: { waitlistCapacity: number }) {
                   className={`inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition ${
                     highlighted
                       ? "bg-et-accent text-et-accent-ink hover:bg-et-accent/88"
-                      : "border border-et-ink/14 bg-et-card text-et-ink hover:bg-et-ink/[0.06]"
+                      : "border-et-ink/14 bg-et-card text-et-ink hover:bg-et-ink/[0.06] border"
                   }`}
                 >
                   {plan.cta}
@@ -480,7 +492,7 @@ function PricingSection(props: { waitlistCapacity: number }) {
               </div>
 
               {highlighted ? (
-                <div className="mt-4 rounded-2xl border border-et-border bg-black/20 p-3 text-xs text-et-ink/60">
+                <div className="border-et-border text-et-ink/60 mt-4 rounded-2xl border bg-black/20 p-3 text-xs">
                   3 gratis → 7 max → carosello: rigenera senza ansia, con un
                   limite chiaro.
                 </div>
@@ -490,12 +502,13 @@ function PricingSection(props: { waitlistCapacity: number }) {
         })}
       </div>
 
-      <div className="mt-6 rounded-3xl border border-et-border bg-et-card p-5">
-        <p className="text-sm font-semibold text-et-ink/90">In più (Premium)</p>
-        <p className="mt-2 text-sm text-et-ink/70">
-          Qualsiasi piano + <span className="text-et-accent/88">€3,99 add-on per città</span>{" "}
-          con LocalPass: posti curati da insider locali, gemme nascoste e
-          consigli non-turistici.
+      <div className="border-et-border bg-et-card mt-6 rounded-3xl border p-5">
+        <p className="text-et-ink/90 text-sm font-semibold">In più (Premium)</p>
+        <p className="text-et-ink/70 mt-2 text-sm">
+          Qualsiasi piano +{" "}
+          <span className="text-et-accent/88">€3,99 add-on per città</span> con
+          LocalPass: posti curati da insider locali, gemme nascoste e consigli
+          non-turistici.
         </p>
       </div>
     </SectionContainer>
@@ -543,17 +556,15 @@ function FAQSection() {
     <SectionContainer>
       <div id="faq" className="flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="max-w-xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-et-accent/88">
+          <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
             FAQ
           </p>
-          <h2
-            className="font-display mt-3 text-3xl font-normal leading-tight tracking-[-0.02em] sm:text-4xl"
-          >
+          <h2 className="font-display mt-3 text-3xl leading-tight font-normal tracking-[-0.02em] sm:text-4xl">
             Risposte rapide, prima che tu ci ripensi.
           </h2>
-          <p className={`mt-3 text-base leading-relaxed text-et-ink/70`}>
-            Cancellazione: credito, mai rimborso. I contenuti sono pensati
-            per essere vissuti nel tempo, non collezionati come file.
+          <p className={`text-et-ink/70 mt-3 text-base leading-relaxed`}>
+            Cancellazione: credito, mai rimborso. I contenuti sono pensati per
+            essere vissuti nel tempo, non collezionati come file.
           </p>
         </div>
 
@@ -562,15 +573,15 @@ function FAQSection() {
             {faqs.map((f) => (
               <details
                 key={f.q}
-                className="group rounded-2xl border border-et-border bg-et-card p-4"
+                className="group border-et-border bg-et-card rounded-2xl border p-4"
               >
-                <summary className="cursor-pointer list-none text-sm font-semibold text-et-ink/90">
+                <summary className="text-et-ink/90 cursor-pointer list-none text-sm font-semibold">
                   {f.q}
-                  <span className="float-right text-et-accent transition group-open:rotate-180">
+                  <span className="text-et-accent float-right transition group-open:rotate-180">
                     ▼
                   </span>
                 </summary>
-                <p className={`mt-3 text-sm leading-relaxed text-et-ink/70`}>
+                <p className={`text-et-ink/70 mt-3 text-sm leading-relaxed`}>
                   {f.a}
                 </p>
               </details>
@@ -609,15 +620,13 @@ function TestimonialsSection() {
   return (
     <SectionContainer className="bg-et-raised/80">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-et-accent/88">
+        <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
           Fiducia
         </p>
-        <h2
-          className="font-display mt-3 text-3xl font-normal leading-tight tracking-[-0.02em] sm:text-4xl"
-        >
+        <h2 className="font-display mt-3 text-3xl leading-tight font-normal tracking-[-0.02em] sm:text-4xl">
           Le frasi che senti prima di comprare.
         </h2>
-        <p className={`mt-3 text-base leading-relaxed text-et-ink/70`}>
+        <p className={`text-et-ink/70 mt-3 text-base leading-relaxed`}>
           Quando capisci che il piano non è un PDF, ma un sistema dinamico,
           smetti di perdere tempo e inizi a esplorare.
         </p>
@@ -627,17 +636,17 @@ function TestimonialsSection() {
         {testimonials.map((t) => (
           <figure
             key={t.label}
-            className="rounded-3xl border border-et-border bg-et-card p-6"
+            className="border-et-border bg-et-card rounded-3xl border p-6"
           >
-            <div className="text-xs font-semibold text-et-accent/88">
+            <div className="text-et-accent/88 text-xs font-semibold">
               {t.label}
             </div>
             <blockquote
-              className={`mt-3 text-sm leading-relaxed text-et-ink/80`}
+              className={`text-et-ink/80 mt-3 text-sm leading-relaxed`}
             >
               “{t.quote}”
             </blockquote>
-            <figcaption className="mt-4 text-xs text-et-ink/55">
+            <figcaption className="text-et-ink/55 mt-4 text-xs">
               Beta tester &amp; viaggiatori frequenti
             </figcaption>
           </figure>
@@ -647,39 +656,44 @@ function TestimonialsSection() {
   );
 }
 
-function CTASection(props: { waitlistCount: number; waitlistCapacity: number }) {
+function CTASection(props: {
+  waitlistCount: number;
+  waitlistCapacity: number;
+}) {
   return (
     <SectionContainer className="py-10 sm:py-14">
       <div
         id="waitlist"
-        className="rounded-3xl border border-et-border bg-gradient-to-b from-et-ink/[0.05] to-black/10 p-6 sm:p-10"
+        className="border-et-border from-et-ink/[0.05] rounded-3xl border bg-gradient-to-b to-black/10 p-6 sm:p-10"
       >
         <div className="grid gap-8 lg:grid-cols-[1fr_420px] lg:items-center">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-et-accent/88">
+            <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
               Beta in arrivo — posti limitati
             </p>
-            <h2
-              className="font-display mt-3 text-3xl font-normal leading-tight tracking-[-0.02em] sm:text-4xl"
-            >
+            <h2 className="font-display mt-3 text-3xl leading-tight font-normal tracking-[-0.02em] sm:text-4xl">
               Voglio l&apos;accesso.
               <br />
-              <span className="italic text-et-accent">Scontato a €4,99 in beta.</span>
+              <span className="text-et-accent italic">
+                Scontato a €4,99 in beta.
+              </span>
             </h2>
-            <p className={`mt-3 text-base leading-relaxed text-et-ink/70`}>
-              L'intera esperienza di viaggio è pensata per essere vissuta giorno dopo giorno.
+            <p className={`text-et-ink/70 mt-3 text-base leading-relaxed`}>
+              L'intera esperienza di viaggio è pensata per essere vissuta giorno
+              dopo giorno.
             </p>
-            <div className="mt-4 text-sm text-et-ink/60">
+            <div className="text-et-ink/60 mt-4 text-sm">
               🔥 <strong className="text-et-ink">{props.waitlistCount}</strong>{" "}
               persone già in lista • Accesso scontato a €4,99 per i primi{" "}
               <strong className="text-et-ink">{props.waitlistCapacity}</strong>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-et-border bg-black/20 p-5">
+          <div className="border-et-border rounded-2xl border bg-black/20 p-5">
             <Form />
-            <div className="mt-4 rounded-2xl border border-et-border bg-et-card p-4 text-xs text-et-ink/60">
-              Bonus: Invita un amico → <strong className="text-et-ink">1 trip gratis</strong>.
+            <div className="border-et-border bg-et-card text-et-ink/60 mt-4 rounded-2xl border p-4 text-xs">
+              Bonus: Invita un amico →{" "}
+              <strong className="text-et-ink">1 trip gratis</strong>.
             </div>
           </div>
         </div>
@@ -690,33 +704,42 @@ function CTASection(props: { waitlistCount: number; waitlistCapacity: number }) 
 
 function Footer() {
   return (
-    <footer className="border-t border-et-border bg-et-deep">
+    <footer className="border-et-border bg-et-deep border-t">
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="font-display text-lg font-normal tracking-tight text-et-accent">
+            <div className="font-display text-et-accent text-lg font-normal tracking-tight">
               EasyTrip
             </div>
-            <p className="mt-2 text-sm text-et-ink/60">
+            <p className="text-et-ink/60 mt-2 text-sm">
               Itinerari AI per viaggi brevi in Europa. Pianifica in 30 secondi.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <a className="text-sm text-et-ink/70 hover:text-et-ink" href="#come-funziona">
+            <a
+              className="text-et-ink/70 hover:text-et-ink text-sm"
+              href="#come-funziona"
+            >
               Come funziona
             </a>
-            <a className="text-sm text-et-ink/70 hover:text-et-ink" href="#prezzi">
+            <a
+              className="text-et-ink/70 hover:text-et-ink text-sm"
+              href="#prezzi"
+            >
               Prezzi
             </a>
-            <a className="text-sm text-et-ink/70 hover:text-et-ink" href="#faq">
+            <a className="text-et-ink/70 hover:text-et-ink text-sm" href="#faq">
               FAQ
             </a>
-            <Link className="text-sm text-et-ink/70 hover:text-et-ink" href="/app">
+            <Link
+              className="text-et-ink/70 hover:text-et-ink text-sm"
+              href="/app"
+            >
               Area riservata
             </Link>
           </div>
         </div>
-        <div className="mt-8 text-xs text-et-ink/45">
+        <div className="text-et-ink/45 mt-8 text-xs">
           © {new Date().getFullYear()} EasyTrip. Tutti i diritti riservati.
         </div>
       </div>
@@ -736,14 +759,14 @@ export default async function Home({
   const waitlistCapacity = stats.capacity;
 
   return (
-    <div className={`min-h-screen bg-et-deep text-et-ink`}>
+    <div className={`bg-et-deep text-et-ink min-h-screen`}>
       <Suspense fallback={null}>
         <ReferralCapture />
       </Suspense>
       <Nav />
       {success ? (
         <div className="mx-auto max-w-6xl px-4 pt-4">
-          <div className="rounded-2xl border border-et-accent/30 bg-et-accent/10 px-4 py-3 text-sm text-et-accent/88">
+          <div className="border-et-accent/30 bg-et-accent/10 text-et-accent/88 rounded-2xl border px-4 py-3 text-sm">
             Grazie! Sei dentro la lista beta. Ti contatteremo via email.
           </div>
         </div>
@@ -760,7 +783,10 @@ export default async function Home({
       <PricingSection waitlistCapacity={waitlistCapacity} />
       <TestimonialsSection />
       <FAQSection />
-      <CTASection waitlistCount={waitlistCount} waitlistCapacity={waitlistCapacity} />
+      <CTASection
+        waitlistCount={waitlistCount}
+        waitlistCapacity={waitlistCapacity}
+      />
       <Footer />
     </div>
   );

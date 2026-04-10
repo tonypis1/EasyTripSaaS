@@ -59,7 +59,10 @@ export class ExpenseService {
     return user;
   }
 
-  async addExpense(tripId: string, input: CreateExpenseInput): Promise<ExpenseDto> {
+  async addExpense(
+    tripId: string,
+    input: CreateExpenseInput,
+  ): Promise<ExpenseDto> {
     const user = await this.requireMembership(tripId);
 
     const members = await this.expenseRepo.getMembers(tripId);
@@ -116,7 +119,10 @@ export class ExpenseService {
     }));
   }
 
-  async deleteExpense(tripId: string, expenseId: string): Promise<{ deleted: true }> {
+  async deleteExpense(
+    tripId: string,
+    expenseId: string,
+  ): Promise<{ deleted: true }> {
     await this.requireMembership(tripId);
     const deleted = await this.expenseRepo.deleteById(expenseId, tripId);
     if (!deleted) {
@@ -149,14 +155,27 @@ export class ExpenseService {
   }
 
   private calculateSettlements(members: BalanceEntryDto[]): SettlementDto[] {
-    const debtors: { memberId: string; name: string | null; amount: number }[] = [];
-    const creditors: { memberId: string; name: string | null; amount: number }[] = [];
+    const debtors: { memberId: string; name: string | null; amount: number }[] =
+      [];
+    const creditors: {
+      memberId: string;
+      name: string | null;
+      amount: number;
+    }[] = [];
 
     for (const m of members) {
       if (m.balance < -0.01) {
-        debtors.push({ memberId: m.memberId, name: m.name, amount: Math.abs(m.balance) });
+        debtors.push({
+          memberId: m.memberId,
+          name: m.name,
+          amount: Math.abs(m.balance),
+        });
       } else if (m.balance > 0.01) {
-        creditors.push({ memberId: m.memberId, name: m.name, amount: m.balance });
+        creditors.push({
+          memberId: m.memberId,
+          name: m.name,
+          amount: m.balance,
+        });
       }
     }
 

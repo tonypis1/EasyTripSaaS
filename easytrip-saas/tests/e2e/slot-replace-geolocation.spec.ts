@@ -4,7 +4,10 @@ const authState = process.env.E2E_AUTH_STORAGE_STATE;
 const tripId = process.env.E2E_TRIP_ID;
 
 test.describe("slot replace with geolocation", () => {
-  test.skip(!authState || !tripId, "Set E2E_AUTH_STORAGE_STATE and E2E_TRIP_ID");
+  test.skip(
+    !authState || !tripId,
+    "Set E2E_AUTH_STORAGE_STATE and E2E_TRIP_ID",
+  );
 
   test.use({ storageState: authState! });
 

@@ -13,4 +13,4 @@ Per controlli **HTTP sintetici** su produzione o staging senza integrarli nel me
 
 **Nota:** le route `/api/inngest` e le API protette da Clerk **non** sono adatte a check anonimi senza token; limitarsi a URL pubblici o usare [Checkly Browser checks](https://www.checklyhq.com/docs/browser-checks/) con credenziali di test in **secrets** Checkly, mai in repository.
 
-Questo monitoraggio è **opzionale** e non blocca i merge: la qualità minima resta definita da `.github/workflows/qa.yml` (lint, unit+coverage, integrazione DB, Playwright smoke).
+Questo monitoraggio è **opzionale** e non blocca i merge: la qualità minima sul codice è definita dal workflow **`CI`** ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)): audit dipendenze (solo **critical** in produzione), Prettier, ESLint, TypeScript, test unitari, coverage, integrazione con Postgres di servizio, Playwright smoke (`@smoke`). Oltre a ciò: **CodeQL** (SAST) e, opzionalmente, E2E sulla Preview Vercel dopo il deploy. Dettaglio e ordine degli step: [`docs/DEPLOYMENT.md`](DEPLOYMENT.md#ci-github-actions).

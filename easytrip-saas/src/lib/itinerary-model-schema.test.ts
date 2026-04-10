@@ -98,14 +98,14 @@ describe("parseAndValidateModelJson", () => {
 
   it("throws on invalid JSON", () => {
     expect(() => parseAndValidateModelJson("not json", 1)).toThrow(
-      /JSON non valido/
+      /JSON non valido/,
     );
   });
 
   it("throws when day count mismatches", () => {
-    expect(() =>
-      parseAndValidateModelJson(validPayload(2), 1)
-    ).toThrow(/Numero giorni non valido/);
+    expect(() => parseAndValidateModelJson(validPayload(2), 1)).toThrow(
+      /Numero giorni non valido/,
+    );
   });
 
   it("throws when a dayNumber is missing in sequence", () => {
@@ -113,7 +113,9 @@ describe("parseAndValidateModelJson", () => {
       optimizationScore: 5,
       days: [day(1), day(3)],
     });
-    expect(() => parseAndValidateModelJson(bad, 2)).toThrow(/Manca dayNumber=2/);
+    expect(() => parseAndValidateModelJson(bad, 2)).toThrow(
+      /Manca dayNumber=2/,
+    );
   });
 
   it("throws on schema violation", () => {
@@ -121,7 +123,9 @@ describe("parseAndValidateModelJson", () => {
       optimizationScore: 0,
       days: [day(1)],
     });
-    expect(() => parseAndValidateModelJson(bad, 1)).toThrow(/Schema non valido/);
+    expect(() => parseAndValidateModelJson(bad, 1)).toThrow(
+      /Schema non valido/,
+    );
   });
 
   it("throws when optimizationScore above 10", () => {
@@ -129,6 +133,8 @@ describe("parseAndValidateModelJson", () => {
       optimizationScore: 11,
       days: [day(1)],
     });
-    expect(() => parseAndValidateModelJson(bad, 1)).toThrow(/Schema non valido/);
+    expect(() => parseAndValidateModelJson(bad, 1)).toThrow(
+      /Schema non valido/,
+    );
   });
 });

@@ -10,13 +10,16 @@ const tripController = container.controllers.tripController;
  */
 export async function POST(
   _req: Request,
-  { params }: { params: Promise<{ tripId: string }> }
+  { params }: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await params;
 
   const { userId } = await auth();
   if (!userId) {
-    return Response.json({ ok: false, error: { message: "Non autenticato" } }, { status: 401 });
+    return Response.json(
+      { ok: false, error: { message: "Non autenticato" } },
+      { status: 401 },
+    );
   }
 
   const rl = await enforceRateLimit(
@@ -28,7 +31,7 @@ export async function POST(
   if (!tripId) {
     return Response.json(
       { ok: false, error: { message: "tripId richiesto" } },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

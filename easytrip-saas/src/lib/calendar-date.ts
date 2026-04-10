@@ -15,11 +15,14 @@ export function toDateOnlyIsoUtc(d: Date): string {
 }
 
 /** Giorni inclusivi tra due date di calendario (UTC), es. 24→27 marzo = 4 giorni. */
-export function inclusiveCalendarDaysBetweenUtc(start: Date, end: Date): number {
+export function inclusiveCalendarDaysBetweenUtc(
+  start: Date,
+  end: Date,
+): number {
   const s = Date.UTC(
     start.getUTCFullYear(),
     start.getUTCMonth(),
-    start.getUTCDate()
+    start.getUTCDate(),
   );
   const e = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
   return Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1;

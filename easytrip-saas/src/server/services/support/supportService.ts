@@ -1,7 +1,10 @@
 import { AuthService } from "@/server/services/auth/authService";
 import { SupportRepository } from "@/server/repositories/SupportRepository";
 import { AppError } from "@/server/errors/AppError";
-import type { CreateTicketInput, AddMessageInput } from "@/server/validators/support.schema";
+import type {
+  CreateTicketInput,
+  AddMessageInput,
+} from "@/server/validators/support.schema";
 
 export type TicketDto = {
   id: string;
@@ -60,7 +63,10 @@ export class SupportService {
     return tickets.map((t) => this.toDto(t));
   }
 
-  async addMessage(ticketId: string, input: AddMessageInput): Promise<TicketDto> {
+  async addMessage(
+    ticketId: string,
+    input: AddMessageInput,
+  ): Promise<TicketDto> {
     const user = await this.authService.getOrCreateCurrentUser();
 
     const ticket = await this.supportRepository.findByIdForUser(
@@ -71,11 +77,7 @@ export class SupportService {
       throw new AppError("Ticket non trovato", 404, "TICKET_NOT_FOUND");
     }
     if (ticket.status === "closed" || ticket.status === "resolved") {
-      throw new AppError(
-        "Il ticket è già chiuso",
-        400,
-        "TICKET_CLOSED",
-      );
+      throw new AppError("Il ticket è già chiuso", 400, "TICKET_CLOSED");
     }
 
     await this.supportRepository.addMessage(ticketId, "user", input.body);

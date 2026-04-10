@@ -9,13 +9,16 @@ const tripController = container.controllers.tripController;
  */
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ tripId: string }> }
+  { params }: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await params;
 
   const { userId } = await auth();
   if (!userId) {
-    return Response.json({ ok: false, error: { message: "Non autenticato" } }, { status: 401 });
+    return Response.json(
+      { ok: false, error: { message: "Non autenticato" } },
+      { status: 401 },
+    );
   }
 
   return tripController.updatePreferences(tripId, req);

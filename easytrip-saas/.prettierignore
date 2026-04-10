@@ -1,0 +1,12 @@
+.next
+out
+build
+coverage
+node_modules
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.next/cache
+*.min.js
+.next/types
+prisma/migrations

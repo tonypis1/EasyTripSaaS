@@ -42,7 +42,7 @@ describe("TripController.replaceSlot", () => {
       tripService,
       authService,
       slotReplaceService,
-      liveSuggestService
+      liveSuggestService,
     );
 
     const req = new Request("http://localhost/api/trips/t1/replace-slot", {
@@ -67,7 +67,7 @@ describe("TripController.replaceSlot", () => {
         tripId: "t1",
         dayId: "day-1",
         slot: "morning",
-      })
+      }),
     );
   });
 
@@ -76,7 +76,7 @@ describe("TripController.replaceSlot", () => {
       {} as TripService,
       { getOrCreateCurrentUser: vi.fn() } as unknown as AuthService,
       { replaceSlot: vi.fn() } as unknown as SlotReplaceService,
-      {} as LiveSuggestService
+      {} as LiveSuggestService,
     );
     const req = new Request("http://localhost/x", {
       method: "POST",

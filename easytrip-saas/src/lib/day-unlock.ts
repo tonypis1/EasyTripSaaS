@@ -2,7 +2,10 @@
  * Sblocco “a minuti”: ogni giorno si sblocca solo dopo le 00:01 locali del device.
  * La stringa `unlockDateStr` è `YYYY-MM-DD` (data di calendario).
  */
-export function isDayUnlocked(unlockDateStr: string, now = new Date()): boolean {
+export function isDayUnlocked(
+  unlockDateStr: string,
+  now = new Date(),
+): boolean {
   const [y, m, d] = unlockDateStr.split("-").map(Number);
   if (!y || !m || !d) return false;
   const unlockAt = new Date(y, m - 1, d, 0, 1, 0, 0); // 00:01:00.000 del giorno locale
@@ -62,7 +65,10 @@ export function tripPhase(
  * Giorni rimanenti fino allo sblocco di un singolo giorno.
  * Ritorna 0 se già sbloccato, altrimenti il numero di giorni di attesa.
  */
-export function daysUntilUnlock(unlockDateStr: string, now = new Date()): number {
+export function daysUntilUnlock(
+  unlockDateStr: string,
+  now = new Date(),
+): number {
   const unlock = parseLocalMidnight(unlockDateStr);
   if (!unlock) return 0;
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());

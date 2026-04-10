@@ -34,8 +34,8 @@ alwaysApply: true
 
 - `npm run dev` — Next dev (`--webpack` nello script)
 - `npm run build` / `npm start`
-- `npm run lint`
-- `npm run test:e2e` — Playwright
+- `npm run lint` / `npm run format:check` / `npm run typecheck` — qualità (allineati alla CI in `easytrip-saas/docs/DEPLOYMENT.md`)
+- `npm run test:unit` / `npm run test:e2e` — Vitest e Playwright
 - `npx prisma migrate` / `db:generate` come da README del progetto
 
 ## Regole modulari

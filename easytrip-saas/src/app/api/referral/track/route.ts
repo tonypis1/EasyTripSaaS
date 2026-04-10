@@ -15,7 +15,8 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const referralCode = typeof body.referralCode === "string" ? body.referralCode.trim() : "";
+    const referralCode =
+      typeof body.referralCode === "string" ? body.referralCode.trim() : "";
 
     if (!referralCode) {
       return NextResponse.json(

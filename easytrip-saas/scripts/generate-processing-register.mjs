@@ -45,14 +45,16 @@ for (const line of lines) {
 const out = {
   generatedAt: new Date().toISOString(),
   sourceFile: "prisma/schema.prisma",
-  note:
-    "Integrare con base giuridica, responsabili del trattamento e trasferimenti extra-UE. Questo file è un supporto tecnico, non sostituisce il registro GDPR aziendale.",
+  note: "Integrare con base giuridica, responsabili del trattamento e trasferimenti extra-UE. Questo file è un supporto tecnico, non sostituisce il registro GDPR aziendale.",
   models: entries,
   subprocessors: [
     { name: "Clerk", role: "Autenticazione e gestione account" },
     { name: "Stripe", role: "Pagamenti" },
     { name: "Inngest", role: "Code e job in background" },
-    { name: "Anthropic", role: "Generazione contenuti itinerario (API server-side)" },
+    {
+      name: "Anthropic",
+      role: "Generazione contenuti itinerario (API server-side)",
+    },
     { name: "Resend", role: "Email transazionali (se configurato)" },
     { name: "PostHog", role: "Analytics prodotto (se abilitato)" },
   ],

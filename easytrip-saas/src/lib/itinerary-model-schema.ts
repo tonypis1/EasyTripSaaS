@@ -72,7 +72,7 @@ export type DayPlanExtended = z.infer<typeof DayPlanExtendedSchema>;
 
 export function parseAndValidateModelJson(
   raw: string,
-  numDays: number
+  numDays: number,
 ): { optimizationScore: number; days: DayPlanExtended[] } {
   const text = extractJsonText(raw);
   let parsed: unknown;
@@ -88,14 +88,14 @@ export function parseAndValidateModelJson(
       `Schema non valido: ${check.error.issues
         .map((i) => i.message)
         .slice(0, 4)
-        .join("; ")}`
+        .join("; ")}`,
     );
   }
 
   const { optimizationScore, days } = check.data;
   if (days.length !== numDays) {
     throw new Error(
-      `Numero giorni non valido: attesi ${numDays}, ottenuti ${days.length}`
+      `Numero giorni non valido: attesi ${numDays}, ottenuti ${days.length}`,
     );
   }
 

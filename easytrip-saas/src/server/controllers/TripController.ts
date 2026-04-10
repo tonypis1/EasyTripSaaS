@@ -32,7 +32,7 @@ export class TripController extends BaseController {
       if (error instanceof SyntaxError) {
         return this.fail(
           new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.create"
+          "TripController.create",
         );
       }
       return this.fail(error, "TripController.create");
@@ -95,14 +95,14 @@ export class TripController extends BaseController {
       const { versionNum } = setActiveVersionSchema.parse(body);
       const result = await this.tripService.setActiveTripVersion(
         tripId,
-        versionNum
+        versionNum,
       );
       return this.ok(result);
     } catch (error) {
       if (error instanceof SyntaxError) {
         return this.fail(
           new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.setActiveVersion"
+          "TripController.setActiveVersion",
         );
       }
       return this.fail(error, "TripController.setActiveVersion");
@@ -127,7 +127,7 @@ export class TripController extends BaseController {
       if (error instanceof SyntaxError) {
         return this.fail(
           new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.replaceSlot"
+          "TripController.replaceSlot",
         );
       }
       return this.fail(error, "TripController.replaceSlot");
@@ -170,7 +170,7 @@ export class TripController extends BaseController {
       if (error instanceof SyntaxError) {
         return this.fail(
           new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.updatePreferences"
+          "TripController.updatePreferences",
         );
       }
       return this.fail(error, "TripController.updatePreferences");

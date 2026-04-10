@@ -13,12 +13,20 @@ const envSchema = z.object({
 
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
-  STRIPE_PRICE_SOLO_COUPLE_CENTS: z.coerce.number().int().positive().default(999),
+  STRIPE_PRICE_SOLO_COUPLE_CENTS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(999),
   STRIPE_PRICE_GROUP_CENTS: z.coerce.number().int().positive().default(1499),
   /** Rigenerazione itinerario (default €1,99). */
   STRIPE_PRICE_REGEN_CENTS: z.coerce.number().int().positive().default(199),
   /** Riattivazione accesso post-trip (default €2,90). */
-  STRIPE_PRICE_REACTIVATE_CENTS: z.coerce.number().int().positive().default(290),
+  STRIPE_PRICE_REACTIVATE_CENTS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(290),
 
   /** Resend.com — opzionale; se assente le email transazionali sono solo loggate in dev. */
   RESEND_API_KEY: z.string().optional(),
@@ -34,18 +42,26 @@ const envSchema = z.object({
   WAITLIST_CAPACITY: z.coerce.number().int().positive().default(200),
 
   /** Giorni dopo cui eliminare versioni itinerario non attive (solo storico carosello). */
-  RETENTION_INACTIVE_TRIP_VERSION_DAYS: z.coerce.number().int().positive().default(365),
+  RETENTION_INACTIVE_TRIP_VERSION_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(365),
   /** Giorni dopo soft-delete prima di rimuovere definitivamente il trip dal DB. */
-  RETENTION_SOFT_DELETED_TRIP_DAYS: z.coerce.number().int().positive().default(90),
+  RETENTION_SOFT_DELETED_TRIP_DAYS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(90),
 });
 
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   throw new Error(
-    `Invalid environment configuration: ${parsed.error.flatten().formErrors.join(
-      ", "
-    )}`
+    `Invalid environment configuration: ${parsed.error
+      .flatten()
+      .formErrors.join(", ")}`,
   );
 }
 
@@ -79,8 +95,7 @@ export const config = {
   ai: {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
     /** Default: Sonnet 4 (sostituisce snapshot 3.5 spesso deprecati / non trovati). */
-    anthropicModel:
-      env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
+    anthropicModel: env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
   },
   waitlist: {
     initialCount: env.WAITLIST_INITIAL_COUNT,

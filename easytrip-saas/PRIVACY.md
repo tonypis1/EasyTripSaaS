@@ -11,56 +11,56 @@ I dati sotto sono organizzati per **origine** e **destinazione di conservazione*
 
 ### 1.1 Identità e account (Clerk → applicazione)
 
-| Dato / categoria | Dove viene memorizzato | Note tecniche |
-|------------------|------------------------|---------------|
-| Identificativo Clerk | `User.clerkUserId` | Collegamento univoco tra sessione Clerk e record applicativo. |
-| Email | `User.email` | Sincronizzata con l’account; usata per account, fatturazione e comunicazioni coerenti con il prodotto. |
-| Nome (opzionale) | `User.name` | Profilo utente. |
-| Piano / abbonamento (metadati) | `User.planType`, `User.subExpiresAt` | Informazioni di prodotto legate al billing. |
-| Cliente Stripe (riferimento) | `User.stripeCustomerId` | **Non** sono memorizzati numeri di carta sul database dell’app; Stripe gestisce i dati di pagamento. |
-| Saldo crediti | `User.creditBalance` | Valore monetario dei crediti utente. |
-| Codice referral | `User.referralCode`, `User.referredBy` | Programma inviti. |
+| Dato / categoria               | Dove viene memorizzato                 | Note tecniche                                                                                          |
+| ------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Identificativo Clerk           | `User.clerkUserId`                     | Collegamento univoco tra sessione Clerk e record applicativo.                                          |
+| Email                          | `User.email`                           | Sincronizzata con l’account; usata per account, fatturazione e comunicazioni coerenti con il prodotto. |
+| Nome (opzionale)               | `User.name`                            | Profilo utente.                                                                                        |
+| Piano / abbonamento (metadati) | `User.planType`, `User.subExpiresAt`   | Informazioni di prodotto legate al billing.                                                            |
+| Cliente Stripe (riferimento)   | `User.stripeCustomerId`                | **Non** sono memorizzati numeri di carta sul database dell’app; Stripe gestisce i dati di pagamento.   |
+| Saldo crediti                  | `User.creditBalance`                   | Valore monetario dei crediti utente.                                                                   |
+| Codice referral                | `User.referralCode`, `User.referredBy` | Programma inviti.                                                                                      |
 
 **Clerk** gestisce autenticazione, sessioni e profilo lato provider; l’app conserva una copia minimale in `User` per logiche di business (itinerari, pagamenti, referral).
 
 ### 1.2 Itinerari e contenuti di viaggio
 
-| Dato / categoria | Dove viene memorizzato | Note tecniche |
-|------------------|------------------------|---------------|
-| Metadati viaggio | `Trip` (destinazione, date, tipo, stile, budget, stato, scadenze accesso, token invito, soft-delete, ecc.) | Nucleo del prodotto. |
-| Versioni itinerario (carosello) | `TripVersion` | Storico versioni generate; una versione può essere contrassegnata come attiva. |
-| Giorni e contenuti | `Day` | Testi attività (campi serializzati/JSON), titoli, **coordinate centro mappa POI** (`mapCenterLat` / `mapCenterLng`), zone, suggerimenti. |
-| Membri e ruoli | `TripMember` | Collegamento utente–viaggio, ruolo (organizzatore/membro), saldi spese. |
-| Spese di gruppo | `Expense` | Importi, descrizioni, categorie, chi ha pagato. |
+| Dato / categoria                | Dove viene memorizzato                                                                                     | Note tecniche                                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Metadati viaggio                | `Trip` (destinazione, date, tipo, stile, budget, stato, scadenze accesso, token invito, soft-delete, ecc.) | Nucleo del prodotto.                                                                                                                     |
+| Versioni itinerario (carosello) | `TripVersion`                                                                                              | Storico versioni generate; una versione può essere contrassegnata come attiva.                                                           |
+| Giorni e contenuti              | `Day`                                                                                                      | Testi attività (campi serializzati/JSON), titoli, **coordinate centro mappa POI** (`mapCenterLat` / `mapCenterLng`), zone, suggerimenti. |
+| Membri e ruoli                  | `TripMember`                                                                                               | Collegamento utente–viaggio, ruolo (organizzatore/membro), saldi spese.                                                                  |
+| Spese di gruppo                 | `Expense`                                                                                                  | Importi, descrizioni, categorie, chi ha pagato.                                                                                          |
 
 **Coordinate nel database:** sono associate ai **contenuti dell’itinerario** (es. centro mappa per POI giornata), non alla posizione GPS dell’utente in tempo reale.
 
 ### 1.3 Pagamenti e crediti
 
-| Dato / categoria | Dove viene memorizzato | Note tecniche |
-|------------------|------------------------|---------------|
-| Pagamenti | `Payment` | Tipo (`purchase`, `regen`, `reactivate`), importo, riferimenti Stripe (`stripePaymentId`), collegamento opzionale a `Trip`. |
-| Crediti | `Credit` | Importo, scadenza, utilizzo, collegamenti opzionali a viaggi. |
+| Dato / categoria | Dove viene memorizzato | Note tecniche                                                                                                               |
+| ---------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Pagamenti        | `Payment`              | Tipo (`purchase`, `regen`, `reactivate`), importo, riferimenti Stripe (`stripePaymentId`), collegamento opzionale a `Trip`. |
+| Crediti          | `Credit`               | Importo, scadenza, utilizzo, collegamenti opzionali a viaggi.                                                               |
 
 ### 1.4 Supporto e referral
 
-| Dato / categoria | Dove viene memorizzato | Note tecniche |
-|------------------|------------------------|---------------|
-| Ticket supporto | `SupportTicket`, `SupportMessage` | Oggetto, stato, canale; messaggi testuali; opzionale `crispSessionId` se integrazione Crisp. |
-| Referral | `Referral` | Email invitato, stato, collegamenti a utenti/crediti. |
+| Dato / categoria | Dove viene memorizzato            | Note tecniche                                                                                |
+| ---------------- | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| Ticket supporto  | `SupportTicket`, `SupportMessage` | Oggetto, stato, canale; messaggi testuali; opzionale `crispSessionId` se integrazione Crisp. |
+| Referral         | `Referral`                        | Email invitato, stato, collegamenti a utenti/crediti.                                        |
 
 ### 1.5 Waitlist (landing / marketing)
 
-| Dato / categoria | Dove viene memorizzato | Note tecniche |
-|------------------|------------------------|---------------|
-| Email waitlist | `WaitlistEntry` | Indirizzo univoco; contatore sequenza email (`dripSent`). |
+| Dato / categoria | Dove viene memorizzato | Note tecniche                                             |
+| ---------------- | ---------------------- | --------------------------------------------------------- |
+| Email waitlist   | `WaitlistEntry`        | Indirizzo univoco; contatore sequenza email (`dripSent`). |
 
 ### 1.6 Posizione GPS dell’utente (non persistita nello schema)
 
-| Flusso | Trattamento |
-|--------|-------------|
+| Flusso                                                          | Trattamento                                                                                                                                                                                                                   |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Sostituzione slot** (`POST /api/trips/[tripId]/replace-slot`) | Coordinate opzionali inviate dal browser nel corpo della richiesta; il backend le **arrotonda** (riduzione precisione) prima dell’invio al modello AI; **non** risultano campi dedicati nello schema Prisma per “GPS utente”. |
-| **Suggerimenti live** (`POST /api/trips/[tripId]/live-suggest`) | Stesso approccio: coordinate nella richiesta, arrotondamento per AI; **non** persistenza come tracciamento storico nel DB. |
+| **Suggerimenti live** (`POST /api/trips/[tripId]/live-suggest`) | Stesso approccio: coordinate nella richiesta, arrotondamento per AI; **non** persistenza come tracciamento storico nel DB.                                                                                                    |
 
 ### 1.7 Dati inviati ad Anthropic (Claude API)
 
@@ -97,38 +97,38 @@ L’app **non** invia ad Anthropic l’email o il nome utente come parte obbliga
 
 ## 2. Finalità del trattamento (motivazione tecnica)
 
-| Area | Perché il dato è necessario |
-|------|-----------------------------|
-| **Account (Clerk + `User`)** | Registrare l’utente, proteggere l’area riservata `/app`, associare itinerari e pagamenti a un soggetto univoco. |
-| **Itinerari (`Trip`, `TripVersion`, `Day`)** | Erogare il servizio core: generazione, consultazione, versionamento, condivisione tramite token di invito. |
-| **Coordinate POI in `Day`** | Mostrare mappe e contenuti legati a luoghi pubblici nell’itinerario; non costituiscono tracciamento GPS dell’utente. |
+| Area                                                  | Perché il dato è necessario                                                                                                                                                                                                           |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Account (Clerk + `User`)**                          | Registrare l’utente, proteggere l’area riservata `/app`, associare itinerari e pagamenti a un soggetto univoco.                                                                                                                       |
+| **Itinerari (`Trip`, `TripVersion`, `Day`)**          | Erogare il servizio core: generazione, consultazione, versionamento, condivisione tramite token di invito.                                                                                                                            |
+| **Coordinate POI in `Day`**                           | Mostrare mappe e contenuti legati a luoghi pubblici nell’itinerario; non costituiscono tracciamento GPS dell’utente.                                                                                                                  |
 | **GPS nella richiesta (replace-slot / live-suggest)** | Migliorare la pertinenza delle proposte AI in base alla zona corrente; le coordinate sono **limitate in precisione** prima dell’invio al fornitore AI e **non sono persistite** come “cronologia posizioni” nello schema documentato. |
-| **Consenso locale (browser)** | Memorizzazione in `sessionStorage` della chiave `easytrip_gps_ai_consent_v1` per ricordare l’accordo all’uso della posizione per finalità AI nella sessione (comportamento implementato nel client). |
-| **Pagamenti (Stripe)** | Incassare corrispettivi, gestire rigenerazioni/riattivazioni; conservare provvisti minimi in `Payment` per contabilità/reconciliation. |
-| **Crediti** | Gestire premi referral e utilizzo crediti sui viaggi. |
-| **Spese di gruppo** | Calcolare e visualizzare bilanci tra partecipanti. |
-| **Supporto** | Gestire richieste e storico messaggi. |
-| **Referral** | Attribuire inviti e ricompense. |
-| **Waitlist** | Contattare chi ha lasciato l’email in lista d’attesa secondo le finalità dichiarate in landing/iscrizione. |
-| **Inngest** | Esecuzione affidabile di processi lunghi o schedulati senza esporre PII in più del necessario negli eventi. |
-| **PostHog** | Misurare utilizzo prodotto e funnel; configurazione con host EU/US secondo variabili d’ambiente. |
+| **Consenso locale (browser)**                         | Memorizzazione in `sessionStorage` della chiave `easytrip_gps_ai_consent_v1` per ricordare l’accordo all’uso della posizione per finalità AI nella sessione (comportamento implementato nel client).                                  |
+| **Pagamenti (Stripe)**                                | Incassare corrispettivi, gestire rigenerazioni/riattivazioni; conservare provvisti minimi in `Payment` per contabilità/reconciliation.                                                                                                |
+| **Crediti**                                           | Gestire premi referral e utilizzo crediti sui viaggi.                                                                                                                                                                                 |
+| **Spese di gruppo**                                   | Calcolare e visualizzare bilanci tra partecipanti.                                                                                                                                                                                    |
+| **Supporto**                                          | Gestire richieste e storico messaggi.                                                                                                                                                                                                 |
+| **Referral**                                          | Attribuire inviti e ricompense.                                                                                                                                                                                                       |
+| **Waitlist**                                          | Contattare chi ha lasciato l’email in lista d’attesa secondo le finalità dichiarate in landing/iscrizione.                                                                                                                            |
+| **Inngest**                                           | Esecuzione affidabile di processi lunghi o schedulati senza esporre PII in più del necessario negli eventi.                                                                                                                           |
+| **PostHog**                                           | Misurare utilizzo prodotto e funnel; configurazione con host EU/US secondo variabili d’ambiente.                                                                                                                                      |
 
 ---
 
 ## 3. Terze parti (sub-processors) e ruoli
 
-| Fornitore | Ruolo tecnico |
-|-----------|----------------|
-| **Clerk** | Gestione identità, autenticazione, sessioni; bridge con `User` tramite `clerkUserId`. |
-| **Stripe** | Elaborazione pagamenti; **dati di carta** gestiti da Stripe; l’app conserva ID cliente (`stripeCustomerId`) e metadati transazione. |
-| **Anthropic** | Elaborazione linguistica per generazione itinerari, sostituzione slot e suggerimenti live. I contenuti inviati sono **limitati al necessario**; le coordinate utente, ove presenti, sono **arrotondate** (non invio a piena precisione del dispositivo). **Non equivale a “anonimizzazione completa”**: gli identificativi diretti dell’utente non devono essere inclusi nei prompt ove evitabile; la valutazione giuridica spetta al Titolare. |
-| **Inngest** | Orchestrazione di workflow asincroni (generazione itinerario, promemoria, retention, drip waitlist, ecc.); payload minimizzati ove possibile (es. solo `waitlistEntryId` per la waitlist). |
-| **PostgreSQL** (hosting dipendente dal deploy) | Persistenza dati applicativi tramite Prisma. |
-| **PostHog** | Analytics prodotto; eventi configurati nel client. |
-| **Resend** | Invio email transazionali/drip. |
-| **Crisp** | Chat di supporto (se `NEXT_PUBLIC_CRISP_WEBSITE_ID` configurato). |
+| Fornitore                                      | Ruolo tecnico                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Clerk**                                      | Gestione identità, autenticazione, sessioni; bridge con `User` tramite `clerkUserId`.                                                                                                                                                                                                                                                                                                                                                           |
+| **Stripe**                                     | Elaborazione pagamenti; **dati di carta** gestiti da Stripe; l’app conserva ID cliente (`stripeCustomerId`) e metadati transazione.                                                                                                                                                                                                                                                                                                             |
+| **Anthropic**                                  | Elaborazione linguistica per generazione itinerari, sostituzione slot e suggerimenti live. I contenuti inviati sono **limitati al necessario**; le coordinate utente, ove presenti, sono **arrotondate** (non invio a piena precisione del dispositivo). **Non equivale a “anonimizzazione completa”**: gli identificativi diretti dell’utente non devono essere inclusi nei prompt ove evitabile; la valutazione giuridica spetta al Titolare. |
+| **Inngest**                                    | Orchestrazione di workflow asincroni (generazione itinerario, promemoria, retention, drip waitlist, ecc.); payload minimizzati ove possibile (es. solo `waitlistEntryId` per la waitlist).                                                                                                                                                                                                                                                      |
+| **PostgreSQL** (hosting dipendente dal deploy) | Persistenza dati applicativi tramite Prisma.                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **PostHog**                                    | Analytics prodotto; eventi configurati nel client.                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Resend**                                     | Invio email transazionali/drip.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Crisp**                                      | Chat di supporto (se `NEXT_PUBLIC_CRISP_WEBSITE_ID` configurato).                                                                                                                                                                                                                                                                                                                                                                               |
 
-*Elenco da integrare con contratti/DPA effettivi e regione di hosting scelti in produzione.*
+_Elenco da integrare con contratti/DPA effettivi e regione di hosting scelti in produzione._
 
 ---
 
@@ -136,10 +136,10 @@ L’app **non** invia ad Anthropic l’email o il nome utente come parte obbliga
 
 I tempi predefiniti sono configurabili tramite variabili d’ambiente (vedi `src/config/unifiedConfig.ts`):
 
-| Parametro | Default (codice) | Comportamento |
-|-----------|------------------|---------------|
-| `RETENTION_INACTIVE_TRIP_VERSION_DAYS` | **365** | Le righe `TripVersion` con `isActive: false` e `generatedAt` anteriore alla soglia possono essere **eliminate** dal job di retention (cron settimanale). |
-| `RETENTION_SOFT_DELETED_TRIP_DAYS` | **90** | I `Trip` con `deletedAt` valorizzato e oltre la soglia possono essere **cancellati definitivamente** (hard delete), con aggiornamento dei riferimenti opzionali su pagamenti/crediti collegati al viaggio. |
+| Parametro                              | Default (codice) | Comportamento                                                                                                                                                                                              |
+| -------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RETENTION_INACTIVE_TRIP_VERSION_DAYS` | **365**          | Le righe `TripVersion` con `isActive: false` e `generatedAt` anteriore alla soglia possono essere **eliminate** dal job di retention (cron settimanale).                                                   |
+| `RETENTION_SOFT_DELETED_TRIP_DAYS`     | **90**           | I `Trip` con `deletedAt` valorizzato e oltre la soglia possono essere **cancellati definitivamente** (hard delete), con aggiornamento dei riferimenti opzionali su pagamenti/crediti collegati al viaggio. |
 
 Altri elementi rilevanti:
 
@@ -172,17 +172,17 @@ Dopo la cancellazione, l’utente non potrà più accedere con la sessione prece
 
 ## 6. Riferimenti di implementazione (audit interno)
 
-| Area | Percorsi utili nel repo |
-|------|-------------------------|
-| Schema dati | `prisma/schema.prisma` |
-| Retention automatica | `src/lib/inngest/functions/data-retention.ts` |
-| Export / cancellazione | `src/server/services/privacy/userDataService.ts`, `src/app/api/user/data-export/route.ts`, `src/app/api/user/delete-account/route.ts` |
-| Arrotondamento coordinate AI | `src/lib/geo-privacy.ts` |
-| Servizi AI | `src/lib/inngest/functions/generate-itinerary.ts`, `src/server/services/trip/slotReplaceService.ts`, `src/server/services/trip/liveSuggestService.ts` |
-| Waitlist / Inngest | `src/app/api/waitlist/route.ts`, `src/lib/inngest/functions/waitlist-drip.ts` |
-| Impostazioni Clerk (checklist) | `docs/CLERK_PRIVACY_SETTINGS.md` |
-| Registro trattamenti (supporto tecnico) | `npm run privacy:ropa` |
+| Area                                    | Percorsi utili nel repo                                                                                                                               |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema dati                             | `prisma/schema.prisma`                                                                                                                                |
+| Retention automatica                    | `src/lib/inngest/functions/data-retention.ts`                                                                                                         |
+| Export / cancellazione                  | `src/server/services/privacy/userDataService.ts`, `src/app/api/user/data-export/route.ts`, `src/app/api/user/delete-account/route.ts`                 |
+| Arrotondamento coordinate AI            | `src/lib/geo-privacy.ts`                                                                                                                              |
+| Servizi AI                              | `src/lib/inngest/functions/generate-itinerary.ts`, `src/server/services/trip/slotReplaceService.ts`, `src/server/services/trip/liveSuggestService.ts` |
+| Waitlist / Inngest                      | `src/app/api/waitlist/route.ts`, `src/lib/inngest/functions/waitlist-drip.ts`                                                                         |
+| Impostazioni Clerk (checklist)          | `docs/CLERK_PRIVACY_SETTINGS.md`                                                                                                                      |
+| Registro trattamenti (supporto tecnico) | `npm run privacy:ropa`                                                                                                                                |
 
 ---
 
-*Ultimo aggiornamento strutturale: allineato alla codebase `easytrip-saas` (documento generato per supporto legal-tech e revisione policy).*
+_Ultimo aggiornamento strutturale: allineato alla codebase `easytrip-saas` (documento generato per supporto legal-tech e revisione policy)._

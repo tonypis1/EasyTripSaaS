@@ -17,33 +17,60 @@ L’app è un monolite **Next.js** adatto a deploy su **Vercel** (o altro Node h
 9. **Upstash Redis** (opzionale ma consigliato in produzione) — rate limiting API:
    - `UPSTASH_REDIS_REST_URL`
    - `UPSTASH_REDIS_REST_TOKEN`  
-   Senza queste variabili il rate limiting è disattivato (nessun errore, solo assenza di protezione).
+     Senza queste variabili il rate limiting è disattivato (nessun errore, solo assenza di protezione).
 
 ## Variabili d’ambiente essenziali
 
-| Variabile | Uso |
-|-----------|-----|
-| `DATABASE_URL` | Connessione Prisma |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Auth client |
-| `CLERK_SECRET_KEY` | Auth server |
-| `STRIPE_SECRET_KEY` / chiavi publishable | Pagamenti |
-| `STRIPE_WEBHOOK_SECRET` | Verifica webhook |
-| `ANTHROPIC_API_KEY` | Generazione itinerari |
-| Variabili `STRIPE_PRICE_*` | Prezzi in centesimi |
+| Variabile                                | Uso                                                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                           | Connessione Prisma                                                                           |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`      | Auth client                                                                                  |
+| `CLERK_SECRET_KEY`                       | Auth server                                                                                  |
+| `STRIPE_SECRET_KEY` / chiavi publishable | Pagamenti                                                                                    |
+| `STRIPE_WEBHOOK_SECRET`                  | Verifica webhook                                                                             |
+| `ANTHROPIC_API_KEY`                      | Generazione itinerari                                                                        |
+| Variabili `STRIPE_PRICE_*`               | Prezzi in centesimi (default in codice se omesse)                                            |
+| `APP_BASE_URL`                           | URL pubblico dell’app (es. `https://…vercel.app`); in produzione va impostata esplicitamente |
 
-Elenco completo: `.env.example` (se presente) e codice in `src/config/unifiedConfig.ts`.
+Elenco e gestione dei segreti: [`SECRET_OPS.md`](../SECRET_OPS.md). Contratto delle variabili obbligatorie: [`unifiedConfig`](../src/config/unifiedConfig.ts).
 
 ## CI (GitHub Actions)
 
-Workflow [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml): **lint** + **test unitari** (`npm run test:unit`).
+### Workflow principale — `CI` ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml))
 
-La **`npm run build`** non è in CI di default perché **Clerk valida le chiavi publishable durante il prerender** di Next.js: servono chiavi reali di test/produzione. Esegui la build:
+Su **push** e **pull request** verso `main` / `master` (con _concurrency_ per evitare run duplicati sullo stesso PR).
 
-- in locale con `.env.local` completo, oppure
-- sulla piattaforma di deploy (Vercel inietta le env).
+1. **Job `static-and-unit`**
+   - `npm audit` (solo vulnerabilità **critical** sulle dipendenze di produzione)
+   - **Prettier** — `npm run format:check`
+   - **ESLint** — `npm run lint`
+   - **TypeScript** — `npm run typecheck` (`tsc --noEmit`)
+   - **Test unitari** — `npm run test:unit`
+   - **Coverage** — `npm run test:coverage` (soglie su file critici definiti in `vitest.config.ts`)
+
+2. **Job `integration`** (dopo il successo di `static-and-unit`)
+   - Servizio **PostgreSQL 16** nel runner
+   - `npx prisma db push --skip-generate` sul DB di test
+   - **Test di integrazione** — `npm run test:integration`
+
+3. **Job `playwright-smoke`** (dopo il successo di `integration`)
+   - Playwright **Chromium**, test taggati **`@smoke`** (`npm run test:e2e:smoke`)
+
+### Altri workflow
+
+- **CodeQL** ([`.github/workflows/codeql.yml`](../../.github/workflows/codeql.yml)) — analisi statica (SAST) su `easytrip-saas`.
+- **E2E su Preview Vercel** ([`.github/workflows/deployment-preview-e2e.yml`](../../.github/workflows/deployment-preview-e2e.yml)) — si attiva su `deployment_status` quando un deploy **Preview** ha successo; esegue gli smoke contro l’URL reale (`E2E_BASE_URL` dal deployment). Richiede integrazione GitHub ↔ Vercel con stato dei deployment abilitato.
+
+### Build di produzione e Vercel
+
+La **`npm run build`** **non** è eseguita in CI: il gate è lint, typecheck e test. La build avviene su **Vercel** (o in locale) con env complete: **Clerk** valida spesso la publishable key durante il prerender — servono valori coerenti con l’ambiente.
+
+- In locale: `.env` / `.env.local` allineati a [`unifiedConfig`](../src/config/unifiedConfig.ts).
+- Su Vercel: variabili in **Settings → Environment Variables** (vedi [`SECRET_OPS.md`](../SECRET_OPS.md)).
 
 ## Go-live checklist
 
+- [ ] **CI GitHub** verde sul branch principale (workflow **CI** + eventuali **CodeQL** richiesti dalle regole del repo).
 - [ ] Migrazioni DB applicate su produzione.
 - [ ] Tutte le env configurate sul provider (Vercel / altro).
 - [ ] Webhook Stripe verificato con evento di test.

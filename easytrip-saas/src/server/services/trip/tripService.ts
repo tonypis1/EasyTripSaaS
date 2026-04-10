@@ -178,8 +178,9 @@ function parseRestaurants(raw: string | null): RestaurantSuggestDto[] | null {
     // Se arrivano record vecchi, assegna pranzo/cena in modo deterministico:
     // - 2 elementi: 1° pranzo, 2° cena
     // - >2 elementi: alterna pranzo/cena per index
-    const hasAnyLegacy =
-      out.some((r) => r.cuisine === "ristorante" && r.distance === "");
+    const hasAnyLegacy = out.some(
+      (r) => r.cuisine === "ristorante" && r.distance === "",
+    );
     if (hasAnyLegacy && out.length >= 2) {
       for (let i = 0; i < out.length; i++) {
         out[i] = { ...out[i], meal: i % 2 === 0 ? "pranzo" : "cena" };
@@ -205,7 +206,7 @@ function decToNumber(v: unknown): number | null {
 export class TripService {
   constructor(
     private readonly authService: AuthService,
-    private readonly tripRepository: TripRepository
+    private readonly tripRepository: TripRepository,
   ) {}
 
   async createTrip(input: CreateTripInput) {
@@ -213,7 +214,7 @@ export class TripService {
       throw new AppError(
         "La data di fine deve essere successiva alla data di inizio",
         400,
-        "INVALID_DATE_RANGE"
+        "INVALID_DATE_RANGE",
       );
     }
 
@@ -244,7 +245,7 @@ export class TripService {
 
     let trip = await this.tripRepository.findDetailForOrganizer(
       tripId,
-      user.id
+      user.id,
     );
 
     if (!trip) {
@@ -272,7 +273,8 @@ export class TripService {
     const needsPaidCheckout = !atMax && isPaidRegeneration(rc);
     const prefChanged = trip.prefChangedAfterGen === true;
     const freeRegenFromPrefChange = prefChanged && needsPaidCheckout && !atMax;
-    const canStartGeneration = !atMax && (!needsPaidCheckout || freeRegenFromPrefChange);
+    const canStartGeneration =
+      !atMax && (!needsPaidCheckout || freeRegenFromPrefChange);
 
     const availableCredits = await prisma.credit.aggregate({
       where: { userId: user.id, used: false, expiresAt: { gt: new Date() } },
@@ -283,9 +285,16 @@ export class TripService {
 
     const isOrganizer = trip.organizerId === user.id;
 
-    const membersRaw = "members" in trip && Array.isArray(trip.members)
-      ? (trip.members as { id: string; role: string; balance: unknown; totalPaid: unknown; user: { id: string; name: string | null; email: string } }[])
-      : [];
+    const membersRaw =
+      "members" in trip && Array.isArray(trip.members)
+        ? (trip.members as {
+            id: string;
+            role: string;
+            balance: unknown;
+            totalPaid: unknown;
+            user: { id: string; name: string | null; email: string };
+          }[])
+        : [];
 
     const membersDto: TripMemberDto[] = membersRaw.map((m) => ({
       id: m.id,
@@ -351,7 +360,7 @@ export class TripService {
           dowWarning: d.dowWarning,
           localGem: d.localGem,
           dayTips: d.tips,
-        })
+        }),
       ),
       versions,
       activeGeoScore,
@@ -373,7 +382,7 @@ export class TripService {
     const user = await this.authService.getOrCreateCurrentUser();
     const trip = await this.tripRepository.findByIdAndOrganizer(
       tripId,
-      user.id
+      user.id,
     );
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
@@ -383,7 +392,7 @@ export class TripService {
         throw new AppError(
           "Pagamento richiesto prima della generazione",
           402,
-          "PAYMENT_REQUIRED"
+          "PAYMENT_REQUIRED",
         );
       }
     }
@@ -393,7 +402,7 @@ export class TripService {
       throw new AppError(
         "Hai raggiunto il massimo di 7 versioni. Usa il carosello per tornare a una versione salvata.",
         400,
-        "REGEN_MAX_VERSIONS"
+        "REGEN_MAX_VERSIONS",
       );
     }
 
@@ -401,7 +410,7 @@ export class TripService {
       throw new AppError(
         "Per questa rigenerazione è richiesto il pagamento (€1,99). Usa il pulsante dedicato.",
         402,
-        "REGEN_PAYMENT_REQUIRED"
+        "REGEN_PAYMENT_REQUIRED",
       );
     }
 
@@ -415,13 +424,13 @@ export class TripService {
 
   async setActiveTripVersion(
     tripId: string,
-    versionNum: number
+    versionNum: number,
   ): Promise<{ ok: true }> {
     const user = await this.authService.getOrCreateCurrentUser();
     const result = await this.tripRepository.setActiveVersion(
       tripId,
       user.id,
-      versionNum
+      versionNum,
     );
     if (!result.ok) {
       if (result.reason === "not_found") {
@@ -452,7 +461,7 @@ export class TripService {
     const user = await this.authService.getOrCreateCurrentUser();
     const result = await this.tripRepository.softDeleteByIdForOrganizer(
       tripId,
-      user.id
+      user.id,
     );
     if (!result.deleted) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
@@ -462,7 +471,10 @@ export class TripService {
 
   async getInviteLink(tripId: string): Promise<{ inviteUrl: string }> {
     const user = await this.authService.getOrCreateCurrentUser();
-    const trip = await this.tripRepository.findByIdAndOrganizer(tripId, user.id);
+    const trip = await this.tripRepository.findByIdAndOrganizer(
+      tripId,
+      user.id,
+    );
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
     }
@@ -586,18 +598,13 @@ export class TripService {
     return merged;
   }
 
-  async cancelTripWithCredit(
-    tripId: string,
-  ): Promise<{
+  async cancelTripWithCredit(tripId: string): Promise<{
     cancelled: true;
     creditAmount: number;
     creditExpiresAt: string;
   }> {
     const user = await this.authService.getOrCreateCurrentUser();
-    const result = await this.tripRepository.cancelWithCredit(
-      tripId,
-      user.id,
-    );
+    const result = await this.tripRepository.cancelWithCredit(tripId, user.id);
 
     if (!result.ok) {
       if (result.reason === "not_found") {

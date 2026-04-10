@@ -16,7 +16,9 @@ test("signup guard redirects anonymous user @smoke", async ({ page }) => {
   // In alcuni tenant Clerk il bottone puo' essere un link
   if (!hasAuthCta) {
     await expect(
-      page.getByRole("link", { name: /sign in|sign up|accedi|registrati/i }).first()
+      page
+        .getByRole("link", { name: /sign in|sign up|accedi|registrati/i })
+        .first(),
     ).toBeVisible();
   }
 });

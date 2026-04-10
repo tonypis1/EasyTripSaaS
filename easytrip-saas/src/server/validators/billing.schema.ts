@@ -14,7 +14,9 @@ export const createRegenCheckoutSchema = z.object({
   cancelUrl: z.string().url().optional(),
 });
 
-export type CreateRegenCheckoutInput = z.infer<typeof createRegenCheckoutSchema>;
+export type CreateRegenCheckoutInput = z.infer<
+  typeof createRegenCheckoutSchema
+>;
 
 export const createReactivateCheckoutSchema = z.object({
   tripId: z.string().min(1),
@@ -22,4 +24,6 @@ export const createReactivateCheckoutSchema = z.object({
   cancelUrl: z.string().url().optional(),
 });
 
-export type CreateReactivateCheckoutInput = z.infer<typeof createReactivateCheckoutSchema>;
+export type CreateReactivateCheckoutInput = z.infer<
+  typeof createReactivateCheckoutSchema
+>;

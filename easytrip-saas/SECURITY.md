@@ -9,14 +9,14 @@ Questo documento descrive come EasyTrip tratta la sicurezza dell’applicazione,
 
 ## Categorie di dati trattati
 
-| Categoria | Esempi | Dove risiede |
-|-----------|--------|----------------|
-| Identità e sessione | Email, nome, ID Clerk | [Clerk](https://clerk.com), database applicativo (utente collegato a `clerk_user_id`) |
-| Contenuti viaggio | Destinazione, date, preferenze, itinerari JSON, coordinate mappa/POI | Database PostgreSQL (Prisma) |
-| Pagamenti | Importi, ID sessione/pagamento Stripe, metadati checkout | [Stripe](https://stripe.com) (carta **non** toccata dai nostri server) |
-| Job e notifiche | ID trip negli eventi generazione; waitlist solo `waitlistEntryId` (email solo in DB) | [Inngest](https://www.inngest.com/), worker applicativi |
-| Inferenza AI | Prompt con contesto viaggio; suggerimenti live con coordinate GPS opzionali | [Anthropic](https://www.anthropic.com/) (API server-side) |
-| Analytics e supporto | Eventi prodotto (se abilitati), chat supporto | [PostHog](https://posthog.com/), [Crisp](https://crisp.chat/) (opzionali, variabili `NEXT_PUBLIC_*`) |
+| Categoria            | Esempi                                                                               | Dove risiede                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Identità e sessione  | Email, nome, ID Clerk                                                                | [Clerk](https://clerk.com), database applicativo (utente collegato a `clerk_user_id`)                |
+| Contenuti viaggio    | Destinazione, date, preferenze, itinerari JSON, coordinate mappa/POI                 | Database PostgreSQL (Prisma)                                                                         |
+| Pagamenti            | Importi, ID sessione/pagamento Stripe, metadati checkout                             | [Stripe](https://stripe.com) (carta **non** toccata dai nostri server)                               |
+| Job e notifiche      | ID trip negli eventi generazione; waitlist solo `waitlistEntryId` (email solo in DB) | [Inngest](https://www.inngest.com/), worker applicativi                                              |
+| Inferenza AI         | Prompt con contesto viaggio; suggerimenti live con coordinate GPS opzionali          | [Anthropic](https://www.anthropic.com/) (API server-side)                                            |
+| Analytics e supporto | Eventi prodotto (se abilitati), chat supporto                                        | [PostHog](https://posthog.com/), [Crisp](https://crisp.chat/) (opzionali, variabili `NEXT_PUBLIC_*`) |
 
 ## Controlli tecnici principali
 
@@ -118,4 +118,4 @@ Consultare privacy policy e DPA di ciascun fornitore per retention, sottoprocess
 
 ---
 
-*Ultimo aggiornamento: allineato alle modifiche di sicurezza del repository (CSP, log PII, repair prompt).*
+_Ultimo aggiornamento: allineato alle modifiche di sicurezza del repository (CSP, log PII, repair prompt)._

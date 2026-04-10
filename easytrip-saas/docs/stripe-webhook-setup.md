@@ -4,22 +4,22 @@ Questo progetto **ha già il codice** per checkout e webhook. Devi solo configur
 
 ## Mappa file (cosa fa cosa)
 
-| File | Ruolo |
-|------|--------|
-| `src/app/api/billing/checkout/route.ts` | `POST` → crea una **Stripe Checkout Session** (pagina pagamento Stripe). |
-| `src/app/api/webhooks/stripe/route.ts` | `POST` → endpoint che **Stripe chiama** dopo il pagamento (firma verificata). |
-| `src/server/controllers/BillingController.ts` | Legge body/headers e delega al servizio. |
+| File                                            | Ruolo                                                                                 |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `src/app/api/billing/checkout/route.ts`         | `POST` → crea una **Stripe Checkout Session** (pagina pagamento Stripe).              |
+| `src/app/api/webhooks/stripe/route.ts`          | `POST` → endpoint che **Stripe chiama** dopo il pagamento (firma verificata).         |
+| `src/server/controllers/BillingController.ts`   | Legge body/headers e delega al servizio.                                              |
 | `src/server/services/billing/billingService.ts` | Logica: `createCheckoutSession` + `handleStripeWebhook` (pagamento, DB, **Inngest**). |
-| `src/lib/billing/stripe.ts` | Istanza SDK Stripe con la secret key. |
-| `src/config/unifiedConfig.ts` | Legge `STRIPE_*`, `APP_BASE_URL` da `process.env`. |
+| `src/lib/billing/stripe.ts`                     | Istanza SDK Stripe con la secret key.                                                 |
+| `src/config/unifiedConfig.ts`                   | Legge `STRIPE_*`, `APP_BASE_URL` da `process.env`.                                    |
 
 ### Flusso dopo un pagamento riuscito
 
-1. L’utente paga su Stripe Checkout.  
-2. Stripe invia l’evento `checkout.session.completed` al tuo URL webhook.  
-3. `handleStripeWebhook` verifica la firma (`STRIPE_WEBHOOK_SECRET`).  
-4. Scrive una riga in **Payment**, aggiorna il **Trip** (`paymentId`, `amountPaid`).  
-5. Invia l’evento **`trip/generate.requested`** a **Inngest** (come il pulsante dev).  
+1. L’utente paga su Stripe Checkout.
+2. Stripe invia l’evento `checkout.session.completed` al tuo URL webhook.
+3. `handleStripeWebhook` verifica la firma (`STRIPE_WEBHOOK_SECRET`).
+4. Scrive una riga in **Payment**, aggiorna il **Trip** (`paymentId`, `amountPaid`).
+5. Invia l’evento **`trip/generate.requested`** a **Inngest** (come il pulsante dev).
 6. La funzione `generate-itinerary` genera versione + giorni (stub o AI).
 
 ---
@@ -37,7 +37,7 @@ STRIPE_WEBHOOK_SECRET="whsec_..."
 
 - **`APP_BASE_URL`**: base URL dell’app (dopo il pagamento Stripe reindirizza qui). In locale: `http://localhost:3000`. In produzione: `https://tuodominio.com`.
 
-- **`STRIPE_SECRET_KEY`**: Dashboard Stripe → **Developers → API keys** → *Secret key* (test o live).
+- **`STRIPE_SECRET_KEY`**: Dashboard Stripe → **Developers → API keys** → _Secret key_ (test o live).
 
 - **`STRIPE_WEBHOOK_SECRET`**: dipende da come ricevi i webhook (vedi sotto: CLI locale vs Dashboard produzione).
 
@@ -76,8 +76,8 @@ Stripe non può raggiungere `localhost` senza un tunnel. Il metodo ufficiale è 
 
 1. Deploy dell’app (es. Vercel) con URL pubblico `https://...`.
 2. Imposta `APP_BASE_URL` e `STRIPE_SECRET_KEY` (live se vai in produzione).
-3. Stripe Dashboard → **Developers → Webhooks** → **Add endpoint**  
-   - URL: `https://tuodominio.com/api/webhooks/stripe`  
+3. Stripe Dashboard → **Developers → Webhooks** → **Add endpoint**
+   - URL: `https://tuodominio.com/api/webhooks/stripe`
    - Evento da ascoltare: **`checkout.session.completed`**
 4. Copia il **Signing secret** dell’endpoint e mettilo in `STRIPE_WEBHOOK_SECRET` sul hosting (non usare il secret del `stripe listen` di test).
 
@@ -85,14 +85,14 @@ Stripe non può raggiungere `localhost` senza un tunnel. Il metodo ufficiale è 
 
 ## 4. Cose da controllare se “non succede nulla”
 
-| Problema | Cosa verificare |
-|----------|------------------|
-| 401 / firma non valida | `STRIPE_WEBHOOK_SECRET` deve corrispondere a **questo** ambiente (CLI `listen` vs Dashboard endpoint). |
-| Metadata mancanti | Il checkout è creato solo da `createCheckoutSession` (include `tripId`, `appUserId` nei metadata). |
-| Pagamento ok ma niente generazione | Inngest: in locale serve `npm run inngest:dev`; in cloud l’app deve essere collegata a Inngest con lo stesso evento. |
-| Redirect sbagliato dopo pagamento | `APP_BASE_URL` errato o non impostato. |
-| Stripe Checkout: *«token di conferma» / rifare login CLI* | La sessione **Stripe CLI** è scaduta. Chiudi `stripe listen`, esegui di nuovo `stripe login` (o `stripe login --interactive`), poi rilancia `stripe listen --forward-to ...`. Aggiorna `STRIPE_WEBHOOK_SECRET` se `listen` stampa un `whsec_` nuovo. |
-| Inngest run **Failed** dopo ~2 min (Claude) | Di solito **timeout** sulla singola richiesta verso Next: assicurati di avere l’ultima `generate-itinerary` con **`step.run`** e `timeouts.finish` lunghi; riavvia `npm run dev` e `npm run inngest:dev`. In alternativa imposta `ANTHROPIC_MODEL` esplicito nel `.env`. |
+| Problema                                                  | Cosa verificare                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 401 / firma non valida                                    | `STRIPE_WEBHOOK_SECRET` deve corrispondere a **questo** ambiente (CLI `listen` vs Dashboard endpoint).                                                                                                                                                                   |
+| Metadata mancanti                                         | Il checkout è creato solo da `createCheckoutSession` (include `tripId`, `appUserId` nei metadata).                                                                                                                                                                       |
+| Pagamento ok ma niente generazione                        | Inngest: in locale serve `npm run inngest:dev`; in cloud l’app deve essere collegata a Inngest con lo stesso evento.                                                                                                                                                     |
+| Redirect sbagliato dopo pagamento                         | `APP_BASE_URL` errato o non impostato.                                                                                                                                                                                                                                   |
+| Stripe Checkout: _«token di conferma» / rifare login CLI_ | La sessione **Stripe CLI** è scaduta. Chiudi `stripe listen`, esegui di nuovo `stripe login` (o `stripe login --interactive`), poi rilancia `stripe listen --forward-to ...`. Aggiorna `STRIPE_WEBHOOK_SECRET` se `listen` stampa un `whsec_` nuovo.                     |
+| Inngest run **Failed** dopo ~2 min (Claude)               | Di solito **timeout** sulla singola richiesta verso Next: assicurati di avere l’ultima `generate-itinerary` con **`step.run`** e `timeouts.finish` lunghi; riavvia `npm run dev` e `npm run inngest:dev`. In alternativa imposta `ANTHROPIC_MODEL` esplicito nel `.env`. |
 
 ---
 

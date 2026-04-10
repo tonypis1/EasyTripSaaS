@@ -51,4 +51,4 @@ Checklist orientata a OWASP e alle superfici reali dell’app (Next.js App Route
 
 ---
 
-*Revisione consigliata: a ogni release maggiore o dopo modifiche a auth/API.*
+_Revisione consigliata: a ogni release maggiore o dopo modifiche a auth/API._

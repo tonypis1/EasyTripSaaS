@@ -37,7 +37,7 @@ export class BillingService {
   constructor(
     private readonly authService: AuthService,
     private readonly tripRepository: TripRepository,
-    private readonly paymentRepository: PaymentRepository
+    private readonly paymentRepository: PaymentRepository,
   ) {}
 
   /**
@@ -99,7 +99,10 @@ export class BillingService {
 
   async createCheckoutSession(input: CheckoutInput) {
     const user = await this.authService.getOrCreateCurrentUser();
-    const trip = await this.tripRepository.findByIdAndOrganizer(input.tripId, user.id);
+    const trip = await this.tripRepository.findByIdAndOrganizer(
+      input.tripId,
+      user.id,
+    );
 
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
@@ -218,7 +221,7 @@ export class BillingService {
       throw new AppError(
         "Checkout URL non disponibile",
         500,
-        "CHECKOUT_URL_MISSING"
+        "CHECKOUT_URL_MISSING",
       );
     }
 
@@ -236,7 +239,10 @@ export class BillingService {
    */
   async createRegenCheckoutSession(input: RegenCheckoutInput) {
     const user = await this.authService.getOrCreateCurrentUser();
-    const trip = await this.tripRepository.findByIdAndOrganizer(input.tripId, user.id);
+    const trip = await this.tripRepository.findByIdAndOrganizer(
+      input.tripId,
+      user.id,
+    );
 
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
@@ -246,7 +252,7 @@ export class BillingService {
       throw new AppError(
         "Acquista prima il viaggio principale",
         400,
-        "TRIP_NOT_PAID"
+        "TRIP_NOT_PAID",
       );
     }
 
@@ -254,7 +260,7 @@ export class BillingService {
       throw new AppError(
         "Questa rigenerazione è gratuita: usa il pulsante «Rigenera» senza pagamento.",
         400,
-        "REGEN_NOT_PAID_TIER"
+        "REGEN_NOT_PAID_TIER",
       );
     }
 
@@ -293,7 +299,7 @@ export class BillingService {
       throw new AppError(
         "Checkout URL non disponibile",
         500,
-        "CHECKOUT_URL_MISSING"
+        "CHECKOUT_URL_MISSING",
       );
     }
 
@@ -309,7 +315,10 @@ export class BillingService {
    */
   async createReactivateCheckoutSession(input: ReactivateCheckoutInput) {
     const user = await this.authService.getOrCreateCurrentUser();
-    const trip = await this.tripRepository.findByIdAndOrganizer(input.tripId, user.id);
+    const trip = await this.tripRepository.findByIdAndOrganizer(
+      input.tripId,
+      user.id,
+    );
 
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
@@ -374,7 +383,7 @@ export class BillingService {
       throw new AppError(
         "Firma webhook Stripe mancante",
         400,
-        "MISSING_SIGNATURE"
+        "MISSING_SIGNATURE",
       );
     }
 
@@ -383,10 +392,14 @@ export class BillingService {
       event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
-        config.billing.stripeWebhookSecret
+        config.billing.stripeWebhookSecret,
       );
     } catch {
-      throw new AppError("Firma webhook Stripe non valida", 400, "INVALID_SIGNATURE");
+      throw new AppError(
+        "Firma webhook Stripe non valida",
+        400,
+        "INVALID_SIGNATURE",
+      );
     }
 
     if (event.type === "checkout.session.completed") {
@@ -404,7 +417,7 @@ export class BillingService {
         throw new AppError(
           "Metadata Stripe incompleto",
           400,
-          "INVALID_METADATA"
+          "INVALID_METADATA",
         );
       }
 
@@ -529,7 +542,9 @@ export class BillingService {
         const { container } = await import("@/server/di/container");
         await container.services.referralService.tryGrantReward(appUserId);
       } catch {
-        logger.warn("Referral reward check failed (non-blocking)", { appUserId });
+        logger.warn("Referral reward check failed (non-blocking)", {
+          appUserId,
+        });
       }
     }
 

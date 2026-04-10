@@ -46,7 +46,10 @@ export function parseLiveSuggestModelJson(raw: string): LiveSuggestResult {
   const check = LiveResponseSchema.safeParse(parsed);
   if (!check.success) {
     throw new Error(
-      `Schema live suggest: ${check.error.issues.map((i) => i.message).slice(0, 4).join("; ")}`
+      `Schema live suggest: ${check.error.issues
+        .map((i) => i.message)
+        .slice(0, 4)
+        .join("; ")}`,
     );
   }
   return {
@@ -214,8 +217,7 @@ export class LiveSuggestService {
       : "Nessuno slot specifico — l'utente cerca suggerimenti generici";
 
     const hour = new Date().getUTCHours() + 1;
-    const timeOfDay =
-      hour < 12 ? "mattina" : hour < 17 ? "pomeriggio" : "sera";
+    const timeOfDay = hour < 12 ? "mattina" : hour < 17 ? "pomeriggio" : "sera";
 
     const prompt = buildUserPrompt({
       destination: trip.destination,

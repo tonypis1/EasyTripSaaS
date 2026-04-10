@@ -81,9 +81,9 @@ export default function JoinTripPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-blue-600" />
           <p className="text-gray-600">Caricamento invito...</p>
         </div>
       </div>
@@ -92,18 +92,16 @@ export default function JoinTripPage() {
 
   if (error && !trip) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-100 px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-orange-100 px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
+          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+          <h1 className="mb-2 text-xl font-bold text-gray-900">
             Link non valido
           </h1>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="mb-6 text-gray-600">{error}</p>
           <button
             onClick={() => router.push("/")}
-            className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold
-                       hover:bg-blue-700 transition-colors cursor-pointer
-                       min-h-[44px] min-w-[44px]"
+            className="min-h-[44px] min-w-[44px] cursor-pointer rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
           >
             Torna alla home
           </button>
@@ -114,15 +112,13 @@ export default function JoinTripPage() {
 
   if (joined) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Sei dentro!
-          </h1>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
+          <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-green-500" />
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">Sei dentro!</h1>
           <p className="text-gray-600">
-            Ti sei unito al viaggio a{" "}
-            <strong>{trip?.destination}</strong>. Redirect in corso...
+            Ti sei unito al viaggio a <strong>{trip?.destination}</strong>.
+            Redirect in corso...
           </p>
         </div>
       </div>
@@ -135,31 +131,31 @@ export default function JoinTripPage() {
   const spotsLeft = trip.maxMembers - trip.memberCount;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden max-w-md w-full">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white text-center">
-          <Plane className="w-10 h-10 mx-auto mb-3 opacity-90" />
-          <h1 className="text-2xl font-bold mb-1">Sei stato invitato!</h1>
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center text-white">
+          <Plane className="mx-auto mb-3 h-10 w-10 opacity-90" />
+          <h1 className="mb-1 text-2xl font-bold">Sei stato invitato!</h1>
           <p className="text-blue-100">
             {trip.organizerName} ti ha invitato a partecipare
           </p>
         </div>
 
         {/* Trip Info */}
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-6">
           <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <MapPin className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div>
               <p className="text-sm text-gray-500">Destinazione</p>
-              <p className="font-semibold text-gray-900 text-lg">
+              <p className="text-lg font-semibold text-gray-900">
                 {trip.destination}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <Calendar className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div>
               <p className="text-sm text-gray-500">Date</p>
               <p className="font-medium text-gray-900">
@@ -179,25 +175,26 @@ export default function JoinTripPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Users className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <Users className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div>
               <p className="text-sm text-gray-500">Partecipanti</p>
               <p className="font-medium text-gray-900">
                 {trip.memberCount} / {trip.maxMembers}{" "}
                 {spotsLeft > 0 ? (
-                  <span className="text-green-600 text-sm">
-                    ({spotsLeft} {spotsLeft === 1 ? "posto" : "posti"} disponibil{spotsLeft === 1 ? "e" : "i"})
+                  <span className="text-sm text-green-600">
+                    ({spotsLeft} {spotsLeft === 1 ? "posto" : "posti"}{" "}
+                    disponibil{spotsLeft === 1 ? "e" : "i"})
                   </span>
                 ) : (
-                  <span className="text-red-500 text-sm">(completo)</span>
+                  <span className="text-sm text-red-500">(completo)</span>
                 )}
               </p>
             </div>
           </div>
 
           {trip.style && (
-            <div className="bg-blue-50 rounded-lg p-3 text-center">
-              <span className="text-sm text-blue-700 font-medium">
+            <div className="rounded-lg bg-blue-50 p-3 text-center">
+              <span className="text-sm font-medium text-blue-700">
                 Stile: {trip.style}
               </span>
             </div>
@@ -205,21 +202,21 @@ export default function JoinTripPage() {
 
           {/* Error inline */}
           {error && (
-            <div className="bg-red-50 text-red-700 rounded-lg p-3 text-sm text-center">
+            <div className="rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
               {error}
             </div>
           )}
 
           {/* CTA */}
           {isFull ? (
-            <div className="bg-gray-100 rounded-xl p-4 text-center">
-              <p className="text-gray-600 font-medium">
+            <div className="rounded-xl bg-gray-100 p-4 text-center">
+              <p className="font-medium text-gray-600">
                 Il gruppo è al completo
               </p>
             </div>
           ) : !authLoaded ? (
             <div className="flex justify-center py-3">
-              <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
             </div>
           ) : !isSignedIn ? (
             <div className="space-y-3">
@@ -230,16 +227,12 @@ export default function JoinTripPage() {
                     afterSignUpUrl: `/join/${token}`,
                   })
                 }
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-6
-                           bg-gradient-to-r from-blue-600 to-indigo-600 text-white
-                           rounded-xl font-semibold text-lg
-                           hover:from-blue-700 hover:to-indigo-700
-                           transition-all cursor-pointer min-h-[48px]"
+                className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-lg font-semibold text-white transition-all hover:from-blue-700 hover:to-indigo-700"
               >
-                <LogIn className="w-5 h-5" />
+                <LogIn className="h-5 w-5" />
                 Accedi per unirti
               </button>
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-center text-xs text-gray-500">
                 Devi accedere o creare un account per unirti al viaggio.
               </p>
             </div>
@@ -247,31 +240,25 @@ export default function JoinTripPage() {
             <button
               onClick={onJoin}
               disabled={joining}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-6
-                         bg-gradient-to-r from-blue-600 to-indigo-600 text-white
-                         rounded-xl font-semibold text-lg
-                         hover:from-blue-700 hover:to-indigo-700
-                         transition-all cursor-pointer
-                         disabled:opacity-60 disabled:cursor-not-allowed
-                         min-h-[48px]"
+              className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-lg font-semibold text-white transition-all hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {joining ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   Accesso in corso...
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-5 h-5" />
+                  <UserPlus className="h-5 w-5" />
                   Unisciti al viaggio
                 </>
               )}
             </button>
           )}
 
-          <p className="text-xs text-gray-400 text-center">
-            Avrai accesso in sola lettura all&apos;itinerario e potrai partecipare
-            allo split delle spese.
+          <p className="text-center text-xs text-gray-400">
+            Avrai accesso in sola lettura all&apos;itinerario e potrai
+            partecipare allo split delle spese.
           </p>
         </div>
       </div>

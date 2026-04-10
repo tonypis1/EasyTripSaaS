@@ -43,7 +43,6 @@ export const logger = {
   error: (
     message: string,
     error?: unknown,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ) => emit("error", { message, error, context }),
 };
-

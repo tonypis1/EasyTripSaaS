@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const emailRaw = formData.get("email");
-    const email = typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
+    const email =
+      typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
 
     if (!email || !email.includes("@")) {
       throw new AppError("Email non valida", 400, "INVALID_EMAIL");
@@ -43,7 +44,10 @@ export async function POST(req: Request) {
           data: { waitlistEntryId: entry.id },
         });
       } catch (inngestErr) {
-        logger.error("Inngest event send failed (drip will not start)", inngestErr);
+        logger.error(
+          "Inngest event send failed (drip will not start)",
+          inngestErr,
+        );
       }
     }
 
@@ -62,4 +66,3 @@ export async function POST(req: Request) {
     return NextResponse.redirect(redirectUrl);
   }
 }
-

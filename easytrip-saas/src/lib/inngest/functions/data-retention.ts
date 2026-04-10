@@ -25,15 +25,18 @@ export const dataRetentionPurge = inngest.createFunction(
     const deletedTripCutoff = new Date();
     deletedTripCutoff.setDate(deletedTripCutoff.getDate() - softDeletedDays);
 
-    const versionsDeleted = await step.run("purge-inactive-versions", async () => {
-      const res = await prisma.tripVersion.deleteMany({
-        where: {
-          isActive: false,
-          generatedAt: { lt: versionCutoff },
-        },
-      });
-      return res.count;
-    });
+    const versionsDeleted = await step.run(
+      "purge-inactive-versions",
+      async () => {
+        const res = await prisma.tripVersion.deleteMany({
+          where: {
+            isActive: false,
+            generatedAt: { lt: versionCutoff },
+          },
+        });
+        return res.count;
+      },
+    );
 
     const tripsPurged = await step.run("purge-soft-deleted-trips", async () => {
       const stale = await prisma.trip.findMany({

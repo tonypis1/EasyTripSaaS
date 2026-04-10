@@ -107,14 +107,14 @@ export default function ReferralPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-et-accent" />
+        <Loader2 className="text-et-accent h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="text-center py-24 text-et-ink/50">
+      <div className="text-et-ink/50 py-24 text-center">
         Impossibile caricare i dati referral.
       </div>
     );
@@ -123,40 +123,43 @@ export default function ReferralPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="border-l-2 border-et-accent/40 pl-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-et-accent/88">
+      <div className="border-et-accent/40 border-l-2 pl-6">
+        <p className="text-et-accent/88 text-xs font-semibold tracking-[0.16em] uppercase">
           Programma Referral
         </p>
-        <h1 className="font-display mt-2 text-3xl font-normal tracking-tight text-et-ink sm:text-4xl">
+        <h1 className="font-display text-et-ink mt-2 text-3xl font-normal tracking-tight sm:text-4xl">
           Invita un amico, viaggia gratis
         </h1>
-        <p className="mt-2 max-w-xl text-sm text-et-ink/65">
+        <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
           Per ogni amico che si registra e acquista il primo viaggio, ricevi
-          <strong className="text-et-ink"> €9,99 di credito</strong> = 1 trip gratis.
+          <strong className="text-et-ink"> €9,99 di credito</strong> = 1 trip
+          gratis.
         </p>
       </div>
 
       {/* Hero Card con link */}
-      <section className="rounded-2xl border border-et-border bg-gradient-to-br from-indigo-500/5 to-purple-500/5 p-6 sm:p-8">
-        <div className="flex items-center gap-3 mb-5">
+      <section className="border-et-border rounded-2xl border bg-gradient-to-br from-indigo-500/5 to-purple-500/5 p-6 sm:p-8">
+        <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
             <Gift className="h-6 w-6 text-indigo-400" />
           </div>
           <div>
-            <h2 className="font-display text-lg text-et-ink">Il tuo link di invito</h2>
-            <p className="text-sm text-et-ink/55">Condividilo con amici, social, ovunque!</p>
+            <h2 className="font-display text-et-ink text-lg">
+              Il tuo link di invito
+            </h2>
+            <p className="text-et-ink/55 text-sm">
+              Condividilo con amici, social, ovunque!
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex-1 rounded-xl bg-et-deep border border-et-border px-4 py-3 font-mono text-sm text-et-ink/70 truncate">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="bg-et-deep border-et-border text-et-ink/70 flex-1 truncate rounded-xl border px-4 py-3 font-mono text-sm">
             {data.referralUrl}
           </div>
           <button
             onClick={onCopy}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
-                       bg-indigo-600 text-white hover:bg-indigo-700
-                       transition-colors cursor-pointer min-h-[44px] min-w-[44px]"
+            className="flex h-12 min-h-[44px] w-12 min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-xl bg-indigo-600 text-white transition-colors hover:bg-indigo-700"
             title="Copia link"
           >
             {copied ? (
@@ -167,9 +170,7 @@ export default function ReferralPage() {
           </button>
           <button
             onClick={() => void onShare()}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
-                       bg-purple-600 text-white hover:bg-purple-700
-                       transition-colors cursor-pointer min-h-[44px] min-w-[44px]"
+            className="flex h-12 min-h-[44px] w-12 min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-xl bg-purple-600 text-white transition-colors hover:bg-purple-700"
             title="Condividi"
           >
             <Share2 className="h-5 w-5" />
@@ -177,14 +178,16 @@ export default function ReferralPage() {
         </div>
 
         {copied && (
-          <p className="text-sm text-green-400 font-medium">Link copiato negli appunti!</p>
+          <p className="text-sm font-medium text-green-400">
+            Link copiato negli appunti!
+          </p>
         )}
 
-        <div className="mt-4 rounded-xl bg-et-card/50 border border-et-border/50 p-4">
-          <p className="text-sm text-et-ink/60 leading-relaxed">
-            <Sparkles className="inline h-4 w-4 text-amber-400 mr-1 -mt-0.5" />
-            <strong className="text-et-ink/80">Come funziona:</strong> Il tuo amico
-            clicca il link → si registra → acquista un viaggio → tu ricevi
+        <div className="bg-et-card/50 border-et-border/50 mt-4 rounded-xl border p-4">
+          <p className="text-et-ink/60 text-sm leading-relaxed">
+            <Sparkles className="-mt-0.5 mr-1 inline h-4 w-4 text-amber-400" />
+            <strong className="text-et-ink/80">Come funziona:</strong> Il tuo
+            amico clicca il link → si registra → acquista un viaggio → tu ricevi
             automaticamente €9,99 di credito. Nessun limite di inviti!
           </p>
         </div>
@@ -220,27 +223,29 @@ export default function ReferralPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-et-border bg-et-card p-4 text-center"
+            className="border-et-border bg-et-card rounded-xl border p-4 text-center"
           >
             <div
               className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${stat.color}`}
             >
               <stat.icon className="h-5 w-5" />
             </div>
-            <p className="text-2xl font-bold text-et-ink">{stat.value}</p>
-            <p className="text-xs text-et-ink/50 mt-1">{stat.label}</p>
+            <p className="text-et-ink text-2xl font-bold">{stat.value}</p>
+            <p className="text-et-ink/50 mt-1 text-xs">{stat.label}</p>
           </div>
         ))}
       </div>
 
       {/* Lista referral */}
-      <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
-        <h3 className="font-display text-base text-et-ink mb-4">I tuoi inviti</h3>
+      <section className="border-et-border bg-et-card rounded-2xl border p-5 sm:p-6">
+        <h3 className="font-display text-et-ink mb-4 text-base">
+          I tuoi inviti
+        </h3>
 
         {data.referrals.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-10 w-10 text-et-ink/15 mx-auto mb-3" />
-            <p className="text-sm text-et-ink/40">
+          <div className="py-8 text-center">
+            <Users className="text-et-ink/15 mx-auto mb-3 h-10 w-10" />
+            <p className="text-et-ink/40 text-sm">
               Nessun invito ancora. Condividi il tuo link per iniziare!
             </p>
           </div>
@@ -252,37 +257,41 @@ export default function ReferralPage() {
               return (
                 <div
                   key={r.id}
-                  className="flex items-center justify-between rounded-xl bg-et-bg/40 border border-et-border/50 px-4 py-3"
+                  className="bg-et-bg/40 border-et-border/50 flex items-center justify-between rounded-xl border px-4 py-3"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/10 text-indigo-400 text-sm font-bold shrink-0">
-                      {(r.referredName ?? r.referredEmail).charAt(0).toUpperCase()}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500/10 text-sm font-bold text-indigo-400">
+                      {(r.referredName ?? r.referredEmail)
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-et-ink truncate">
+                      <p className="text-et-ink truncate text-sm font-medium">
                         {r.referredName ?? r.referredEmail}
                       </p>
-                      <p className="text-xs text-et-ink/40">
+                      <p className="text-et-ink/40 text-xs">
                         {new Date(r.createdAt).toLocaleDateString("it-IT")}
                         {r.convertedAt && (
                           <>
                             {" "}
                             <ArrowRight className="inline h-3 w-3" />{" "}
-                            {new Date(r.convertedAt).toLocaleDateString("it-IT")}
+                            {new Date(r.convertedAt).toLocaleDateString(
+                              "it-IT",
+                            )}
                           </>
                         )}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-3">
+                  <div className="ml-3 flex items-center gap-2">
                     <span
-                      className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${st.color}`}
+                      className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${st.color}`}
                     >
                       <Icon className="h-3 w-3" />
                       {st.label}
                     </span>
                     {r.rewardGranted && (
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400">
+                      <span className="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
                         +€9,99
                       </span>
                     )}

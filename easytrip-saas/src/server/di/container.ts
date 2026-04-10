@@ -33,10 +33,14 @@ const liveSuggestService = new LiveSuggestService();
 const billingService = new BillingService(
   authService,
   tripRepository,
-  paymentRepository
+  paymentRepository,
 );
 const supportService = new SupportService(authService, supportRepository);
-const expenseService = new ExpenseService(authService, expenseRepository, tripRepository);
+const expenseService = new ExpenseService(
+  authService,
+  expenseRepository,
+  tripRepository,
+);
 const referralService = new ReferralService(authService, referralRepository);
 const userDataService = new UserDataService();
 

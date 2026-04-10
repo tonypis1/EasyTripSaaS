@@ -40,13 +40,11 @@ function readTripGenerateFields(data: unknown): {
  */
 export function resolveTripGeneratePayload(
   event: MinimalEvt,
-  events: readonly MinimalEvt[]
+  events: readonly MinimalEvt[],
 ): { tripId: string; userId?: string } {
   const chain: MinimalEvt[] = [event, ...events];
 
-  const preferGenerate = chain.filter(
-    (e) => e?.name === TRIP_GENERATE_EVENT
-  );
+  const preferGenerate = chain.filter((e) => e?.name === TRIP_GENERATE_EVENT);
   const rest = chain.filter((e) => e?.name !== TRIP_GENERATE_EVENT);
   const ordered = [...preferGenerate, ...rest];
 
@@ -62,6 +60,6 @@ export function resolveTripGeneratePayload(
       "Se nell'UI Inngest hai usato «Invoke» sulla funzione, non viene passato il payload:",
       `usa «Send event» con nome "${TRIP_GENERATE_EVENT}" e corpo JSON, ad es.:`,
       '{ "name": "trip/generate.requested", "data": { "tripId": "ID_VIAGGIO" } }',
-    ].join(" ")
+    ].join(" "),
   );
 }

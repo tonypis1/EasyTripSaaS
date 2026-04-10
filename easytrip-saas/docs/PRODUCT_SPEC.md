@@ -19,10 +19,10 @@ EasyTrip offre **itinerari AI strutturati** per weekend e viaggi brevi in Europa
 
 ## User personas
 
-| Persona | Ruolo | Comportamento nel prodotto |
-|--------|--------|----------------------------|
-| **Elena — Organizzatrice** | Crea il trip | Checkout Stripe, generazione, inviti (`invite_token`), confronto versioni, rigenerazioni. |
-| **Marco — Membro** | Partecipa al viaggio | Join via `/join/[token]`, itinerario, spese, saldi (`TripMember.balance`). |
+| Persona                       | Ruolo                     | Comportamento nel prodotto                                                                               |
+| ----------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Elena — Organizzatrice**    | Crea il trip              | Checkout Stripe, generazione, inviti (`invite_token`), confronto versioni, rigenerazioni.                |
+| **Marco — Membro**            | Partecipa al viaggio      | Join via `/join/[token]`, itinerario, spese, saldi (`TripMember.balance`).                               |
 | **Sofia — Power user / beta** | Esplora funzioni avanzate | Sostituzione slot, live suggest, referral, waitlist; sensibile a qualità (`geo_score`, rating versione). |
 
 ## Value proposition
@@ -44,25 +44,25 @@ EasyTrip offre **itinerari AI strutturati** per weekend e viaggi brevi in Europa
 
 ## Modello di business
 
-| Voce | Default (env) | Note |
-|------|----------------|------|
-| Solo / coppia | €9,99 | `STRIPE_PRICE_SOLO_COUPLE_CENTS=999` |
-| Gruppo | €14,99 | `STRIPE_PRICE_GROUP_CENTS=1499` |
-| Rigenerazione (v5–v7) | €1,99 | `STRIPE_PRICE_REGEN_CENTS=199` |
-| Riattivazione post-trip | €2,90 | `STRIPE_PRICE_REACTIVATE_CENTS=290` |
+| Voce                    | Default (env) | Note                                 |
+| ----------------------- | ------------- | ------------------------------------ |
+| Solo / coppia           | €9,99         | `STRIPE_PRICE_SOLO_COUPLE_CENTS=999` |
+| Gruppo                  | €14,99        | `STRIPE_PRICE_GROUP_CENTS=1499`      |
+| Rigenerazione (v5–v7)   | €1,99         | `STRIPE_PRICE_REGEN_CENTS=199`       |
+| Riattivazione post-trip | €2,90         | `STRIPE_PRICE_REACTIVATE_CENTS=290`  |
 
 Tipi pagamento Prisma: `purchase`, `regen`, `reactivate`. Crediti e referral: modelli `Credit`, `Referral` con stati `pending → signed_up → converted`. Campi `planType` / `subExpiresAt` sullo user predispongono una futura **subscription**.
 
 ## Metriche di successo (suggerite)
 
-| Metrica | Definizione operativa |
-|---------|------------------------|
-| North Star | Trip con generazione completata e versione attiva (`TripVersion.isActive`). |
-| Conversione checkout | Sessioni Stripe completate vs trip `pending → active`. |
-| Attach rate rigenerazioni | Pagamenti `regen` / utenti con `regenCount` ≥ 4. |
-| Qualità percepita | Distribuzione `geo_score` e `userRating` per versione. |
-| Retention post-trip | Tasso pagamenti `reactivate`; crediti usati entro `expiresAt`. |
-| Crescita referral | `ReferralStatus.converted` / link condivisi. |
+| Metrica                   | Definizione operativa                                                       |
+| ------------------------- | --------------------------------------------------------------------------- |
+| North Star                | Trip con generazione completata e versione attiva (`TripVersion.isActive`). |
+| Conversione checkout      | Sessioni Stripe completate vs trip `pending → active`.                      |
+| Attach rate rigenerazioni | Pagamenti `regen` / utenti con `regenCount` ≥ 4.                            |
+| Qualità percepita         | Distribuzione `geo_score` e `userRating` per versione.                      |
+| Retention post-trip       | Tasso pagamenti `reactivate`; crediti usati entro `expiresAt`.              |
+| Crescita referral         | `ReferralStatus.converted` / link condivisi.                                |
 
 ## User stories (legate al codice)
 
@@ -94,4 +94,4 @@ Tipi pagamento Prisma: `purchase`, `regen`, `reactivate`. Crediti e referral: mo
 
 ---
 
-*Ultimo aggiornamento: allineato al repository EasyTrip SaaS (Next.js App Router, Prisma, Clerk, Stripe, Inngest, Anthropic).*
+_Ultimo aggiornamento: allineato al repository EasyTrip SaaS (Next.js App Router, Prisma, Clerk, Stripe, Inngest, Anthropic)._

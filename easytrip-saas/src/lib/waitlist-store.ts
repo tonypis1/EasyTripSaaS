@@ -60,4 +60,3 @@ export async function incrementWaitlistCount() {
   await fs.writeFile(STORE_PATH, JSON.stringify(next, null, 2), "utf-8");
   return next;
 }
-

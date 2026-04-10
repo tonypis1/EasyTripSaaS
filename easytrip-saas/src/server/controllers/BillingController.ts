@@ -22,7 +22,7 @@ export class BillingController extends BaseController {
       if (error instanceof SyntaxError) {
         return this.fail(
           new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "BillingController.createCheckout"
+          "BillingController.createCheckout",
         );
       }
       return this.fail(error, "BillingController.createCheckout");
@@ -33,13 +33,14 @@ export class BillingController extends BaseController {
     try {
       const body = await req.json();
       const input = createRegenCheckoutSchema.parse(body);
-      const session = await this.billingService.createRegenCheckoutSession(input);
+      const session =
+        await this.billingService.createRegenCheckoutSession(input);
       return this.ok(session, 201);
     } catch (error) {
       if (error instanceof SyntaxError) {
         return this.fail(
           new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "BillingController.createRegenCheckout"
+          "BillingController.createRegenCheckout",
         );
       }
       return this.fail(error, "BillingController.createRegenCheckout");
@@ -70,7 +71,7 @@ export class BillingController extends BaseController {
       const signature = req.headers.get("stripe-signature");
       const result = await this.billingService.handleStripeWebhook(
         rawBody,
-        signature
+        signature,
       );
       return this.ok(result);
     } catch (error) {

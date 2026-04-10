@@ -58,7 +58,9 @@ describe.skipIf(!run)("Prisma trip flow (integration)", () => {
 
   afterAll(async () => {
     if (userId) {
-      await prisma.user.delete({ where: { id: userId } }).catch(() => undefined);
+      await prisma.user
+        .delete({ where: { id: userId } })
+        .catch(() => undefined);
     }
     await prisma.$disconnect();
   });

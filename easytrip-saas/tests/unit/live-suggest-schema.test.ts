@@ -61,7 +61,7 @@ describe("parseLiveSuggestModelJson", () => {
 
   it("throws on invalid JSON", () => {
     expect(() => parseLiveSuggestModelJson("not json")).toThrow(
-      "LIVE_SUGGEST_JSON_PARSE"
+      "LIVE_SUGGEST_JSON_PARSE",
     );
   });
 

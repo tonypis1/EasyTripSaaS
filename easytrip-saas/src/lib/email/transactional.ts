@@ -15,10 +15,13 @@ export async function sendTransactionalEmail(args: SendArgs): Promise<void> {
   const key = config.email.resendApiKey;
   const from = config.email.from;
   if (!key || !from) {
-    logger.info("Email transazionale (mock — configura RESEND_API_KEY e EMAIL_FROM)", {
-      to: redactEmail(args.to),
-      subject: args.subject,
-    });
+    logger.info(
+      "Email transazionale (mock — configura RESEND_API_KEY e EMAIL_FROM)",
+      {
+        to: redactEmail(args.to),
+        subject: args.subject,
+      },
+    );
     return;
   }
 
@@ -50,7 +53,7 @@ export function purchaseConfirmedHtml(params: {
   return `
   <p>Ciao,</p>
   <p>Abbiamo ricevuto il pagamento per il viaggio verso <strong>${escapeHtml(
-    params.destination
+    params.destination,
   )}</strong>.</p>
   <p>Stiamo generando il tuo itinerario: riceverai un'altra email appena sarà pronto.</p>
   <p><a href="${params.tripUrl}">Apri il viaggio in EasyTrip</a></p>
@@ -128,9 +131,16 @@ export function creditExpiryReminderHtml(params: {
   expiresAt: string;
   tripsUrl: string;
 }): string {
-  const urgency = params.daysLeft <= 1 ? "🚨" : params.daysLeft <= 7 ? "⏰" : "📅";
-  const urgencyColor = params.daysLeft <= 1 ? "#dc2626" : params.daysLeft <= 7 ? "#ea580c" : "#ca8a04";
-  const daysText = params.daysLeft === 1 ? "1 giorno" : `${params.daysLeft} giorni`;
+  const urgency =
+    params.daysLeft <= 1 ? "🚨" : params.daysLeft <= 7 ? "⏰" : "📅";
+  const urgencyColor =
+    params.daysLeft <= 1
+      ? "#dc2626"
+      : params.daysLeft <= 7
+        ? "#ea580c"
+        : "#ca8a04";
+  const daysText =
+    params.daysLeft === 1 ? "1 giorno" : `${params.daysLeft} giorni`;
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">${urgency}</p>
@@ -582,9 +592,7 @@ export function postTripFeedbackHtml(params: {
   `.trim();
 }
 
-export function postTripReengageHtml(params: {
-  newTripUrl: string;
-}): string {
+export function postTripReengageHtml(params: { newTripUrl: string }): string {
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🌤️</p>

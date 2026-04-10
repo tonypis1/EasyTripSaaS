@@ -80,7 +80,8 @@ export class UserDataService {
         startDate: t.startDate.toISOString(),
         endDate: t.endDate.toISOString(),
         accessExpiresAt: t.accessExpiresAt.toISOString(),
-        amountPaid: t.amountPaid != null ? serializeDecimal(t.amountPaid) : null,
+        amountPaid:
+          t.amountPaid != null ? serializeDecimal(t.amountPaid) : null,
         deletedAt: t.deletedAt?.toISOString() ?? null,
         createdAt: t.createdAt.toISOString(),
         updatedAt: t.updatedAt.toISOString(),
@@ -91,8 +92,10 @@ export class UserDataService {
           days: v.days.map((d) => ({
             ...d,
             unlockDate: d.unlockDate.toISOString(),
-            mapCenterLat: d.mapCenterLat != null ? serializeDecimal(d.mapCenterLat) : null,
-            mapCenterLng: d.mapCenterLng != null ? serializeDecimal(d.mapCenterLng) : null,
+            mapCenterLat:
+              d.mapCenterLat != null ? serializeDecimal(d.mapCenterLat) : null,
+            mapCenterLng:
+              d.mapCenterLng != null ? serializeDecimal(d.mapCenterLng) : null,
           })),
         })),
         members: t.members.map((m) => ({

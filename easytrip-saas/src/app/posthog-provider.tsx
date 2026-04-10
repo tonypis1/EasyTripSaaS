@@ -6,7 +6,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const PH_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
-const PH_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+const PH_HOST =
+  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
 
 function PostHogPageView() {
   const pathname = usePathname();

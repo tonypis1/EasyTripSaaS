@@ -27,8 +27,7 @@ export abstract class BaseController {
           message: appError.message,
         },
       },
-      { status: appError.statusCode }
+      { status: appError.statusCode },
     );
   }
 }
-

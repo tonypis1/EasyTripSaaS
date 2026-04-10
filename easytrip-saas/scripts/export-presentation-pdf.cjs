@@ -31,13 +31,11 @@ async function main() {
 
   await page.waitForFunction(() => document.fonts.ready).catch(() => {});
   await page.waitForTimeout(1500);
-  await page
-    .waitForSelector(".mermaid svg", { timeout: 60_000 })
-    .catch(() => {
-      console.warn(
-        "Mermaid: SVG non trovato in tempo; il PDF potrebbe avere il diagramma vuoto.",
-      );
-    });
+  await page.waitForSelector(".mermaid svg", { timeout: 60_000 }).catch(() => {
+    console.warn(
+      "Mermaid: SVG non trovato in tempo; il PDF potrebbe avere il diagramma vuoto.",
+    );
+  });
   await page.waitForTimeout(500);
 
   await page.pdf({

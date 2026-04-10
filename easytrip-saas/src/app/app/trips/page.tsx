@@ -14,25 +14,25 @@ export default async function TripsPage() {
 
   return (
     <div className="space-y-12">
-      <div className="border-l-2 border-et-accent/40 pl-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-et-accent/88">
+      <div className="border-et-accent/40 border-l-2 pl-6">
+        <p className="text-et-accent/88 text-xs font-semibold tracking-[0.16em] uppercase">
           Itinerari
         </p>
-        <h1 className="font-display mt-2 text-3xl font-normal tracking-tight text-et-ink sm:text-4xl">
+        <h1 className="font-display text-et-ink mt-2 text-3xl font-normal tracking-tight sm:text-4xl">
           I miei viaggi
         </h1>
-        <p className="mt-2 max-w-xl text-sm text-et-ink/65">
-          Crea un viaggio, paga (o usa la scorciatoia dev), poi segui la generazione e lo
-          sblocco giorno per giorno.
+        <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
+          Crea un viaggio, paga (o usa la scorciatoia dev), poi segui la
+          generazione e lo sblocco giorno per giorno.
         </p>
       </div>
 
       <CreateTripForm />
 
       <section>
-        <h2 className="font-display text-lg text-et-ink">Elenco</h2>
+        <h2 className="font-display text-et-ink text-lg">Elenco</h2>
         {trips.length === 0 ? (
-          <p className="mt-4 text-sm text-et-ink/55">
+          <p className="text-et-ink/55 mt-4 text-sm">
             Nessun viaggio ancora: usa il modulo sopra per crearne uno.
           </p>
         ) : (
@@ -40,44 +40,44 @@ export default async function TripsPage() {
             {trips.map((t) => (
               <li
                 key={t.id}
-                className="relative rounded-2xl border border-et-border bg-et-card transition hover:border-et-accent/30 hover:bg-et-accent/5"
+                className="border-et-border bg-et-card hover:border-et-accent/30 hover:bg-et-accent/5 relative rounded-2xl border transition"
               >
                 <Link
                   href={`/app/trips/${t.id}`}
                   className="block px-5 py-4 pr-[9.5rem] sm:pr-40"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-display text-lg text-et-ink">
+                    <span className="font-display text-et-ink text-lg">
                       {t.destination}
                     </span>
-                    <span className="text-xs text-et-ink/50">
+                    <span className="text-et-ink/50 text-xs">
                       {toDateLabel(t.startDate)} — {toDateLabel(t.endDate)}
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full border border-et-border px-2 py-0.5 text-et-ink/65">
+                    <span className="border-et-border text-et-ink/65 rounded-full border px-2 py-0.5">
                       {formatTripType(t.tripType)}
                     </span>
-                    <span className="rounded-full border border-et-border px-2 py-0.5 text-et-ink/65">
+                    <span className="border-et-border text-et-ink/65 rounded-full border px-2 py-0.5">
                       {formatStatus(t.status)}
                     </span>
                     {t.isPaid ? (
-                      <span className="rounded-full border border-et-accent/30 bg-et-accent/10 px-2 py-0.5 text-et-accent">
+                      <span className="border-et-accent/30 bg-et-accent/10 text-et-accent rounded-full border px-2 py-0.5">
                         Pagato
                       </span>
                     ) : (
-                      <span className="rounded-full border border-et-border px-2 py-0.5 text-et-ink/45">
+                      <span className="border-et-border text-et-ink/45 rounded-full border px-2 py-0.5">
                         Da pagare
                       </span>
                     )}
                     {t.activeDays > 0 ? (
-                      <span className="rounded-full border border-et-border px-2 py-0.5 text-et-ink/55">
+                      <span className="border-et-border text-et-ink/55 rounded-full border px-2 py-0.5">
                         {t.activeDays} giorni in bozza
                       </span>
                     ) : null}
                   </div>
                 </Link>
-                <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5 sm:top-1/2 sm:-translate-y-1/2">
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5 sm:top-1/2 sm:-translate-y-1/2">
                   <DeleteTripButton
                     tripId={t.id}
                     destination={t.destination}

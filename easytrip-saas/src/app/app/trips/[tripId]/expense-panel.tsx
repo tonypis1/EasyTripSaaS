@@ -110,7 +110,11 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
       });
 
       if (res.ok) {
-        posthog.capture("expense_added", { tripId, amount: amountNum, category });
+        posthog.capture("expense_added", {
+          tripId,
+          amount: amountNum,
+          category,
+        });
         setDescription("");
         setAmount("");
         setCategory("altro");
@@ -127,10 +131,9 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
 
   async function onDelete(expenseId: string) {
     try {
-      const res = await fetch(
-        `/api/trips/${tripId}/expenses/${expenseId}`,
-        { method: "DELETE" },
-      );
+      const res = await fetch(`/api/trips/${tripId}/expenses/${expenseId}`, {
+        method: "DELETE",
+      });
       if (res.ok) {
         posthog.capture("expense_deleted", { tripId, expenseId });
         await fetchData();
@@ -155,17 +158,14 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
       {/* Header con totale */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-et-ink/55">Totale spese</p>
-          <p className="text-2xl font-bold text-et-ink">
+          <p className="text-et-ink/55 text-sm">Totale spese</p>
+          <p className="text-et-ink text-2xl font-bold">
             €{totalExpenses.toFixed(2)}
           </p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl
-                     bg-blue-600 text-white text-sm font-semibold
-                     hover:bg-blue-700 transition-colors cursor-pointer
-                     min-h-[44px]"
+          className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
         >
           <Plus className="h-4 w-4" />
           Aggiungi spesa
@@ -174,9 +174,9 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
 
       {/* Form nuova spesa */}
       {showForm && (
-        <div className="rounded-xl border border-et-border bg-et-bg/40 p-4 space-y-3">
+        <div className="border-et-border bg-et-bg/40 space-y-3 rounded-xl border p-4">
           <div>
-            <label className="text-xs font-medium text-et-ink/60 uppercase tracking-wide">
+            <label className="text-et-ink/60 text-xs font-medium tracking-wide uppercase">
               Descrizione
             </label>
             <input
@@ -184,15 +184,13 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Es: Cena da Mario"
-              className="mt-1 w-full rounded-lg border border-et-border bg-et-card px-3 py-2.5
-                         text-sm text-et-ink placeholder:text-et-ink/30
-                         focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className="border-et-border bg-et-card text-et-ink placeholder:text-et-ink/30 mt-1 w-full rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-et-ink/60 uppercase tracking-wide">
+              <label className="text-et-ink/60 text-xs font-medium tracking-wide uppercase">
                 Importo (€)
               </label>
               <input
@@ -202,21 +200,17 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="mt-1 w-full rounded-lg border border-et-border bg-et-card px-3 py-2.5
-                           text-sm text-et-ink placeholder:text-et-ink/30
-                           focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="border-et-border bg-et-card text-et-ink placeholder:text-et-ink/30 mt-1 w-full rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-et-ink/60 uppercase tracking-wide">
+              <label className="text-et-ink/60 text-xs font-medium tracking-wide uppercase">
                 Categoria
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-et-border bg-et-card px-3 py-2.5
-                           text-sm text-et-ink cursor-pointer
-                           focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="border-et-border bg-et-card text-et-ink mt-1 w-full cursor-pointer rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
               >
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>
@@ -229,15 +223,13 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
 
           {totalDays > 0 && (
             <div>
-              <label className="text-xs font-medium text-et-ink/60 uppercase tracking-wide">
+              <label className="text-et-ink/60 text-xs font-medium tracking-wide uppercase">
                 Giorno (opzionale)
               </label>
               <select
                 value={dayNumber}
                 onChange={(e) => setDayNumber(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-et-border bg-et-card px-3 py-2.5
-                           text-sm text-et-ink cursor-pointer
-                           focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="border-et-border bg-et-card text-et-ink mt-1 w-full cursor-pointer rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500/30 focus:outline-none"
               >
                 <option value="">— Nessuno —</option>
                 {Array.from({ length: totalDays }, (_, i) => (
@@ -253,10 +245,7 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
             <button
               onClick={onAdd}
               disabled={adding || !description.trim() || !amount}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5
-                         bg-green-600 text-white rounded-lg text-sm font-semibold
-                         hover:bg-green-700 transition-colors cursor-pointer
-                         disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+              className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {adding ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -267,8 +256,7 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2.5 rounded-lg text-sm text-et-ink/60
-                         hover:bg-et-bg/60 transition-colors cursor-pointer min-h-[44px]"
+              className="text-et-ink/60 hover:bg-et-bg/60 min-h-[44px] cursor-pointer rounded-lg px-4 py-2.5 text-sm transition-colors"
             >
               Annulla
             </button>
@@ -284,16 +272,15 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
             return (
               <div
                 key={exp.id}
-                className="flex items-center justify-between rounded-xl bg-et-bg/40
-                           border border-et-border px-4 py-3"
+                className="bg-et-bg/40 border-et-border flex items-center justify-between rounded-xl border px-4 py-3"
               >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="text-lg">{cat.emoji}</span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-et-ink truncate">
+                    <p className="text-et-ink truncate text-sm font-medium">
                       {exp.description}
                     </p>
-                    <p className="text-xs text-et-ink/50">
+                    <p className="text-et-ink/50 text-xs">
                       Pagato da{" "}
                       <strong>
                         {exp.paidBy.name ?? exp.paidBy.email.split("@")[0]}
@@ -302,15 +289,13 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ml-3">
-                  <span className="text-sm font-bold text-et-ink">
+                <div className="ml-3 flex items-center gap-2">
+                  <span className="text-et-ink text-sm font-bold">
                     €{exp.amount.toFixed(2)}
                   </span>
                   <button
                     onClick={() => onDelete(exp.id)}
-                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400
-                               cursor-pointer transition-colors min-h-[44px] min-w-[44px]
-                               flex items-center justify-center"
+                    className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg p-1.5 text-red-400 transition-colors hover:bg-red-500/10"
                     title="Elimina spesa"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -323,9 +308,9 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
       )}
 
       {expenses.length === 0 && !showForm && (
-        <div className="text-center py-6">
-          <Receipt className="h-10 w-10 text-et-ink/20 mx-auto mb-2" />
-          <p className="text-sm text-et-ink/40">
+        <div className="py-6 text-center">
+          <Receipt className="text-et-ink/20 mx-auto mb-2 h-10 w-10" />
+          <p className="text-et-ink/40 text-sm">
             Nessuna spesa registrata ancora.
           </p>
         </div>
@@ -333,11 +318,10 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
 
       {/* Bilancio e settlements */}
       {balances.length > 1 && (
-        <div className="border-t border-et-border pt-4">
+        <div className="border-et-border border-t pt-4">
           <button
             onClick={() => setShowBalances(!showBalances)}
-            className="flex items-center gap-2 text-sm font-semibold text-et-ink
-                       cursor-pointer hover:text-blue-500 transition-colors w-full justify-between"
+            className="text-et-ink flex w-full cursor-pointer items-center justify-between gap-2 text-sm font-semibold transition-colors hover:text-blue-500"
           >
             <span className="flex items-center gap-2">
               <Wallet className="h-4 w-4" />
@@ -357,13 +341,13 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
                 {balances.map((b) => (
                   <div
                     key={b.memberId}
-                    className="flex items-center justify-between rounded-lg bg-et-bg/40 px-4 py-2.5"
+                    className="bg-et-bg/40 flex items-center justify-between rounded-lg px-4 py-2.5"
                   >
                     <div>
-                      <p className="text-sm font-medium text-et-ink">
+                      <p className="text-et-ink text-sm font-medium">
                         {b.name ?? b.email.split("@")[0]}
                       </p>
-                      <p className="text-xs text-et-ink/50">
+                      <p className="text-et-ink/50 text-xs">
                         Pagato: €{b.totalPaid.toFixed(2)}
                       </p>
                     </div>
@@ -389,21 +373,20 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
               {/* Chi deve cosa a chi */}
               {settlements.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold text-et-ink/55 uppercase tracking-wide mb-2">
+                  <h4 className="text-et-ink/55 mb-2 text-xs font-semibold tracking-wide uppercase">
                     Chi deve cosa a chi
                   </h4>
                   <div className="space-y-2">
                     {settlements.map((s, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-2 rounded-lg bg-amber-500/5
-                                   border border-amber-500/10 px-4 py-2.5"
+                        className="flex items-center gap-2 rounded-lg border border-amber-500/10 bg-amber-500/5 px-4 py-2.5"
                       >
-                        <span className="text-sm font-medium text-et-ink">
+                        <span className="text-et-ink text-sm font-medium">
                           {s.from.name ?? "?"}
                         </span>
-                        <ArrowRight className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                        <span className="text-sm font-medium text-et-ink">
+                        <ArrowRight className="h-4 w-4 flex-shrink-0 text-amber-500" />
+                        <span className="text-et-ink text-sm font-medium">
                           {s.to.name ?? "?"}
                         </span>
                         <span className="ml-auto text-sm font-bold text-amber-600">

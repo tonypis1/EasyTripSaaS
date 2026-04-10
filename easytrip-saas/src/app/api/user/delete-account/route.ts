@@ -13,7 +13,10 @@ export async function POST(req: Request) {
     body = (await req.json()) as { confirm?: string };
   } catch {
     return NextResponse.json(
-      { ok: false, error: { message: "JSON non valido", code: "INVALID_JSON" } },
+      {
+        ok: false,
+        error: { message: "JSON non valido", code: "INVALID_JSON" },
+      },
       { status: 400 },
     );
   }

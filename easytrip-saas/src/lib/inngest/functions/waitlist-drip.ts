@@ -69,7 +69,9 @@ export const waitlistDrip = inngest.createFunction(
     };
     const waitlistEntryId = raw.waitlistEntryId;
     if (!waitlistEntryId) {
-      throw new Error("waitlist/signup: waitlistEntryId mancante in event.data");
+      throw new Error(
+        "waitlist/signup: waitlistEntryId mancante in event.data",
+      );
     }
     const signupUrl = `${config.app.baseUrl}/app/trips?new=1`;
     let sent = 0;

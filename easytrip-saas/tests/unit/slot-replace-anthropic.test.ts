@@ -89,7 +89,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
         slot: "morning",
         lat: 41.9,
         lng: 12.45,
-      })
+      }),
     ).rejects.toMatchObject({ code: "AI_ERROR", statusCode: 502 });
   });
 

@@ -4,14 +4,14 @@ Applicazione [Next.js](https://nextjs.org) con **Prisma**, **PostgreSQL**, **Cle
 
 ## Documentazione operativa e prodotto
 
-| Documento | Contenuto |
-|-----------|-----------|
-| [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) | Specifica prodotto: problema, target, personas, business, metriche, user stories, MVP |
-| [`docs/openapi.yaml`](docs/openapi.yaml) | Specifica OpenAPI 3.x delle route `/api` |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploy, variabili d’ambiente, go-live |
-| [`docs/security-review.md`](docs/security-review.md) | Checklist sicurezza |
-| [`docs/observability.md`](docs/observability.md) | Logging, metriche, strumenti consigliati |
-| [`presentation.html`](presentation.html) | Pitch HTML con screenshot e stack (root progetto) |
+| Documento                                            | Contenuto                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md)       | Specifica prodotto: problema, target, personas, business, metriche, user stories, MVP |
+| [`docs/openapi.yaml`](docs/openapi.yaml)             | Specifica OpenAPI 3.x delle route `/api`                                              |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)           | Deploy, variabili d’ambiente, go-live                                                 |
+| [`docs/security-review.md`](docs/security-review.md) | Checklist sicurezza                                                                   |
+| [`docs/observability.md`](docs/observability.md)     | Logging, metriche, strumenti consigliati                                              |
+| [`presentation.html`](presentation.html)             | Pitch HTML con screenshot e stack (root progetto)                                     |
 
 ## Documentazione HTML (visione prodotto)
 
@@ -29,11 +29,11 @@ Il file **`CATALOG.md`** (catalogo skill Cursor) è incluso nella root del proge
 
 Oltre a `DATABASE_URL`, chiavi Clerk, Stripe e `ANTHROPIC_API_KEY`, sono supportate:
 
-| Variabile | Descrizione |
-|-----------|-------------|
-| `STRIPE_PRICE_REGEN_CENTS` | Prezzo rigenerazione (default `199` = €1,99) |
-| `RESEND_API_KEY` | API key [Resend](https://resend.com) per email transazionali |
-| `EMAIL_FROM` | Mittente verificato su Resend (es. `onboarding@tuo-dominio.com`) |
+| Variabile                  | Descrizione                                                      |
+| -------------------------- | ---------------------------------------------------------------- |
+| `STRIPE_PRICE_REGEN_CENTS` | Prezzo rigenerazione (default `199` = €1,99)                     |
+| `RESEND_API_KEY`           | API key [Resend](https://resend.com) per email transazionali     |
+| `EMAIL_FROM`               | Mittente verificato su Resend (es. `onboarding@tuo-dominio.com`) |
 
 Senza Resend, le email sono solo loggate lato server (utile in sviluppo).
 
@@ -82,14 +82,14 @@ npm run screenshots:presentation
 ```
 
 - **Memoria (Windows / “Zone Allocation failed” / out of memory)**  
-  Gli script `screenshots:*` usano già Node con `--max-old-space-size=8192`. In più: avvia **`npm run dev` in un terminale separato** e aspetta che sia pronto, *poi* lancia gli screenshot. Così Playwright riusa il server (`reuseExistingServer`) e **non** avvia una seconda copia di Next.js, che consuma molta RAM.
+  Gli script `screenshots:*` usano già Node con `--max-old-space-size=8192`. In più: avvia **`npm run dev` in un terminale separato** e aspetta che sia pronto, _poi_ lancia gli screenshot. Così Playwright riusa il server (`reuseExistingServer`) e **non** avvia una seconda copia di Next.js, che consuma molta RAM.
 
 - Senza variabili extra: genera `01-landing.png` e `02-auth-clerk.png`.
 - Per le immagini **autenticate** (`03`–`05`) serve un file `e2e/.auth/user.json`.
 
 #### Perché Google “browser non sicuro” con Playwright
 
-Se usi **Accedi con Google** nella finestra di `playwright codegen`, Google spesso mostra *“Questo browser o questa app potrebbero non essere sicuri”*: è una **difesa di Google contro i browser controllati da automazione**, non un errore di Clerk o dell’app. **Non si risolve** affidandosi a OAuth Google dentro Playwright.
+Se usi **Accedi con Google** nella finestra di `playwright codegen`, Google spesso mostra _“Questo browser o questa app potrebbero non essere sicuri”_: è una **difesa di Google contro i browser controllati da automazione**, non un errore di Clerk o dell’app. **Non si risolve** affidandosi a OAuth Google dentro Playwright.
 
 **Percorsi consigliati:**
 
@@ -115,4 +115,8 @@ Deploy standard: [documentazione Next.js](https://nextjs.org/docs/app/building-y
 
 ### CI (GitHub Actions)
 
-Su push/PR: **ESLint** + **test unitari** (`npm run test:unit`). La build di produzione si esegue in locale o sulla piattaforma di deploy con variabili complete (Clerk valida le chiavi durante `next build`).
+Su push/PR verso `main` / `master`, il workflow **`CI`** ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) esegue in sequenza: **npm audit** (solo vulnerabilità critical sulle dipendenze di produzione), **Prettier (check)**, **ESLint**, **TypeScript** (`tsc --noEmit`), **test unitari**, **coverage** (soglie su file critici), **test di integrazione** (Postgres di servizio nel runner), **Playwright smoke** (`@smoke`). In parallelo sul repo: **CodeQL** ([`codeql.yml`](../.github/workflows/codeql.yml)). Opzionale: E2E sulla Preview Vercel dopo un deploy riuscito ([`deployment-preview-e2e.yml`](../.github/workflows/deployment-preview-e2e.yml)). Segreti e hook Git: [`SECRET_OPS.md`](SECRET_OPS.md).
+
+Descrizione completa: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md#ci-github-actions).
+
+La build di produzione si esegue in locale o su Vercel con variabili complete (Clerk valida le chiavi durante `next build`).

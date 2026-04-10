@@ -75,8 +75,7 @@ export function DeleteTripButton({
       ? `\n\n⚠️ Nota: questa azione nasconde il viaggio ma NON genera crediti.\nPer cancellare il viaggio e ricevere crediti EasyTrip, usa invece «Cancella viaggio».`
       : "";
 
-    const message =
-      `Nascondere «${destination}» dall'elenco?\n\nIl viaggio verrà rimosso dalla tua lista. Tutti i dati e i pagamenti resteranno salvati nel sistema.${hint}`;
+    const message = `Nascondere «${destination}» dall'elenco?\n\nIl viaggio verrà rimosso dalla tua lista. Tutti i dati e i pagamenti resteranno salvati nel sistema.${hint}`;
 
     if (!window.confirm(message)) return;
 
@@ -141,7 +140,7 @@ export function DeleteTripButton({
               ? "Cancella il viaggio e ricevi credito EasyTrip"
               : "Cancella il viaggio dalla tua lista"
           }
-          className="shrink-0 min-h-[44px] cursor-pointer rounded-lg border border-et-border/80 px-3 py-1.5 text-xs font-medium text-et-ink/70 transition duration-200 hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-200 disabled:opacity-50"
+          className="border-et-border/80 text-et-ink/70 min-h-[44px] shrink-0 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition duration-200 hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-200 disabled:opacity-50"
         >
           {busyCancel ? (
             <Loader2 className="inline h-3.5 w-3.5 animate-spin" />
@@ -155,7 +154,7 @@ export function DeleteTripButton({
       ) : hasStarted && status !== "cancelled" ? (
         <span
           title="Non puoi cancellare un viaggio già iniziato"
-          className="shrink-0 rounded-lg border border-et-border/40 px-3 py-1.5 text-xs text-et-ink/30 cursor-not-allowed"
+          className="border-et-border/40 text-et-ink/30 shrink-0 cursor-not-allowed rounded-lg border px-3 py-1.5 text-xs"
         >
           <X className="mr-1 inline h-3 w-3" />
           Non cancellabile
@@ -171,7 +170,7 @@ export function DeleteTripButton({
         }}
         disabled={busyCancel || busyArchive}
         title="Nasconde il viaggio dall'elenco (nessun dato cancellato)"
-        className="shrink-0 min-h-[44px] cursor-pointer rounded-lg border border-et-border/50 px-3 py-1.5 text-xs font-medium text-et-ink/45 transition duration-200 hover:border-amber-400/40 hover:bg-amber-500/8 hover:text-amber-300 disabled:opacity-50"
+        className="border-et-border/50 text-et-ink/45 min-h-[44px] shrink-0 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition duration-200 hover:border-amber-400/40 hover:bg-amber-500/8 hover:text-amber-300 disabled:opacity-50"
       >
         {busyArchive ? (
           <Loader2 className="inline h-3.5 w-3.5 animate-spin" />

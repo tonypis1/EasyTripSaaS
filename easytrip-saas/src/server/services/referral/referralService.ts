@@ -61,8 +61,13 @@ export class ReferralService {
    * Chiamato quando un nuovo utente si registra con un referral code.
    * Crea il record Referral (o aggiorna da pending a signed_up).
    */
-  async trackSignup(referralCode: string, newUserId: string, newUserEmail: string) {
-    const referrer = await this.referralRepo.findUserByReferralCode(referralCode);
+  async trackSignup(
+    referralCode: string,
+    newUserId: string,
+    newUserEmail: string,
+  ) {
+    const referrer =
+      await this.referralRepo.findUserByReferralCode(referralCode);
     if (!referrer) return;
 
     if (referrer.id === newUserId) return;

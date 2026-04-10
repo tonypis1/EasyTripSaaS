@@ -169,7 +169,7 @@ function truncateForRepairPrompt(raw: string): string {
 function buildRepairPrompt(
   baseUserPrompt: string,
   previousRaw: string,
-  reason: string
+  reason: string,
 ) {
   const snippet = truncateForRepairPrompt(previousRaw);
   return `
@@ -213,25 +213,28 @@ export const generateItinerary = inngest.createFunction(
   async ({ event, events, step }) => {
     const { tripId } = resolveTripGeneratePayload(event, events);
 
-    const trip = await step.run("carica-trip", async (): Promise<TripSnapshot> => {
-      const t = await prisma.trip.findUnique({
-        where: { id: tripId },
-      });
-      if (!t) {
-        throw new Error(`Trip ${tripId} non trovato`);
-      }
-      return {
-        id: t.id,
-        destination: t.destination,
-        startDateIso: t.startDate.toISOString(),
-        endDateIso: t.endDate.toISOString(),
-        tripType: t.tripType,
-        style: t.style,
-        budgetLevel: t.budgetLevel ?? "moderate",
-        regenCount: t.regenCount ?? 0,
-        usedZones: t.usedZones,
-      };
-    });
+    const trip = await step.run(
+      "carica-trip",
+      async (): Promise<TripSnapshot> => {
+        const t = await prisma.trip.findUnique({
+          where: { id: tripId },
+        });
+        if (!t) {
+          throw new Error(`Trip ${tripId} non trovato`);
+        }
+        return {
+          id: t.id,
+          destination: t.destination,
+          startDateIso: t.startDate.toISOString(),
+          endDateIso: t.endDate.toISOString(),
+          tripType: t.tripType,
+          style: t.style,
+          budgetLevel: t.budgetLevel ?? "moderate",
+          regenCount: t.regenCount ?? 0,
+          usedZones: t.usedZones,
+        };
+      },
+    );
 
     const startDate = new Date(trip.startDateIso);
     const endDate = new Date(trip.endDateIso);
@@ -281,7 +284,8 @@ export const generateItinerary = inngest.createFunction(
             lastErr = e;
             if (attempt === maxAttempts) break;
 
-            const reason = e instanceof Error ? e.message : "errore sconosciuto";
+            const reason =
+              e instanceof Error ? e.message : "errore sconosciuto";
             const repairPrompt = buildRepairPrompt(userPrompt, lastRaw, reason);
 
             const repairResponse = await anthropic.messages.create({
@@ -293,11 +297,11 @@ export const generateItinerary = inngest.createFunction(
             });
 
             const repairTextBlock = repairResponse.content.find(
-              (c) => c.type === "text"
+              (c) => c.type === "text",
             );
             if (!repairTextBlock || repairTextBlock.type !== "text") {
               throw new Error(
-                "Claude non ha restituito un blocco testuale (riparazione)"
+                "Claude non ha restituito un blocco testuale (riparazione)",
               );
             }
 
@@ -311,11 +315,12 @@ export const generateItinerary = inngest.createFunction(
           }
         }
 
-        const msg = lastErr instanceof Error ? lastErr.message : "errore sconosciuto";
+        const msg =
+          lastErr instanceof Error ? lastErr.message : "errore sconosciuto";
         throw new Error(
-          `Claude JSON non valido dopo ${maxAttempts} tentativi: ${msg}`
+          `Claude JSON non valido dopo ${maxAttempts} tentativi: ${msg}`,
         );
-      }
+      },
     );
 
     const result = await step.run("salva-versione-e-giorni", async () => {
@@ -349,22 +354,20 @@ export const generateItinerary = inngest.createFunction(
             unlockDate,
             title: day.title || `Giorno ${day.dayNumber}`,
             morning: JSON.stringify(
-              day.morning ?? fallbackSlot("Mattina libera")
+              day.morning ?? fallbackSlot("Mattina libera"),
             ),
             afternoon: JSON.stringify(
-              day.afternoon ?? fallbackSlot("Pomeriggio libero")
+              day.afternoon ?? fallbackSlot("Pomeriggio libero"),
             ),
             evening: JSON.stringify(
-              day.evening ?? fallbackSlot("Serata libera")
+              day.evening ?? fallbackSlot("Serata libera"),
             ),
             restaurants:
               day.restaurants && day.restaurants.length > 0
                 ? JSON.stringify(day.restaurants)
                 : null,
-            mapCenterLat:
-              day.mapCenterLat != null ? day.mapCenterLat : null,
-            mapCenterLng:
-              day.mapCenterLng != null ? day.mapCenterLng : null,
+            mapCenterLat: day.mapCenterLat != null ? day.mapCenterLat : null,
+            mapCenterLng: day.mapCenterLng != null ? day.mapCenterLng : null,
             zoneFocus: day.zoneFocus || null,
             dowWarning: day.dowWarning || null,
             localGem: day.localGem || null,
@@ -413,5 +416,5 @@ export const generateItinerary = inngest.createFunction(
     });
 
     return { tripId: trip.id, ...result };
-  }
+  },
 );

@@ -112,7 +112,10 @@ export class ReferralRepository {
     const [total, signedUp, converted, totalRewardAmount] = await Promise.all([
       prisma.referral.count({ where: { referrerId: userId } }),
       prisma.referral.count({
-        where: { referrerId: userId, status: { in: ["signed_up", "converted"] } },
+        where: {
+          referrerId: userId,
+          status: { in: ["signed_up", "converted"] },
+        },
       }),
       prisma.referral.count({
         where: { referrerId: userId, status: "converted" },

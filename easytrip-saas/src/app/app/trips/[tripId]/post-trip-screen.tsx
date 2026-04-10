@@ -53,11 +53,11 @@ export function PostTripScreen({ trip }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-10 px-4 pb-20 pt-8">
+    <div className="mx-auto max-w-2xl space-y-10 px-4 pt-8 pb-20">
       {/* Back link */}
       <Link
         href="/app/trips"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-et-ink/50 transition-colors duration-200 hover:text-et-accent"
+        className="text-et-ink/50 hover:text-et-accent inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors duration-200"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Tutti i viaggi
@@ -69,17 +69,17 @@ export function PostTripScreen({ trip }: Props) {
           <Sunset className="h-8 w-8 text-amber-400" />
         </div>
 
-        <p className="text-sm font-medium uppercase tracking-widest text-amber-400/80">
+        <p className="text-sm font-medium tracking-widest text-amber-400/80 uppercase">
           Viaggio completato
         </p>
 
-        <h1 className="font-display mt-3 text-3xl font-normal leading-tight tracking-tight text-et-ink sm:text-4xl">
+        <h1 className="font-display text-et-ink mt-3 text-3xl leading-tight font-normal tracking-tight sm:text-4xl">
           Il tuo viaggio a{" "}
           <span className="text-et-accent">{trip.destination}</span>
           <br />è stato indimenticabile
         </h1>
 
-        <p className="mt-4 max-w-md text-sm leading-relaxed text-et-ink/55">
+        <p className="text-et-ink/55 mt-4 max-w-md text-sm leading-relaxed">
           Ogni viaggio lascia un segno. I luoghi che hai scoperto, i sapori che
           hai assaggiato, i momenti che hai vissuto — sono tutti qui, pronti per
           essere rivissuti.
@@ -88,21 +88,21 @@ export function PostTripScreen({ trip }: Props) {
 
       {/* Trip stats */}
       <div className="flex flex-wrap items-center justify-center gap-4">
-        <div className="flex items-center gap-2 rounded-xl border border-et-border bg-et-card px-4 py-2.5">
-          <Calendar className="h-4 w-4 text-et-ink/40" />
-          <span className="text-sm text-et-ink/70">
+        <div className="border-et-border bg-et-card flex items-center gap-2 rounded-xl border px-4 py-2.5">
+          <Calendar className="text-et-ink/40 h-4 w-4" />
+          <span className="text-et-ink/70 text-sm">
             {trip.startDate} → {trip.endDate}
           </span>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-et-border bg-et-card px-4 py-2.5">
-          <MapPin className="h-4 w-4 text-et-ink/40" />
-          <span className="text-sm text-et-ink/70">
+        <div className="border-et-border bg-et-card flex items-center gap-2 rounded-xl border px-4 py-2.5">
+          <MapPin className="text-et-ink/40 h-4 w-4" />
+          <span className="text-et-ink/70 text-sm">
             {totalDays} {totalDays === 1 ? "giorno" : "giorni"} di avventura
           </span>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-et-border bg-et-card px-4 py-2.5">
-          <Heart className="h-4 w-4 text-et-ink/40" />
-          <span className="text-sm text-et-ink/70">
+        <div className="border-et-border bg-et-card flex items-center gap-2 rounded-xl border px-4 py-2.5">
+          <Heart className="text-et-ink/40 h-4 w-4" />
+          <span className="text-et-ink/70 text-sm">
             {formatTripType(trip.tripType)}
           </span>
         </div>
@@ -110,13 +110,13 @@ export function PostTripScreen({ trip }: Props) {
 
       {/* Expiry notice */}
       <div className="text-center">
-        <p className="text-sm text-et-ink/40">
+        <p className="text-et-ink/40 text-sm">
           L&apos;accesso al tuo itinerario è scaduto il{" "}
-          <span className="font-medium text-et-ink/60">
+          <span className="text-et-ink/60 font-medium">
             {trip.accessExpiresAt}
           </span>
         </p>
-        <p className="mt-1 text-xs text-et-ink/30">
+        <p className="text-et-ink/30 mt-1 text-xs">
           Ma i ricordi restano per sempre.
         </p>
       </div>
@@ -131,10 +131,10 @@ export function PostTripScreen({ trip }: Props) {
                 <BookOpen className="h-5 w-5 text-amber-400" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-medium text-et-ink">
+                <h2 className="text-et-ink text-lg font-medium">
                   Rileggi i ricordi
                 </h2>
-                <p className="mt-1 text-sm leading-relaxed text-et-ink/55">
+                <p className="text-et-ink/55 mt-1 text-sm leading-relaxed">
                   Riattiva l&apos;accesso completo al tuo itinerario per{" "}
                   <span className="font-semibold text-amber-300">
                     30 giorni
@@ -164,20 +164,20 @@ export function PostTripScreen({ trip }: Props) {
         </div>
 
         {/* CTA 2: New trip */}
-        <div className="group overflow-hidden rounded-2xl border border-et-accent/20 bg-gradient-to-br from-et-accent/6 via-et-accent/3 to-transparent transition-colors duration-200 hover:border-et-accent/35">
+        <div className="group border-et-accent/20 from-et-accent/6 via-et-accent/3 hover:border-et-accent/35 overflow-hidden rounded-2xl border bg-gradient-to-br to-transparent transition-colors duration-200">
           <div className="px-6 py-6 sm:px-8">
             <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-et-accent/25 bg-et-accent/10">
-                <Globe className="h-5 w-5 text-et-accent" />
+              <div className="border-et-accent/25 bg-et-accent/10 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
+                <Globe className="text-et-accent h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-medium text-et-ink">
+                <h2 className="text-et-ink text-lg font-medium">
                   Pianifica il prossimo viaggio
                 </h2>
-                <p className="mt-1 text-sm leading-relaxed text-et-ink/55">
+                <p className="text-et-ink/55 mt-1 text-sm leading-relaxed">
                   Hai già vissuto la magia di un itinerario su misura. La
                   prossima avventura ti aspetta — con uno{" "}
-                  <span className="font-semibold text-et-accent">
+                  <span className="text-et-accent font-semibold">
                     sconto del 20%
                   </span>{" "}
                   dedicato a te.
@@ -187,7 +187,7 @@ export function PostTripScreen({ trip }: Props) {
 
             <Link
               href="/app/trips?new=1"
-              className="mt-5 flex min-h-[44px] w-full items-center justify-center gap-2.5 rounded-xl border border-et-accent/30 bg-et-accent/10 px-6 py-3 text-sm font-semibold text-et-accent transition-all duration-200 hover:bg-et-accent/20"
+              className="border-et-accent/30 bg-et-accent/10 text-et-accent hover:bg-et-accent/20 mt-5 flex min-h-[44px] w-full items-center justify-center gap-2.5 rounded-xl border px-6 py-3 text-sm font-semibold transition-all duration-200"
             >
               <Globe className="h-4 w-4" />
               Nuovo viaggio — sconto 20%
@@ -198,7 +198,7 @@ export function PostTripScreen({ trip }: Props) {
       </div>
 
       {/* Footer note */}
-      <p className="text-center text-xs leading-relaxed text-et-ink/30">
+      <p className="text-et-ink/30 text-center text-xs leading-relaxed">
         Il tuo itinerario è al sicuro. Puoi riattivare l&apos;accesso in
         qualsiasi momento.
       </p>

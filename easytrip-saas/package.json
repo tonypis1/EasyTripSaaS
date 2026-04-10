@@ -9,7 +9,12 @@
     "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3000/api/inngest",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky",
     "test:unit": "vitest run --project unit",
     "test:unit:watch": "vitest --project unit",
     "test:coverage": "vitest run --project unit --coverage",
@@ -23,6 +28,15 @@
     "screenshots:clerk-session": "node --max-old-space-size=8192 ./node_modules/@playwright/test/cli.js test -c playwright.clerk-session.config.ts",
     "presentation:pdf": "node scripts/export-presentation-pdf.cjs",
     "privacy:ropa": "node scripts/generate-processing-register.mjs"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix --max-warnings 0",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
@@ -51,7 +65,12 @@
     "@types/react-dom": "^19",
     "dotenv": "^17.4.1",
     "eslint": "^9",
+    "eslint-config-prettier": "^10.1.1",
     "eslint-config-next": "16.1.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
+    "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
     "prisma": "6.19.0",
     "tailwindcss": "^4",
     "typescript": "^5",

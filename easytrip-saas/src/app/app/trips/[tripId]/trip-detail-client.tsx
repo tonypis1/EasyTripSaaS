@@ -65,10 +65,7 @@ import {
   theForkUrl,
   viatorUrl,
 } from "@/lib/affiliate";
-import {
-  openCrispChat,
-  isCrispEnabled,
-} from "@/app/app/crisp-chat";
+import { openCrispChat, isCrispEnabled } from "@/app/app/crisp-chat";
 import { ExpensePanel } from "./expense-panel";
 import { roundCoordForAi } from "@/lib/geo-privacy";
 
@@ -144,9 +141,18 @@ type LiveSuggestResult = {
 /* ---------- helpers ---------- */
 
 const BUDGET_LABELS: Record<string, { label: string; color: string }> = {
-  economy: { label: "Economico", color: "text-emerald-400 border-emerald-400/30 bg-emerald-400/10" },
-  moderate: { label: "Standard", color: "text-sky-400 border-sky-400/30 bg-sky-400/10" },
-  premium: { label: "Premium", color: "text-amber-400 border-amber-400/30 bg-amber-400/10" },
+  economy: {
+    label: "Economico",
+    color: "text-emerald-400 border-emerald-400/30 bg-emerald-400/10",
+  },
+  moderate: {
+    label: "Standard",
+    color: "text-sky-400 border-sky-400/30 bg-sky-400/10",
+  },
+  premium: {
+    label: "Premium",
+    color: "text-amber-400 border-amber-400/30 bg-amber-400/10",
+  },
 };
 
 function googleSearchUrl(query: string) {
@@ -234,7 +240,9 @@ function parseSlot(raw: string | null): Slot | null {
         typeof o.bookingLink === "string" && o.bookingLink.length > 0
           ? o.bookingLink
           : null,
-      tips: (o.tips as unknown[]).filter((t): t is string => typeof t === "string"),
+      tips: (o.tips as unknown[]).filter(
+        (t): t is string => typeof t === "string",
+      ),
       lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
       lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
     };
@@ -632,7 +640,9 @@ export function TripDetailClient({
         style: prefStyle.trim() || null,
       });
       setPrefOpen(false);
-      setMsg("Preferenze aggiornate. Puoi rigenerare l'itinerario gratuitamente.");
+      setMsg(
+        "Preferenze aggiornate. Puoi rigenerare l'itinerario gratuitamente.",
+      );
       await refreshTrip();
     } catch {
       setMsg("Errore di rete");
@@ -663,20 +673,20 @@ export function TripDetailClient({
   return (
     <div className="et-protected mx-auto max-w-3xl space-y-8 pb-16">
       {/* ── Header ── */}
-      <header className="border-l-2 border-et-accent/40 pl-6">
+      <header className="border-et-accent/40 border-l-2 pl-6">
         <Link
           href="/app/trips"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-et-ink/50 transition-colors duration-200 hover:text-et-accent"
+          className="text-et-ink/50 hover:text-et-accent inline-flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase transition-colors duration-200"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Tutti i viaggi
         </Link>
 
-        <h1 className="font-display mt-2 text-3xl font-normal tracking-tight text-et-ink sm:text-4xl">
+        <h1 className="font-display text-et-ink mt-2 text-3xl font-normal tracking-tight sm:text-4xl">
           {trip.destination}
         </h1>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-et-ink/65">
+        <div className="text-et-ink/65 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <span>
             {trip.startDate} → {trip.endDate}
           </span>
@@ -688,21 +698,26 @@ export function TripDetailClient({
               <span>{trip.style}</span>
             </>
           ) : null}
-          {trip.budgetLevel ? (() => {
-            const bl = BUDGET_LABELS[trip.budgetLevel] ?? BUDGET_LABELS.moderate;
-            return (
-              <>
-                <span className="text-et-ink/30">|</span>
-                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${bl.color}`}>
-                  <Wallet className="h-3 w-3" />
-                  {bl.label}
-                </span>
-              </>
-            );
-          })() : null}
+          {trip.budgetLevel
+            ? (() => {
+                const bl =
+                  BUDGET_LABELS[trip.budgetLevel] ?? BUDGET_LABELS.moderate;
+                return (
+                  <>
+                    <span className="text-et-ink/30">|</span>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${bl.color}`}
+                    >
+                      <Wallet className="h-3 w-3" />
+                      {bl.label}
+                    </span>
+                  </>
+                );
+              })()
+            : null}
         </div>
 
-        <div className="mt-1.5 flex items-center gap-3 text-xs text-et-ink/50">
+        <div className="text-et-ink/50 mt-1.5 flex items-center gap-3 text-xs">
           <span>
             Stato:{" "}
             <span className="text-et-accent/90">
@@ -714,9 +729,9 @@ export function TripDetailClient({
 
         {/* Geo-score nell'header quando disponibile */}
         {trip.activeGeoScore != null ? (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-et-accent/25 bg-et-accent/8 px-3.5 py-1.5">
-            <Star className="h-4 w-4 text-et-accent" />
-            <span className="text-sm font-medium text-et-accent">
+          <div className="border-et-accent/25 bg-et-accent/8 mt-3 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
+            <Star className="text-et-accent h-4 w-4" />
+            <span className="text-et-accent text-sm font-medium">
               {formatGeoScoreLabel(trip.activeGeoScore)}
             </span>
           </div>
@@ -732,25 +747,27 @@ export function TripDetailClient({
               <p className="text-sm font-medium text-sky-300">
                 Il viaggio inizia tra{" "}
                 <span className="font-bold text-sky-200">
-                  {phase.daysUntil} {phase.daysUntil === 1 ? "giorno" : "giorni"}
+                  {phase.daysUntil}{" "}
+                  {phase.daysUntil === 1 ? "giorno" : "giorni"}
                 </span>
               </p>
               <p className="mt-0.5 text-xs text-sky-400/70">
-                I contenuti si sbloccano giorno per giorno a partire dalla data di partenza.
+                I contenuti si sbloccano giorno per giorno a partire dalla data
+                di partenza.
               </p>
             </div>
           </div>
         ) : phase.phase === "ongoing" ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-et-accent/25 bg-et-accent/8 px-5 py-3.5">
-            <Sparkles className="h-5 w-5 shrink-0 text-et-accent" />
+          <div className="border-et-accent/25 bg-et-accent/8 flex items-center gap-3 rounded-2xl border px-5 py-3.5">
+            <Sparkles className="text-et-accent h-5 w-5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-et-accent">
+              <p className="text-et-accent text-sm font-medium">
                 Il viaggio è in corso —{" "}
                 <span className="font-bold">
                   Giorno {phase.currentDay} di {phase.totalDays}
                 </span>
               </p>
-              <p className="mt-0.5 text-xs text-et-accent/70">
+              <p className="text-et-accent/70 mt-0.5 text-xs">
                 Buon viaggio! I giorni futuri si sbloccheranno automaticamente.
               </p>
             </div>
@@ -766,44 +783,47 @@ export function TripDetailClient({
       ) : null}
 
       {/* ── Affiliate: Prenota alloggio ── */}
-      {hasDays && trip.isPaid ? (() => {
-        const bookingUrl = bookingSearchUrl({
-          destination: trip.destination,
-          checkin: trip.startDate,
-          checkout: trip.endDate,
-        });
+      {hasDays && trip.isPaid
+        ? (() => {
+            const bookingUrl = bookingSearchUrl({
+              destination: trip.destination,
+              checkin: trip.startDate,
+              checkout: trip.endDate,
+            });
 
-        if (!bookingUrl) return null;
+            if (!bookingUrl) return null;
 
-        return (
-          <a
-            href={bookingUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() =>
-              posthog.capture("affiliate_click", {
-                partner: "booking",
-                destination: trip.destination,
-                tripId: trip.id,
-              })
-            }
-            className="group flex items-center gap-4 rounded-2xl border border-blue-400/20 bg-gradient-to-r from-blue-500/8 via-blue-400/5 to-transparent px-5 py-4 transition-all duration-200 hover:border-blue-400/40 hover:from-blue-500/15"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15">
-              <BedDouble className="h-5 w-5 text-blue-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-blue-300">
-                Prenota l&apos;alloggio a {destinationPrimary(trip.destination) || trip.destination}
-              </p>
-              <p className="mt-0.5 text-xs text-blue-400/60">
-                Cerca hotel, B&amp;B e appartamenti su Booking.com
-              </p>
-            </div>
-            <ExternalLink className="h-4 w-4 shrink-0 text-blue-400/50 transition-colors duration-200 group-hover:text-blue-400" />
-          </a>
-        );
-      })() : null}
+            return (
+              <a
+                href={bookingUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() =>
+                  posthog.capture("affiliate_click", {
+                    partner: "booking",
+                    destination: trip.destination,
+                    tripId: trip.id,
+                  })
+                }
+                className="group flex items-center gap-4 rounded-2xl border border-blue-400/20 bg-gradient-to-r from-blue-500/8 via-blue-400/5 to-transparent px-5 py-4 transition-all duration-200 hover:border-blue-400/40 hover:from-blue-500/15"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15">
+                  <BedDouble className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-blue-300">
+                    Prenota l&apos;alloggio a{" "}
+                    {destinationPrimary(trip.destination) || trip.destination}
+                  </p>
+                  <p className="mt-0.5 text-xs text-blue-400/60">
+                    Cerca hotel, B&amp;B e appartamenti su Booking.com
+                  </p>
+                </div>
+                <ExternalLink className="h-4 w-4 shrink-0 text-blue-400/50 transition-colors duration-200 group-hover:text-blue-400" />
+              </a>
+            );
+          })()
+        : null}
 
       {/* ── Flash messages ── */}
       {checkoutFlash === "success" ? (
@@ -823,9 +843,7 @@ export function TripDetailClient({
         </Flash>
       ) : null}
       {regenFlash === "cancel" ? (
-        <Flash variant="neutral">
-          Pagamento rigenerazione annullato.
-        </Flash>
+        <Flash variant="neutral">Pagamento rigenerazione annullato.</Flash>
       ) : null}
       {reactivateFlash === "success" ? (
         <Flash variant="success">
@@ -847,31 +865,31 @@ export function TripDetailClient({
           aria-modal="true"
           aria-labelledby="gps-consent-title"
         >
-          <div className="max-w-md rounded-2xl border border-et-border bg-et-card p-6 shadow-xl">
+          <div className="border-et-border bg-et-card max-w-md rounded-2xl border p-6 shadow-xl">
             <h2
               id="gps-consent-title"
-              className="text-lg font-semibold text-et-ink"
+              className="text-et-ink text-lg font-semibold"
             >
               Posizione e suggerimenti AI
             </h2>
-            <p className="mt-3 text-sm leading-relaxed text-et-ink/75">
+            <p className="text-et-ink/75 mt-3 text-sm leading-relaxed">
               La posizione viene usata solo quando lo chiedi (non in background)
-              per &laquo;Cambia slot&raquo; e suggerimenti live. Viene inviata al
-              nostro server con precisione ridotta e al fornitore AI per
+              per &laquo;Cambia slot&raquo; e suggerimenti live. Viene inviata
+              al nostro server con precisione ridotta e al fornitore AI per
               calcolare alternative vicine. Puoi negare il permesso del browser
               in qualsiasi momento.
             </p>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
-                className="rounded-xl border border-et-border px-4 py-2 text-sm text-et-ink/80 hover:bg-et-deep"
+                className="border-et-border text-et-ink/80 hover:bg-et-deep rounded-xl border px-4 py-2 text-sm"
                 onClick={onGpsConsentDismiss}
               >
                 Annulla
               </button>
               <button
                 type="button"
-                className="rounded-xl bg-et-accent px-4 py-2 text-sm font-semibold text-et-accent-ink hover:bg-et-accent/90"
+                className="bg-et-accent text-et-accent-ink hover:bg-et-accent/90 rounded-xl px-4 py-2 text-sm font-semibold"
                 onClick={onGpsConsentAccept}
               >
                 Acconsenti e continua
@@ -883,11 +901,11 @@ export function TripDetailClient({
 
       {/* ── Controlli: Carosello + Rigenera + GPS ── */}
       {showControls ? (
-        <section className="space-y-5 rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
+        <section className="border-et-border bg-et-card space-y-5 rounded-2xl border p-5 sm:p-6">
           {/* Carosello versioni — pills orizzontali */}
           {trip.versions.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-et-ink/45">
+              <p className="text-et-ink/45 text-xs font-semibold tracking-wider uppercase">
                 Versioni generate
               </p>
               <div
@@ -906,8 +924,8 @@ export function TripDetailClient({
                       }}
                       className={`inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-200 disabled:opacity-50 ${
                         active
-                          ? "border-2 border-et-accent bg-et-accent/15 text-et-accent"
-                          : "border border-et-border bg-et-deep text-et-ink/70 hover:border-et-accent/40 hover:text-et-ink"
+                          ? "border-et-accent bg-et-accent/15 text-et-accent border-2"
+                          : "border-et-border bg-et-deep text-et-ink/70 hover:border-et-accent/40 hover:text-et-ink border"
                       }`}
                     >
                       v{v.versionNum}
@@ -917,7 +935,7 @@ export function TripDetailClient({
                         </span>
                       ) : null}
                       {active ? (
-                        <span className="ml-1 h-2 w-2 rounded-full bg-et-accent" />
+                        <span className="bg-et-accent ml-1 h-2 w-2 rounded-full" />
                       ) : null}
                     </button>
                   );
@@ -928,296 +946,314 @@ export function TripDetailClient({
 
           {/* Rigenera + GPS — divisi in due righe (solo organizzatore) */}
           {trip.isOrganizer ? (
-          <>
-          <div className="flex flex-wrap items-center gap-3 border-t border-et-border pt-4">
-            {trip.regen.atMax ? (
-              <p className="text-sm text-et-ink/60">
-                Hai raggiunto 7 versioni. Usa le pill qui sopra per navigare
-                tra le versioni salvate.
-              </p>
-            ) : (
-              <>
-                {trip.regen.canStartGeneration ? (
-                  <button
-                    type="button"
-                    onClick={() => void onGenerate()}
-                    disabled={busy !== null}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-et-accent px-5 py-2.5 text-sm font-semibold text-et-accent-ink transition-colors duration-200 hover:bg-et-accent/90 disabled:opacity-50"
-                  >
-                    <RefreshCw
-                      className={`h-4 w-4 ${busy === "gen" ? "animate-spin" : ""}`}
-                    />
-                    {busy === "gen"
-                      ? "Generazione in corso…"
-                      : "Rigenera itinerario"}
-                  </button>
-                ) : null}
-                {trip.regen.needsPaidCheckout ? (
-                  <button
-                    type="button"
-                    onClick={() => void onRegenCheckout()}
-                    disabled={busy !== null}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-et-accent/50 bg-et-accent/10 px-5 py-2.5 text-sm font-semibold text-et-accent transition-colors duration-200 hover:bg-et-accent/20 disabled:opacity-50"
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    {busy === "regen-pay"
-                      ? "Reindirizzamento…"
-                      : "Rigenera (€1,99)"}
-                  </button>
-                ) : null}
-                <span className="text-xs text-et-ink/45">
-                  Prossima: v{trip.regen.nextVersion}/7
-                  {trip.regen.freeRegenFromPrefChange
-                    ? " — gratuita (preferenze modificate)"
-                    : trip.regen.needsPaidCheckout
-                      ? " — a pagamento"
-                      : " — gratuita"}
-                </span>
-              </>
-            )}
-          </div>
+            <>
+              <div className="border-et-border flex flex-wrap items-center gap-3 border-t pt-4">
+                {trip.regen.atMax ? (
+                  <p className="text-et-ink/60 text-sm">
+                    Hai raggiunto 7 versioni. Usa le pill qui sopra per navigare
+                    tra le versioni salvate.
+                  </p>
+                ) : (
+                  <>
+                    {trip.regen.canStartGeneration ? (
+                      <button
+                        type="button"
+                        onClick={() => void onGenerate()}
+                        disabled={busy !== null}
+                        className="bg-et-accent text-et-accent-ink hover:bg-et-accent/90 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors duration-200 disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`h-4 w-4 ${busy === "gen" ? "animate-spin" : ""}`}
+                        />
+                        {busy === "gen"
+                          ? "Generazione in corso…"
+                          : "Rigenera itinerario"}
+                      </button>
+                    ) : null}
+                    {trip.regen.needsPaidCheckout ? (
+                      <button
+                        type="button"
+                        onClick={() => void onRegenCheckout()}
+                        disabled={busy !== null}
+                        className="border-et-accent/50 bg-et-accent/10 text-et-accent hover:bg-et-accent/20 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-semibold transition-colors duration-200 disabled:opacity-50"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        {busy === "regen-pay"
+                          ? "Reindirizzamento…"
+                          : "Rigenera (€1,99)"}
+                      </button>
+                    ) : null}
+                    <span className="text-et-ink/45 text-xs">
+                      Prossima: v{trip.regen.nextVersion}/7
+                      {trip.regen.freeRegenFromPrefChange
+                        ? " — gratuita (preferenze modificate)"
+                        : trip.regen.needsPaidCheckout
+                          ? " — a pagamento"
+                          : " — gratuita"}
+                    </span>
+                  </>
+                )}
+              </div>
 
-          {/* GPS */}
-          <div className="flex flex-wrap items-center gap-3 border-t border-et-border pt-4">
-            <button
-              type="button"
-              onClick={requestGeo}
-              disabled={busy !== null}
-              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-et-border px-4 py-2 text-sm text-et-ink/80 transition-colors duration-200 hover:border-et-accent/40 hover:text-et-accent disabled:opacity-50"
-            >
-              <Navigation className="h-4 w-4" />
-              {busy === "geo" ? "Acquisizione…" : "Usa GPS"}
-            </button>
-            {geoLat != null && geoLng != null ? (
-              <span className="flex items-center gap-1 text-xs text-et-accent/80">
-                <MapPin className="h-3 w-3" />
-                {geoLat.toFixed(3)}, {geoLng.toFixed(3)}
-              </span>
-            ) : (
-              <span className="text-xs text-et-ink/40">
-                Migliora &laquo;Cambia slot&raquo; con la tua posizione
-              </span>
-            )}
-          </div>
-          </>) : null}
+              {/* GPS */}
+              <div className="border-et-border flex flex-wrap items-center gap-3 border-t pt-4">
+                <button
+                  type="button"
+                  onClick={requestGeo}
+                  disabled={busy !== null}
+                  className="border-et-border text-et-ink/80 hover:border-et-accent/40 hover:text-et-accent inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-colors duration-200 disabled:opacity-50"
+                >
+                  <Navigation className="h-4 w-4" />
+                  {busy === "geo" ? "Acquisizione…" : "Usa GPS"}
+                </button>
+                {geoLat != null && geoLng != null ? (
+                  <span className="text-et-accent/80 flex items-center gap-1 text-xs">
+                    <MapPin className="h-3 w-3" />
+                    {geoLat.toFixed(3)}, {geoLng.toFixed(3)}
+                  </span>
+                ) : (
+                  <span className="text-et-ink/40 text-xs">
+                    Migliora &laquo;Cambia slot&raquo; con la tua posizione
+                  </span>
+                )}
+              </div>
+            </>
+          ) : null}
 
           {/* Modifica preferenze (solo organizzatore) */}
           {trip.isOrganizer ? (
-          <div className="border-t border-et-border pt-4">
-            <button
-              type="button"
-              onClick={() => setPrefOpen((p) => !p)}
-              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-et-border px-4 py-2 text-sm text-et-ink/70 transition-colors duration-200 hover:border-et-accent/40 hover:text-et-accent"
-            >
-              <Settings className="h-4 w-4" />
-              {prefOpen ? "Chiudi preferenze" : "Modifica preferenze"}
-              {trip.prefChangedAfterGen && trip.regen.freeRegenFromPrefChange ? (
-                <span className="ml-1 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
-                  1 regen gratis
-                </span>
-              ) : null}
-            </button>
-
-            {prefOpen ? (
-              <div className="mt-3 space-y-4 rounded-xl border border-et-border/60 bg-et-deep/60 p-4">
-                <div>
-                  <label
-                    htmlFor="pref-style"
-                    className="block text-xs font-semibold uppercase tracking-wider text-et-accent/88"
-                  >
-                    Stile (opz.)
-                  </label>
-                  <input
-                    id="pref-style"
-                    value={prefStyle}
-                    onChange={(e) => setPrefStyle(e.target.value)}
-                    maxLength={120}
-                    placeholder="foodie, cultura…"
-                    className="mt-1.5 w-full rounded-xl border border-et-border bg-et-deep px-3 py-2.5 text-sm text-et-ink placeholder:text-et-ink/40 outline-none focus:border-et-accent/50"
-                  />
-                </div>
-
-                <fieldset>
-                  <legend className="block text-xs font-semibold uppercase tracking-wider text-et-accent/88">
-                    Budget
-                  </legend>
-                  <div className="mt-1.5 flex gap-2">
-                    {(["economy", "moderate", "premium"] as const).map((lv) => {
-                      const active = prefBudget === lv;
-                      const lbl = BUDGET_LABELS[lv] ?? BUDGET_LABELS.moderate;
-                      return (
-                        <button
-                          key={lv}
-                          type="button"
-                          onClick={() => setPrefBudget(lv)}
-                          className={[
-                            "min-h-[44px] flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer",
-                            "focus:outline-none focus:ring-2 focus:ring-et-accent/50 focus:ring-offset-1 focus:ring-offset-et-deep",
-                            active
-                              ? "border-et-accent bg-et-accent/15 text-et-accent"
-                              : "border-et-border bg-et-deep text-et-ink/60 hover:border-et-accent/30 hover:text-et-ink/80",
-                          ].join(" ")}
-                        >
-                          {lbl.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </fieldset>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void onSavePreferences()}
-                    disabled={busy !== null}
-                    className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-et-accent px-5 py-2.5 text-sm font-semibold text-et-accent-ink transition-colors duration-200 hover:bg-et-accent/90 disabled:opacity-50"
-                  >
-                    {busy === "pref" ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    {busy === "pref" ? "Salvataggio…" : "Salva preferenze"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPrefOpen(false)}
-                    className="min-h-[44px] cursor-pointer rounded-xl border border-et-border px-4 py-2 text-sm text-et-ink/60 transition-colors duration-200 hover:text-et-ink"
-                  >
-                    Annulla
-                  </button>
-                </div>
-
-                {!trip.prefChangedAfterGen ? (
-                  <p className="text-xs text-et-ink/45">
-                    Se modifichi le preferenze dopo la generazione, riceverai 1 rigenerazione gratuita per adattare l&apos;itinerario.
-                  </p>
+            <div className="border-et-border border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setPrefOpen((p) => !p)}
+                className="border-et-border text-et-ink/70 hover:border-et-accent/40 hover:text-et-accent inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-colors duration-200"
+              >
+                <Settings className="h-4 w-4" />
+                {prefOpen ? "Chiudi preferenze" : "Modifica preferenze"}
+                {trip.prefChangedAfterGen &&
+                trip.regen.freeRegenFromPrefChange ? (
+                  <span className="ml-1 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
+                    1 regen gratis
+                  </span>
                 ) : null}
-              </div>
-            ) : null}
-          </div>
+              </button>
+
+              {prefOpen ? (
+                <div className="border-et-border/60 bg-et-deep/60 mt-3 space-y-4 rounded-xl border p-4">
+                  <div>
+                    <label
+                      htmlFor="pref-style"
+                      className="text-et-accent/88 block text-xs font-semibold tracking-wider uppercase"
+                    >
+                      Stile (opz.)
+                    </label>
+                    <input
+                      id="pref-style"
+                      value={prefStyle}
+                      onChange={(e) => setPrefStyle(e.target.value)}
+                      maxLength={120}
+                      placeholder="foodie, cultura…"
+                      className="border-et-border bg-et-deep text-et-ink placeholder:text-et-ink/40 focus:border-et-accent/50 mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
+                    />
+                  </div>
+
+                  <fieldset>
+                    <legend className="text-et-accent/88 block text-xs font-semibold tracking-wider uppercase">
+                      Budget
+                    </legend>
+                    <div className="mt-1.5 flex gap-2">
+                      {(["economy", "moderate", "premium"] as const).map(
+                        (lv) => {
+                          const active = prefBudget === lv;
+                          const lbl =
+                            BUDGET_LABELS[lv] ?? BUDGET_LABELS.moderate;
+                          return (
+                            <button
+                              key={lv}
+                              type="button"
+                              onClick={() => setPrefBudget(lv)}
+                              className={[
+                                "min-h-[44px] flex-1 cursor-pointer rounded-xl border px-3 py-2 text-sm font-medium transition-colors duration-200",
+                                "focus:ring-et-accent/50 focus:ring-offset-et-deep focus:ring-2 focus:ring-offset-1 focus:outline-none",
+                                active
+                                  ? "border-et-accent bg-et-accent/15 text-et-accent"
+                                  : "border-et-border bg-et-deep text-et-ink/60 hover:border-et-accent/30 hover:text-et-ink/80",
+                              ].join(" ")}
+                            >
+                              {lbl.label}
+                            </button>
+                          );
+                        },
+                      )}
+                    </div>
+                  </fieldset>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void onSavePreferences()}
+                      disabled={busy !== null}
+                      className="bg-et-accent text-et-accent-ink hover:bg-et-accent/90 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors duration-200 disabled:opacity-50"
+                    >
+                      {busy === "pref" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      {busy === "pref" ? "Salvataggio…" : "Salva preferenze"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPrefOpen(false)}
+                      className="border-et-border text-et-ink/60 hover:text-et-ink min-h-[44px] cursor-pointer rounded-xl border px-4 py-2 text-sm transition-colors duration-200"
+                    >
+                      Annulla
+                    </button>
+                  </div>
+
+                  {!trip.prefChangedAfterGen ? (
+                    <p className="text-et-ink/45 text-xs">
+                      Se modifichi le preferenze dopo la generazione, riceverai
+                      1 rigenerazione gratuita per adattare l&apos;itinerario.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </section>
       ) : null}
 
       {/* ── Pagamento (solo organizzatore) ── */}
-      {!trip.isPaid && trip.isOrganizer ? (() => {
-        const priceCents = trip.tripPriceCents;
-        const creditCents = trip.userCreditBalanceCents;
-        const discountCents = Math.min(creditCents, priceCents);
-        const finalCents = priceCents - discountCents;
-        const fullyByCredit = finalCents <= 0;
-        const hasCredit = creditCents > 0;
-        const fmt = (c: number) => `€${(c / 100).toFixed(2)}`;
+      {!trip.isPaid && trip.isOrganizer
+        ? (() => {
+            const priceCents = trip.tripPriceCents;
+            const creditCents = trip.userCreditBalanceCents;
+            const discountCents = Math.min(creditCents, priceCents);
+            const finalCents = priceCents - discountCents;
+            const fullyByCredit = finalCents <= 0;
+            const hasCredit = creditCents > 0;
+            const fmt = (c: number) => `€${(c / 100).toFixed(2)}`;
 
-        return (
-          <section className="rounded-2xl border border-et-border bg-et-card p-6">
-            <h2 className="font-display text-lg text-et-ink">
-              Sblocca la generazione
-            </h2>
-            <p className="mt-2 max-w-xl text-sm text-et-ink/65">
-              {fullyByCredit
-                ? "Hai abbastanza crediti per attivare questo viaggio gratuitamente!"
-                : "Completa il pagamento per avviare la creazione del tuo itinerario personalizzato."}
-            </p>
-
-            {hasCredit ? (
-              <div className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-500/8 p-4">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-emerald-400" />
-                  <span className="text-sm font-semibold text-emerald-300">
-                    Hai {fmt(creditCents)} di crediti EasyTrip
-                  </span>
-                </div>
-                <div className="mt-3 space-y-1 text-xs text-et-ink/60">
-                  <div className="flex justify-between">
-                    <span>Prezzo viaggio</span>
-                    <span className={discountCents > 0 ? "line-through text-et-ink/35" : ""}>
-                      {fmt(priceCents)}
-                    </span>
-                  </div>
-                  {discountCents > 0 ? (
-                    <div className="flex justify-between text-emerald-400">
-                      <span>Sconto crediti</span>
-                      <span>−{fmt(discountCents)}</span>
-                    </div>
-                  ) : null}
-                  <div className="flex justify-between border-t border-et-border/40 pt-1 text-sm font-semibold text-et-ink">
-                    <span>Totale</span>
-                    <span className={fullyByCredit ? "text-emerald-400" : ""}>
-                      {fullyByCredit ? "Gratis" : fmt(finalCents)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={onCheckout}
-              disabled={busy !== null}
-              className={[
-                "mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors duration-200 disabled:opacity-50",
-                fullyByCredit
-                  ? "border border-emerald-400/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
-                  : "bg-et-accent text-et-accent-ink hover:bg-et-accent/90",
-              ].join(" ")}
-            >
-              {fullyByCredit ? (
-                <>
-                  <Wallet className="h-4 w-4" />
-                  {busy === "checkout" ? "Attivazione…" : "Usa i tuoi crediti — Gratis"}
-                </>
-              ) : (
-                <>
-                  <CreditCard className="h-4 w-4" />
-                  {busy === "checkout"
-                    ? "Reindirizzamento…"
-                    : hasCredit
-                      ? `Vai al pagamento — ${fmt(finalCents)}`
-                      : "Vai al pagamento"}
-                </>
-              )}
-            </button>
-
-            {showDevShortcut ? (
-              <div className="mt-6 border-t border-et-border pt-6">
-                <p className="text-xs font-semibold uppercase tracking-wider text-et-ink/45">
-                  Solo sviluppo locale
+            return (
+              <section className="border-et-border bg-et-card rounded-2xl border p-6">
+                <h2 className="font-display text-et-ink text-lg">
+                  Sblocca la generazione
+                </h2>
+                <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
+                  {fullyByCredit
+                    ? "Hai abbastanza crediti per attivare questo viaggio gratuitamente!"
+                    : "Completa il pagamento per avviare la creazione del tuo itinerario personalizzato."}
                 </p>
+
+                {hasCredit ? (
+                  <div className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-500/8 p-4">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-emerald-400" />
+                      <span className="text-sm font-semibold text-emerald-300">
+                        Hai {fmt(creditCents)} di crediti EasyTrip
+                      </span>
+                    </div>
+                    <div className="text-et-ink/60 mt-3 space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span>Prezzo viaggio</span>
+                        <span
+                          className={
+                            discountCents > 0
+                              ? "text-et-ink/35 line-through"
+                              : ""
+                          }
+                        >
+                          {fmt(priceCents)}
+                        </span>
+                      </div>
+                      {discountCents > 0 ? (
+                        <div className="flex justify-between text-emerald-400">
+                          <span>Sconto crediti</span>
+                          <span>−{fmt(discountCents)}</span>
+                        </div>
+                      ) : null}
+                      <div className="border-et-border/40 text-et-ink flex justify-between border-t pt-1 text-sm font-semibold">
+                        <span>Totale</span>
+                        <span
+                          className={fullyByCredit ? "text-emerald-400" : ""}
+                        >
+                          {fullyByCredit ? "Gratis" : fmt(finalCents)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <button
                   type="button"
-                  onClick={onGenerate}
+                  onClick={onCheckout}
                   disabled={busy !== null}
-                  className="mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-et-border px-4 py-2 text-sm text-et-ink/80 transition-colors duration-200 hover:border-et-accent/40 hover:text-et-accent disabled:opacity-50"
+                  className={[
+                    "mt-4 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors duration-200 disabled:opacity-50",
+                    fullyByCredit
+                      ? "border border-emerald-400/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
+                      : "bg-et-accent text-et-accent-ink hover:bg-et-accent/90",
+                  ].join(" ")}
                 >
-                  <Sparkles className="h-4 w-4" />
-                  {busy === "gen" ? "Invio…" : "Avvia generazione (dev)"}
+                  {fullyByCredit ? (
+                    <>
+                      <Wallet className="h-4 w-4" />
+                      {busy === "checkout"
+                        ? "Attivazione…"
+                        : "Usa i tuoi crediti — Gratis"}
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4" />
+                      {busy === "checkout"
+                        ? "Reindirizzamento…"
+                        : hasCredit
+                          ? `Vai al pagamento — ${fmt(finalCents)}`
+                          : "Vai al pagamento"}
+                    </>
+                  )}
                 </button>
-                <p className="mt-3 max-w-md text-xs leading-relaxed text-et-ink/45">
-                  Serve{" "}
-                  <code className="rounded bg-et-deep px-1 py-0.5 text-et-ink/70">
-                    npm run inngest:dev
-                  </code>{" "}
-                  in un secondo terminale.
-                </p>
-              </div>
-            ) : null}
-          </section>
-        );
-      })() : null}
+
+                {showDevShortcut ? (
+                  <div className="border-et-border mt-6 border-t pt-6">
+                    <p className="text-et-ink/45 text-xs font-semibold tracking-wider uppercase">
+                      Solo sviluppo locale
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onGenerate}
+                      disabled={busy !== null}
+                      className="border-et-border text-et-ink/80 hover:border-et-accent/40 hover:text-et-accent mt-3 inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm transition-colors duration-200 disabled:opacity-50"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {busy === "gen" ? "Invio…" : "Avvia generazione (dev)"}
+                    </button>
+                    <p className="text-et-ink/45 mt-3 max-w-md text-xs leading-relaxed">
+                      Serve{" "}
+                      <code className="bg-et-deep text-et-ink/70 rounded px-1 py-0.5">
+                        npm run inngest:dev
+                      </code>{" "}
+                      in un secondo terminale.
+                    </p>
+                  </div>
+                ) : null}
+              </section>
+            );
+          })()
+        : null}
 
       {/* ── Generazione in corso ── */}
       {trip.isPaid && !hasDays ? (
-        <section className="rounded-2xl border border-dashed border-et-accent/35 bg-et-accent/5 p-8 text-center">
+        <section className="border-et-accent/35 bg-et-accent/5 rounded-2xl border border-dashed p-8 text-center">
           <Loader2
-            className="mx-auto h-8 w-8 animate-spin text-et-accent/60"
+            className="text-et-accent/60 mx-auto h-8 w-8 animate-spin"
             aria-hidden
           />
-          <h2 className="font-display mt-4 text-xl text-et-ink">
+          <h2 className="font-display text-et-ink mt-4 text-xl">
             Generazione in corso
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-et-ink/65">
+          <p className="text-et-ink/65 mx-auto mt-2 max-w-md text-sm">
             L&apos;AI sta creando il tuo itinerario. Questa pagina si aggiorna
             automaticamente.
           </p>
@@ -1227,7 +1263,7 @@ export function TripDetailClient({
               void refreshTrip();
               router.refresh();
             }}
-            className="mt-6 cursor-pointer text-sm text-et-accent underline-offset-4 transition-colors duration-200 hover:underline"
+            className="text-et-accent mt-6 cursor-pointer text-sm underline-offset-4 transition-colors duration-200 hover:underline"
           >
             Aggiorna ora
           </button>
@@ -1237,8 +1273,8 @@ export function TripDetailClient({
       {/* ── Itinerario — Giorni ── */}
       {hasDays ? (
         <section className="space-y-3">
-          <h2 className="font-display text-xl text-et-ink">Itinerario</h2>
-          <p className="text-sm text-et-ink/55">
+          <h2 className="font-display text-et-ink text-xl">Itinerario</h2>
+          <p className="text-et-ink/55 text-sm">
             I contenuti si sbloccano giorno per giorno alla data del viaggio.
           </p>
           {DEV_PREVIEW_UNLOCK_CONTENT ? (
@@ -1272,17 +1308,17 @@ export function TripDetailClient({
                   {/* Day header */}
                   <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 pb-3">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-display text-lg text-et-ink">
+                      <h3 className="font-display text-et-ink text-lg">
                         {day.title ?? `Giorno ${day.dayNumber}`}
                       </h3>
                       {day.zoneFocus ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-et-border bg-et-deep px-2.5 py-0.5 text-xs text-et-ink/60">
+                        <span className="border-et-border bg-et-deep text-et-ink/60 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs">
                           <Compass className="h-3 w-3" />
                           {day.zoneFocus}
                         </span>
                       ) : null}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-et-ink/50">
+                    <div className="text-et-ink/50 flex items-center gap-2 text-xs">
                       <span>{day.unlockDate}</span>
                       {!reallyUnlocked ? (
                         DEV_PREVIEW_UNLOCK_CONTENT ? (
@@ -1290,13 +1326,13 @@ export function TripDetailClient({
                             Anteprima
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-et-ink/15 bg-et-deep px-2 py-0.5 text-et-ink/45">
+                          <span className="border-et-ink/15 bg-et-deep text-et-ink/45 inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
                             <Lock className="h-2.5 w-2.5" />
                             Bloccato
                           </span>
                         )
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-et-accent/30 bg-et-accent/10 px-2 py-0.5 text-et-accent">
+                        <span className="border-et-accent/30 bg-et-accent/10 text-et-accent inline-flex items-center gap-1 rounded-full border px-2 py-0.5">
                           <CheckCircle2 className="h-2.5 w-2.5" />
                           Sbloccato
                         </span>
@@ -1318,9 +1354,9 @@ export function TripDetailClient({
 
                       {/* Local gem */}
                       {day.localGem ? (
-                        <div className="flex items-start gap-2 rounded-xl border border-et-accent/20 bg-et-accent/5 px-3.5 py-2.5">
-                          <Gem className="mt-0.5 h-4 w-4 shrink-0 text-et-accent/80" />
-                          <p className="text-xs leading-relaxed text-et-accent/90">
+                        <div className="border-et-accent/20 bg-et-accent/5 flex items-start gap-2 rounded-xl border px-3.5 py-2.5">
+                          <Gem className="text-et-accent/80 mt-0.5 h-4 w-4 shrink-0" />
+                          <p className="text-et-accent/90 text-xs leading-relaxed">
                             <span className="font-semibold">
                               Consiglio da locale:
                             </span>{" "}
@@ -1341,29 +1377,28 @@ export function TripDetailClient({
                         const Icon = SlotIcon[key];
                         const tipsKey = `${day.id}-${key}`;
                         const tipsOpen = expandedTips.has(tipsKey);
-                        const isReplacing =
-                          busy === `replace-${day.id}-${key}`;
+                        const isReplacing = busy === `replace-${day.id}-${key}`;
 
                         return (
                           <div
                             key={key}
-                            className="rounded-xl border border-et-border/70 bg-et-deep/40 p-4 transition-colors duration-200"
+                            className="border-et-border/70 bg-et-deep/40 rounded-xl border p-4 transition-colors duration-200"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex items-start gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-et-accent/10">
-                                  <Icon className="h-4.5 w-4.5 text-et-accent/80" />
+                                <div className="bg-et-accent/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                                  <Icon className="text-et-accent/80 h-4.5 w-4.5" />
                                 </div>
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                    <span className="text-xs font-semibold uppercase tracking-wider text-et-ink/50">
+                                    <span className="text-et-ink/50 text-xs font-semibold tracking-wider uppercase">
                                       {slotLabel[key]}
                                     </span>
-                                    <span className="text-xs text-et-ink/40">
+                                    <span className="text-et-ink/40 text-xs">
                                       {slot.startTime} – {slot.endTime}
                                     </span>
                                     {slot.durationMin ? (
-                                      <span className="rounded-full border border-et-accent/20 bg-et-accent/8 px-2 py-0.5 text-[10px] font-medium text-et-accent/80">
+                                      <span className="border-et-accent/20 bg-et-accent/8 text-et-accent/80 rounded-full border px-2 py-0.5 text-[10px] font-medium">
                                         {formatDuration(slot.durationMin)}
                                       </span>
                                     ) : null}
@@ -1382,15 +1417,15 @@ export function TripDetailClient({
                                     }
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="mt-0.5 inline-flex items-center gap-1 text-sm font-medium text-et-accent underline-offset-4 transition-colors duration-200 hover:underline"
+                                    className="text-et-accent mt-0.5 inline-flex items-center gap-1 text-sm font-medium underline-offset-4 transition-colors duration-200 hover:underline"
                                   >
                                     {slot.title}
                                     <MapPin className="h-3 w-3 opacity-50" />
                                   </a>
-                                  <p className="mt-0.5 text-xs text-et-ink/55">
+                                  <p className="text-et-ink/55 mt-0.5 text-xs">
                                     {slot.place}
                                   </p>
-                                  <p className="mt-1 text-sm leading-relaxed text-et-ink/70">
+                                  <p className="text-et-ink/70 mt-1 text-sm leading-relaxed">
                                     {slot.why}
                                   </p>
                                   {/* Affiliate + booking links */}
@@ -1414,7 +1449,10 @@ export function TripDetailClient({
                                       </a>
                                     ) : null}
                                     {(() => {
-                                      const gygUrl = getYourGuideUrl(slot.title, trip.destination);
+                                      const gygUrl = getYourGuideUrl(
+                                        slot.title,
+                                        trip.destination,
+                                      );
                                       if (!gygUrl) return null;
                                       return (
                                         <a
@@ -1436,7 +1474,10 @@ export function TripDetailClient({
                                       );
                                     })()}
                                     {(() => {
-                                      const vUrl = viatorUrl(slot.title, trip.destination);
+                                      const vUrl = viatorUrl(
+                                        slot.title,
+                                        trip.destination,
+                                      );
                                       if (!vUrl) return null;
                                       return (
                                         <a
@@ -1463,31 +1504,31 @@ export function TripDetailClient({
 
                               {/* Cambia slot (solo organizzatore) */}
                               {trip.isOrganizer && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void onReplaceSlot(day.id, key)
-                                }
-                                disabled={busy !== null}
-                                aria-label={`Cambia ${slotLabel[key]}`}
-                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-et-border text-et-ink/50 transition-colors duration-200 hover:border-et-accent/40 hover:text-et-accent disabled:opacity-40"
-                              >
-                                {isReplacing ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Replace className="h-4 w-4" />
-                                )}
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void onReplaceSlot(day.id, key)
+                                  }
+                                  disabled={busy !== null}
+                                  aria-label={`Cambia ${slotLabel[key]}`}
+                                  className="border-et-border text-et-ink/50 hover:border-et-accent/40 hover:text-et-accent flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition-colors duration-200 disabled:opacity-40"
+                                >
+                                  {isReplacing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Replace className="h-4 w-4" />
+                                  )}
+                                </button>
                               )}
                             </div>
 
                             {/* Tips collapsible */}
                             {slot.tips.length > 0 ? (
-                              <div className="mt-2 border-t border-et-border/50 pt-2">
+                              <div className="border-et-border/50 mt-2 border-t pt-2">
                                 <button
                                   type="button"
                                   onClick={() => toggleTips(tipsKey)}
-                                  className="inline-flex cursor-pointer items-center gap-1 text-xs text-et-ink/45 transition-colors duration-200 hover:text-et-ink/70"
+                                  className="text-et-ink/45 hover:text-et-ink/70 inline-flex cursor-pointer items-center gap-1 text-xs transition-colors duration-200"
                                 >
                                   <Lightbulb className="h-3 w-3" />
                                   {slot.tips.length} consigli
@@ -1498,7 +1539,7 @@ export function TripDetailClient({
                                   )}
                                 </button>
                                 {tipsOpen ? (
-                                  <ul className="mt-1.5 space-y-0.5 text-xs text-et-ink/55">
+                                  <ul className="text-et-ink/55 mt-1.5 space-y-0.5 text-xs">
                                     {slot.tips.map((tip, ti) => (
                                       <li key={ti} className="pl-4">
                                         {tip}
@@ -1510,11 +1551,10 @@ export function TripDetailClient({
                             ) : null}
 
                             {/* Enriched replacement result panel */}
-                            {replaceResult?.key ===
-                              `${day.id}-${key}` ? (
-                              <div className="mt-3 space-y-3 rounded-xl border-2 border-purple-400/30 bg-gradient-to-br from-purple-500/8 to-et-accent/5 p-4">
+                            {replaceResult?.key === `${day.id}-${key}` ? (
+                              <div className="to-et-accent/5 mt-3 space-y-3 rounded-xl border-2 border-purple-400/30 bg-gradient-to-br from-purple-500/8 p-4">
                                 <div className="flex items-center justify-between">
-                                  <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-purple-300">
+                                  <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-purple-300 uppercase">
                                     <Replace className="h-3.5 w-3.5" />
                                     Sostituzione completata
                                   </p>
@@ -1522,7 +1562,7 @@ export function TripDetailClient({
                                     type="button"
                                     onClick={() => setReplaceResult(null)}
                                     aria-label="Chiudi dettagli sostituzione"
-                                    className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-et-ink/40 transition-colors hover:bg-et-deep hover:text-et-ink/70"
+                                    className="text-et-ink/40 hover:bg-et-deep hover:text-et-ink/70 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors"
                                   >
                                     <X className="h-3.5 w-3.5" />
                                   </button>
@@ -1540,9 +1580,9 @@ export function TripDetailClient({
                                   </p>
                                 </div>
 
-                                <div className="rounded-lg border border-et-accent/20 bg-et-accent/8 px-3 py-2.5">
-                                  <p className="flex items-start gap-2 text-xs leading-relaxed text-et-accent/90">
-                                    <Route className="mt-0.5 h-3.5 w-3.5 shrink-0 text-et-accent" />
+                                <div className="border-et-accent/20 bg-et-accent/8 rounded-lg border px-3 py-2.5">
+                                  <p className="text-et-accent/90 flex items-start gap-2 text-xs leading-relaxed">
+                                    <Route className="text-et-accent mt-0.5 h-3.5 w-3.5 shrink-0" />
                                     <span>
                                       <strong className="font-semibold">
                                         Integrazione percorso:
@@ -1552,20 +1592,19 @@ export function TripDetailClient({
                                   </p>
                                 </div>
 
-                                <div className="flex items-center gap-2 rounded-lg border border-et-border/60 bg-et-deep/60 px-3 py-2.5">
-                                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-et-ink/45" />
-                                  <p className="text-xs text-et-ink/65">
-                                    <strong className="font-semibold text-et-ink/80">
+                                <div className="border-et-border/60 bg-et-deep/60 flex items-center gap-2 rounded-lg border px-3 py-2.5">
+                                  <ArrowRight className="text-et-ink/45 h-3.5 w-3.5 shrink-0" />
+                                  <p className="text-et-ink/65 text-xs">
+                                    <strong className="text-et-ink/80 font-semibold">
                                       Percorso aggiornato:
                                     </strong>{" "}
                                     {replaceResult.data.dayRouteUpdated}
                                   </p>
                                 </div>
 
-                                {replaceResult.data.alternatives
-                                  .length > 0 ? (
+                                {replaceResult.data.alternatives.length > 0 ? (
                                   <div>
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-et-ink/45">
+                                    <p className="text-et-ink/45 mb-2 text-xs font-semibold tracking-wider uppercase">
                                       Alternative (se il posto è pieno)
                                     </p>
                                     <div className="grid gap-2 sm:grid-cols-2">
@@ -1573,12 +1612,12 @@ export function TripDetailClient({
                                         (alt, ai) => (
                                           <div
                                             key={ai}
-                                            className="rounded-lg border border-et-border/60 bg-et-card/40 p-3"
+                                            className="border-et-border/60 bg-et-card/40 rounded-lg border p-3"
                                           >
-                                            <p className="text-sm font-semibold text-et-ink/85">
+                                            <p className="text-et-ink/85 text-sm font-semibold">
                                               {alt.name}
                                             </p>
-                                            <p className="mt-0.5 flex items-center gap-1 text-xs text-et-ink/50">
+                                            <p className="text-et-ink/50 mt-0.5 flex items-center gap-1 text-xs">
                                               <MapPin className="h-3 w-3" />
                                               {alt.distance}
                                             </p>
@@ -1598,28 +1637,28 @@ export function TripDetailClient({
                       })}
 
                       {!hasAnySlot ? (
-                        <p className="text-sm text-et-ink/50">
+                        <p className="text-et-ink/50 text-sm">
                           Contenuto in arrivo…
                         </p>
                       ) : null}
 
                       {/* Day tips */}
                       {day.dayTips ? (
-                        <div className="flex items-start gap-2 text-sm text-et-ink/60">
-                          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-et-ink/40" />
+                        <div className="text-et-ink/60 flex items-start gap-2 text-sm">
+                          <Lightbulb className="text-et-ink/40 mt-0.5 h-4 w-4 shrink-0" />
                           <p className="leading-relaxed">{day.dayTips}</p>
                         </div>
                       ) : null}
 
                       {/* Restaurants */}
                       {day.restaurants && day.restaurants.length > 0 ? (
-                        <div className="rounded-xl border border-et-border/70 bg-et-deep/40 p-4">
+                        <div className="border-et-border/70 bg-et-deep/40 rounded-xl border p-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-et-ink/50">
+                            <p className="text-et-ink/50 flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase">
                               <UtensilsCrossed className="h-3.5 w-3.5" />
                               Dove mangiare
                             </p>
-                            <p className="text-xs text-et-ink/40">
+                            <p className="text-et-ink/40 text-xs">
                               Pranzo e cena separati
                             </p>
                           </div>
@@ -1641,18 +1680,19 @@ export function TripDetailClient({
                             }) => (
                               <div className="mt-4">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className="text-xs font-semibold uppercase tracking-wider text-et-ink/45">
+                                  <p className="text-et-ink/45 text-xs font-semibold tracking-wider uppercase">
                                     {title}
                                   </p>
-                                  <span className="text-xs text-et-ink/35">
-                                    {items.length} opzion{items.length === 1 ? "e" : "i"}
+                                  <span className="text-et-ink/35 text-xs">
+                                    {items.length} opzion
+                                    {items.length === 1 ? "e" : "i"}
                                   </span>
                                 </div>
                                 <ul className="mt-2.5 space-y-2.5">
                                   {items.map((r, i) => (
                                     <li
                                       key={`${r.name}-${i}`}
-                                      className="rounded-xl border border-et-border/60 bg-et-card/40 p-3"
+                                      className="border-et-border/60 bg-et-card/40 rounded-xl border p-3"
                                     >
                                       <div className="flex flex-wrap items-start justify-between gap-2">
                                         <div className="min-w-0">
@@ -1666,25 +1706,25 @@ export function TripDetailClient({
                                             )}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="inline-flex items-center gap-1 text-sm font-semibold text-et-ink/90 underline-offset-4 transition-colors duration-200 hover:text-et-accent hover:underline"
+                                            className="text-et-ink/90 hover:text-et-accent inline-flex items-center gap-1 text-sm font-semibold underline-offset-4 transition-colors duration-200 hover:underline"
                                           >
                                             {r.name}
                                             <ExternalLink className="h-3 w-3 opacity-50" />
                                           </a>
-                                          <p className="mt-0.5 text-xs text-et-ink/55">
+                                          <p className="text-et-ink/55 mt-0.5 text-xs">
                                             {r.cuisine}
                                           </p>
                                         </div>
 
                                         <div className="flex flex-wrap items-center justify-end gap-2">
                                           {r.budgetHint ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full border border-et-border bg-et-deep px-2 py-0.5 text-xs text-et-ink/60">
+                                            <span className="border-et-border bg-et-deep text-et-ink/60 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
                                               <Wallet className="h-3 w-3" />
                                               {r.budgetHint}
                                             </span>
                                           ) : null}
                                           {r.distance ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full border border-et-border bg-et-deep px-2 py-0.5 text-xs text-et-ink/60">
+                                            <span className="border-et-border bg-et-deep text-et-ink/60 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
                                               <MapPin className="h-3 w-3" />
                                               {r.distance}
                                             </span>
@@ -1703,11 +1743,12 @@ export function TripDetailClient({
                                         </div>
                                       </div>
 
-                                      <p className="mt-2 text-sm leading-relaxed text-et-ink/70">
+                                      <p className="text-et-ink/70 mt-2 text-sm leading-relaxed">
                                         {r.why}
                                       </p>
 
-                                      {r.reservationNeeded && r.reservationTip ? (
+                                      {r.reservationNeeded &&
+                                      r.reservationTip ? (
                                         <div className="mt-2 rounded-lg border border-amber-400/25 bg-amber-500/8 px-3 py-2 text-xs text-amber-100/90">
                                           <strong className="font-semibold">
                                             Tip prenotazione:
@@ -1718,7 +1759,10 @@ export function TripDetailClient({
 
                                       {/* TheFork affiliate */}
                                       {(() => {
-                                        const tfUrl = theForkUrl(r.name, destinationPrimary(trip.destination));
+                                        const tfUrl = theForkUrl(
+                                          r.name,
+                                          destinationPrimary(trip.destination),
+                                        );
                                         if (!tfUrl) return null;
                                         return (
                                           <a
@@ -1726,11 +1770,14 @@ export function TripDetailClient({
                                             target="_blank"
                                             rel="noreferrer"
                                             onClick={() =>
-                                              posthog.capture("affiliate_click", {
-                                                partner: "thefork",
-                                                restaurant: r.name,
-                                                tripId: trip.id,
-                                              })
+                                              posthog.capture(
+                                                "affiliate_click",
+                                                {
+                                                  partner: "thefork",
+                                                  restaurant: r.name,
+                                                  tripId: trip.id,
+                                                },
+                                              )
                                             }
                                             className="mt-2 inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-green-400/25 bg-green-500/8 px-2.5 py-1 text-xs font-medium text-green-300 transition-colors duration-200 hover:border-green-400/40 hover:bg-green-500/15"
                                           >
@@ -1764,41 +1811,66 @@ export function TripDetailClient({
                           name: string;
                           color: string;
                         }[] = [
-                          { key: "morning", slot: morning, label: "M", name: "Mattina", color: "#f97316" },
-                          { key: "afternoon", slot: afternoon, label: "P", name: "Pomeriggio", color: "#3b82f6" },
-                          { key: "evening", slot: evening, label: "S", name: "Sera", color: "#a855f7" },
+                          {
+                            key: "morning",
+                            slot: morning,
+                            label: "M",
+                            name: "Mattina",
+                            color: "#f97316",
+                          },
+                          {
+                            key: "afternoon",
+                            slot: afternoon,
+                            label: "P",
+                            name: "Pomeriggio",
+                            color: "#3b82f6",
+                          },
+                          {
+                            key: "evening",
+                            slot: evening,
+                            label: "S",
+                            name: "Sera",
+                            color: "#a855f7",
+                          },
                         ];
                         const markers = SLOT_META.flatMap((m) => {
-                          if (!m.slot || m.slot.lat == null || m.slot.lng == null) return [];
-                          return [{
-                            label: m.label,
-                            title: m.slot.title,
-                            place: m.slot.place,
-                            time: `${m.slot.startTime} – ${m.slot.endTime}`,
-                            lat: m.slot.lat,
-                            lng: m.slot.lng,
-                            color: m.color,
-                          }];
+                          if (
+                            !m.slot ||
+                            m.slot.lat == null ||
+                            m.slot.lng == null
+                          )
+                            return [];
+                          return [
+                            {
+                              label: m.label,
+                              title: m.slot.title,
+                              place: m.slot.place,
+                              time: `${m.slot.startTime} – ${m.slot.endTime}`,
+                              lat: m.slot.lat,
+                              lng: m.slot.lng,
+                              color: m.color,
+                            },
+                          ];
                         });
 
                         if (markers.length === 0) return null;
 
                         return (
                           <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-xs text-et-ink/50">
+                            <div className="text-et-ink/50 flex items-center gap-2 text-xs">
                               <Route className="h-3.5 w-3.5" />
                               <span>Percorso del giorno</span>
                             </div>
                             <DayRouteMap
                               markers={markers}
-                              className="h-[280px] w-full overflow-hidden rounded-xl border border-et-border"
+                              className="border-et-border h-[280px] w-full overflow-hidden rounded-xl border"
                             />
                             <div className="flex items-center gap-3">
                               {SLOT_META.map((m) =>
                                 m.slot?.lat != null && m.slot?.lng != null ? (
                                   <span
                                     key={m.key}
-                                    className="inline-flex items-center gap-1.5 text-[11px] text-et-ink/45"
+                                    className="text-et-ink/45 inline-flex items-center gap-1.5 text-[11px]"
                                   >
                                     <span
                                       className="inline-block h-2.5 w-2.5 rounded-full"
@@ -1808,12 +1880,13 @@ export function TripDetailClient({
                                   </span>
                                 ) : null,
                               )}
-                              {day.mapCenterLat != null && day.mapCenterLng != null ? (
+                              {day.mapCenterLat != null &&
+                              day.mapCenterLng != null ? (
                                 <a
                                   href={`https://www.google.com/maps?q=${day.mapCenterLat},${day.mapCenterLng}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="ml-auto inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 text-[11px] text-et-ink/40 transition-colors duration-200 hover:text-et-accent"
+                                  className="text-et-ink/40 hover:text-et-accent ml-auto inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 text-[11px] transition-colors duration-200"
                                 >
                                   <ExternalLink className="h-3 w-3" />
                                   Google Maps
@@ -1831,7 +1904,7 @@ export function TripDetailClient({
                             type="button"
                             onClick={() => void onLiveSuggest(day.id)}
                             disabled={busy !== null}
-                            className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-purple-400/30 bg-gradient-to-r from-purple-500/8 via-et-accent/5 to-purple-500/8 px-5 py-3 text-sm font-semibold text-purple-300 transition-all duration-200 hover:border-purple-400/50 hover:from-purple-500/15 hover:via-et-accent/10 hover:to-purple-500/15 disabled:opacity-50"
+                            className="via-et-accent/5 hover:via-et-accent/10 inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-purple-400/30 bg-gradient-to-r from-purple-500/8 to-purple-500/8 px-5 py-3 text-sm font-semibold text-purple-300 transition-all duration-200 hover:border-purple-400/50 hover:from-purple-500/15 hover:to-purple-500/15 disabled:opacity-50"
                           >
                             {busy === `live-${day.id}` ? (
                               <>
@@ -1847,9 +1920,9 @@ export function TripDetailClient({
                           </button>
 
                           {liveSuggest?.dayId === day.id ? (
-                            <div className="space-y-3 rounded-2xl border-2 border-purple-400/25 bg-gradient-to-br from-purple-500/6 via-et-deep to-et-accent/4 p-4">
+                            <div className="via-et-deep to-et-accent/4 space-y-3 rounded-2xl border-2 border-purple-400/25 bg-gradient-to-br from-purple-500/6 p-4">
                               <div className="flex items-center justify-between">
-                                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-purple-300">
+                                <p className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-purple-300 uppercase">
                                   <Navigation className="h-3.5 w-3.5" />
                                   Suggerimenti live
                                 </p>
@@ -1857,12 +1930,12 @@ export function TripDetailClient({
                                   type="button"
                                   onClick={() => setLiveSuggest(null)}
                                   aria-label="Chiudi suggerimenti"
-                                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-et-ink/40 transition-colors hover:bg-et-deep hover:text-et-ink/70"
+                                  className="text-et-ink/40 hover:bg-et-deep hover:text-et-ink/70 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
                                 >
                                   <X className="h-3.5 w-3.5" />
                                 </button>
                               </div>
-                              <p className="text-sm leading-relaxed text-et-ink/70">
+                              <p className="text-et-ink/70 text-sm leading-relaxed">
                                 {liveSuggest.data.contextNote}
                               </p>
                               <div className="space-y-2.5">
@@ -1870,7 +1943,7 @@ export function TripDetailClient({
                                   (sug, idx) => (
                                     <div
                                       key={idx}
-                                      className="rounded-xl border border-et-border/60 bg-et-deep/50 p-3.5 transition-colors duration-200 hover:border-purple-400/25"
+                                      className="border-et-border/60 bg-et-deep/50 rounded-xl border p-3.5 transition-colors duration-200 hover:border-purple-400/25"
                                     >
                                       <div className="flex items-start justify-between gap-2">
                                         <div className="min-w-0 flex-1">
@@ -1881,12 +1954,12 @@ export function TripDetailClient({
                                               )}
                                               target="_blank"
                                               rel="noreferrer"
-                                              className="text-sm font-semibold text-et-accent transition-colors hover:underline"
+                                              className="text-et-accent text-sm font-semibold transition-colors hover:underline"
                                             >
                                               {sug.name}
                                               <MapPin className="ml-1 inline h-3 w-3 opacity-50" />
                                             </a>
-                                            <span className="rounded-full border border-et-border px-2 py-0.5 text-[10px] text-et-ink/50">
+                                            <span className="border-et-border text-et-ink/50 rounded-full border px-2 py-0.5 text-[10px]">
                                               {sug.type}
                                             </span>
                                             {sug.indoor ? (
@@ -1899,7 +1972,7 @@ export function TripDetailClient({
                                               </span>
                                             )}
                                           </div>
-                                          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-et-ink/50">
+                                          <div className="text-et-ink/50 mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs">
                                             <span className="flex items-center gap-1">
                                               <MapPin className="h-3 w-3" />
                                               {sug.distance}
@@ -1909,11 +1982,11 @@ export function TripDetailClient({
                                             </span>
                                             <span>{sug.budgetHint}</span>
                                           </div>
-                                          <p className="mt-1.5 text-sm leading-relaxed text-et-ink/65">
+                                          <p className="text-et-ink/65 mt-1.5 text-sm leading-relaxed">
                                             {sug.why}
                                           </p>
                                           {sug.tips.length > 0 ? (
-                                            <p className="mt-1 text-xs text-et-ink/40">
+                                            <p className="text-et-ink/40 mt-1 text-xs">
                                               <Lightbulb className="mr-1 inline h-3 w-3 align-[-2px]" />
                                               {sug.tips.join(" · ")}
                                             </p>
@@ -1930,11 +2003,14 @@ export function TripDetailClient({
                                             target="_blank"
                                             rel="noreferrer"
                                             onClick={() =>
-                                              posthog.capture("affiliate_click", {
-                                                partner: "direct",
-                                                activity: sug.name,
-                                                tripId: trip.id,
-                                              })
+                                              posthog.capture(
+                                                "affiliate_click",
+                                                {
+                                                  partner: "direct",
+                                                  activity: sug.name,
+                                                  tripId: trip.id,
+                                                },
+                                              )
                                             }
                                             className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
                                           >
@@ -1943,7 +2019,10 @@ export function TripDetailClient({
                                           </a>
                                         ) : null}
                                         {(() => {
-                                          const gygUrl = getYourGuideUrl(sug.name, trip.destination);
+                                          const gygUrl = getYourGuideUrl(
+                                            sug.name,
+                                            trip.destination,
+                                          );
                                           if (!gygUrl) return null;
                                           return (
                                             <a
@@ -1951,11 +2030,14 @@ export function TripDetailClient({
                                               target="_blank"
                                               rel="noreferrer"
                                               onClick={() =>
-                                                posthog.capture("affiliate_click", {
-                                                  partner: "gyg",
-                                                  activity: sug.name,
-                                                  tripId: trip.id,
-                                                })
+                                                posthog.capture(
+                                                  "affiliate_click",
+                                                  {
+                                                    partner: "gyg",
+                                                    activity: sug.name,
+                                                    tripId: trip.id,
+                                                  },
+                                                )
                                               }
                                               className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-orange-400/25 bg-orange-500/8 px-2.5 py-1 text-xs font-medium text-orange-300 transition-colors duration-200 hover:border-orange-400/40 hover:bg-orange-500/15"
                                             >
@@ -1974,34 +2056,37 @@ export function TripDetailClient({
                         </div>
                       ) : null}
                     </div>
-                  ) : (() => {
-                    const daysLeft = daysUntilUnlock(day.unlockDate);
-                    return (
-                      <div className="mx-5 mb-5 flex items-center gap-4 rounded-xl border border-et-border/50 bg-et-deep/60 px-4 py-4">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-et-border/60 bg-et-deep">
-                          <Lock className="h-4.5 w-4.5 text-et-ink/35" />
+                  ) : (
+                    (() => {
+                      const daysLeft = daysUntilUnlock(day.unlockDate);
+                      return (
+                        <div className="border-et-border/50 bg-et-deep/60 mx-5 mb-5 flex items-center gap-4 rounded-xl border px-4 py-4">
+                          <div className="border-et-border/60 bg-et-deep flex h-10 w-10 shrink-0 items-center justify-center rounded-full border">
+                            <Lock className="text-et-ink/35 h-4.5 w-4.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-et-ink/60 text-sm font-medium">
+                              Contenuti bloccati
+                            </p>
+                            <p className="text-et-ink/40 mt-0.5 text-xs">
+                              {daysLeft > 0 ? (
+                                <>
+                                  <Clock className="mr-1 inline h-3 w-3 align-[-2px]" />
+                                  Si sblocca tra{" "}
+                                  <span className="text-et-ink/55 font-semibold">
+                                    {daysLeft}{" "}
+                                    {daysLeft === 1 ? "giorno" : "giorni"}
+                                  </span>
+                                </>
+                              ) : (
+                                "Si sblocca a breve…"
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-et-ink/60">
-                            Contenuti bloccati
-                          </p>
-                          <p className="mt-0.5 text-xs text-et-ink/40">
-                            {daysLeft > 0 ? (
-                              <>
-                                <Clock className="mr-1 inline h-3 w-3 align-[-2px]" />
-                                Si sblocca tra{" "}
-                                <span className="font-semibold text-et-ink/55">
-                                  {daysLeft} {daysLeft === 1 ? "giorno" : "giorni"}
-                                </span>
-                              </>
-                            ) : (
-                              "Si sblocca a breve…"
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()
+                  )}
                 </li>
               );
             })}
@@ -2011,26 +2096,25 @@ export function TripDetailClient({
 
       {/* ── Gruppo & Membri ── */}
       {(trip.tripType === "gruppo" || trip.tripType === "coppia") &&
-        trip.isPaid &&
-        hasDays ? (
-        <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
+      trip.isPaid &&
+      hasDays ? (
+        <section className="border-et-border bg-et-card rounded-2xl border p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10">
                 <Users className="h-5 w-5 text-indigo-400" />
               </div>
               <div>
-                <h3 className="font-display text-base text-et-ink">Gruppo</h3>
-                <p className="text-sm text-et-ink/55">
-                  {trip.members.length} partecipant{trip.members.length === 1 ? "e" : "i"}
+                <h3 className="font-display text-et-ink text-base">Gruppo</h3>
+                <p className="text-et-ink/55 text-sm">
+                  {trip.members.length} partecipant
+                  {trip.members.length === 1 ? "e" : "i"}
                 </p>
               </div>
             </div>
             <button
               onClick={() => void refreshTrip()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
-                         text-et-ink/50 hover:text-et-accent hover:bg-et-accent/5
-                         transition-colors cursor-pointer min-h-[44px]"
+              className="text-et-ink/50 hover:text-et-accent hover:bg-et-accent/5 flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors"
               title="Aggiorna lista membri"
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -2039,25 +2123,25 @@ export function TripDetailClient({
           </div>
 
           {/* Lista membri */}
-          <div className="space-y-2 mb-4">
+          <div className="mb-4 space-y-2">
             {trip.members.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between rounded-xl bg-et-bg/60 px-4 py-2.5"
+                className="bg-et-bg/60 flex items-center justify-between rounded-xl px-4 py-2.5"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 text-sm font-bold">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 text-sm font-bold text-blue-500">
                     {(m.name ?? m.email).charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-et-ink">
+                    <p className="text-et-ink text-sm font-medium">
                       {m.name ?? m.email.split("@")[0]}
                     </p>
-                    <p className="text-xs text-et-ink/50">{m.email}</p>
+                    <p className="text-et-ink/50 text-xs">{m.email}</p>
                   </div>
                 </div>
                 <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                     m.role === "org"
                       ? "bg-amber-500/10 text-amber-500"
                       : "bg-blue-500/10 text-blue-500"
@@ -2071,14 +2155,14 @@ export function TripDetailClient({
 
           {/* Link invito (solo organizzatore) */}
           {trip.isOrganizer && (
-            <div className="border-t border-et-border pt-4">
+            <div className="border-et-border border-t pt-4">
               {inviteUrl ? (
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-et-ink/55 uppercase tracking-wide">
+                  <label className="text-et-ink/55 text-xs font-medium tracking-wide uppercase">
                     Link di invito
                   </label>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 rounded-lg bg-et-bg/60 px-3 py-2 text-sm text-et-ink/70 font-mono truncate border border-et-border">
+                    <div className="bg-et-bg/60 text-et-ink/70 border-et-border flex-1 truncate rounded-lg border px-3 py-2 font-mono text-sm">
                       {inviteUrl}
                     </div>
                     <button
@@ -2091,9 +2175,7 @@ export function TripDetailClient({
                           tripType: trip.tripType,
                         });
                       }}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg
-                                 bg-blue-600 text-white hover:bg-blue-700
-                                 transition-colors cursor-pointer min-h-[44px] min-w-[44px]"
+                      className="flex h-10 min-h-[44px] w-10 min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-700"
                       title="Copia link"
                     >
                       {copiedLink ? (
@@ -2104,7 +2186,7 @@ export function TripDetailClient({
                     </button>
                   </div>
                   {copiedLink && (
-                    <p className="text-xs text-green-500 font-medium">
+                    <p className="text-xs font-medium text-green-500">
                       Link copiato!
                     </p>
                   )}
@@ -2113,9 +2195,7 @@ export function TripDetailClient({
                 <button
                   onClick={async () => {
                     try {
-                      const res = await fetch(
-                        `/api/trips/${trip.id}/invite`
-                      );
+                      const res = await fetch(`/api/trips/${trip.id}/invite`);
                       const json = await res.json();
                       if (res.ok && json.data?.inviteUrl) {
                         setInviteUrl(json.data.inviteUrl);
@@ -2124,26 +2204,24 @@ export function TripDetailClient({
                       /* ignore */
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl
-                             bg-indigo-600 text-white text-sm font-semibold
-                             hover:bg-indigo-700 transition-colors cursor-pointer
-                             min-h-[44px]"
+                  className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
                 >
                   <UserPlus className="h-4 w-4" />
                   Genera link di invito
                 </button>
               )}
-              <p className="mt-2 text-xs text-et-ink/40">
+              <p className="text-et-ink/40 mt-2 text-xs">
                 Condividi il link con chi vuoi invitare. Il membro avrà accesso
-                in sola lettura all&apos;itinerario e potrà partecipare allo split spese.
+                in sola lettura all&apos;itinerario e potrà partecipare allo
+                split spese.
               </p>
             </div>
           )}
 
           {/* Membro read-only: nota */}
           {!trip.isOrganizer && (
-            <div className="bg-blue-500/5 rounded-lg px-4 py-3 text-sm text-blue-400">
-              <Link2 className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+            <div className="rounded-lg bg-blue-500/5 px-4 py-3 text-sm text-blue-400">
+              <Link2 className="-mt-0.5 mr-1.5 inline h-4 w-4" />
               Accesso in sola lettura. Solo l&apos;organizzatore può modificare
               l&apos;itinerario.
             </div>
@@ -2153,19 +2231,19 @@ export function TripDetailClient({
 
       {/* ── Split Spese (solo gruppo/coppia) ── */}
       {(trip.tripType === "gruppo" || trip.tripType === "coppia") &&
-        trip.isPaid &&
-        trip.members.length >= 2 &&
-        hasDays ? (
-        <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
+      trip.isPaid &&
+      trip.members.length >= 2 &&
+      hasDays ? (
+        <section className="border-et-border bg-et-card rounded-2xl border p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10">
               <Receipt className="h-5 w-5 text-green-400" />
             </div>
             <div>
-              <h3 className="font-display text-base text-et-ink">
+              <h3 className="font-display text-et-ink text-base">
                 Split spese
               </h3>
-              <p className="text-sm text-et-ink/55">
+              <p className="text-et-ink/55 text-sm">
                 Registra le spese e scopri chi deve cosa a chi
               </p>
             </div>
@@ -2176,16 +2254,16 @@ export function TripDetailClient({
 
       {/* ── Supporto: Hai bisogno di aiuto? ── */}
       {hasDays && trip.isPaid ? (
-        <section className="rounded-2xl border border-et-border bg-et-card p-5 sm:p-6">
+        <section className="border-et-border bg-et-card rounded-2xl border p-5 sm:p-6">
           <div className="flex items-start gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10">
               <HelpCircle className="h-5 w-5 text-purple-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-display text-base text-et-ink">
+              <h3 className="font-display text-et-ink text-base">
                 Hai bisogno di aiuto?
               </h3>
-              <p className="mt-1 text-sm text-et-ink/55">
+              <p className="text-et-ink/55 mt-1 text-sm">
                 Qualcosa non funziona? Un giorno non si sblocca? Hai dubbi
                 sull&apos;itinerario? Siamo qui per te.
               </p>
@@ -2228,8 +2306,7 @@ export function TripDetailClient({
                         body: JSON.stringify({
                           tripId: trip.id,
                           subject: subject.trim(),
-                          message:
-                            message?.trim() || subject.trim(),
+                          message: message?.trim() || subject.trim(),
                           channel: "in_app",
                         }),
                       });
@@ -2254,7 +2331,7 @@ export function TripDetailClient({
                       setBusy(null);
                     }
                   }}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border border-et-border px-5 py-2.5 text-sm font-medium text-et-ink/70 transition-colors duration-200 hover:border-et-accent/40 hover:text-et-accent disabled:opacity-50"
+                  className="border-et-border text-et-ink/70 hover:border-et-accent/40 hover:text-et-accent inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-colors duration-200 disabled:opacity-50"
                 >
                   {busy === "support" ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
