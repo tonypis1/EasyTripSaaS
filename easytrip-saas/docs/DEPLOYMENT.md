@@ -9,8 +9,8 @@ L’app è un monolite **Next.js** adatto a deploy su **Vercel** (o altro Node h
 1. **Database PostgreSQL** — crea database e ottieni `DATABASE_URL`.
 2. **Prisma** — in locale: `npm run db:generate`; applica migrazioni (`npx prisma migrate deploy` in produzione dopo il primo deploy o prima del go-live).
 3. **Clerk** — crea applicazione, abilita provider di login; copia `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` e `CLERK_SECRET_KEY`.
-4. **Stripe** — prodotti/prezzi in centesimi come da `README` e variabili `STRIPE_PRICE_*`; configura webhook verso `https://<dominio>/api/webhooks/stripe` (vedi [stripe-webhook-setup.md](./stripe-webhook-setup.md)).
-5. **Inngest** — registra app con URL produzione `https://<dominio>/api/inngest`.
+4. **Stripe** — prodotti/prezzi in centesimi come da `README` e variabili `STRIPE_PRICE_*`; configura webhook verso `https://easytripsaas.vercel.app/api/webhooks/stripe` (o il dominio finale; vedi [stripe-webhook-setup.md](./stripe-webhook-setup.md) e [CUSTOM_DOMAIN.md](./CUSTOM_DOMAIN.md)).
+5. **Inngest** — registra app con URL produzione `https://easytripsaas.vercel.app/api/inngest` (aggiorna se cambi dominio; vedi [CUSTOM_DOMAIN.md](./CUSTOM_DOMAIN.md)).
 6. **Anthropic** — `ANTHROPIC_API_KEY` e opzionale `ANTHROPIC_MODEL`.
 7. **Resend** (opzionale) — email transazionali; senza chiave le email sono solo log.
 8. **PostHog** (opzionale) — analytics client.
@@ -30,7 +30,7 @@ L’app è un monolite **Next.js** adatto a deploy su **Vercel** (o altro Node h
 | `STRIPE_WEBHOOK_SECRET`                  | Verifica webhook                                                                             |
 | `ANTHROPIC_API_KEY`                      | Generazione itinerari                                                                        |
 | Variabili `STRIPE_PRICE_*`               | Prezzi in centesimi (default in codice se omesse)                                            |
-| `APP_BASE_URL`                           | URL pubblico dell’app (es. `https://…vercel.app`); in produzione va impostata esplicitamente |
+| `APP_BASE_URL`                           | URL pubblico dell’app; produzione attuale: `https://easytripsaas.vercel.app` — vedi [CUSTOM_DOMAIN.md](./CUSTOM_DOMAIN.md) per dominio proprio |
 
 Elenco e gestione dei segreti: [`SECRET_OPS.md`](../SECRET_OPS.md). Contratto delle variabili obbligatorie: [`unifiedConfig`](../src/config/unifiedConfig.ts).
 

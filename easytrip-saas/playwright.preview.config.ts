@@ -3,7 +3,7 @@ import root from "./playwright.config";
 
 /**
  * E2E contro URL Vercel Preview (nessun webServer locale).
- * Uso: `E2E_BASE_URL=https://xxx.vercel.app npx playwright test -c playwright.preview.config.ts`
+ * Uso: `E2E_BASE_URL=https://easytripsaas.vercel.app npx playwright test -c playwright.preview.config.ts`
  */
 export default defineConfig({
   ...root,

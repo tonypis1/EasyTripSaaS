@@ -11,7 +11,7 @@ info:
 
 servers:
   - url: /
-    description: Origine dell'applicazione (es. https://app.example.com)
+    description: Origine dell'applicazione (produzione attuale su Vercel, https://easytripsaas.vercel.app)
 
 tags:
   - name: trips

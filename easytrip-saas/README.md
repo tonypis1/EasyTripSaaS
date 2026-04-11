@@ -9,6 +9,7 @@ Applicazione [Next.js](https://nextjs.org) con **Prisma**, **PostgreSQL**, **Cle
 | [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md)       | Specifica prodotto: problema, target, personas, business, metriche, user stories, MVP |
 | [`docs/openapi.yaml`](docs/openapi.yaml)             | Specifica OpenAPI 3.x delle route `/api`                                              |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)           | Deploy, variabili d’ambiente, go-live                                                 |
+| [`docs/CUSTOM_DOMAIN.md`](docs/CUSTOM_DOMAIN.md)     | Dominio Vercel attuale (`easytripsaas.vercel.app`) e migrazione a dominio proprio      |
 | [`docs/security-review.md`](docs/security-review.md) | Checklist sicurezza                                                                   |
 | [`docs/observability.md`](docs/observability.md)     | Logging, metriche, strumenti consigliati                                              |
 | [`presentation.html`](presentation.html)             | Pitch HTML con screenshot e stack (root progetto)                                     |
@@ -111,7 +112,7 @@ Se usi **Accedi con Google** nella finestra di `playwright codegen`, Google spes
 
 Guida operativa: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (ordine setup env, go-live checklist, CI).
 
-Deploy standard: [documentazione Next.js](https://nextjs.org/docs/app/building-your-application/deploying) (es. Vercel). Webhook Stripe: `https://tuodominio.com/api/webhooks/stripe`.
+Deploy standard: [documentazione Next.js](https://nextjs.org/docs/app/building-your-application/deploying) (es. Vercel). URL produzione attuale: **`https://easytripsaas.vercel.app`** (`APP_BASE_URL` su Vercel). Webhook Stripe: `https://easytripsaas.vercel.app/api/webhooks/stripe`. Per un dominio proprio (es. `www.easytripsaas.com`) segui [`docs/CUSTOM_DOMAIN.md`](docs/CUSTOM_DOMAIN.md).
 
 ### CI (GitHub Actions)
 

@@ -4,6 +4,11 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  /**
+   * URL pubblico dell’app (redirect Stripe Checkout, link email/Inngest/referral).
+   * Locale: `http://localhost:3000`. Produzione Vercel attuale: `https://easytripsaas.vercel.app`
+   * (impostare in Vercel → Environment Variables). Dominio personalizzato: vedi `docs/CUSTOM_DOMAIN.md`.
+   */
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 
   DATABASE_URL: z.string().min(1),
@@ -58,10 +63,17 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
+  const { fieldErrors, formErrors } = parsed.error.flatten();
+  const parts = [
+    ...formErrors,
+    ...Object.entries(fieldErrors).flatMap(([key, errors]) =>
+      errors?.length ? [`${key}: ${errors.join(", ")}`] : [],
+    ),
+  ];
+  const detail =
+    parts.length > 0 ? parts.join("; ") : parsed.error.message;
   throw new Error(
-    `Invalid environment configuration: ${parsed.error
-      .flatten()
-      .formErrors.join(", ")}`,
+    `Invalid environment configuration. ${detail} (Set these in Vercel: Project → Settings → Environment Variables.)`,
   );
 }
 

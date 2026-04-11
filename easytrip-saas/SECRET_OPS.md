@@ -16,7 +16,7 @@ Guida breve per gestire credenziali in modo sicuro e scalare CI/CD (Vercel + Git
 | **Vercel – Production** | Stesso pannello → Production                            | Solo valori produzione.                                                         |
 | **GitHub Actions**      | Repository → Settings → Secrets and variables → Actions | Per workflow che non passano da Vercel (es. token, URL E2E opzionali).          |
 | **GitHub Environments** | Environments (`production`, `preview`, …)               | Secrets **scoped** per environment + approvatori opzionali su deploy sensibili. |
-| **Locale**              | `easytrip-saas/.env` (gitignored)                       | `vercel env pull` per allinearsi a Vercel.                                      |
+| **Locale**              | `easytrip-saas/.env` (gitignored)                       | `vercel env pull` per allinearsi a Vercel. Per produzione: `APP_BASE_URL=https://easytripsaas.vercel.app` (dominio proprio: [`docs/CUSTOM_DOMAIN.md`](docs/CUSTOM_DOMAIN.md)). |
 
 ## Comandi utili (Vercel CLI / plugin)
 

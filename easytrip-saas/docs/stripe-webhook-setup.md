@@ -35,7 +35,7 @@ STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
 ```
 
-- **`APP_BASE_URL`**: base URL dell’app (dopo il pagamento Stripe reindirizza qui). In locale: `http://localhost:3000`. In produzione: `https://tuodominio.com`.
+- **`APP_BASE_URL`**: base URL dell’app (dopo il pagamento Stripe reindirizza qui). In locale: `http://localhost:3000`. In produzione (Vercel attuale): `https://easytripsaas.vercel.app`. Con dominio proprio: vedi [CUSTOM_DOMAIN.md](./CUSTOM_DOMAIN.md).
 
 - **`STRIPE_SECRET_KEY`**: Dashboard Stripe → **Developers → API keys** → _Secret key_ (test o live).
 
@@ -74,10 +74,10 @@ Stripe non può raggiungere `localhost` senza un tunnel. Il metodo ufficiale è 
 
 ## 3. Produzione (Deploy)
 
-1. Deploy dell’app (es. Vercel) con URL pubblico `https://...`.
+1. Deploy dell’app (es. Vercel) con URL pubblico `https://easytripsaas.vercel.app` (o il dominio collegato in Vercel).
 2. Imposta `APP_BASE_URL` e `STRIPE_SECRET_KEY` (live se vai in produzione).
 3. Stripe Dashboard → **Developers → Webhooks** → **Add endpoint**
-   - URL: `https://tuodominio.com/api/webhooks/stripe`
+   - URL: `https://easytripsaas.vercel.app/api/webhooks/stripe` (aggiorna se usi un dominio personalizzato; vedi [CUSTOM_DOMAIN.md](./CUSTOM_DOMAIN.md))
    - Evento da ascoltare: **`checkout.session.completed`**
 4. Copia il **Signing secret** dell’endpoint e mettilo in `STRIPE_WEBHOOK_SECRET` sul hosting (non usare il secret del `stripe listen` di test).
 

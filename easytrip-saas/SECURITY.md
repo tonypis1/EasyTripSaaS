@@ -86,7 +86,7 @@ Consultare privacy policy e DPA di ciascun fornitore per retention, sottoprocess
 ## Segnalazione vulnerabilità (responsible disclosure)
 
 1. **Non** aprire issue pubbliche con dettagli sfruttabili prima di una correzione concordata.
-2. Inviare una descrizione a un indirizzo di contatto security del progetto (da impostare: es. `security@tuodominio.com` o casella del maintainer).
+2. Inviare una descrizione a un indirizzo di contatto security del progetto (da impostare: es. `security@easytripsaas.com` quando il dominio email sarà attivo, oppure casella del maintainer).
 3. Includere: impatto stimato, passi per riprodurre, componente affetto (es. API `/api/...`), eventuale proof-of-concept non distruttivo.
 4. Impegno a: rispondere entro tempi ragionevoli, tenere riservate le segnalazioni fino a fix o deadline concordata, riconoscere (se desiderato) i ricercatori nella changelog di sicurezza.
 
