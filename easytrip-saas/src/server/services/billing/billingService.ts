@@ -10,10 +10,49 @@ import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 import { logger } from "@/lib/observability";
 import { prisma } from "@/lib/prisma";
 import {
+  abandonedCheckoutHtml,
   purchaseConfirmedHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
+import { tryClaimWebhookDelivery } from "@/lib/email/webhookDelivery";
 import { isPaidRegeneration } from "@/lib/trip-regen-rules";
+function purchaseAmountCentsForTrip(trip: {
+  tripType: string;
+  localPassCityCount?: number | null;
+}): number {
+  const base =
+    trip.tripType === "gruppo"
+      ? config.billing.priceGroupCents
+      : config.billing.priceSoloCoupleCents;
+  const n = Math.min(30, Math.max(0, trip.localPassCityCount ?? 0));
+  return base + n * config.billing.priceLocalPassCents;
+}
+
+function purchaseProductCopy(trip: {
+  tripType: string;
+  localPassCityCount?: number | null;
+  destination: string;
+  startDate: Date;
+  endDate: Date;
+}): { productName: string; description: string } {
+  const lpCount = Math.min(30, Math.max(0, trip.localPassCityCount ?? 0));
+  const baseName =
+    trip.tripType === "gruppo"
+      ? "EasyTrip — Viaggio Gruppo"
+      : "EasyTrip — Viaggio Solo/Coppia";
+  const productName =
+    lpCount > 0
+      ? `${baseName} + LocalPass (${lpCount} città)`
+      : baseName;
+  const dates = `${toDateOnlyIsoUtc(trip.startDate)} - ${toDateOnlyIsoUtc(trip.endDate)}`;
+  const lpExtra =
+    lpCount > 0
+      ? ` — LocalPass: ${lpCount} città (€${((lpCount * config.billing.priceLocalPassCents) / 100).toFixed(2)})`
+      : "";
+  const description = `${trip.destination} (${dates})${lpExtra}`;
+  return { productName, description };
+}
+
 
 type CheckoutInput = {
   tripId: string;
@@ -108,10 +147,7 @@ export class BillingService {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
     }
 
-    const fullAmountCents =
-      trip.tripType === "gruppo"
-        ? config.billing.priceGroupCents
-        : config.billing.priceSoloCoupleCents;
+    const fullAmountCents = purchaseAmountCentsForTrip(trip);
 
     const availableCredits = await this.getAvailableCredits(user.id);
     const totalCreditCents = availableCredits.reduce(
@@ -121,11 +157,7 @@ export class BillingService {
     const creditToApplyCents = Math.min(totalCreditCents, fullAmountCents);
     const stripeAmountCents = fullAmountCents - creditToApplyCents;
 
-    const productName =
-      trip.tripType === "gruppo"
-        ? "EasyTrip — Viaggio Gruppo"
-        : "EasyTrip — Viaggio Solo/Coppia";
-    const description = `${trip.destination} (${toDateOnlyIsoUtc(trip.startDate)} - ${toDateOnlyIsoUtc(trip.endDate)})`;
+    const { productName, description } = purchaseProductCopy(trip);
 
     /* ── SCENARIO A: crediti coprono TUTTO ── */
     if (stripeAmountCents <= 0) {
@@ -378,6 +410,78 @@ export class BillingService {
     };
   }
 
+  /**
+   * Aggiorna piano abbonamento da eventi Stripe Subscription (webhook).
+   */
+  private async syncSubscriptionPlanFromStripe(sub: Stripe.Subscription) {
+    const priceFilter = config.billing.stripeSubscriptionPriceId;
+    if (priceFilter) {
+      const matches = sub.items.data.some(
+        (item) => item.price.id === priceFilter,
+      );
+      if (!matches) {
+        logger.info("Webhook subscription: price non corrispondente, skip", {
+          subscriptionId: sub.id,
+          priceFilter,
+        });
+        return;
+      }
+    }
+
+    const customerId =
+      typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer.deleted || !("email" in customer) || !customer.email) {
+      logger.warn("Webhook subscription: customer senza email utilizzabile", {
+        customerId,
+      });
+      return;
+    }
+
+    const email = customer.email.trim();
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { stripeCustomerId: customerId },
+          { email: { equals: email, mode: "insensitive" } },
+        ],
+      },
+    });
+
+    if (!user) {
+      logger.warn("Webhook subscription: utente non trovato", {
+        customerId,
+        email,
+      });
+      return;
+    }
+
+    const activeStatuses: Stripe.Subscription.Status[] = ["active", "trialing"];
+    const isActive = activeStatuses.includes(sub.status);
+
+    const subExpiresAt = isActive
+      ? new Date(sub.current_period_end * 1000)
+      : null;
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        stripeCustomerId: customerId,
+        planType: isActive ? "sub" : "free",
+        subExpiresAt,
+      },
+    });
+
+    logger.info("Subscription sync applicata", {
+      userId: user.id,
+      subscriptionId: sub.id,
+      status: sub.status,
+      planType: isActive ? "sub" : "free",
+    });
+  }
+
   async handleStripeWebhook(rawBody: string, signature: string | null) {
     if (!signature) {
       throw new AppError(
@@ -546,6 +650,55 @@ export class BillingService {
           appUserId,
         });
       }
+    } else if (event.type === "checkout.session.expired") {
+      const firstTime = await tryClaimWebhookDelivery("stripe", event.id);
+      if (!firstTime) {
+        return { received: true, skipped: "duplicate_webhook" as const };
+      }
+
+      const session = event.data.object as Stripe.Checkout.Session;
+      const tripId = session.metadata?.tripId;
+      const paymentType = session.metadata?.paymentType ?? "purchase";
+
+      if (paymentType !== "purchase" || !tripId) {
+        return { received: true };
+      }
+
+      const trip = await this.tripRepository.findById(tripId);
+      if (
+        !trip ||
+        trip.status !== "pending" ||
+        trip.amountPaid != null ||
+        trip.deletedAt != null
+      ) {
+        return { received: true, skipped: "not_abandoned" as const };
+      }
+
+      const organizer = await prisma.user.findUnique({
+        where: { id: trip.organizerId },
+        select: { email: true },
+      });
+      if (organizer?.email) {
+        const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
+        try {
+          await sendTransactionalEmail({
+            to: organizer.email,
+            subject: `Completa l'acquisto — ${trip.destination}`,
+            html: abandonedCheckoutHtml({
+              destination: trip.destination,
+              tripUrl,
+            }),
+          });
+        } catch {
+          /* email non blocca webhook */
+        }
+      }
+    } else if (
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.deleted"
+    ) {
+      const sub = event.data.object as Stripe.Subscription;
+      await this.syncSubscriptionPlanFromStripe(sub);
     }
 
     return { received: true };

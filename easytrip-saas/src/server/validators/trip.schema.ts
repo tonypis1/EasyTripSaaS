@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 
 export const BUDGET_LEVELS = ["economy", "moderate", "premium"] as const;
 export type BudgetLevel = (typeof BUDGET_LEVELS)[number];
@@ -10,6 +10,8 @@ export const createTripSchema = z.object({
   tripType: z.enum(["solo", "coppia", "gruppo"]),
   style: z.string().min(2).max(120).optional(),
   budgetLevel: z.enum(BUDGET_LEVELS).default("moderate"),
+  /** Add-on LocalPass: numero di città (0 = nessun add-on). */
+  localPassCityCount: z.coerce.number().int().min(0).max(30).default(0),
 });
 
 export type CreateTripInput = z.infer<typeof createTripSchema>;

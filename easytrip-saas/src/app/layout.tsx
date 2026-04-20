@@ -24,6 +24,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  /** Base URL assoluta per og:image / Open Graph (allineata a APP_BASE_URL in .env). */
+  metadataBase: new URL(process.env.APP_BASE_URL ?? "http://localhost:3000"),
   title: "EasyTrip — Itinerari AI per viaggi brevi",
   description: "Pianifica il tuo viaggio in 30 secondi con l'assistente AI",
 };

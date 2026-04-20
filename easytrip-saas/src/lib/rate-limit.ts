@@ -6,7 +6,7 @@ import { Redis } from "@upstash/redis";
  * Senza `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` le funzioni `enforce*` non applicano limiti
  * (utile in sviluppo locale senza Redis).
  *
- * @see docs/DEPLOYMENT.md
+ * @see architecture-docs/12_DEPLOYMENT.md
  */
 
 const redis =
@@ -30,9 +30,6 @@ function createLimiter(
     analytics: true,
   });
 }
-
-/** Endpoint pubblici: waitlist */
-export const waitlistLimiter = createLimiter("waitlist", 10, "1 m");
 
 /** GET /api/join/[token] — mitiga enumerazione token */
 export const joinGetLimiter = createLimiter("join_get", 60, "1 m");

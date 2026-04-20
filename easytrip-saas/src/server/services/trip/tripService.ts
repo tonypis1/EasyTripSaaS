@@ -1,3 +1,4 @@
+import { clerkClient } from "@clerk/nextjs/server";
 import { config } from "@/config/unifiedConfig";
 import { AuthService } from "@/server/services/auth/authService";
 import { TripRepository } from "@/server/repositories/TripRepository";
@@ -7,8 +8,11 @@ import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
 import {
   cancelConfirmedHtml,
   sendTransactionalEmail,
+  tripMemberJoinedMemberHtml,
+  tripMemberJoinedOrganizerHtml,
 } from "@/lib/email/transactional";
 import { inngest } from "@/lib/inngest/client";
+import { logger } from "@/lib/observability";
 import { prisma } from "@/lib/prisma";
 import {
   canCreateNewVersion,
@@ -76,6 +80,7 @@ export type TripDetailDto = {
   isPaid: boolean;
   userCreditBalanceCents: number;
   tripPriceCents: number;
+  localPassCityCount: number;
   inviteToken: string | null;
   isOrganizer: boolean;
   members: TripMemberDto[];
@@ -105,6 +110,8 @@ export type TripListItemDto = {
   currentVersion: number;
   activeDays: number;
   isPaid: boolean;
+  /** Add-on LocalPass (0 = non attivo). */
+  localPassCityCount: number;
 };
 
 /** Riga Prisma da listByOrganizer (include versioni attive + giorni) */
@@ -119,6 +126,7 @@ type TripListItemDb = {
   regenCount: number;
   currentVersion: number;
   amountPaid: unknown;
+  localPassCityCount: number;
   versions: { days: { id: string }[] }[];
 };
 
@@ -256,6 +264,23 @@ export class TripService {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
     }
 
+    await this.syncMemberNamesFromClerkForTrip(tripId);
+
+    let tripAfterSync = await this.tripRepository.findDetailForOrganizer(
+      tripId,
+      user.id,
+    );
+    if (!tripAfterSync) {
+      tripAfterSync = await this.tripRepository.findDetailForMember(
+        tripId,
+        user.id,
+      );
+    }
+    if (!tripAfterSync) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+    trip = tripAfterSync;
+
     const versions = trip.versions.map((v) => ({
       versionNum: v.versionNum,
       geoScore: decToNumber(v.geoScore),
@@ -320,10 +345,13 @@ export class TripService {
       currentVersion: trip.currentVersion,
       isPaid: trip.amountPaid != null,
       userCreditBalanceCents,
+      localPassCityCount: (trip as { localPassCityCount?: number | null }).localPassCityCount ?? 0,
       tripPriceCents:
-        trip.tripType === "gruppo"
+        (trip.tripType === "gruppo"
           ? config.billing.priceGroupCents
-          : config.billing.priceSoloCoupleCents,
+          : config.billing.priceSoloCoupleCents) +
+        ((trip as { localPassCityCount?: number | null }).localPassCityCount ?? 0) *
+          config.billing.priceLocalPassCents,
       inviteToken: isOrganizer ? (trip.inviteToken ?? null) : null,
       isOrganizer,
       members: membersDto,
@@ -538,6 +566,36 @@ export class TripService {
     }
 
     await this.tripRepository.addMember(trip.id, user.id);
+
+    const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
+    void (async () => {
+      try {
+        await sendTransactionalEmail({
+          to: user.email,
+          subject: `Sei nel gruppo — ${trip.destination}`,
+          html: tripMemberJoinedMemberHtml({
+            destination: trip.destination,
+            organizerName: trip.organizer.name,
+            tripUrl,
+          }),
+        });
+        await sendTransactionalEmail({
+          to: trip.organizer.email,
+          subject: `Nuovo membro — ${trip.destination}`,
+          html: tripMemberJoinedOrganizerHtml({
+            destination: trip.destination,
+            memberEmail: user.email,
+            tripUrl,
+          }),
+        });
+      } catch (err) {
+        logger.warn("Email invito gruppo non inviata", {
+          tripId: trip.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    })();
+
     return { tripId: trip.id, alreadyMember: false };
   }
 
@@ -571,6 +629,7 @@ export class TripService {
       currentVersion: trip.currentVersion,
       activeDays: trip.versions[0]?.days.length ?? 0,
       isPaid: trip.amountPaid != null,
+      localPassCityCount: trip.localPassCityCount ?? 0,
     }));
 
     const sharedList = sharedMemberships
@@ -587,6 +646,7 @@ export class TripService {
         currentVersion: m.trip.currentVersion,
         activeDays: m.trip.versions[0]?.days.length ?? 0,
         isPaid: m.trip.amountPaid != null,
+        localPassCityCount: m.trip.localPassCityCount ?? 0,
       }));
 
     const seen = new Set(ownList.map((t) => t.id));
@@ -646,5 +706,40 @@ export class TripService {
       creditAmount: result.creditAmount,
       creditExpiresAt: toDateOnlyIsoUtc(result.creditExpiresAt),
     };
+  }
+
+  /**
+   * Allinea `User.name` ai profili Clerk per tutti i membri del trip.
+   * Senza questo, il nome resta quello salvato al primo login finché l’utente
+   * non apre di nuovo l’app (getOrCreateCurrentUser).
+   */
+  private async syncMemberNamesFromClerkForTrip(tripId: string): Promise<void> {
+    const rows = await prisma.tripMember.findMany({
+      where: { tripId },
+      include: {
+        user: { select: { id: true, clerkUserId: true, name: true } },
+      },
+    });
+    if (rows.length === 0) return;
+
+    const clerk = await clerkClient();
+    for (const row of rows) {
+      try {
+        const cu = await clerk.users.getUser(row.user.clerkUserId);
+        const name = `${cu.firstName ?? ""} ${cu.lastName ?? ""}`.trim();
+        const prev = row.user.name?.trim() ?? "";
+        if (name === prev) continue;
+        await prisma.user.update({
+          where: { id: row.user.id },
+          data: { name: name.length > 0 ? name : null },
+        });
+      } catch (e) {
+        logger.warn("syncMemberNamesFromClerkForTrip: skip user", {
+          tripId,
+          userId: row.user.id,
+          error: e,
+        });
+      }
+    }
   }
 }

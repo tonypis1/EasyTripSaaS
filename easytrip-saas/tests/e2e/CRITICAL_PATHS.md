@@ -2,6 +2,7 @@
 
 ## Scope
 
+- Home `/`: ramo marketing (anonimo) vs dashboard leggera (sessione Clerk) — regressioni UI/nav.
 - Signup access guard (anonymous user -> auth flow)
 - Checkout start from trip detail (authenticated user)
 

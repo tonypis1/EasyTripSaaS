@@ -46,6 +46,50 @@ export async function sendTransactionalEmail(args: SendArgs): Promise<void> {
   }
 }
 
+const marketingUnsubscribeUrl = () =>
+  `${config.app.baseUrl}/app/account/privacy`;
+
+/**
+ * Email marketing (opt-in esplicito). Header List-Unsubscribe verso pagina preferenze.
+ */
+export async function sendMarketingEmail(args: SendArgs): Promise<void> {
+  const key = config.email.resendApiKey;
+  const from = config.email.from;
+  const unsub = marketingUnsubscribeUrl();
+  if (!key || !from) {
+    logger.info("Email marketing (mock — configura RESEND_API_KEY e EMAIL_FROM)", {
+      to: redactEmail(args.to),
+      subject: args.subject,
+    });
+    return;
+  }
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [args.to],
+      subject: args.subject,
+      html: args.html,
+      headers: {
+        "List-Unsubscribe": `<${unsub}>`,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    logger.error("Resend marketing error", new Error(text), {
+      status: res.status,
+    });
+    throw new Error(`Invio email marketing fallito: ${res.status}`);
+  }
+}
+
 export function purchaseConfirmedHtml(params: {
   destination: string;
   tripUrl: string;
@@ -230,227 +274,6 @@ export function tripExpiredHtml(params: {
 
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
       EasyTrip — Il tuo itinerario è al sicuro. Puoi riattivare l'accesso in qualsiasi momento.
-    </p>
-  </div>
-  `.trim();
-}
-
-/* ─────────────────────────────────────────────────────────────
-   WAITLIST DRIP — 5 email in 7 giorni
-   ───────────────────────────────────────────────────────────── */
-
-export function waitlistWelcomeHtml(params: { signupUrl: string }): string {
-  void params.signupUrl;
-  return `
-  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <p style="font-size:24px;margin-bottom:4px">👋</p>
-    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Sei dentro. Ti aspettavamo.
-    </h1>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      La tua iscrizione &egrave; confermata. Non c&rsquo;&egrave; nient&rsquo;altro
-      da fare per ora &mdash; nessun link da cliccare, nessun account da creare.
-    </p>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Stiamo costruendo qualcosa che cambier&agrave; il modo in cui pianifichi i tuoi
-      viaggi. Quando sar&agrave; il momento, sarai tra i primi a provarlo.
-    </p>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Nel frattempo, nei prossimi giorni ti racconteremo perch&eacute; lo stiamo
-      costruendo e cosa lo rende diverso da tutto il resto.
-    </p>
-    <p style="font-size:13px;color:#888;margin-top:20px">
-      A domani,<br/>
-      Il team EasyTrip
-    </p>
-    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px;margin-top:24px">
-      Questa &egrave; l&rsquo;unica email di conferma. Niente spam, promesso.
-    </p>
-  </div>
-  `.trim();
-}
-
-export function waitlistValuePropHtml(params: { signupUrl: string }): string {
-  void params.signupUrl;
-  return `
-  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <p style="font-size:24px;margin-bottom:4px">🇵🇹</p>
-    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Come ho pianificato Lisbona in 32 secondi
-    </h1>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      La settimana scorsa abbiamo fatto un test: pianificare un weekend a Lisbona
-      per due persone, stile foodie, budget moderato.
-    </p>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      <strong>Risultato: 32 secondi.</strong> Non minuti. Secondi.
-    </p>
-
-    <div style="margin:20px 0;padding:16px 20px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
-      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#475569">Cosa ha generato l&rsquo;AI:</p>
-      <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:1.8">
-        <li><strong>Giorno 1 mattina:</strong> Pastéis de Belém + Torre de Belém (percorso a piedi ottimizzato)</li>
-        <li><strong>Pranzo:</strong> Cervejaria Ramiro &mdash; &ldquo;Prenota alle 12:30, dopo è coda di 45 min&rdquo;</li>
-        <li><strong>Pomeriggio:</strong> Alfama + Miradouro da Graça (tramonto perfetto alle 18:40)</li>
-        <li><strong>Cena:</strong> Taberna da Rua das Flores &mdash; €18/persona, menu degustazione</li>
-      </ul>
-    </div>
-
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Ogni attivit&agrave; con orari, mappa interattiva, coordinate GPS, consigli
-      pratici (&ldquo;porta scarpe comode per le salite di Alfama&rdquo;) e link per prenotare.
-    </p>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Quanto tempo ci avresti messo tu?
-    </p>
-
-    <p style="font-size:13px;color:#888;margin-top:20px">
-      Domani non ti scrivo. Ci risentiamo tra 2 giorni.
-    </p>
-    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px;margin-top:24px">
-      EasyTrip &mdash; Pianifica meno, vivi di pi&ugrave;.
-    </p>
-  </div>
-  `.trim();
-}
-
-export function waitlistFeaturesHtml(params: { signupUrl: string }): string {
-  void params.signupUrl;
-  return `
-  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <p style="font-size:24px;margin-bottom:4px">🤔</p>
-    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Il problema che TripAdvisor non risolver&agrave; mai
-    </h1>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Hai presente quando cerchi &ldquo;cosa fare a Roma in 3 giorni&rdquo;?
-    </p>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Trovi 47 blog con le stesse 10 attrazioni, nessun ordine logico,
-      zero indicazioni su quanto camminare tra un punto e l&rsquo;altro,
-      e ristoranti consigliati che hanno chiuso 2 anni fa.
-    </p>
-
-    <div style="margin:20px 0;padding:16px 20px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
-      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#dc2626">Il vero problema:</p>
-      <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:1.8">
-        <li>Le guide non sanno che luned&igrave; i musei sono chiusi</li>
-        <li>Non ottimizzano il percorso (zigzag attraverso la citt&agrave;)</li>
-        <li>Non adattano i consigli al TUO stile e budget</li>
-        <li>Non ti aiutano se qualcosa va storto durante il viaggio</li>
-      </ul>
-    </div>
-
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      EasyTrip risolve tutto questo. L&rsquo;AI sa che il Colosseo &egrave; meno
-      affollato il marted&igrave; mattina, che dopo il Pantheon il miglior pranzo
-      &egrave; a 200 metri (non dall&rsquo;altra parte della citt&agrave;), e che
-      se piove il giorno 2, ci sono 3 alternative indoor a 5 minuti a piedi.
-    </p>
-
-    <p style="font-size:14px;line-height:1.6;color:#555;font-weight:600">
-      Non &egrave; un altro blog di viaggio. &Egrave; il tuo assistente personale.
-    </p>
-
-    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px;margin-top:24px">
-      EasyTrip &mdash; Il viaggio intelligente.
-    </p>
-  </div>
-  `.trim();
-}
-
-export function waitlistSocialProofHtml(params: { signupUrl: string }): string {
-  void params.signupUrl;
-  return `
-  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <p style="font-size:24px;margin-bottom:4px">🎁</p>
-    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Invita un amico &rarr; 1 trip gratis
-    </h1>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      I viaggi migliori si fanno in compagnia. E se potessi regalare a un amico
-      la stessa esperienza che stai per scoprire?
-    </p>
-
-    <div style="margin:20px 0;padding:20px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
-      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#16a34a">
-        Come funziona:
-      </p>
-      <ol style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:2">
-        <li>Rispondi a questa email con l&rsquo;email del tuo amico</li>
-        <li>Quando si iscrive alla waitlist, entrambi salite in lista</li>
-        <li>Al lancio: <strong style="color:#16a34a">il tuo primo trip &egrave; gratis</strong></li>
-      </ol>
-    </div>
-
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Nessun codice, nessun link complicato. Basta un&rsquo;email.
-      Pi&ugrave; amici inviti, pi&ugrave; vantaggi ottieni.
-    </p>
-
-    <div style="margin:20px 0;padding:16px 20px;background:#fefce8;border-radius:10px;border:1px solid #fde68a">
-      <p style="margin:0;font-size:13px;color:#854d0e;line-height:1.6">
-        <strong>Perch&eacute; lo facciamo?</strong> Perch&eacute; sappiamo che chi
-        viaggia con amici che usano EasyTrip ha un&rsquo;esperienza 10 volte migliore.
-        E perch&eacute; il passaparola vale pi&ugrave; di qualsiasi pubblicit&agrave;.
-      </p>
-    </div>
-
-    <p style="font-size:13px;color:#888;margin-top:20px">
-      Ci risentiamo tra 2 giorni con l&rsquo;ultima email della serie.
-    </p>
-    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px;margin-top:24px">
-      EasyTrip &mdash; I viaggi migliori si condividono.
-    </p>
-  </div>
-  `.trim();
-}
-
-export function waitlistFinalCtaHtml(params: { signupUrl: string }): string {
-  return `
-  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
-    <p style="font-size:24px;margin-bottom:4px">✈️</p>
-    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Dove vai il prossimo weekend?
-    </h1>
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      &Egrave; passata una settimana. Probabilmente hai gi&agrave; pensato a
-      qualche destinazione, vero?
-    </p>
-
-    <div style="margin:20px 0;padding:16px 20px;background:#f5f3ff;border-radius:10px;border:1px solid #ddd6fe">
-      <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#7c3aed">Idee per iniziare:</p>
-      <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:1.8">
-        <li><strong>Weekend romantico:</strong> Firenze, 2 giorni, stile culturale</li>
-        <li><strong>Avventura con amici:</strong> Barcellona, 4 giorni, stile nightlife</li>
-        <li><strong>Relax in famiglia:</strong> Costiera Amalfitana, 3 giorni, stile panoramico</li>
-        <li><strong>City break veloce:</strong> Amsterdam, 2 giorni, stile foodie</li>
-      </ul>
-    </div>
-
-    <p style="font-size:14px;line-height:1.6;color:#555">
-      Qualunque sia la tua scelta, EasyTrip ti crea l&rsquo;itinerario perfetto
-      in meno di un minuto. Con mappa, ristoranti, orari ottimizzati e assistente
-      GPS per il giorno del viaggio.
-    </p>
-
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 16px">
-      <tr><td>
-        <a href="${params.signupUrl}"
-           style="display:inline-block;padding:14px 32px;background:#7c3aed;color:#fff;
-                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          🚀 Crea il tuo primo viaggio
-        </a>
-      </td></tr>
-    </table>
-    <p style="font-size:13px;color:#777">
-      Bastano 30 secondi. Nessuna carta di credito richiesta per iniziare.
-    </p>
-
-    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px;margin-top:24px">
-      Questa &egrave; l&rsquo;ultima email della serie. Da qui in poi, solo
-      aggiornamenti importanti. Buon viaggio!<br/>
-      EasyTrip &mdash; Il tuo compagno di viaggio AI.
     </p>
   </div>
   `.trim();
@@ -667,6 +490,208 @@ export function referralSignupHtml(params: {
     </p>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
       EasyTrip &mdash; Viaggia di pi&ugrave;, pianifica di meno.
+    </p>
+  </div>
+  `.trim();
+}
+
+export function welcomeEmailHtml(params: {
+  name: string | null;
+  appUrl: string;
+}): string {
+  const greet = params.name?.trim()
+    ? escapeHtml(params.name.trim())
+    : "Ciao";
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <p style="font-size:24px;margin-bottom:4px">👋</p>
+    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
+      Benvenuto in EasyTrip
+    </h1>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      ${greet}, siamo felici di averti qui. EasyTrip trasforma la tua destinazione in un itinerario giorno per giorno,
+      con mappe, ristoranti e consigli su misura.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
+      <tr><td>
+        <a href="${params.appUrl}/app"
+           style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
+                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
+          Apri l&apos;app
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:13px;color:#777">
+      Suggerimento: crea il tuo primo viaggio in pochi secondi dalla dashboard.
+    </p>
+    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
+      EasyTrip
+    </p>
+  </div>
+  `.trim();
+}
+
+export function abandonedCheckoutHtml(params: {
+  destination: string;
+  tripUrl: string;
+}): string {
+  const dest = escapeHtml(params.destination);
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <p style="font-size:24px;margin-bottom:4px">🧳</p>
+    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
+      Il checkout per ${dest} non &egrave; stato completato
+    </h1>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      Il pagamento &egrave; ancora in sospeso. Puoi tornare al viaggio e concludere l&apos;acquisto quando vuoi:
+      l&apos;itinerario AI ti aspetta.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
+      <tr><td>
+        <a href="${params.tripUrl}"
+           style="display:inline-block;padding:12px 28px;background:#ea580c;color:#fff;
+                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
+          Completa il pagamento
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
+      EasyTrip &mdash; Se hai gi&agrave; pagato, ignora questa email.
+    </p>
+  </div>
+  `.trim();
+}
+
+export function nurtureNoTripHtml(params: {
+  phase: 3 | 7;
+  appUrl: string;
+}): string {
+  const title =
+    params.phase === 3
+      ? "Hai già pensato alla prossima destinazione?"
+      : "Ti manca solo un clic per il primo itinerario";
+  const copy =
+    params.phase === 3
+      ? "Sono passati alcuni giorni dalla registrazione: se vuoi, crea il tuo primo viaggio e ricevi un piano giorno per giorno."
+      : "Un weekend, una settimana o una gita fuori porta: EasyTrip organizza tutto in base alle tue date e al tuo stile.";
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <p style="font-size:24px;margin-bottom:4px">✨</p>
+    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
+      ${title}
+    </h1>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      ${copy}
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
+      <tr><td>
+        <a href="${params.appUrl}/app/trips?new=1"
+           style="display:inline-block;padding:12px 28px;background:#7c3aed;color:#fff;
+                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
+          Crea un viaggio
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
+      Hai ricevuto questa email perch&eacute; hai scelto di ricevere comunicazioni da EasyTrip.
+      Puoi cambiare idea in qualsiasi momento: <a href="${marketingUnsubscribeUrl()}">preferenze privacy</a>.
+    </p>
+  </div>
+  `.trim();
+}
+
+export function tripMemberJoinedMemberHtml(params: {
+  destination: string;
+  organizerName: string | null;
+  tripUrl: string;
+}): string {
+  const dest = escapeHtml(params.destination);
+  const org = params.organizerName?.trim()
+    ? escapeHtml(params.organizerName.trim())
+    : "l&apos;organizzatore";
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <p style="font-size:24px;margin-bottom:4px">🤝</p>
+    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
+      Sei nel gruppo: ${dest}
+    </h1>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      ${org} ti ha aggiunto al viaggio. Puoi vedere itinerario e spese condivise nell&apos;app.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
+      <tr><td>
+        <a href="${params.tripUrl}"
+           style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
+                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
+          Apri il viaggio
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
+      EasyTrip
+    </p>
+  </div>
+  `.trim();
+}
+
+export function tripMemberJoinedOrganizerHtml(params: {
+  destination: string;
+  memberEmail: string;
+  tripUrl: string;
+}): string {
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <p style="font-size:24px;margin-bottom:4px">👥</p>
+    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
+      Nuovo membro per ${escapeHtml(params.destination)}
+    </h1>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      <strong>${escapeHtml(params.memberEmail)}</strong> &egrave; entrato nel gruppo del viaggio.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
+      <tr><td>
+        <a href="${params.tripUrl}"
+           style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
+                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
+          Vedi il gruppo
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
+      EasyTrip
+    </p>
+  </div>
+  `.trim();
+}
+
+export function itineraryReadyMemberHtml(params: {
+  destination: string;
+  tripUrl: string;
+  geoScoreLabel: string;
+}): string {
+  return `
+  <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
+    <p style="font-size:24px;margin-bottom:4px">🗺️</p>
+    <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
+      Itinerario pronto &mdash; ${escapeHtml(params.destination)}
+    </h1>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      Il piano del viaggio &egrave; stato generato. Efficienza percorso (stima AI): <strong>${escapeHtml(params.geoScoreLabel)}</strong>
+    </p>
+    <p style="font-size:14px;line-height:1.6;color:#555">
+      Come membro del gruppo puoi consultare giorno per giorno attivit&agrave; e mappa dall&apos;app.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
+      <tr><td>
+        <a href="${params.tripUrl}"
+           style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
+                  font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
+          Apri l&apos;itinerario
+        </a>
+      </td></tr>
+    </table>
+    <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
+      EasyTrip
     </p>
   </div>
   `.trim();

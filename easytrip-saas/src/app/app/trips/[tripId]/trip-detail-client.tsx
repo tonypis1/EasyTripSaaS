@@ -686,6 +686,25 @@ export function TripDetailClient({
           {trip.destination}
         </h1>
 
+        {trip.localPassCityCount > 0 ? (
+          <div className="mt-3 space-y-1.5">
+            <p
+              className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-amber-400/35 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-100 shadow-sm"
+              title="Questo viaggio include l'add-on LocalPass: l'itinerario è stato generato con istruzioni extra per consigli da insider."
+            >
+              <Ticket className="h-3.5 w-3.5 shrink-0 text-amber-300/90" />
+              <span>LocalPass attivo</span>
+              <span className="text-amber-200/75 font-normal">
+                · {trip.localPassCityCount} città
+              </span>
+            </p>
+            <p className="text-et-ink/55 max-w-xl text-xs leading-relaxed">
+              Gemme nascoste, consigli meno turistici e ristoranti con tono più
+              da residente — già inclusi nella generazione di questo viaggio.
+            </p>
+          </div>
+        ) : null}
+
         <div className="text-et-ink/65 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <span>
             {trip.startDate} → {trip.endDate}
@@ -1145,6 +1164,19 @@ export function TripDetailClient({
                     ? "Hai abbastanza crediti per attivare questo viaggio gratuitamente!"
                     : "Completa il pagamento per avviare la creazione del tuo itinerario personalizzato."}
                 </p>
+
+                {trip.localPassCityCount > 0 ? (
+                  <p className="border-et-accent/20 bg-et-accent/8 text-et-accent/90 mt-3 flex items-start gap-2 rounded-xl border px-3 py-2 text-xs leading-relaxed">
+                    <Ticket className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      Nel prezzo è incluso{" "}
+                      <strong className="text-et-accent">
+                        LocalPass ({trip.localPassCityCount} città)
+                      </strong>
+                      : consigli da insider e tono più locale nell&apos;itinerario.
+                    </span>
+                  </p>
+                ) : null}
 
                 {hasCredit ? (
                   <div className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-500/8 p-4">
@@ -2272,13 +2304,17 @@ export function TripDetailClient({
                   <button
                     type="button"
                     onClick={() => {
-                      posthog.capture("support_chat_opened", {
-                        tripId: trip.id,
-                        destination: trip.destination,
-                      });
                       openCrispChat(
                         `Ciao! Ho bisogno di aiuto con il mio viaggio a ${trip.destination} (ID: ${trip.id})`,
                       );
+                      try {
+                        posthog.capture("support_chat_opened", {
+                          tripId: trip.id,
+                          destination: trip.destination,
+                        });
+                      } catch {
+                        // analytics non deve bloccare l’apertura chat
+                      }
                     }}
                     className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-purple-500/15 px-5 py-2.5 text-sm font-semibold text-purple-300 transition-colors duration-200 hover:bg-purple-500/25"
                   >

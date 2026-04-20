@@ -27,4 +27,14 @@ export class UserRepository {
       where: { clerkUserId },
     });
   }
+
+  async updateMarketingOptIn(userId: string, marketingOptIn: boolean) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        marketingOptIn,
+        marketingOptInAt: marketingOptIn ? new Date() : null,
+      },
+    });
+  }
 }

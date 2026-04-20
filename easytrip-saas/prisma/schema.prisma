@@ -30,6 +30,11 @@ enum PaymentType {
   reactivate  // riattivazione accesso post-trip (€2,90)
 }
 
+enum WebhookProvider {
+  stripe
+  clerk
+}
+
 // ========== MODELLI ==========
 // RoPA: commenti `/// purpose:` e `/// retention:` alimentano `npm run privacy:ropa`
 
@@ -47,6 +52,12 @@ model User {
   subExpiresAt      DateTime? @map("sub_expires_at")
   stripeCustomerId  String?   @map("stripe_customer_id")
   totalTrips        Int       @default(0) @map("total_trips")
+  /// Consenso email marketing (nurture, promemoria commerciali). Default false (opt-in esplicito).
+  marketingOptIn    Boolean   @default(false) @map("marketing_opt_in")
+  marketingOptInAt  DateTime? @map("marketing_opt_in_at")
+  welcomeEmailSentAt DateTime? @map("welcome_email_sent_at")
+  nurtureNoTrip3SentAt DateTime? @map("nurture_no_trip_3_sent_at")
+  nurtureNoTrip7SentAt DateTime? @map("nurture_no_trip_7_sent_at")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -76,6 +87,8 @@ model Trip {
   currentVersion  Int        @default(1) @map("current_version") // carosello
   usedZones       String?   @map("used_zones") // zone_focus concatenate per rigenera
   prefChangedAfterGen Boolean @default(false) @map("pref_changed_after_gen")
+  /// Add-on LocalPass: numero di città coperte (€3,99/città in checkout).
+  localPassCityCount Int      @default(0) @map("local_pass_city_count")
   inviteToken     String?   @unique @map("invite_token") // token unico per link invito gruppo
   paymentId       String?   @map("payment_id") // Stripe payment/session
   amountPaid      Decimal?  @map("amount_paid") @db.Decimal(10, 2)
@@ -241,19 +254,6 @@ model SupportMessage {
   @@map("support_message")
 }
 
-// ========== WAITLIST ==========
-
-/// purpose: notifiche marketing waitlist (email)
-/// retention: fino a cancellazione o opt-out; coerente con finalità raccolta
-model WaitlistEntry {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  dripSent  Int      @default(0) @map("drip_sent")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("waitlist_entry")
-}
-
 // ========== REFERRAL ==========
 
 enum ReferralStatus {
@@ -279,6 +279,17 @@ model Referral {
 
   @@unique([referrerId, referredEmail])
   @@map("referral")
+}
+
+/// Dedup webhook (Stripe event id, Clerk svix id) per idempotenza invii email.
+model WebhookDelivery {
+  id         String          @id @default(cuid())
+  provider   WebhookProvider @map("provider")
+  externalId String          @map("external_id")
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@unique([provider, externalId])
+  @@map("webhook_delivery")
 }
 
 // --- Nota GDPR: finalità e tempi di conservazione per modello sono documentati con /// sopra ogni model. ---

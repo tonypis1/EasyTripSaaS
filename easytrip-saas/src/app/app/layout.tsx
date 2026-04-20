@@ -28,6 +28,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             >
               Invita amici
             </Link>
+            <Link
+              href="/app/account/privacy"
+              className="text-et-ink/65 hover:text-et-accent text-sm transition-colors duration-200"
+            >
+              Privacy
+            </Link>
             <UserButtonClient />
           </nav>
         </div>

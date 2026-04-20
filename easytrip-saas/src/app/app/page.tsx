@@ -12,8 +12,7 @@ export default function AppHomePage() {
         </h1>
       </div>
       <p className="text-et-ink/70 max-w-xl text-base leading-relaxed">
-        Crea un viaggio, completa il pagamento (o in sviluppo usa la scorciatoia
-        senza Stripe), attendi la generazione e consulta i giorni con sblocco
+        Crea un viaggio, completa il pagamento, attendi la generazione e consulta i giorni con sblocco
         progressivo.
       </p>
       <Link

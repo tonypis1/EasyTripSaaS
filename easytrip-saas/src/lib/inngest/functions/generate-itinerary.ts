@@ -15,6 +15,7 @@ import {
 } from "@/lib/itinerary-model-schema";
 import {
   itineraryReadyHtml,
+  itineraryReadyMemberHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
@@ -31,6 +32,7 @@ type TripSnapshot = {
   budgetLevel: string;
   regenCount: number;
   usedZones: string | null;
+  localPassCityCount: number;
 };
 
 function buildSystemPrompt(): string {
@@ -74,6 +76,7 @@ function buildUserPrompt(args: {
   numDays: number;
   dayCalendar: string;
   usedZones: string | null;
+  localPassCityCount: number;
 }): string {
   const usedBlock =
     args.usedZones && args.usedZones.trim().length > 0
@@ -84,6 +87,13 @@ ${args.usedZones}
 `
       : "";
 
+  const localPassBlock =
+    args.localPassCityCount > 0
+      ? `
+SEZIONE — LOCALPASS (add-on attivo)
+L'utente ha acquistato LocalPass per ${args.localPassCityCount} città (o altrettanti contesti urbani distinti da valorizzare nel viaggio). Privilegia consigli da insider, luoghi curati, gemme poco note e ristoranti dove vanno i residenti; evita cliché turistici e trappole per visitatori. Rafforza "localGem", i consigli giornalieri ("tips") e le scelte tra i ristoranti in questo senso.
+`
+      : "";
   const budgetInstruction =
     BUDGET_PROMPT_MAP[args.budgetLevel] ?? BUDGET_PROMPT_MAP.moderate;
 
@@ -105,6 +115,7 @@ ${args.dayCalendar}
 SEZIONE — ISTRUZIONI BUDGET
 ${budgetInstruction}
 ${usedBlock}
+${localPassBlock}
 
 SEZIONE — OUTPUT ATTESO
 Rispondi con un unico oggetto JSON con:
@@ -232,6 +243,7 @@ export const generateItinerary = inngest.createFunction(
           budgetLevel: t.budgetLevel ?? "moderate",
           regenCount: t.regenCount ?? 0,
           usedZones: t.usedZones,
+          localPassCityCount: (t as { localPassCityCount?: number }).localPassCityCount ?? 0,
         };
       },
     );
@@ -256,6 +268,7 @@ export const generateItinerary = inngest.createFunction(
           numDays,
           dayCalendar: buildDayCalendar(startDate, numDays),
           usedZones: trip.usedZones,
+          localPassCityCount: trip.localPassCityCount,
         });
 
         const maxAttempts = 3;
@@ -397,7 +410,13 @@ export const generateItinerary = inngest.createFunction(
     await step.run("email-itinerario-pronto", async () => {
       const full = await prisma.trip.findUnique({
         where: { id: trip.id },
-        include: { organizer: { select: { email: true } } },
+        include: {
+          organizer: { select: { email: true } },
+          members: {
+            where: { role: "member" },
+            include: { user: { select: { email: true } } },
+          },
+        },
       });
       if (!full?.organizer?.email) return;
 
@@ -413,6 +432,24 @@ export const generateItinerary = inngest.createFunction(
           geoScoreLabel: label,
         }),
       });
+
+      for (const m of full.members) {
+        const em = m.user.email?.trim();
+        if (!em || em === full.organizer.email) continue;
+        try {
+          await sendTransactionalEmail({
+            to: em,
+            subject: `Itinerario pronto — ${full.destination}`,
+            html: itineraryReadyMemberHtml({
+              destination: full.destination,
+              tripUrl,
+              geoScoreLabel: label,
+            }),
+          });
+        } catch {
+          /* best-effort */
+        }
+      }
     });
 
     return { tripId: trip.id, ...result };

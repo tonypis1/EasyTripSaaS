@@ -30,6 +30,7 @@ export function CreateTripForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [budgetLevel, setBudgetLevel] = useState<BudgetLevel>("moderate");
+  const [localPassCities, setLocalPassCities] = useState(0);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,6 +55,7 @@ export function CreateTripForm() {
           endDate,
           tripType,
           budgetLevel,
+          localPassCityCount: Math.min(30, Math.max(0, localPassCities)),
           ...(styleRaw.length >= 2 ? { style: styleRaw } : {}),
         }),
       });
@@ -81,6 +83,7 @@ export function CreateTripForm() {
 
   return (
     <form
+      id="create-trip-form"
       onSubmit={onSubmit}
       className="border-et-border bg-et-card space-y-4 rounded-2xl border p-6"
     >
@@ -205,6 +208,32 @@ export function CreateTripForm() {
             {BUDGET_OPTIONS.find((o) => o.value === budgetLevel)?.hint}
           </p>
         </fieldset>
+
+        <div className="sm:col-span-2">
+          <label
+            htmlFor="localPassCityCount"
+            className="text-et-accent/88 block text-xs font-semibold tracking-wider uppercase"
+          >
+            LocalPass (opzionale)
+          </label>
+          <p className="text-et-ink/50 mt-1 text-xs leading-relaxed">
+            Aggiungi €3,99 per ogni città in cui vuoi consigli da insider, gemme nascoste e suggerimenti non turistici (LocalPass).
+          </p>
+          <input
+            id="localPassCityCount"
+            name="localPassCityCount"
+            type="number"
+            min={0}
+            max={30}
+            value={localPassCities}
+            onChange={(e) =>
+              setLocalPassCities(
+                Math.min(30, Math.max(0, Number.parseInt(e.target.value || "0", 10) || 0)),
+              )
+            }
+            className="border-et-border bg-et-deep text-et-ink focus:border-et-accent/50 mt-1.5 w-full max-w-[120px] rounded-xl border px-3 py-2.5 text-sm outline-none"
+          />
+        </div>
       </div>
 
       {error ? (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Ticket } from "lucide-react";
 import { fetchTripsForDashboard } from "@/lib/trips-data";
 import { CreateTripForm } from "./create-trip-form";
 import { DeleteTripButton } from "./delete-trip-button";
@@ -22,7 +23,7 @@ export default async function TripsPage() {
           I miei viaggi
         </h1>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Crea un viaggio, paga (o usa la scorciatoia dev), poi segui la
+          Crea un viaggio, completa il pagamento, poi segui la
           generazione e lo sblocco giorno per giorno.
         </p>
       </div>
@@ -70,6 +71,18 @@ export default async function TripsPage() {
                         Da pagare
                       </span>
                     )}
+                    {t.localPassCityCount > 0 ? (
+                      <span
+                        className="border-amber-400/35 bg-amber-500/10 text-amber-100/95 inline-flex items-center gap-1 rounded-full border px-2 py-0.5"
+                        title="LocalPass attivo su questo viaggio"
+                      >
+                        <Ticket
+                          className="h-3 w-3 shrink-0 opacity-90"
+                          aria-hidden
+                        />
+                        LocalPass · {t.localPassCityCount}
+                      </span>
+                    ) : null}
                     {t.activeDays > 0 ? (
                       <span className="border-et-border text-et-ink/55 rounded-full border px-2 py-0.5">
                         {t.activeDays} giorni in bozza

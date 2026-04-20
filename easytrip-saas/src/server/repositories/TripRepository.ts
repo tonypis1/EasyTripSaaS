@@ -27,6 +27,7 @@ export class TripRepository {
         tripType: input.tripType,
         style: input.style,
         budgetLevel: input.budgetLevel ?? "moderate",
+        localPassCityCount: input.localPassCityCount ?? 0,
         status: "pending",
         inviteToken: isGroup ? generateToken() : null,
         members: {
@@ -47,6 +48,32 @@ export class TripRepository {
         versions: {
           where: { isActive: true },
           include: { days: true },
+        },
+      },
+    });
+  }
+
+  /** Home dashboard: ultimi trip con tutte le versioni (carosello). */
+  async listRecentForDashboard(organizerId: string, take = 5) {
+    return prisma.trip.findMany({
+      where: { organizerId, deletedAt: null },
+      orderBy: { updatedAt: "desc" },
+      take,
+      select: {
+        id: true,
+        destination: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        currentVersion: true,
+        versions: {
+          orderBy: { versionNum: "asc" },
+          select: {
+            versionNum: true,
+            isActive: true,
+            generatedAt: true,
+            geoScore: true,
+          },
         },
       },
     });

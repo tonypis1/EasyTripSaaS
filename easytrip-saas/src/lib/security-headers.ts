@@ -1,6 +1,6 @@
 /**
  * Valori per Content-Security-Policy e header complementari (OWASP).
- * Aggiornare quando si aggiungono nuovi script/domini di terze parti (Clerk, PostHog, Crisp, mappe).
+ * Aggiornare quando si aggiungono nuovi script/domini di terze parti (Clerk, Turnstile/CAPTCHA, PostHog, Crisp, mappe).
  *
  * Nota: Next.js usa script inline per l’idratazione; in molti setup restano necessari
  * 'unsafe-inline' / 'unsafe-eval' — per restringere ulteriormente usare nonce via middleware.
@@ -18,32 +18,45 @@ export const CONTENT_SECURITY_POLICY = [
     "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
     "https://clerk.browser.com",
-    "https://client.crisp.chat",
+    "https://challenges.cloudflare.com",
+    // Crisp: https://docs.crisp.chat/guides/others/whitelisting-our-systems/crisp-domain-names/
+    "https://*.crisp.chat",
     "https://eu-assets.i.posthog.com",
     "https://us-assets.i.posthog.com",
   ].join(" "),
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
+  [
+    "style-src 'self' 'unsafe-inline'",
+    "https://fonts.googleapis.com",
+    "https://challenges.cloudflare.com",
+    "https://*.crisp.chat",
+  ].join(" "),
+  [
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "https://*.crisp.chat",
+  ].join(" "),
   "img-src 'self' data: blob: https: https://*.basemaps.cartocdn.com",
+  "media-src 'self' blob: https://*.crisp.chat",
   [
     "connect-src 'self'",
     "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
     "https://clerk-telemetry.com",
+    "https://challenges.cloudflare.com",
     "https://eu.i.posthog.com",
     "https://eu.posthog.com",
     "https://us.i.posthog.com",
-    "https://client.crisp.chat",
-    "wss://client.relay.crisp.chat",
-    "wss://stream.relay.crisp.chat",
+    "https://*.crisp.chat",
+    "wss://*.relay.crisp.chat",
+    "wss://*.relay.rescue.crisp.chat",
     "https://*.basemaps.cartocdn.com",
   ].join(" "),
-  "worker-src 'self' blob:",
+  // Crisp widget: worker da sottodominio crisp poi eseguito in blob:
+  "worker-src 'self' blob: https://*.crisp.chat",
   [
     "frame-src 'self'",
     "https://*.clerk.accounts.dev",
     "https://challenges.cloudflare.com",
-    "https://game.crisp.chat",
+    "https://*.crisp.chat",
   ].join(" "),
 ].join("; ");
 

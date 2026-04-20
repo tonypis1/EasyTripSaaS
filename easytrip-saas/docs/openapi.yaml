@@ -2,16 +2,26 @@ openapi: 3.0.3
 info:
   title: EasyTrip API
   description: |
-    REST API dell'app EasyTrip (Next.js App Router). Le route vivono sotto `/api`.
-    Autenticazione: la maggior parte delle route richiede sessione Clerk (cookie o header secondo configurazione `@clerk/nextjs`).
-    Eccezioni pubbliche o semi-pubbliche: webhook Stripe, join con token, waitlist, alcune GET di invito.
-  version: 1.0.0
+    Contratto REST dell'applicazione EasyTrip (Next.js App Router). Tutte le route sono sotto il prefisso `/api`.
+
+    **Autenticazione:** la maggior parte degli endpoint richiede una sessione Clerk (cookie `__session` o Bearer secondo documentazione Clerk).
+
+    **Eccezioni tipiche:** `POST /api/webhooks/stripe` (firma `Stripe-Signature`); `GET /api/join/{token}` (token path); rate limit opzionale Upstash su alcune route (risposta `429`).
+
+    **Documentazione narrativa e inventario allineato al codice:** vedere `architecture-docs/04_API_SPECIFICATION.md` (riferimento incrociato con questo file).
+
+    **Nota:** non sono esposte Server Actions; le mutazioni avvengono tramite questi Route Handler.
+  version: 1.1.0
   contact:
     name: EasyTrip
 
+externalDocs:
+  description: Specifica API (route handlers, assenza Server Actions, tabella inventario)
+  url: ../architecture-docs/04_API_SPECIFICATION.md
+
 servers:
   - url: /
-    description: Origine dell'applicazione (produzione attuale su Vercel, https://easytripsaas.vercel.app)
+    description: Origine dell'applicazione (es. produzione Vercel)
 
 tags:
   - name: trips
@@ -24,12 +34,12 @@ tags:
     description: Ticket di supporto
   - name: referral
     description: Programma referral
-  - name: waitlist
-    description: Iscrizione waitlist
   - name: webhooks
     description: Webhook esterni (Stripe)
   - name: inngest
     description: Endpoint Inngest (sync funzioni, non per client finali)
+  - name: user
+    description: Privacy e account (export dati, cancellazione)
 
 paths:
   /api/trips:
@@ -40,6 +50,19 @@ paths:
       responses:
         "200":
           description: Lista trip
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, data]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TripListItem"
         "401":
           description: Non autenticato
     post:
@@ -90,14 +113,21 @@ paths:
     post:
       tags: [trips]
       summary: Richiede generazione itinerario (Inngest + Anthropic)
+      description: |
+        Rate limit applicato se configurato Upstash Redis (chiave per utente e trip).
+        Body della richiesta vuoto; logica in `TripController.requestGeneration`.
       security: [{ clerkSession: [] }]
       responses:
         "202":
           description: Generazione avviata o in coda
+        "401":
+          description: Non autenticato
         "402":
           description: Pagamento richiesto (produzione)
         "403":
           description: Non autorizzato
+        "429":
+          description: Troppe richieste (rate limit)
 
   /api/trips/{tripId}/preferences:
     parameters:
@@ -116,6 +146,8 @@ paths:
           description: Aggiornato
         "400":
           description: Validazione fallita
+        "401":
+          description: Non autenticato
 
   /api/trips/{tripId}/active-version:
     parameters:
@@ -398,30 +430,6 @@ paths:
         "200":
           description: Tracciato
 
-  /api/waitlist:
-    post:
-      tags: [waitlist]
-      summary: Iscrizione email waitlist
-      description: |
-        Il form della landing invia `multipart/form-data` o `application/x-www-form-urlencoded` con campo `email`.
-        Risposta tipica redirect HTTP verso `/` con query `waitlist=ok` o `waitlist=error`.
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [email]
-              properties:
-                email:
-                  type: string
-                  format: email
-      responses:
-        "302":
-          description: Redirect verso homepage con esito in query string
-        "400":
-          description: Email non valida
-
   /api/inngest:
     get:
       tags: [inngest]
@@ -441,6 +449,39 @@ paths:
       responses:
         "200":
           description: OK
+
+  /api/user/data-export:
+    get:
+      tags: [user]
+      summary: Esportazione dati personali (GDPR-style)
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Payload export (formato definito da UserDataService)
+        "401":
+          description: Non autenticato
+
+  /api/user/delete-account:
+    post:
+      tags: [user]
+      summary: Cancellazione account definitiva
+      description: |
+        Richiede conferma esplicita nel body JSON con la frase costante `DELETE_MY_ACCOUNT`
+        (vedi implementazione `src/app/api/user/delete-account/route.ts`).
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteAccountBody"
+      responses:
+        "200":
+          description: Account eliminato o processo completato
+        "400":
+          description: JSON non valido o conferma mancante
+        "401":
+          description: Non autenticato
 
 components:
   securitySchemes:
@@ -486,6 +527,79 @@ components:
           type: string
           enum: [economy, moderate, premium]
           default: moderate
+        localPassCityCount:
+          type: integer
+          minimum: 0
+          maximum: 30
+          default: 0
+          description: Add-on LocalPass — numero di città coperte (prezzo in checkout)
+
+    TripListItem:
+      type: object
+      description: Elemento dell'elenco restituito da GET /api/trips (viaggi propri e condivisi come membro)
+      required:
+        - id
+        - destination
+        - tripType
+        - status
+        - startDate
+        - endDate
+        - accessExpiresAt
+        - regenCount
+        - currentVersion
+        - activeDays
+        - isPaid
+        - localPassCityCount
+      properties:
+        id:
+          type: string
+          description: ID Prisma (cuid) del viaggio
+        destination:
+          type: string
+        tripType:
+          type: string
+          enum: [solo, coppia, gruppo]
+        status:
+          type: string
+          description: Stato workflow (es. pending, active, expired, cancelled)
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        accessExpiresAt:
+          type: string
+          format: date-time
+        regenCount:
+          type: integer
+          minimum: 0
+        currentVersion:
+          type: integer
+          minimum: 1
+        activeDays:
+          type: integer
+          minimum: 0
+          description: Numero di giorni nella versione attiva dell'itinerario (0 se non ancora generato)
+        isPaid:
+          type: boolean
+          description: true se il viaggio risulta pagato (`amountPaid` valorizzato)
+        localPassCityCount:
+          type: integer
+          minimum: 0
+          maximum: 30
+          description: |
+            Add-on LocalPass per questo viaggio: numero di città scelte in creazione (0 = assente).
+            Stesso significato del campo omonimo nel dettaglio trip; incluso in lista per badge UI e client API.
+
+    DeleteAccountBody:
+      type: object
+      required: [confirm]
+      properties:
+        confirm:
+          type: string
+          enum: [DELETE_MY_ACCOUNT]
+          description: Deve essere esattamente DELETE_MY_ACCOUNT per confermare la cancellazione
 
     UpdatePreferencesBody:
       type: object

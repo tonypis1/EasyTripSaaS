@@ -7,7 +7,7 @@ const envSchema = z.object({
   /**
    * URL pubblico dell’app (redirect Stripe Checkout, link email/Inngest/referral).
    * Locale: `http://localhost:3000`. Produzione Vercel attuale: `https://easytripsaas.vercel.app`
-   * (impostare in Vercel → Environment Variables). Dominio personalizzato: vedi `docs/CUSTOM_DOMAIN.md`.
+   * (impostare in Vercel → Environment Variables). Dominio personalizzato: vedi `architecture-docs/12_DEPLOYMENT.md`.
    */
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 
@@ -15,6 +15,8 @@ const envSchema = z.object({
 
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
   CLERK_SECRET_KEY: z.string().min(1),
+  /** Signing secret del webhook Clerk (Dashboard → Webhooks). Opzionale: senza, /api/webhooks/clerk risponde 503. */
+  CLERK_WEBHOOK_SIGNING_SECRET: z.string().min(1).optional(),
 
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
@@ -32,6 +34,14 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(290),
+  /** Add-on LocalPass per città (default €3,99). */
+  STRIPE_PRICE_LOCALPASS_CENTS: z.coerce.number().int().nonnegative().default(399),
+
+  /**
+   * Price ID Stripe dell'abbonamento mensile (se impostato, il webhook subscription
+   * aggiorna il piano solo per questo prodotto).
+   */
+  STRIPE_SUBSCRIPTION_PRICE_ID: z.string().optional(),
 
   /** Resend.com — opzionale; se assente le email transazionali sono solo loggate in dev. */
   RESEND_API_KEY: z.string().optional(),
@@ -43,8 +53,6 @@ const envSchema = z.object({
    */
   ANTHROPIC_MODEL: z.string().min(1).optional(),
 
-  WAITLIST_INITIAL_COUNT: z.coerce.number().int().nonnegative().default(847),
-  WAITLIST_CAPACITY: z.coerce.number().int().positive().default(200),
 
   /** Giorni dopo cui eliminare versioni itinerario non attive (solo storico carosello). */
   RETENTION_INACTIVE_TRIP_VERSION_DAYS: z.coerce
@@ -70,8 +78,7 @@ if (!parsed.success) {
       errors?.length ? [`${key}: ${errors.join(", ")}`] : [],
     ),
   ];
-  const detail =
-    parts.length > 0 ? parts.join("; ") : parsed.error.message;
+  const detail = parts.length > 0 ? parts.join("; ") : parsed.error.message;
   throw new Error(
     `Invalid environment configuration. ${detail} (Set these in Vercel: Project → Settings → Environment Variables.)`,
   );
@@ -90,6 +97,7 @@ export const config = {
   auth: {
     clerkPublishableKey: env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     clerkSecretKey: env.CLERK_SECRET_KEY,
+    clerkWebhookSigningSecret: env.CLERK_WEBHOOK_SIGNING_SECRET ?? null,
   },
   billing: {
     stripeSecretKey: env.STRIPE_SECRET_KEY,
@@ -98,6 +106,9 @@ export const config = {
     priceGroupCents: env.STRIPE_PRICE_GROUP_CENTS,
     priceRegenCents: env.STRIPE_PRICE_REGEN_CENTS,
     priceReactivateCents: env.STRIPE_PRICE_REACTIVATE_CENTS,
+    priceLocalPassCents: env.STRIPE_PRICE_LOCALPASS_CENTS,
+    /** Abbonamento SaaS (opzionale). */
+    stripeSubscriptionPriceId: env.STRIPE_SUBSCRIPTION_PRICE_ID ?? null,
     currency: "eur" as const,
   },
   email: {
@@ -108,10 +119,6 @@ export const config = {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
     /** Default: Sonnet 4 (sostituisce snapshot 3.5 spesso deprecati / non trovati). */
     anthropicModel: env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
-  },
-  waitlist: {
-    initialCount: env.WAITLIST_INITIAL_COUNT,
-    capacity: env.WAITLIST_CAPACITY,
   },
   retention: {
     inactiveTripVersionDays: env.RETENTION_INACTIVE_TRIP_VERSION_DAYS,

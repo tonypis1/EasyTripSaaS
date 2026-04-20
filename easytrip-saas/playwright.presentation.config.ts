@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config as loadEnv } from "dotenv";
+import path from "path";
+
+loadEnv({ path: path.join(process.cwd(), ".env.local") });
+loadEnv({ path: path.join(process.cwd(), ".env") });
 
 /**
  * Solo test screenshot per presentation.html.
@@ -15,15 +20,16 @@ export default defineConfig({
   testMatch: "**/presentation-screenshots.spec.ts",
   reporter: [["list"]],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    // Allineato a `next dev` (Local: http://localhost:3000) per evitare mismatch cookie con 127.0.0.1.
+    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     trace: "off",
     viewport: { width: 1440, height: 900 },
   },
   webServer: {
     command: "npm run dev",
-    url: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    url: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     reuseExistingServer: true,
-    timeout: 120000,
+    timeout: 180_000,
   },
   projects: [
     {
