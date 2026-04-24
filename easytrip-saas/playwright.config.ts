@@ -14,13 +14,16 @@ const devServerEnv = {
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@127.0.0.1:5432/e2e_smoke_ci",
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "pk_test_e2e_smoke_placeholder",
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
+    "pk_test_e2e_smoke_placeholder",
   CLERK_SECRET_KEY:
-    process.env.CLERK_SECRET_KEY ?? "sk_test_e2e_smoke_placeholder_min_32________",
+    process.env.CLERK_SECRET_KEY ??
+    "sk_test_e2e_smoke_placeholder_min_32________",
   STRIPE_SECRET_KEY:
     process.env.STRIPE_SECRET_KEY ?? "sk_test_e2e_smoke_placeholder_32ch______",
   STRIPE_WEBHOOK_SECRET:
-    process.env.STRIPE_WEBHOOK_SECRET ?? "whsec_e2e_smoke_ci_placeholder_32b___",
+    process.env.STRIPE_WEBHOOK_SECRET ??
+    "whsec_e2e_smoke_ci_placeholder_32b___",
   ANTHROPIC_API_KEY:
     process.env.ANTHROPIC_API_KEY ??
     "sk-ant-api03-e2e-smoke-not-used-0000000000000000",
