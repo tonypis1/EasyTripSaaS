@@ -24,7 +24,7 @@ npm run test:e2e     # Playwright E2E
 npm run inngest:dev  # Inngest dev server (vedi package.json)
 ```
 
-**CI su GitHub:** vedi [`docs/DEPLOYMENT.md`](../easytrip-saas/docs/DEPLOYMENT.md) (sezione CI) — workflow `.github/workflows/ci.yml`.
+**CI su GitHub:** vedi [`docs/DEPLOYMENT.md`](../easytrip-saas/docs/DEPLOYMENT.md) (sezione CI) — workflow `.github/workflows/main.yml`.
 
 ## File Locations (in `easytrip-saas/`)
 

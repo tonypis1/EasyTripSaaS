@@ -1,82 +1,53 @@
+import { useTranslations } from "next-intl";
 import { SectionContainer } from "./section-container";
 import { SignupCtaButton } from "./signup-cta";
 
-type Plan = {
-  name: string;
-  badge: string;
-  priceDisplay: string;
-  desc: string;
-  features: string[];
-  cta: string;
-};
+type PlanKey = "solo" | "group" | "frequent";
 
-const PLANS: Plan[] = [
-  {
-    name: "Trip Solo / Coppia",
-    badge: "Core",
-    priceDisplay: "€9,99/viaggio",
-    desc: "TripGenius base, 1–2 persone.",
-    features: [
-      "Sblocco progressivo giornaliero",
-      "Itinerario ottimizzato geograficamente",
-      "Ristoranti locali + gemme nascoste",
-      "Rigenera: 3 gratis → 7 max → carosello",
-    ],
-    cta: "Registrati e crea un viaggio →",
-  },
-  {
-    name: "Trip Gruppo (3–5 persone)",
-    badge: "PackedUp",
-    priceDisplay: "€14,99/viaggio",
-    desc: "TripGenius + PackedUp. Gruppo che già divide le spese.",
-    features: [
-      "Itinerario condiviso",
-      "Split spese automatico",
-      "Chat di viaggio integrata",
-      "Ogni membro vede lo stesso sblocco",
-    ],
-    cta: "Crea account e organizza il gruppo →",
-  },
-  {
-    name: "Viaggiatore frequente",
-    badge: "Abbonamento",
-    priceDisplay: "€14,99/mese",
-    desc: "Trip illimitati solo/coppia per 1 mese.",
-    features: [
-      "Ideale se viaggi spesso",
-      "Meno tempo a riprogettare",
-      "Coerente con i prezzi mostrati in checkout",
-      "Add-on LocalPass: +€3,99 per città (insider, gemme nascoste)",
-    ],
-    cta: "Registrati e scopri i piani →",
-  },
-];
+const PLAN_KEYS: PlanKey[] = ["solo", "group", "frequent"];
 
 export function PricingSection() {
+  const t = useTranslations("home.pricing");
+
+  const plans = PLAN_KEYS.map((key) => ({
+    key,
+    name: t(`plans.${key}.name`),
+    badge: t(`plans.${key}.badge`),
+    priceDisplay: t(`plans.${key}.priceDisplay`),
+    desc: t(`plans.${key}.desc`),
+    features: [
+      t(`plans.${key}.feature1`),
+      t(`plans.${key}.feature2`),
+      t(`plans.${key}.feature3`),
+      t(`plans.${key}.feature4`),
+    ],
+    cta: t(`plans.${key}.cta`),
+  }));
+
   return (
     <SectionContainer className="border-et-border bg-et-raised border-y">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
-            02 — Prezzi chiari
+            {t("eyebrow")}
           </p>
           <h2 className="font-display mt-3 text-3xl leading-tight font-normal tracking-[-0.02em] sm:text-4xl">
-            Prezzo semplice. Valore immediato.
+            {t("title")}
           </h2>
           <p
             className={`text-et-ink/70 mt-3 max-w-xl text-base leading-relaxed`}
           >
-            Paghi per viaggio o scegli abbonamento.
+            {t("subtitle")}
           </p>
         </div>
       </div>
 
       <div id="prezzi" className="mt-10 grid gap-6 lg:grid-cols-3">
-        {PLANS.map((plan, idx) => {
+        {plans.map((plan, idx) => {
           const highlighted = idx === 0;
           return (
             <div
-              key={plan.name}
+              key={plan.key}
               className={`relative rounded-3xl border p-6 ${
                 highlighted
                   ? "border-et-accent/30 bg-et-accent/10"
@@ -123,8 +94,7 @@ export function PricingSection() {
 
               {highlighted ? (
                 <div className="border-et-border text-et-ink/60 mt-4 rounded-2xl border bg-black/20 p-3 text-xs">
-                  3 gratis → 7 max → carosello: rigenera senza ansia, con un
-                  limite chiaro.
+                  {t("plans.solo.highlightFooter")}
                 </div>
               ) : null}
             </div>
@@ -133,15 +103,17 @@ export function PricingSection() {
       </div>
 
       <div className="border-et-border bg-et-card mt-6 rounded-3xl border p-5">
-        <p className="text-et-ink/90 text-sm font-semibold">In più (Premium)</p>
+        <p className="text-et-ink/90 text-sm font-semibold">
+          {t("addon.title")}
+        </p>
         <p className="text-et-ink/70 mt-2 text-sm">
-          Qualsiasi piano +{" "}
-          <span className="text-et-accent/88">€3,99 add-on per città</span> con
-          LocalPass: luoghi curati da insider locali, gemme nascoste e consigli
-          non turistici.
+          {t.rich("addon.body", {
+            accent: (chunks) => (
+              <span className="text-et-accent/88">{chunks}</span>
+            ),
+          })}
         </p>
       </div>
     </SectionContainer>
   );
 }
-

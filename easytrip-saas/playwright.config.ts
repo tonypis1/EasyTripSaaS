@@ -15,6 +15,10 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     viewport: { width: 1440, height: 900 },
+    locale: "it-IT",
+    extraHTTPHeaders: {
+      "Accept-Language": "it-IT,it;q=0.9",
+    },
   },
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? undefined

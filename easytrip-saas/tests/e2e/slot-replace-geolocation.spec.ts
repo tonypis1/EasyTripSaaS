@@ -18,7 +18,7 @@ test.describe("slot replace with geolocation", () => {
   });
 
   test("trip detail loads with geo permission", async ({ page }) => {
-    await page.goto(`/app/trips/${tripId}`);
+    await page.goto(`/it/app/trips/${tripId}`);
     await expect(page.locator("body")).toBeVisible();
   });
 });

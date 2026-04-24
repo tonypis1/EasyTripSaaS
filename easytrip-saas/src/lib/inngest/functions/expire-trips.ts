@@ -6,6 +6,10 @@ import {
   sendTransactionalEmail,
   tripExpiredHtml,
 } from "@/lib/email/transactional";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 
 /**
  * Cron job giornaliero (02:00 UTC).
@@ -33,7 +37,7 @@ export const expireTrips = inngest.createFunction(
         select: {
           id: true,
           destination: true,
-          organizer: { select: { email: true } },
+          organizer: { select: { email: true, language: true } },
         },
       });
 
@@ -48,6 +52,7 @@ export const expireTrips = inngest.createFunction(
         tripId: t.id,
         destination: t.destination,
         email: t.organizer.email,
+        language: t.organizer.language,
       }));
     });
 
@@ -61,14 +66,16 @@ export const expireTrips = inngest.createFunction(
 
       for (const t of expired) {
         const tripUrl = `${baseUrl}/app/trips/${t.tripId}`;
+        const locale = normalizeEmailLocale(t.language);
         try {
           await sendTransactionalEmail({
             to: t.email,
-            subject: `🌅 Il tuo viaggio a ${t.destination} è terminato`,
+            subject: `🌅 ${trEmail("subject.tripExpired", locale)} — ${t.destination}`,
             html: tripExpiredHtml({
               destination: t.destination,
               tripUrl,
               newTripUrl,
+              locale,
             }),
           });
         } catch (err) {

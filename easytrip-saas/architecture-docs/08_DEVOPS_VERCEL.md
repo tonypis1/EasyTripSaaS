@@ -48,10 +48,15 @@ Opzionali / default: prezzi Stripe in centesimi, `ANTHROPIC_MODEL`, `STRIPE_SUBS
 
 | Variabile | Uso |
 |-----------|-----|
+| `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | Inngest Cloud → sync con `/api/inngest` |
 | `UPSTASH_REDIS_REST_URL` | Rate limit |
 | `UPSTASH_REDIS_REST_TOKEN` | Rate limit |
+| `NEXT_PUBLIC_POSTHOG_*` | Analytics (`posthog-provider.tsx`) |
+| `NEXT_PUBLIC_CRISP_WEBSITE_ID` | Chat (`crisp-chat.tsx`) |
 | `NEXT_PUBLIC_*` affiliate | `src/lib/affiliate.ts` (partner ID) |
 | `E2E_*` | Playwright (CI / test) |
+
+Template completo: [`.env.example`](../.env.example). Validazione manuale: `node scripts/check-env.mjs` (vedi `--strict` / `--production`).
 
 ## 6. Comandi operativi
 

@@ -6,8 +6,8 @@ const envSchema = z.object({
     .default("development"),
   /**
    * URL pubblico dell’app (redirect Stripe Checkout, link email/Inngest/referral).
-   * Locale: `http://localhost:3000`. Produzione Vercel attuale: `https://easytripsaas.vercel.app`
-   * (impostare in Vercel → Environment Variables). Dominio personalizzato: vedi `architecture-docs/12_DEPLOYMENT.md`.
+   * Locale: `http://localhost:3000`. Produzione: `https://easytripsaas.com` (Vercel + DNS).
+   * Impostare in Vercel → Environment Variables. Dettagli: `architecture-docs/12_DEPLOYMENT.md`, `13_CICD_SECRETS_AND_DNS.md`.
    */
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
 

@@ -9,7 +9,12 @@ function pathnameIsApp(url: string | URL): boolean {
   try {
     const u = typeof url === "string" ? new URL(url) : url;
     const p = u.pathname.replace(/\/$/, "") || "/";
-    return p === "/app" || p.startsWith("/app/");
+    // Supporta sia /app sia /{locale}/app (it|en|es|fr|de)
+    return (
+      p === "/app" ||
+      p.startsWith("/app/") ||
+      /^\/(it|en|es|fr|de)\/app(\/|$)/.test(p)
+    );
   } catch {
     return false;
   }
@@ -26,7 +31,7 @@ async function ensureOnAppDashboard(page: Page) {
 
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      await page.goto("/app", { waitUntil: "load", timeout: 90_000 });
+      await page.goto("/it/app", { waitUntil: "load", timeout: 90_000 });
       return;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -62,7 +67,7 @@ setup("clerk session → e2e/.auth/user.json", async ({ page }) => {
 
   await clerkSetup();
 
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/it", { waitUntil: "domcontentloaded" });
 
   const password = process.env.E2E_CLERK_USER_PASSWORD;
   try {

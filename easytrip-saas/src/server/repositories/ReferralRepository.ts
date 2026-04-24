@@ -24,7 +24,13 @@ export class ReferralRepository {
   async findUserByReferralCode(code: string) {
     return prisma.user.findFirst({
       where: { referralCode: code },
-      select: { id: true, email: true, name: true, referralCode: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        referralCode: true,
+        language: true,
+      },
     });
   }
 

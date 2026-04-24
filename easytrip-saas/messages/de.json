@@ -1,0 +1,528 @@
+{
+  "meta": {
+    "root": {
+      "title": "EasyTrip — KI-Reisepläne für Kurztrips",
+      "description": "Plane Wochenenden und Kurzreisen mit KI-gestützten Reiseplänen, geteilten Ausgaben und gespeicherten Versionen. Wähle eine Sprache und starte in wenigen Minuten."
+    },
+    "app": {
+      "title": "EasyTrip-Dashboard",
+      "description": "Verwalte deine Reisepläne, geteilten Ausgaben und gespeicherten Versionen."
+    }
+  },
+  "common": {
+    "appName": "EasyTrip",
+    "tagline": "KI-Reiserouten für Kurztrips",
+    "back": "Zurück",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "loading": "Wird geladen...",
+    "retry": "Erneut versuchen",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "nav": {
+    "home": "Startseite",
+    "myTrips": "Meine Reisen",
+    "newTrip": "Neue Reise",
+    "account": "Konto",
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "signOut": "Abmelden"
+  },
+  "locale": {
+    "switcher": {
+      "label": "Sprache",
+      "it": "Italienisch",
+      "en": "Englisch",
+      "es": "Spanisch",
+      "fr": "Französisch",
+      "de": "Deutsch"
+    }
+  },
+  "home": {
+    "metadata": {
+      "title": "EasyTrip — KI-Reiserouten für Europa-Wochenenden | In 30 Sekunden planen",
+      "description": "Plane Kurztrips von 2–5 Tagen oder länger mit KI. Optimierte Routen, lokale Restaurants und versteckte Perlen.",
+      "ogLocale": "de_DE",
+      "ogImageAlt": "EasyTrip — KI-Reiserouten für Kurztrips"
+    },
+    "nav": {
+      "howItWorks": "So funktioniert's",
+      "pricing": "Preise",
+      "faq": "FAQ",
+      "myTrips": "Meine Reisen",
+      "signIn": "Anmelden",
+      "signUp": "Registrieren",
+      "reservedArea": "Mitgliederbereich"
+    },
+    "hero": {
+      "badge": "Intelligente Reiserouten",
+      "titleLine1": "KI-Reiserouten für Kurztrips.",
+      "titleLine2": "Plane in 30 Sekunden.",
+      "subtitle": "Die KI erstellt einen Tag-für-Tag-Plan, geografisch optimiert, mit lokalen Restaurants und versteckten Perlen. Zeitlich begrenzter Zugang: Tag 2 wird an Tag 2 freigeschaltet.",
+      "signupCard": {
+        "title": "Erstelle deine erste Reiseroute",
+        "body": "Registriere dich kostenlos und komm direkt ins Dashboard: keine Warteliste.",
+        "ctaSignUp": "Jetzt starten",
+        "ctaSignIn": "Anmelden",
+        "authFooter": "Nach dem Login nutzt du <em>Reiseerstellung und Dashboard</em>."
+      },
+      "benefitsCard": {
+        "title": "Das bekommst du sofort",
+        "item1": "KI-Routenplanung für 2–5 Tage oder mehr",
+        "item2": "Karten und optimierte Routen (weniger Wege)",
+        "item3": "Neu generieren: 3 kostenlos → 7 max → Karussell",
+        "footer": "Stornierung: Guthaben innerhalb eines Jahres nutzbar."
+      }
+    },
+    "heroAuth": {
+      "greetingPrefix": "Hallo,",
+      "greetingFallback": "Reisende(r)",
+      "planLabel": "Plan",
+      "subExpiresPrefix": "bis zum",
+      "welcomeBack": "Willkommen zurück",
+      "titleLine2": "Dein Reise-Hub.",
+      "subtitle": "Setze eine Reise fort oder erstelle eine neue: KI-Generierung, Tag-für-Tag-Freischaltung, Karten und Neugenerierungen wie im reservierten Bereich.",
+      "createNewCta": "Neue Reise erstellen",
+      "viewAllCta": "Alle Reisen →"
+    },
+    "dashboard": {
+      "emptyTitle": "Deine Reisen",
+      "emptyBody": "Du hast noch keine Reisen. Verwende das Formular unten, um eine zu erstellen.",
+      "eyebrow": "Schnell-Dashboard",
+      "title": "Neueste Reisen",
+      "viewAll": "Alle anzeigen →",
+      "carouselLabel": "Karussell · bis v{version}",
+      "noVersions": "Noch keine Versionen.",
+      "generatedAt": "Erstellt {when}",
+      "status": {
+        "pending": "Ausstehend",
+        "active": "Aktiv",
+        "expired": "Abgelaufen",
+        "cancelled": "Storniert"
+      }
+    },
+    "features": {
+      "eyebrow": "01 — Struktur & Mehrwert",
+      "title": "Du kaufst kein Produkt. Du kaufst ein Erlebnis über die Zeit.",
+      "body": "Die Zeitbegrenzung ist das Produkt selbst: Weil Tag 2 erst an Tag 2 freigeschaltet wird, öffnet der Nutzer die App jeden Morgen der Reise. Das erzeugt ein Engagement, das kein PDF nachbilden kann.",
+      "box1": {
+        "title": "Schrittweise Freischaltung",
+        "body": "An Tag 1 siehst du nur Tag 1. Tag 2 wird an Tag 2 freigeschaltet."
+      },
+      "box2": {
+        "title": "Zugang ≠ Datei",
+        "body": "Du kaufst kein PDF. Du kaufst Zugriff auf ein dynamisches System, das weiß, wo du bist und was heute passiert."
+      },
+      "rightTitle": "Die 3 Punkte, die zählen",
+      "item1": {
+        "title": "KI-Routenerstellung",
+        "body": "Input: Ziel + Daten + Stil. Output: Tag-für-Tag-Plan, schrittweise freigeschaltet."
+      },
+      "item2": {
+        "title": "Live-Karten",
+        "body": "Optimierte Routen, um Wege zu minimieren. Ein Klick öffnet Google Maps."
+      },
+      "item3": {
+        "title": "PackedUp (Gruppe)",
+        "body": "Geteilte Route, In-App-Abstimmungen und integrierte Kostenaufteilung."
+      },
+      "footer": "Neu generieren: 3 kostenlos → 7 max → Karussell. So hörst du auf, ständig etwas zu ändern, wählst die beste Route und genießt die Reise."
+    },
+    "pricing": {
+      "eyebrow": "02 — Klare Preise",
+      "title": "Einfacher Preis. Sofortiger Mehrwert.",
+      "subtitle": "Pro Trip zahlen oder Abo wählen.",
+      "plans": {
+        "solo": {
+          "name": "Trip Solo / Paar",
+          "badge": "Core",
+          "priceDisplay": "9,99 €/Trip",
+          "desc": "TripGenius Basic, 1–2 Personen.",
+          "feature1": "Tägliche schrittweise Freischaltung",
+          "feature2": "Geografisch optimierte Route",
+          "feature3": "Lokale Restaurants + versteckte Perlen",
+          "feature4": "Neu generieren: 3 kostenlos → 7 max → Karussell",
+          "cta": "Registrieren und eine Reise erstellen →",
+          "highlightFooter": "3 kostenlos → 7 max → Karussell: ohne Stress neu generieren, mit klarer Grenze."
+        },
+        "group": {
+          "name": "Gruppen-Trip (3–5 Personen)",
+          "badge": "PackedUp",
+          "priceDisplay": "14,99 €/Trip",
+          "desc": "TripGenius + PackedUp. Für Gruppen, die Ausgaben teilen.",
+          "feature1": "Geteilte Reiseroute",
+          "feature2": "Automatische Kostenaufteilung",
+          "feature3": "Integrierter Reise-Chat",
+          "feature4": "Alle Mitglieder sehen dieselbe Freischaltung",
+          "cta": "Konto erstellen und Gruppe organisieren →"
+        },
+        "frequent": {
+          "name": "Vielreisende",
+          "badge": "Abo",
+          "priceDisplay": "14,99 €/Monat",
+          "desc": "Unbegrenzte Solo-/Paar-Trips für 1 Monat.",
+          "feature1": "Ideal, wenn du oft reist",
+          "feature2": "Weniger Zeit für Umplanung",
+          "feature3": "Konsistent mit den Preisen im Checkout",
+          "feature4": "LocalPass Add-on: +3,99 € pro Stadt (Insider, versteckte Perlen)",
+          "cta": "Registrieren und Pläne entdecken →"
+        }
+      },
+      "addon": {
+        "title": "Zusätzlich (Premium)",
+        "body": "Jeder Plan + <accent>3,99 € Add-on pro Stadt</accent> mit LocalPass: von lokalen Insidern kuratierte Orte, versteckte Perlen und nicht-touristische Tipps."
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Schnelle Antworten, bevor du zweifelst.",
+      "subtitle": "Stornierung: Guthaben innerhalb eines Jahres nutzbar. Die Inhalte sind dafür gedacht, über die Zeit erlebt und nicht als Dateien gesammelt zu werden.",
+      "items": {
+        "q1": {
+          "q": "Wie funktioniert die tägliche Freischaltung?",
+          "a": "An Tag 1 siehst du nur Tag 1. Tag 2 wird an Tag 2 freigeschaltet. Der Zugriff endet am Reiseende + 1 Tag (end_date + 1 Tag)."
+        },
+        "q2": {
+          "q": "Wie lange dauert es, den kompletten Plan zu bekommen?",
+          "a": "Die Route wird in 30 Sekunden erstellt. Das System nutzt unterschiedliche Prompts je nach Moment: Generierung, Live-Anpassung und Slot-Austausch."
+        },
+        "q3": {
+          "q": "Wie oft kann ich eine Route neu generieren?",
+          "a": "3 kostenlose Regenerierungen. Dann 4–7 kostenpflichtig (1,99 €). Nach dem Maximum: Karussell (zurück zur Version 1, du wählst die beste Route und startest deine Reise)."
+        },
+        "q4": {
+          "q": "Funktioniert es offline?",
+          "a": "Routengenerierung und Live-Funktionen brauchen eine Verbindung. Während der Reise kannst du den bereits freigeschalteten Plan einsehen, aber Erstellung/Anpassung braucht Internet."
+        },
+        "q5": {
+          "q": "Was unterscheidet LocalPass von anderen Reiseplattformen?",
+          "a": "LocalPass bringt authentische Inhalte von lokalen Insidern: kuratierte Orte, versteckte Perlen und nicht-touristische Tipps. Ziel ist, Orte zu vermeiden, die die meisten Touristen auf anderen Plattformen sehen."
+        }
+      }
+    },
+    "testimonials": {
+      "eyebrow": "Vertrauen",
+      "title": "Die Sätze, die du hörst, bevor du kaufst.",
+      "subtitle": "Wenn du verstehst, dass der Plan kein statisches PDF ist, sondern ein System, das sich an die Reise anpasst, hörst du auf, Zeit zu verlieren, und fängst an zu erkunden.",
+      "caption": "Feedback aus User Research und von Reisenden",
+      "items": {
+        "t1": {
+          "label": "Vielreisende(r)",
+          "quote": "Ich verliere 8 Stunden mit der Planung jeder Reise. Ich will einfach sagen, wohin ich fahre, und einen Plan haben, der funktioniert."
+        },
+        "t2": {
+          "label": "Gruppe (3-5 Freunde)",
+          "quote": "Eine Reise zu fünft zu organisieren ist schlimmer als Arbeit: Abstimmungen, Kosten, wer bucht was."
+        },
+        "t3": {
+          "label": "LocalPass-Stil",
+          "quote": "Ich lande oft in Touristenfallen. Ich will wissen, wohin die Einheimischen wirklich gehen."
+        }
+      }
+    },
+    "cta": {
+      "eyebrow": "Bereit zum Aufbruch",
+      "titleLine1": "Kostenlos registrieren.",
+      "titleLine2": "Deine Reiseroute in wenigen Minuten.",
+      "subtitle": "Das gesamte Reiseerlebnis ist darauf ausgelegt, Tag für Tag erlebt zu werden.",
+      "bonus": "Bonus: Lade einen Freund ein → <strong>1 Trip gratis</strong>."
+    },
+    "footer": {
+      "tagline": "KI-Reiserouten für Kurztrips in Europa. In 30 Sekunden planen.",
+      "howItWorks": "So funktioniert's",
+      "pricing": "Preise",
+      "faq": "FAQ",
+      "reservedArea": "Mitgliederbereich",
+      "rights": "© {year} EasyTrip. Alle Rechte vorbehalten."
+    }
+  },
+  "app": {
+    "nav": {
+      "myTrips": "Meine Reisen",
+      "inviteFriends": "Freunde einladen",
+      "privacy": "Datenschutz"
+    },
+    "dashboard": {
+      "eyebrow": "Geschützter Bereich",
+      "title": "Dein Dashboard",
+      "description": "Erstelle eine Reise, schließe die Zahlung ab, warte auf die Generierung und durchstöbere die Tage mit schrittweiser Freischaltung.",
+      "ctaViewTrips": "Zu den Reisen →",
+      "noTrips": "Du hast noch keine Reisen.",
+      "viewAll": "Alle ansehen"
+    },
+    "trips": {
+      "list": {
+        "eyebrow": "Reisen",
+        "title": "Meine Reisen",
+        "hint": "Erstelle eine Reise, schließe die Zahlung ab und verfolge dann die Generierung und die tägliche Freischaltung.",
+        "listHeading": "Liste",
+        "empty": "Noch keine Reisen: Benutze das obige Formular, um eine zu erstellen.",
+        "createCta": "Erstelle deine erste Reise",
+        "createdAt": "Erstellt am",
+        "paid": "Bezahlt",
+        "unpaid": "Zu zahlen",
+        "activeDaysSuffix": "{count} Tage im Entwurf",
+        "localPassTitle": "LocalPass aktiv auf dieser Reise",
+        "status": {
+          "draft": "Entwurf",
+          "ready": "Bereit",
+          "inProgress": "Läuft",
+          "completed": "Abgeschlossen"
+        }
+      },
+      "create": {
+        "title": "Neue Reise",
+        "subtitle": "Nach der Erstellung kannst du bezahlen und die KI-Generierung der Route starten.",
+        "destinationLabel": "Ziel",
+        "destinationPlaceholder": "z. B. Lissabon",
+        "startDateLabel": "Start",
+        "endDateLabel": "Ende",
+        "tripTypeLabel": "Typ",
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Paar",
+          "group": "Gruppe (3–5)"
+        },
+        "styleLabel": "Stil (opt.)",
+        "stylePlaceholder": "Foodie, Kultur…",
+        "budgetLabel": "Budget",
+        "budget": {
+          "economy": "Günstig",
+          "economyHint": "Street Food, kostenlose Museen, öffentliche Verkehrsmittel",
+          "moderate": "Standard",
+          "moderateHint": "Ausgewogenes Preis-Leistungs-Verhältnis, Mix an Erlebnissen",
+          "premium": "Premium",
+          "premiumHint": "Top-Restaurants, private Touren, VIP-Erlebnisse"
+        },
+        "localPassLabel": "LocalPass (optional)",
+        "localPassHint": "Füge 3,99 € pro Stadt hinzu, in der du Insider-Tipps, versteckte Juwelen und untouristische Empfehlungen (LocalPass) möchtest.",
+        "submit": "Reise erstellen",
+        "submitting": "Wird erstellt…",
+        "errorGeneric": "Reise konnte nicht erstellt werden",
+        "errorNetwork": "Netzwerkfehler. Bitte erneut versuchen."
+      },
+      "detail": {
+        "back": "Zurück zu den Reisen",
+        "regenerateDay": "Tag neu generieren",
+        "loading": "Route wird geladen...",
+        "dayLabel": "Tag",
+        "lockedDay": "Dieser Tag wird am {date} freigeschaltet",
+        "expensesTab": "Ausgaben",
+        "itineraryTab": "Route",
+        "headerBack": "Alle Reisen",
+        "localPassActive": "LocalPass aktiv",
+        "localPassCities": "{count} Städte",
+        "localPassTooltip": "Diese Reise enthält das LocalPass-Add-on: Die Route wurde mit zusätzlichen Anweisungen für Insider-Tipps generiert.",
+        "localPassTagline": "Versteckte Perlen, untouristische Tipps und Restaurants mit lokalem Flair — bereits in der Generierung dieser Reise enthalten.",
+        "statusLabel": "Status:",
+        "paid": "Bezahlt",
+        "unpaid": "Offen",
+        "countdownPre": "Die Reise beginnt in",
+        "daysPlural": "{count, plural, one {Tag} other {Tagen}}",
+        "countdownPreHint": "Inhalte werden tageweise ab dem Abreisedatum freigeschaltet.",
+        "countdownOngoing": "Die Reise läuft —",
+        "countdownOngoingDay": "Tag {current} von {total}",
+        "countdownOngoingHint": "Gute Reise! Zukünftige Tage werden automatisch freigeschaltet.",
+        "countdownCompleted": "Reise abgeschlossen — alle Inhalte sind verfügbar.",
+        "editPrefs": "Präferenzen bearbeiten",
+        "closePrefs": "Präferenzen schließen",
+        "savePrefs": "Präferenzen speichern",
+        "saving": "Speichern…",
+        "regenerate": "Route neu generieren",
+        "generating": "Wird erstellt…",
+        "redirecting": "Weiterleitung…",
+        "regenerateWithCost": "Neu generieren (€1,99)",
+        "gpsUse": "GPS verwenden",
+        "gpsAcquiring": "Wird ermittelt…",
+        "gpsHint": "„Slot tauschen“ mit deinem Standort verbessern",
+        "regenerationCanceled": "Regenerierungszahlung abgebrochen.",
+        "priceLabel": "Reisepreis",
+        "creditDiscount": "Guthaben-Rabatt",
+        "total": "Gesamt",
+        "itineraryTitle": "Reiseplan",
+        "devPreview": "Entwicklungsvorschau",
+        "dayRoute": "Tagesroute",
+        "group": "Gruppe",
+        "closeReplacement": "Ersatzdetails schließen",
+        "lunch": "Mittagessen",
+        "dinner": "Abendessen",
+        "closeSuggestions": "Vorschläge schließen",
+        "refreshMembers": "Mitgliederliste aktualisieren",
+        "copyLink": "Link kopieren",
+        "members": {
+          "refresh": "Aktualisieren",
+          "roleOrganizer": "Organisator",
+          "roleMember": "Mitglied",
+          "inviteLinkLabel": "Einladungslink",
+          "linkCopied": "Link kopiert!",
+          "generateInviteLink": "Einladungslink erstellen",
+          "inviteLinkHint": "Teile den Link mit der Person, die du einladen möchtest. Das Mitglied hat Lesezugriff auf die Reiseroute und kann an der Kostenaufteilung teilnehmen.",
+          "readOnlyNotice": "Nur-Lese-Zugriff. Nur der Organisator kann die Reiseroute bearbeiten."
+        },
+        "expenses": {
+          "title": "Kostenaufteilung",
+          "subtitle": "Erfasse Ausgaben und sieh, wer wem was schuldet"
+        },
+        "budget": {
+          "economy": "Sparsam",
+          "moderate": "Standard",
+          "premium": "Premium"
+        },
+        "slot": {
+          "morning": "Morgen",
+          "afternoon": "Nachmittag",
+          "evening": "Abend",
+          "morningShort": "M",
+          "afternoonShort": "N",
+          "eveningShort": "A",
+          "changePrefix": "Ändern"
+        },
+        "errors": {
+          "generic": "Vorgang fehlgeschlagen",
+          "checkoutUnavailable": "Checkout nicht verfügbar",
+          "network": "Netzwerkfehler",
+          "networkCheckout": "Netzwerkfehler beim Checkout",
+          "networkRetry": "Netzwerkfehler. Bitte erneut versuchen.",
+          "geoUnsupported": "Geolokalisierung wird vom Browser nicht unterstützt.",
+          "geoUnsupportedShort": "Geolokalisierung nicht unterstützt",
+          "geoReadFailed": "Standort konnte nicht gelesen werden. Prüfe die Berechtigungen.",
+          "suggestError": "Fehler beim Vorschlagen"
+        },
+        "status": {
+          "geoAcquired": "Standort erfasst (reduzierte Genauigkeit aus Datenschutzgründen).",
+          "prefsUpdated": "Einstellungen aktualisiert. Du kannst den Reiseplan kostenlos neu erstellen."
+        },
+        "unlockTitle": "Erstellung freischalten",
+        "unlockCreditMsg": "Du hast genug Guthaben, um diese Reise kostenlos zu aktivieren!",
+        "unlockPayMsg": "Schließe die Zahlung ab, um deinen personalisierten Reiseplan zu starten.",
+        "localPassIncluded": "Im Preis enthalten",
+        "localPassIncludedCount": "LocalPass ({count} Städte)",
+        "localPassIncludedSuffix": ": Insidertipps und ein lokalerer Ton im Reiseplan.",
+        "creditBalance": "Du hast {amount} an EasyTrip-Guthaben",
+        "free": "Kostenlos",
+        "activating": "Wird aktiviert…",
+        "useCreditsFree": "Guthaben verwenden — Kostenlos",
+        "payNow": "Zur Zahlung",
+        "payNowWithAmount": "Zur Zahlung — {amount}",
+        "startGenDev": "Erstellung starten (dev)",
+        "sending": "Senden…",
+        "dayTitle": "Tag {n}",
+        "soonUnlocking": "Wird bald freigeschaltet…",
+        "preview": "Vorschau",
+        "role": {
+          "org": "Organisator",
+          "member": "Mitglied"
+        },
+        "ticket": {
+          "describeProblem": "Beschreibe das Problem kurz:",
+          "additionalDetails": "Zusätzliche Details (optional):",
+          "sent": "Ticket gesendet! Wir antworten so schnell wie möglich.",
+          "error": "Fehler beim Senden des Tickets",
+          "open": "Ticket öffnen"
+        },
+        "devModeTitle": "Nur lokale Entwicklung",
+        "devModeRun": "Erfordert <code>npm run inngest:dev</code> in einem zweiten Terminal."
+      },
+      "delete": {
+        "cancelButton": "Reise stornieren",
+        "cancelConfirmPaid": "«{destination}» stornieren?\n\nDer bezahlte Betrag wird in EasyTrip-Guthaben umgewandelt (365 Tage gültig) und kann für die nächste Reise verwendet werden.",
+        "cancelConfirmFree": "«{destination}» von deiner Liste entfernen?",
+        "cancelErrorFallback": "Reise kann nicht storniert werden",
+        "cancelTooltipPaid": "Reise stornieren und EasyTrip-Guthaben erhalten",
+        "cancelTooltipFree": "Reise von deiner Liste entfernen",
+        "notCancellable": "Nicht stornierbar",
+        "notCancellableTooltip": "Du kannst eine bereits begonnene Reise nicht stornieren",
+        "archiveButton": "Aus der Liste entfernen",
+        "archiveConfirm": "«{destination}» aus der Liste ausblenden?\n\nDie Reise wird aus deiner Liste entfernt. Alle Daten und Zahlungen bleiben im System gespeichert.{hint}",
+        "archiveHint": "\n\n⚠️ Hinweis: Diese Aktion blendet die Reise aus, generiert aber KEIN Guthaben.\nUm die Reise zu stornieren und EasyTrip-Guthaben zu erhalten, verwende stattdessen «Reise stornieren».",
+        "archiveErrorFallback": "Reise kann nicht ausgeblendet werden",
+        "archiveTooltip": "Blendet die Reise aus der Liste aus (keine Daten werden gelöscht)",
+        "archived": "Aus der Liste ausgeblendet",
+        "creditGranted": "€{amount} gutgeschrieben"
+      },
+      "postTrip": {
+        "backToTrips": "Alle Reisen",
+        "eyebrow": "Reise abgeschlossen",
+        "heroLine1": "Deine Reise nach",
+        "heroLine2": "war unvergesslich",
+        "heroBody": "Jede Reise hinterlässt Spuren. Die Orte, die du entdeckt hast, die Geschmäcker, die du probiert hast, die Momente, die du erlebt hast — sie sind alle hier, bereit, wieder erlebt zu werden.",
+        "daysSingular": "Tag voller Abenteuer",
+        "daysPlural": "Tage voller Abenteuer",
+        "expiryPrefix": "Der Zugriff auf deine Route ist abgelaufen am",
+        "expirySuffix": "Aber Erinnerungen bleiben für immer.",
+        "reactivateTitle": "Erinnerungen wiedererleben",
+        "reactivateBody": "Reaktiviere den vollen Zugriff auf deine Route für <strong>30 Tage</strong>. Erlebe jeden Tag, jedes Restaurant, jeden versteckten Schatz, den du entdeckt hast, erneut.",
+        "reactivateCta": "Zugriff reaktivieren — 2,90 €",
+        "reactivateError": "Fehler bei der Reaktivierung",
+        "reactivateNetworkError": "Netzwerkfehler. Bitte erneut versuchen.",
+        "newTripTitle": "Plane deine nächste Reise",
+        "newTripBody": "Du hast bereits die Magie einer maßgeschneiderten Route erlebt. Das nächste Abenteuer wartet — mit <accent>20 % Rabatt</accent> nur für dich.",
+        "newTripCta": "Neue Reise — 20 % Rabatt",
+        "footerNote": "Deine Route ist sicher. Du kannst den Zugriff jederzeit reaktivieren."
+      },
+      "expenses": {
+        "totalLabel": "Gesamtausgaben",
+        "addButton": "Ausgabe hinzufügen",
+        "descriptionLabel": "Beschreibung",
+        "descriptionPlaceholder": "z. B. Abendessen bei Mario",
+        "amountLabel": "Betrag (€)",
+        "amountPlaceholder": "0.00",
+        "categoryLabel": "Kategorie",
+        "dayLabel": "Tag (optional)",
+        "dayNone": "— Keiner —",
+        "dayOption": "Tag {day}",
+        "saveButton": "Speichern",
+        "cancelButton": "Abbrechen",
+        "paidBy": "Bezahlt von",
+        "dayPrefix": "Tag",
+        "deleteTooltip": "Ausgabe löschen",
+        "emptyState": "Noch keine Ausgaben erfasst.",
+        "groupBalance": "Gruppensaldo",
+        "paidTotal": "Bezahlt: €{amount}",
+        "whoOwesWho": "Wer wem was schuldet",
+        "categories": {
+          "cibo": "Essen",
+          "trasporti": "Transport",
+          "attivita": "Aktivitäten",
+          "alloggio": "Unterkunft",
+          "altro": "Sonstiges"
+        }
+      }
+    },
+    "account": {
+      "privacy": {
+        "title": "Datenschutz und Daten",
+        "description": "Verwalte deine persönlichen Daten und die Privatsphäre deines Kontos.",
+        "exportTitle": "Deine Daten exportieren",
+        "exportBody": "Lade eine Kopie deiner Daten im JSON-Format herunter.",
+        "exportCta": "Daten exportieren",
+        "deleteTitle": "Konto löschen",
+        "deleteBody": "Unumkehrbare Aktion: Konto, Reisen und zugehörige Daten werden gelöscht.",
+        "deleteCta": "Konto löschen",
+        "deleteConfirm": "Endgültige Löschung des Kontos bestätigen?",
+        "deleting": "Wird gelöscht..."
+      }
+    },
+    "notFound": {
+      "title": "Seite nicht gefunden (404)",
+      "body": "Diese Adresse entspricht keiner Seite der App.",
+      "back": "Zurück zur Startseite"
+    }
+  },
+  "join": {
+    "loading": "Einladung wird geladen...",
+    "invalidTitle": "Ungültige Einladung",
+    "invalidBody": "Der Einladungslink ist nicht mehr gültig oder abgelaufen.",
+    "needAccountTitle": "Melde dich an, um der Reise beizutreten",
+    "needAccountBody": "Um die Einladung anzunehmen, musst du dich anmelden oder registrieren.",
+    "signInCta": "Anmelden",
+    "signUpCta": "Registrieren",
+    "joinCta": "Der Reise beitreten",
+    "joining": "Du trittst der Reise bei..."
+  }
+}

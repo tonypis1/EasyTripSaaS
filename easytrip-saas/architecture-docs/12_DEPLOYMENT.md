@@ -19,15 +19,17 @@ npm start
 
 ## 2. Pipeline CI (GitHub Actions)
 
-File: `.github/workflows/ci.yml` (root repository, `working-directory: easytrip-saas`).
+File principale: `.github/workflows/main.yml` (root repository, `working-directory: easytrip-saas`).
 
 | Job | Contenuto |
 |-----|-----------|
-| `static-and-unit` | `npm audit` (critical), Prettier check, ESLint, TypeScript, Vitest unit, coverage |
+| `quality` | `npm audit` (critical), Prettier check, ESLint, TypeScript, Vitest unit, coverage |
 | `integration` | Postgres 16 service, `prisma db push`, test integrazione |
-| `playwright-smoke` | Chromium, `npm run test:e2e:smoke` |
+| `e2e-smoke-local` | Chromium, `npm run test:e2e:smoke` |
+| `e2e-preview` | (su `deployment_status` Vercel Preview) smoke contro URL deploy |
+| `verify-env` | `workflow_dispatch` — controlla segreti allineati a produzione (opzionale) |
 
-Altri workflow: `codeql.yml`, `deployment-preview-e2e.yml` (vedi `.github/workflows/`).
+Altri workflow: `codeql.yml`. Segreti, DNS, post-deploy: [13_CICD_SECRETS_AND_DNS.md](13_CICD_SECRETS_AND_DNS.md).
 
 ## 3. Checklist go-live
 
@@ -59,3 +61,5 @@ Altri workflow: `codeql.yml`, `deployment-preview-e2e.yml` (vedi `.github/workfl
 |---------|------|
 | OpenAPI | `docs/openapi.yaml` |
 | Config env | `src/config/unifiedConfig.ts` |
+| Template env | `.env.example` |
+| CI/CD, segreti, DNS | [13_CICD_SECRETS_AND_DNS.md](13_CICD_SECRETS_AND_DNS.md) |

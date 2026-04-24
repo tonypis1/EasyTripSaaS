@@ -43,3 +43,7 @@
 ## Known gap
 
 - Full end-to-end payment confirmation (Stripe webhook -> generated days) requires test Stripe setup + webhook tunnel in CI/staging.
+
+## See also
+
+- [tests/e2e/README.md](./README.md) — progetti Playwright (`chromium` vs `mobile-chromium`), perché alcuni test risultano *skipped* senza `E2E_AUTH_STORAGE_STATE` / `E2E_TRIP_ID`, e come abilitarli.

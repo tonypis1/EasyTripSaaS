@@ -8,6 +8,7 @@ import {
   creditExpiryReminderHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
+import { normalizeEmailLocale, t as tr } from "@/lib/email/email-i18n";
 
 const REMINDER_DAYS = [30, 7, 1] as const;
 
@@ -51,7 +52,7 @@ export const creditExpiryReminders = inngest.createFunction(
           select: {
             amount: true,
             expiresAt: true,
-            user: { select: { email: true } },
+            user: { select: { email: true, language: true } },
           },
         });
 
@@ -60,17 +61,22 @@ export const creditExpiryReminders = inngest.createFunction(
 
         for (const c of credits) {
           try {
+            const locale = normalizeEmailLocale(c.user.language);
+            const subject =
+              daysLeft === 1
+                ? tr("subject.creditExpiryTomorrow", locale)
+                : tr("subject.creditExpiryDays", locale, {
+                    days: String(daysLeft),
+                  });
             await sendTransactionalEmail({
               to: c.user.email,
-              subject:
-                daysLeft === 1
-                  ? `🚨 Il tuo credito EasyTrip scade domani!`
-                  : `⏰ Il tuo credito EasyTrip scade tra ${daysLeft} giorni`,
+              subject,
               html: creditExpiryReminderHtml({
                 creditAmount: `€${Number(c.amount).toFixed(2)}`,
                 daysLeft,
                 expiresAt: toDateOnlyIsoUtc(c.expiresAt),
                 tripsUrl,
+                locale,
               }),
             });
             count++;

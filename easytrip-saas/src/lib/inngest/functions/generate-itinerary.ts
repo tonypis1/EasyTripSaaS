@@ -2,11 +2,17 @@ import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
 import {
   addCalendarDaysUtc,
-  dayOfWeekItalian,
+  dayOfWeekForLocale,
   inclusiveCalendarDaysBetweenUtc,
   toDateOnlyIsoUtc,
 } from "@/lib/calendar-date";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
+import {
+  normalizeAiLocale,
+  systemLanguageDirective,
+  userLanguageReminder,
+  type SupportedAiLocale,
+} from "@/lib/ai/prompt-locale";
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
 import {
   parseAndValidateModelJson,
@@ -18,6 +24,10 @@ import {
   itineraryReadyMemberHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
 import { config } from "@/config/unifiedConfig";
 
@@ -33,26 +43,43 @@ type TripSnapshot = {
   regenCount: number;
   usedZones: string | null;
   localPassCityCount: number;
+  /** Lingua preferita dell'organizer (passata ai prompt Claude). */
+  organizerLanguage: SupportedAiLocale;
 };
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(locale: SupportedAiLocale): string {
   return [
     "Sei un travel planner locale esperto.",
     "Rispondi sempre e solo con JSON valido, senza markdown e senza testo fuori dal JSON.",
+    systemLanguageDirective(locale),
   ].join(" ");
 }
 
 /**
- * Genera la riga di calendario per ogni giorno del viaggio.
- * Es: "  Giorno 1 (2026-03-30): lunedì"
+ * Genera la riga di calendario per ogni giorno del viaggio nella lingua
+ * dell'organizer. Es (it): "  Giorno 1 (2026-03-30): lunedì"
+ * Es (en): "  Day 1 (2026-03-30): Monday"
  */
-function buildDayCalendar(startDate: Date, numDays: number): string {
+const DAY_WORD: Record<SupportedAiLocale, string> = {
+  it: "Giorno",
+  en: "Day",
+  es: "Día",
+  fr: "Jour",
+  de: "Tag",
+};
+
+function buildDayCalendar(
+  startDate: Date,
+  numDays: number,
+  locale: SupportedAiLocale,
+): string {
+  const dayWord = DAY_WORD[locale];
   const lines: string[] = [];
   for (let i = 0; i < numDays; i++) {
     const d = addCalendarDaysUtc(startDate, i);
     const iso = toDateOnlyIsoUtc(d);
-    const dow = dayOfWeekItalian(d);
-    lines.push(`  Giorno ${i + 1} (${iso}): ${dow}`);
+    const dow = dayOfWeekForLocale(d, locale);
+    lines.push(`  ${dayWord} ${i + 1} (${iso}): ${dow}`);
   }
   return lines.join("\n");
 }
@@ -77,6 +104,7 @@ function buildUserPrompt(args: {
   dayCalendar: string;
   usedZones: string | null;
   localPassCityCount: number;
+  locale: SupportedAiLocale;
 }): string {
   const usedBlock =
     args.usedZones && args.usedZones.trim().length > 0
@@ -164,7 +192,7 @@ SEZIONE — REGOLE
 - Indoor/outdoor: in ogni giorno almeno uno slot adatto alla pioggia e uno all'aperto.
 - In "tips" di ogni slot includi almeno un accenno meteo e un micro-budget qualitativo (senza prezzi inventati).
 - IMPORTANTE: consulta il CALENDARIO GIORNALIERO per sapere il giorno della settimana di ogni giornata. NON calcolare i giorni da solo. Usa questa informazione per: (a) evitare di suggerire POI chiusi quel giorno; (b) compilare "dowWarning" con avvisi concreti; (c) preferire attività adatte al weekend se il giorno cade di sabato o domenica.
-- Testi in italiano chiaro e concreto.
+- LINGUA DI RISPOSTA: ${userLanguageReminder(args.locale)} Tutti i campi testuali liberi del JSON (title, why, tips, dowWarning, localGem, reservationTip, ecc.) DEVONO essere in questa lingua. I valori enum (es. "pranzo"/"cena" in "meal") restano invariati perché fanno parte dello schema.
 `.trim();
 }
 
@@ -229,6 +257,9 @@ export const generateItinerary = inngest.createFunction(
       async (): Promise<TripSnapshot> => {
         const t = await prisma.trip.findUnique({
           where: { id: tripId },
+          include: {
+            organizer: { select: { language: true } },
+          },
         });
         if (!t) {
           throw new Error(`Trip ${tripId} non trovato`);
@@ -244,6 +275,7 @@ export const generateItinerary = inngest.createFunction(
           regenCount: t.regenCount ?? 0,
           usedZones: t.usedZones,
           localPassCityCount: (t as { localPassCityCount?: number }).localPassCityCount ?? 0,
+          organizerLanguage: normalizeAiLocale(t.organizer?.language),
         };
       },
     );
@@ -258,6 +290,7 @@ export const generateItinerary = inngest.createFunction(
         optimizationScore: number;
         days: DayPlanExtended[];
       }> => {
+        const locale = trip.organizerLanguage;
         const userPrompt = buildUserPrompt({
           destination: trip.destination,
           startDate: startDate.toISOString().slice(0, 10),
@@ -266,9 +299,10 @@ export const generateItinerary = inngest.createFunction(
           style: trip.style,
           budgetLevel: trip.budgetLevel,
           numDays,
-          dayCalendar: buildDayCalendar(startDate, numDays),
+          dayCalendar: buildDayCalendar(startDate, numDays, locale),
           usedZones: trip.usedZones,
           localPassCityCount: trip.localPassCityCount,
+          locale,
         });
 
         const maxAttempts = 3;
@@ -280,7 +314,7 @@ export const generateItinerary = inngest.createFunction(
             model: ANTHROPIC_MODEL,
             max_tokens: 12000,
             temperature: attempt === 1 ? 0.35 : 0.2,
-            system: buildSystemPrompt(),
+            system: buildSystemPrompt(locale),
             messages: [{ role: "user", content: userPrompt }],
           });
 
@@ -305,7 +339,7 @@ export const generateItinerary = inngest.createFunction(
               model: ANTHROPIC_MODEL,
               max_tokens: 12000,
               temperature: 0.2,
-              system: buildSystemPrompt(),
+              system: buildSystemPrompt(locale),
               messages: [{ role: "user", content: repairPrompt }],
             });
 
@@ -411,10 +445,12 @@ export const generateItinerary = inngest.createFunction(
       const full = await prisma.trip.findUnique({
         where: { id: trip.id },
         include: {
-          organizer: { select: { email: true } },
+          organizer: { select: { email: true, language: true } },
           members: {
             where: { role: "member" },
-            include: { user: { select: { email: true } } },
+            include: {
+              user: { select: { email: true, language: true } },
+            },
           },
         },
       });
@@ -422,28 +458,32 @@ export const generateItinerary = inngest.createFunction(
 
       const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
       const label = formatGeoScoreLabel(result.optimizationScore);
+      const organizerLocale = normalizeEmailLocale(full.organizer.language);
 
       await sendTransactionalEmail({
         to: full.organizer.email,
-        subject: `Itinerario pronto — ${full.destination}`,
+        subject: `${trEmail("subject.itineraryReady", organizerLocale)} — ${full.destination}`,
         html: itineraryReadyHtml({
           destination: full.destination,
           tripUrl,
           geoScoreLabel: label,
+          locale: organizerLocale,
         }),
       });
 
       for (const m of full.members) {
         const em = m.user.email?.trim();
         if (!em || em === full.organizer.email) continue;
+        const memberLocale = normalizeEmailLocale(m.user.language);
         try {
           await sendTransactionalEmail({
             to: em,
-            subject: `Itinerario pronto — ${full.destination}`,
+            subject: `${trEmail("subject.itineraryReady", memberLocale)} — ${full.destination}`,
             html: itineraryReadyMemberHtml({
               destination: full.destination,
               tripUrl,
               geoScoreLabel: label,
+              locale: memberLocale,
             }),
           });
         } catch {

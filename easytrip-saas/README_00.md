@@ -33,6 +33,7 @@ I due artefatti sono **incrociati**: `openapi.yaml` espone `externalDocs` verso 
 | 10 | [architecture-docs/10_INNGEST_SLOTS.md](architecture-docs/10_INNGEST_SLOTS.md) | Inngest, generazione, slot/GPS, live suggest |
 | 11 | [architecture-docs/11_OBSERVABILITY.md](architecture-docs/11_OBSERVABILITY.md) | PostHog, log, dashboard Inngest/Stripe |
 | 12 | [architecture-docs/12_DEPLOYMENT.md](architecture-docs/12_DEPLOYMENT.md) | CI/CD GitHub Actions, go-live |
+| 13 | [architecture-docs/13_CICD_SECRETS_AND_DNS.md](architecture-docs/13_CICD_SECRETS_AND_DNS.md) | Segreti Vercel/GitHub, post-deploy, DNS Hostinger |
 
 ---
 
@@ -96,7 +97,7 @@ sequenceDiagram
 | E2E | `npm run test:e2e` / `test:e2e:smoke` |
 | QA manuale (Golden Path, stack) | [`docs/MASTER_TESTING_CHECKLIST.md`](docs/MASTER_TESTING_CHECKLIST.md) |
 
-Pipeline: `.github/workflows/ci.yml` sulla cartella `easytrip-saas/`.
+Pipeline: `.github/workflows/main.yml` sulla cartella `easytrip-saas/`.
 
 ### Screenshot per presentazione (`docs/presentation-screenshots/`)
 

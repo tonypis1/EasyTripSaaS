@@ -1,0 +1,209 @@
+# CI/CD principale easytrip-saas: qualità, test, E2E locale, E2E su Preview Vercel, verifica env manuale.
+# Build produzione: Vercel (integrazione Git) con env complete.
+name: Main
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  deployment_status:
+  workflow_dispatch:
+
+concurrency:
+  group: main-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: easytrip-saas
+
+jobs:
+  quality:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: easytrip-saas/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Node/npm environment
+        run: |
+          node -v
+          npm -v
+
+      - name: Dependency audit (production)
+        run: npm audit --omit=dev --audit-level=critical
+
+      - name: Prettier (check)
+        run: npm run format:check
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Unit tests + coverage (soglie aree critiche)
+        run: npm run test:coverage
+
+  integration:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: quality
+    services:
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: easytrip_test
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/easytrip_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: easytrip-saas/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify DATABASE_URL for integration
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "::error::DATABASE_URL is not set for integration tests"
+            exit 1
+          fi
+          echo "DATABASE_URL is set (value hidden)"
+
+      - name: Prisma schema su DB di test
+        run: npx prisma db push --skip-generate
+
+      - name: Integration tests
+        run: npm run test:integration
+
+  e2e-smoke-local:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: integration
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: easytrip-saas/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install chromium
+
+      - name: Smoke E2E (@smoke, chromium)
+        run: npm run test:e2e:smoke -- --project chromium
+        env:
+          CI: true
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: easytrip-saas/playwright-report/
+          if-no-files-found: ignore
+
+  e2e-preview:
+    if: |
+      github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.target_url != '' &&
+      (github.event.deployment.environment == 'Preview' ||
+       github.event.deployment.environment == 'preview')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: easytrip-saas/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install chromium
+
+      - name: Smoke E2E against Preview URL
+        run: npm run test:e2e:smoke -- --project chromium
+        env:
+          E2E_BASE_URL: ${{ github.event.deployment_status.target_url }}
+          PLAYWRIGHT_SKIP_WEBSERVER: "true"
+          CI: true
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-preview-report
+          path: easytrip-saas/playwright-report/
+          if-no-files-found: ignore
+
+  verify-env:
+    name: Verify production env (workflow_dispatch)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check env keys (--production)
+        working-directory: easytrip-saas
+        run: node scripts/check-env.mjs --production
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          INNGEST_SIGNING_KEY: ${{ secrets.INNGEST_SIGNING_KEY }}
+          INNGEST_EVENT_KEY: ${{ secrets.INNGEST_EVENT_KEY }}
+          CLERK_WEBHOOK_SIGNING_SECRET: ${{ secrets.CLERK_WEBHOOK_SIGNING_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}

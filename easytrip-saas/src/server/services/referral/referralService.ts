@@ -6,6 +6,7 @@ import {
   referralSignupHtml,
   referralRewardHtml,
 } from "@/lib/email/transactional";
+import { normalizeEmailLocale, t as tr } from "@/lib/email/email-i18n";
 
 const REWARD_EUROS = 9.99;
 
@@ -89,13 +90,15 @@ export class ReferralService {
     }
 
     try {
+      const locale = normalizeEmailLocale(referrer.language);
       await sendTransactionalEmail({
         to: referrer.email,
-        subject: "🎉 Il tuo amico si è registrato su EasyTrip!",
+        subject: tr("subject.referralSignup", locale),
         html: referralSignupHtml({
-          referrerName: referrer.name ?? "Viaggiatore",
+          referrerName: referrer.name ?? tr("email.travelerFallback", locale),
           referredEmail: newUserEmail,
           dashboardUrl: `${config.app.baseUrl}/app/referral`,
+          locale,
         }),
       });
     } catch {
@@ -121,18 +124,21 @@ export class ReferralService {
       const { prisma } = await import("@/lib/prisma");
       const referrerUser = await prisma.user.findUnique({
         where: { id: referral.referrerId },
-        select: { email: true, name: true },
+        select: { email: true, name: true, language: true },
       });
 
       if (referrerUser) {
+        const locale = normalizeEmailLocale(referrerUser.language);
         await sendTransactionalEmail({
           to: referrerUser.email,
-          subject: "🎁 Hai guadagnato 1 trip gratis!",
+          subject: tr("subject.referralReward", locale),
           html: referralRewardHtml({
-            referrerName: referrerUser.name ?? "Viaggiatore",
+            referrerName:
+              referrerUser.name ?? tr("email.travelerFallback", locale),
             rewardAmount: REWARD_EUROS,
             creditExpiresAt: credit.expiresAt.toISOString().split("T")[0],
             tripsUrl: `${config.app.baseUrl}/app/trips?new=1`,
+            locale,
           }),
         });
       }

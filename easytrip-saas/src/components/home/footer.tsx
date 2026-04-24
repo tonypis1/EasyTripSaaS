@@ -1,6 +1,10 @@
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 export function MarketingFooter() {
+  const t = useTranslations("home.footer");
+  const year = new Date().getFullYear();
+
   return (
     <footer className="border-et-border bg-et-deep border-t">
       <div className="mx-auto max-w-6xl px-4 py-10">
@@ -9,36 +13,34 @@ export function MarketingFooter() {
             <div className="font-display text-et-accent text-lg font-normal tracking-tight">
               EasyTrip
             </div>
-            <p className="text-et-ink/60 mt-2 text-sm">
-              Itinerari AI per viaggi brevi in Europa. Pianifica in 30 secondi.
-            </p>
+            <p className="text-et-ink/60 mt-2 text-sm">{t("tagline")}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <a
               className="text-et-ink/70 hover:text-et-ink text-sm"
               href="#come-funziona"
             >
-              Come funziona
+              {t("howItWorks")}
             </a>
             <a
               className="text-et-ink/70 hover:text-et-ink text-sm"
               href="#prezzi"
             >
-              Prezzi
+              {t("pricing")}
             </a>
             <a className="text-et-ink/70 hover:text-et-ink text-sm" href="#faq">
-              FAQ
+              {t("faq")}
             </a>
             <Link
               className="text-et-ink/70 hover:text-et-ink text-sm"
               href="/app"
             >
-              Area riservata
+              {t("reservedArea")}
             </Link>
           </div>
         </div>
         <div className="text-et-ink/45 mt-8 text-xs">
-          © {new Date().getFullYear()} EasyTrip. Tutti i diritti riservati.
+          {t("rights", { year })}
         </div>
       </div>
     </footer>

@@ -1,6 +1,16 @@
 import { config } from "@/config/unifiedConfig";
 import { logger } from "@/lib/observability";
 import { redactEmail } from "@/lib/redact-pii";
+import {
+  daysLabel,
+  formatEmailDate,
+  normalizeEmailLocale,
+  t as tr,
+  type EmailLocale,
+} from "./email-i18n";
+
+export type { EmailLocale } from "./email-i18n";
+export { normalizeEmailLocale } from "./email-i18n";
 
 type SendArgs = {
   to: string;
@@ -93,15 +103,16 @@ export async function sendMarketingEmail(args: SendArgs): Promise<void> {
 export function purchaseConfirmedHtml(params: {
   destination: string;
   tripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
+  const dest = escapeHtml(params.destination);
   return `
-  <p>Ciao,</p>
-  <p>Abbiamo ricevuto il pagamento per il viaggio verso <strong>${escapeHtml(
-    params.destination,
-  )}</strong>.</p>
-  <p>Stiamo generando il tuo itinerario: riceverai un'altra email appena sarà pronto.</p>
-  <p><a href="${params.tripUrl}">Apri il viaggio in EasyTrip</a></p>
-  <p style="color:#666;font-size:12px">EasyTrip</p>
+  <p>${tr("hello", locale)},</p>
+  <p>${tr("purchaseConfirmed.body", locale, { destination: dest })}</p>
+  <p>${tr("purchaseConfirmed.generating", locale)}</p>
+  <p><a href="${params.tripUrl}">${tr("purchaseConfirmed.cta", locale)}</a></p>
+  <p style="color:#666;font-size:12px">${tr("signature", locale)}</p>
   `.trim();
 }
 
@@ -109,13 +120,17 @@ export function itineraryReadyHtml(params: {
   destination: string;
   tripUrl: string;
   geoScoreLabel: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
+  const dest = escapeHtml(params.destination);
+  const score = escapeHtml(params.geoScoreLabel);
   return `
-  <p>Ciao,</p>
-  <p>Il tuo itinerario per <strong>${escapeHtml(params.destination)}</strong> è pronto.</p>
-  <p>Efficienza percorso (stima AI): <strong>${escapeHtml(params.geoScoreLabel)}</strong></p>
-  <p><a href="${params.tripUrl}">Vedi l'itinerario</a></p>
-  <p style="color:#666;font-size:12px">EasyTrip</p>
+  <p>${tr("hello", locale)},</p>
+  <p>${tr("itineraryReady.title", locale, { destination: dest })}</p>
+  <p>${tr("itineraryReady.efficiency", locale, { score })}</p>
+  <p><a href="${params.tripUrl}">${tr("itineraryReady.cta", locale)}</a></p>
+  <p style="color:#666;font-size:12px">${tr("signature", locale)}</p>
   `.trim();
 }
 
@@ -124,31 +139,31 @@ export function cancelConfirmedHtml(params: {
   creditAmount: number;
   creditExpiresAt: string;
   tripsUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
   const amount = `€${params.creditAmount.toFixed(2)}`;
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">💳</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Viaggio a ${dest} cancellato
+      ${tr("cancelConfirmed.title", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Abbiamo cancellato il tuo viaggio. Non preoccuparti: l'importo pagato è
-      stato convertito in <strong style="color:#16a34a">${amount} di credito EasyTrip</strong>.
+      ${tr("cancelConfirmed.body", locale, { amount })}
     </p>
 
     <div style="margin:20px 0;padding:16px 20px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
-      <p style="margin:0 0 4px;font-size:13px;color:#15803d;font-weight:600">Il tuo credito</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#15803d;font-weight:600">${tr("cancelConfirmed.creditLabel", locale)}</p>
       <p style="margin:0;font-size:24px;font-weight:700;color:#166534">${amount}</p>
       <p style="margin:6px 0 0;font-size:12px;color:#16a34a">
-        Valido fino al ${escapeHtml(params.creditExpiresAt)}
+        ${tr("cancelConfirmed.validUntil", locale, { date: escapeHtml(params.creditExpiresAt) })}
       </p>
     </div>
 
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Puoi usare il credito per il prossimo viaggio. Sarà applicato
-      automaticamente al checkout.
+      ${tr("cancelConfirmed.usage", locale)}
     </p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
@@ -156,14 +171,13 @@ export function cancelConfirmedHtml(params: {
         <a href="${params.tripsUrl}"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          🌍 Pianifica il prossimo viaggio
+          ${tr("cancelConfirmed.cta", locale)}
         </a>
       </td></tr>
     </table>
 
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip — Il credito viene applicato automaticamente al checkout.
-      Ti invieremo un promemoria prima della scadenza.
+      ${tr("cancelConfirmed.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -174,7 +188,9 @@ export function creditExpiryReminderHtml(params: {
   daysLeft: number;
   expiresAt: string;
   tripsUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const urgency =
     params.daysLeft <= 1 ? "🚨" : params.daysLeft <= 7 ? "⏰" : "📅";
   const urgencyColor =
@@ -183,28 +199,26 @@ export function creditExpiryReminderHtml(params: {
       : params.daysLeft <= 7
         ? "#ea580c"
         : "#ca8a04";
-  const daysText =
-    params.daysLeft === 1 ? "1 giorno" : `${params.daysLeft} giorni`;
+  const daysText = daysLabel(params.daysLeft, locale);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">${urgency}</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Il tuo credito EasyTrip scade tra ${daysText}
+      ${tr("creditExpiry.title", locale, { days: daysText })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Hai ancora <strong style="color:#16a34a">${escapeHtml(params.creditAmount)}</strong>
-      di credito da usare. Non lasciarlo scadere!
+      ${tr("creditExpiry.body", locale, { amount: escapeHtml(params.creditAmount) })}
     </p>
 
     <div style="margin:20px 0;padding:16px 20px;background:#fffbeb;border-radius:10px;border:1px solid ${urgencyColor}40">
       <p style="margin:0 0 4px;font-size:13px;color:${urgencyColor};font-weight:600">
-        Scadenza credito
+        ${tr("creditExpiry.expiryLabel", locale)}
       </p>
       <p style="margin:0;font-size:20px;font-weight:700;color:${urgencyColor}">
         ${escapeHtml(params.expiresAt)}
       </p>
       <p style="margin:6px 0 0;font-size:12px;color:#888">
-        Dopo questa data, il credito non sarà più utilizzabile.
+        ${tr("creditExpiry.afterNote", locale)}
       </p>
     </div>
 
@@ -213,13 +227,13 @@ export function creditExpiryReminderHtml(params: {
         <a href="${params.tripsUrl}"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          🌍 Usa il credito — pianifica un viaggio
+          ${tr("creditExpiry.cta", locale)}
         </a>
       </td></tr>
     </table>
 
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip — Il credito viene applicato automaticamente al checkout.
+      ${tr("creditExpiry.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -229,21 +243,21 @@ export function tripExpiredHtml(params: {
   destination: string;
   tripUrl: string;
   newTripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🌅</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Il tuo viaggio a ${dest} è stato indimenticabile
+      ${tr("tripExpired.title", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Ogni viaggio lascia un segno. I luoghi che hai scoperto, i sapori che hai
-      assaggiato, i momenti che hai vissuto — sono tutti qui, pronti per essere
-      rivissuti.
+      ${tr("tripExpired.body", locale)}
     </p>
     <p style="font-size:13px;color:#888;margin:16px 0 24px">
-      L'accesso al tuo itinerario è scaduto, ma i ricordi restano per sempre.
+      ${tr("tripExpired.accessInfo", locale)}
     </p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">
@@ -251,12 +265,12 @@ export function tripExpiredHtml(params: {
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#f59e0b;color:#1a1a1a;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          📖 Rileggi i ricordi — €2,90
+          ${tr("tripExpired.reactivateCta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777;margin:0 0 24px">
-      Riattiva l'accesso completo per 30 giorni e rivivi ogni giorno del viaggio.
+      ${tr("tripExpired.reactivateBody", locale)}
     </p>
 
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">
@@ -264,16 +278,16 @@ export function tripExpiredHtml(params: {
         <a href="${params.newTripUrl}"
            style="display:inline-block;padding:12px 28px;border:1.5px solid #84cc16;color:#4d7c0f;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          🌍 Nuovo viaggio — sconto 20%
+          ${tr("tripExpired.newTripCta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777;margin:0 0 32px">
-      Hai già vissuto la magia di un itinerario su misura. La prossima avventura ti aspetta.
+      ${tr("tripExpired.newTripBody", locale)}
     </p>
 
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip — Il tuo itinerario è al sicuro. Puoi riattivare l'accesso in qualsiasi momento.
+      ${tr("tripExpired.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -287,25 +301,27 @@ export function preTripCountdownHtml(params: {
   destination: string;
   daysLeft: number;
   tripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
-  const days = params.daysLeft === 1 ? "1 giorno" : `${params.daysLeft} giorni`;
+  const days = daysLabel(params.daysLeft, locale);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🗓️</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Il viaggio a ${dest} inizia tra ${days}!
+      ${tr("preTrip.title", locale, { destination: dest, days })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Manca pochissimo! Ecco una mini checklist per partire sereno:
+      ${tr("preTrip.body", locale)}
     </p>
     <div style="margin:16px 0;padding:16px 20px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
       <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:2">
-        <li>&#9745; Documenti e carta d&rsquo;identit&agrave;</li>
-        <li>&#9745; Caricatore telefono e power bank</li>
-        <li>&#9745; Scarpe comode (camminerai molto!)</li>
-        <li>&#9745; App EasyTrip aperta e pronta</li>
-        <li>&#9745; Controllare il meteo della destinazione</li>
+        <li>&#9745; ${tr("preTrip.checkDocuments", locale)}</li>
+        <li>&#9745; ${tr("preTrip.checkCharger", locale)}</li>
+        <li>&#9745; ${tr("preTrip.checkShoes", locale)}</li>
+        <li>&#9745; ${tr("preTrip.checkApp", locale)}</li>
+        <li>&#9745; ${tr("preTrip.checkWeather", locale)}</li>
       </ul>
     </div>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
@@ -313,12 +329,12 @@ export function preTripCountdownHtml(params: {
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          📋 Rivedi il tuo itinerario
+          ${tr("preTrip.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Buona preparazione!
+      ${tr("preTrip.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -327,25 +343,27 @@ export function preTripCountdownHtml(params: {
 export function tripStartTodayHtml(params: {
   destination: string;
   tripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">✈️</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Buon viaggio a ${dest}!
+      ${tr("tripStart.title", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Oggi &egrave; il grande giorno! Il tuo itinerario &egrave; sbloccato e pronto.
+      ${tr("tripStart.body", locale)}
     </p>
     <div style="margin:16px 0;padding:16px 20px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe">
       <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#1d4ed8">
-        Ricorda:
+        ${tr("tripStart.reminderLabel", locale)}
       </p>
       <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:1.8">
-        <li>Apri l&rsquo;itinerario del giorno per vedere attivit&agrave; e mappa</li>
-        <li>Usa il bottone <strong>&ldquo;Cosa faccio adesso?&rdquo;</strong> se qualcosa va storto</li>
-        <li>Controlla i ristoranti consigliati per pranzo e cena</li>
+        <li>${tr("tripStart.reminder1", locale)}</li>
+        <li>${tr("tripStart.reminder2", locale)}</li>
+        <li>${tr("tripStart.reminder3", locale)}</li>
       </ul>
     </div>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
@@ -353,15 +371,15 @@ export function tripStartTodayHtml(params: {
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#7c3aed;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          🗺️ Apri il tuo itinerario
+          ${tr("tripStart.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777">
-      Buon divertimento! Ogni giorno del viaggio si sblocca automaticamente.
+      ${tr("tripStart.footerHint", locale)}
     </p>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Il tuo compagno di viaggio AI.
+      ${tr("tripStart.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -374,29 +392,28 @@ export function tripStartTodayHtml(params: {
 export function postTripFeedbackHtml(params: {
   destination: string;
   newTripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">💭</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Com&rsquo;&egrave; andato il viaggio a ${dest}?
+      ${tr("postTripFeedback.title", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Speriamo che il tuo viaggio sia stato indimenticabile! I luoghi, i sapori,
-      le persone &mdash; ogni viaggio lascia qualcosa di speciale.
+      ${tr("postTripFeedback.intro", locale)}
     </p>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Ti &egrave; piaciuto l&rsquo;itinerario? C&rsquo;&egrave; stato un posto che
-      ti ha sorpreso? Un ristorante da ricordare? Ci farebbe piacere saperlo
-      &mdash; rispondi a questa email con un pensiero.
+      ${tr("postTripFeedback.ask", locale)}
     </p>
     <div style="margin:20px 0;padding:16px 20px;background:#faf5ff;border-radius:10px;border:1px solid #e9d5ff">
       <p style="margin:0;font-size:14px;color:#7c3aed;font-weight:600">
-        Hai gi&agrave; in mente la prossima destinazione?
+        ${tr("postTripFeedback.nextLabel", locale)}
       </p>
       <p style="margin:6px 0 0;font-size:13px;color:#555;line-height:1.6">
-        Pianifica il prossimo viaggio in 30 secondi e parti di nuovo alla scoperta.
+        ${tr("postTripFeedback.nextBody", locale)}
       </p>
     </div>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
@@ -404,36 +421,39 @@ export function postTripFeedbackHtml(params: {
         <a href="${params.newTripUrl}"
            style="display:inline-block;padding:12px 28px;background:#7c3aed;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          🌍 Pianifica il prossimo viaggio
+          ${tr("postTripFeedback.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Ogni viaggio &egrave; un ricordo da custodire.
+      ${tr("postTripFeedback.footer", locale)}
     </p>
   </div>
   `.trim();
 }
 
-export function postTripReengageHtml(params: { newTripUrl: string }): string {
+export function postTripReengageHtml(params: {
+  newTripUrl: string;
+  locale?: string | null;
+}): string {
+  const locale = normalizeEmailLocale(params.locale);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🌤️</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Dove vai il prossimo weekend?
+      ${tr("postTripReengage.title", locale)}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Sono passate due settimane dal tuo ultimo viaggio. La routine pu&ograve; aspettare,
-      la prossima avventura no.
+      ${tr("postTripReengage.body", locale)}
     </p>
     <div style="margin:16px 0;padding:16px 20px;background:#fff7ed;border-radius:10px;border:1px solid #fed7aa">
       <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#c2410c">
-        Idee per un weekend veloce:
+        ${tr("postTripReengage.ideasTitle", locale)}
       </p>
       <ul style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:1.8">
-        <li>🇮🇹 Un borgo italiano che non conosci ancora</li>
-        <li>🇪🇸 Una citt&agrave; europea a 2 ore di volo</li>
-        <li>🏔️ Montagna o lago per staccare dalla citt&agrave;</li>
+        <li>${tr("postTripReengage.idea1", locale)}</li>
+        <li>${tr("postTripReengage.idea2", locale)}</li>
+        <li>${tr("postTripReengage.idea3", locale)}</li>
       </ul>
     </div>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
@@ -441,15 +461,15 @@ export function postTripReengageHtml(params: { newTripUrl: string }): string {
         <a href="${params.newTripUrl}"
            style="display:inline-block;padding:14px 32px;background:#ea580c;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          ✨ Crea un itinerario in 30 secondi
+          ${tr("postTripReengage.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777">
-      Il tuo prossimo viaggio &egrave; a un clic di distanza.
+      ${tr("postTripReengage.closing", locale)}
     </p>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Viaggia di pi&ugrave;, pianifica di meno.
+      ${tr("postTripReengage.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -461,35 +481,35 @@ export function referralSignupHtml(params: {
   referrerName: string;
   referredEmail: string;
   dashboardUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   return `
   <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">
-    <h1 style="font-size:22px;margin:0 0 16px">🎉 Il tuo amico si &egrave; registrato!</h1>
+    <h1 style="font-size:22px;margin:0 0 16px">${tr("referralSignup.title", locale)}</h1>
     <p style="font-size:15px;line-height:1.6;color:#444">
-      Ciao <strong>${escapeHtml(params.referrerName)}</strong>,
+      ${tr("referralSignup.greeting", locale, { name: escapeHtml(params.referrerName) })}
     </p>
     <p style="font-size:15px;line-height:1.6;color:#444">
-      Ottima notizia! <strong>${escapeHtml(params.referredEmail)}</strong> si &egrave;
-      registrato su EasyTrip grazie al tuo link di invito.
+      ${tr("referralSignup.body", locale, { email: escapeHtml(params.referredEmail) })}
     </p>
     <p style="font-size:15px;line-height:1.6;color:#444">
-      Quando acquister&agrave; il primo viaggio, riceverai automaticamente
-      <strong>&euro;9,99 di credito</strong> (= 1 trip gratis!) sul tuo account.
+      ${tr("referralSignup.reward", locale)}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.dashboardUrl}"
            style="display:inline-block;padding:14px 32px;background:#6366f1;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Vedi i tuoi inviti
+          ${tr("referralSignup.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777">
-      Continua a condividere il tuo link per guadagnare pi&ugrave; trip gratis!
+      ${tr("referralSignup.closing", locale)}
     </p>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Viaggia di pi&ugrave;, pianifica di meno.
+      ${tr("email.brandFooter", locale)}
     </p>
   </div>
   `.trim();
@@ -498,34 +518,35 @@ export function referralSignupHtml(params: {
 export function welcomeEmailHtml(params: {
   name: string | null;
   appUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const greet = params.name?.trim()
     ? escapeHtml(params.name.trim())
-    : "Ciao";
+    : tr("hello", locale);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">👋</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Benvenuto in EasyTrip
+      ${tr("welcome.title", locale)}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      ${greet}, siamo felici di averti qui. EasyTrip trasforma la tua destinazione in un itinerario giorno per giorno,
-      con mappe, ristoranti e consigli su misura.
+      ${tr("welcome.body", locale, { greet })}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.appUrl}/app"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Apri l&apos;app
+          ${tr("welcome.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777">
-      Suggerimento: crea il tuo primo viaggio in pochi secondi dalla dashboard.
+      ${tr("welcome.tip", locale)}
     </p>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip
+      ${tr("signature", locale)}
     </p>
   </div>
   `.trim();
@@ -534,29 +555,30 @@ export function welcomeEmailHtml(params: {
 export function abandonedCheckoutHtml(params: {
   destination: string;
   tripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🧳</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Il checkout per ${dest} non &egrave; stato completato
+      ${tr("abandonedCheckout.title", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Il pagamento &egrave; ancora in sospeso. Puoi tornare al viaggio e concludere l&apos;acquisto quando vuoi:
-      l&apos;itinerario AI ti aspetta.
+      ${tr("abandonedCheckout.body", locale)}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#ea580c;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Completa il pagamento
+          ${tr("abandonedCheckout.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Se hai gi&agrave; pagato, ignora questa email.
+      ${tr("abandonedCheckout.footer", locale)}
     </p>
   </div>
   `.trim();
@@ -565,15 +587,17 @@ export function abandonedCheckoutHtml(params: {
 export function nurtureNoTripHtml(params: {
   phase: 3 | 7;
   appUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const title =
     params.phase === 3
-      ? "Hai già pensato alla prossima destinazione?"
-      : "Ti manca solo un clic per il primo itinerario";
+      ? tr("nurture.title3", locale)
+      : tr("nurture.title7", locale);
   const copy =
     params.phase === 3
-      ? "Sono passati alcuni giorni dalla registrazione: se vuoi, crea il tuo primo viaggio e ricevi un piano giorno per giorno."
-      : "Un weekend, una settimana o una gita fuori porta: EasyTrip organizza tutto in base alle tue date e al tuo stile.";
+      ? tr("nurture.body3", locale)
+      : tr("nurture.body7", locale);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">✨</p>
@@ -588,13 +612,13 @@ export function nurtureNoTripHtml(params: {
         <a href="${params.appUrl}/app/trips?new=1"
            style="display:inline-block;padding:12px 28px;background:#7c3aed;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Crea un viaggio
+          ${tr("nurture.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      Hai ricevuto questa email perch&eacute; hai scelto di ricevere comunicazioni da EasyTrip.
-      Puoi cambiare idea in qualsiasi momento: <a href="${marketingUnsubscribeUrl()}">preferenze privacy</a>.
+      ${tr("nurture.footer", locale)}
+      <a href="${marketingUnsubscribeUrl()}">${tr("nurture.preferences", locale)}</a>.
     </p>
   </div>
   `.trim();
@@ -604,31 +628,33 @@ export function tripMemberJoinedMemberHtml(params: {
   destination: string;
   organizerName: string | null;
   tripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
   const org = params.organizerName?.trim()
     ? escapeHtml(params.organizerName.trim())
-    : "l&apos;organizzatore";
+    : tr("memberJoined.organizerFallback", locale);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🤝</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Sei nel gruppo: ${dest}
+      ${tr("memberJoined.memberTitle", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      ${org} ti ha aggiunto al viaggio. Puoi vedere itinerario e spese condivise nell&apos;app.
+      ${tr("memberJoined.memberBody", locale, { organizer: org })}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Apri il viaggio
+          ${tr("memberJoined.memberCta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip
+      ${tr("signature", locale)}
     </p>
   </div>
   `.trim();
@@ -638,27 +664,31 @@ export function tripMemberJoinedOrganizerHtml(params: {
   destination: string;
   memberEmail: string;
   tripUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
+  const dest = escapeHtml(params.destination);
+  const email = escapeHtml(params.memberEmail);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">👥</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Nuovo membro per ${escapeHtml(params.destination)}
+      ${tr("memberJoined.organizerTitle", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      <strong>${escapeHtml(params.memberEmail)}</strong> &egrave; entrato nel gruppo del viaggio.
+      ${tr("memberJoined.organizerBody", locale, { email })}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Vedi il gruppo
+          ${tr("memberJoined.organizerCta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip
+      ${tr("signature", locale)}
     </p>
   </div>
   `.trim();
@@ -668,30 +698,34 @@ export function itineraryReadyMemberHtml(params: {
   destination: string;
   tripUrl: string;
   geoScoreLabel: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
+  const dest = escapeHtml(params.destination);
+  const score = escapeHtml(params.geoScoreLabel);
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🗺️</p>
     <h1 style="font-size:20px;font-weight:600;color:#222;margin:0 0 12px">
-      Itinerario pronto &mdash; ${escapeHtml(params.destination)}
+      ${tr("itineraryReady.memberTitle", locale, { destination: dest })}
     </h1>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Il piano del viaggio &egrave; stato generato. Efficienza percorso (stima AI): <strong>${escapeHtml(params.geoScoreLabel)}</strong>
+      ${tr("itineraryReady.efficiency", locale, { score })}
     </p>
     <p style="font-size:14px;line-height:1.6;color:#555">
-      Come membro del gruppo puoi consultare giorno per giorno attivit&agrave; e mappa dall&apos;app.
+      ${tr("itineraryReady.memberNote", locale)}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.tripUrl}"
            style="display:inline-block;padding:12px 28px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          Apri l&apos;itinerario
+          ${tr("itineraryReady.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip
+      ${tr("signature", locale)}
     </p>
   </div>
   `.trim();
@@ -702,44 +736,44 @@ export function referralRewardHtml(params: {
   rewardAmount: number;
   creditExpiresAt: string;
   tripsUrl: string;
+  locale?: string | null;
 }): string {
+  const locale = normalizeEmailLocale(params.locale);
+  const amount = params.rewardAmount.toFixed(2);
   return `
   <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#1a1a2e">
-    <h1 style="font-size:22px;margin:0 0 16px">🎁 Hai guadagnato 1 trip gratis!</h1>
+    <h1 style="font-size:22px;margin:0 0 16px">${tr("referralReward.title", locale)}</h1>
     <p style="font-size:15px;line-height:1.6;color:#444">
-      Ciao <strong>${escapeHtml(params.referrerName)}</strong>,
+      ${tr("referralSignup.greeting", locale, { name: escapeHtml(params.referrerName) })}
     </p>
     <p style="font-size:15px;line-height:1.6;color:#444">
-      Un tuo amico ha appena acquistato il primo viaggio su EasyTrip!
-      Come promesso, abbiamo accreditato <strong>&euro;${params.rewardAmount.toFixed(2)}</strong>
-      sul tuo account.
+      ${tr("referralReward.body", locale, { amount })}
     </p>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin:16px 0;text-align:center">
       <p style="font-size:24px;font-weight:700;color:#16a34a;margin:0">
-        +&euro;${params.rewardAmount.toFixed(2)}
+        +&euro;${amount}
       </p>
       <p style="font-size:13px;color:#666;margin:4px 0 0">
-        Credito valido fino al ${params.creditExpiresAt}
+        ${tr("referralReward.validUntil", locale, { date: escapeHtml(params.creditExpiresAt) })}
       </p>
     </div>
     <p style="font-size:15px;line-height:1.6;color:#444">
-      Usa il credito per il tuo prossimo viaggio &mdash; sar&agrave; applicato
-      automaticamente al checkout!
+      ${tr("referralReward.howToUse", locale)}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0 16px">
       <tr><td>
         <a href="${params.tripsUrl}"
            style="display:inline-block;padding:14px 32px;background:#16a34a;color:#fff;
                   font-size:14px;font-weight:600;text-decoration:none;border-radius:8px">
-          ✨ Crea il tuo prossimo viaggio gratis
+          ${tr("referralReward.cta", locale)}
         </a>
       </td></tr>
     </table>
     <p style="font-size:13px;color:#777">
-      Continua a invitare amici per guadagnare ancora!
+      ${tr("referralReward.closing", locale)}
     </p>
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
-      EasyTrip &mdash; Viaggia di pi&ugrave;, pianifica di meno.
+      ${tr("email.brandFooter", locale)}
     </p>
   </div>
   `.trim();

@@ -1,6 +1,12 @@
 import { roundCoordForAi } from "@/lib/geo-privacy";
 import { prisma } from "@/lib/prisma";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
+import {
+  normalizeAiLocale,
+  systemLanguageDirective,
+  userLanguageReminder,
+  type SupportedAiLocale,
+} from "@/lib/ai/prompt-locale";
 import { AppError } from "@/server/errors/AppError";
 import { z } from "zod";
 
@@ -85,7 +91,7 @@ function slotSummary(raw: string | null, label: string): string {
   }
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(locale: SupportedAiLocale): string {
   return [
     "Sei EasyTrip AI in modalità sostituzione slot.",
     "Devi sostituire UNA SINGOLA attività nell'itinerario di un utente.",
@@ -95,6 +101,7 @@ function buildSystemPrompt(): string {
     "Aggiungi SEMPRE 2 alternative contestuali con nota sul timing/apertura.",
     "Se un'alternativa ha restrizioni orarie, spiegale chiaramente.",
     "Rispondi SOLO con JSON valido, zero testo extra, zero markdown.",
+    systemLanguageDirective(locale),
   ].join(" ");
 }
 
@@ -110,6 +117,7 @@ function buildUserPrompt(args: {
   budgetLevel: string;
   style: string | null;
   gpsHint: string;
+  locale: SupportedAiLocale;
 }): string {
   const zoneBlock = args.zoneFocus
     ? `Vincolo zona: rimani in "${args.zoneFocus}" o zone immediatamente adiacenti.`
@@ -172,7 +180,7 @@ REGOLE
 - ESCLUDI lo slot rimosso e posti nello stesso isolato.
 - Se un'alternativa ha restrizioni orarie (apre tardi, chiude presto), spiegalo nella "note".
 - "lat" e "lng" nel replacement DEVONO essere le coordinate WGS84 reali del POI specifico. NON usare coordinate generiche del centro città.
-- Testi in italiano chiaro e concreto.
+- LINGUA DI RISPOSTA: ${userLanguageReminder(args.locale)} Tutti i campi testuali liberi del JSON (title, place, why, tips, whyNotOriginal, geoContinuityNote, dayRouteUpdated, alternatives[].note, ecc.) DEVONO essere in questa lingua.
 `.trim();
 }
 
@@ -195,7 +203,11 @@ export class SlotReplaceService {
       include: {
         tripVersion: {
           include: {
-            trip: true,
+            trip: {
+              include: {
+                organizer: { select: { language: true } },
+              },
+            },
           },
         },
       },
@@ -244,6 +256,7 @@ export class SlotReplaceService {
         ? `Area approssimativa utente (precisione ridotta): lat ${roundCoordForAi(input.lat)}, lng ${roundCoordForAi(input.lng)}. Preferisci luoghi raggiungibili da questa zona. Calcola le distanze da questo punto.`
         : `GPS non fornito. Scegli alternative coerenti con il percorso della giornata nella zona "${day.zoneFocus ?? trip.destination}".`;
 
+    const locale = normalizeAiLocale(trip.organizer?.language);
     const prompt = buildUserPrompt({
       destination: trip.destination,
       dayNumber: day.dayNumber,
@@ -256,13 +269,14 @@ export class SlotReplaceService {
       budgetLevel: trip.budgetLevel ?? "moderate",
       style: trip.style,
       gpsHint,
+      locale,
     });
 
     const response = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: 3000,
       temperature: 0.35,
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(locale),
       messages: [{ role: "user", content: prompt }],
     });
 

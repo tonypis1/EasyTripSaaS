@@ -1,6 +1,6 @@
 "use client";
 
-import { SignUpButton } from "@clerk/nextjs";
+import { SignUpLocaleButton } from "@/components/i18n/clerk-locale-buttons";
 
 type Props = {
   className: string;
@@ -9,13 +9,16 @@ type Props = {
 
 /**
  * CTA stile bottone che apre il modal di registrazione Clerk.
+ *
+ * Usa `SignUpLocaleButton` per inoltrare l'utente a `/{locale}/app` dopo
+ * la registrazione, preservando la lingua scelta sulla home.
  */
 export function SignupCtaButton(props: Props) {
   return (
-    <SignUpButton mode="modal" forceRedirectUrl="/app">
+    <SignUpLocaleButton mode="modal" appPath="/app">
       <button type="button" className={props.className}>
         {props.children}
       </button>
-    </SignUpButton>
+    </SignUpLocaleButton>
   );
 }

@@ -14,6 +14,10 @@ import {
   purchaseConfirmedHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 import { tryClaimWebhookDelivery } from "@/lib/email/webhookDelivery";
 import { isPaidRegeneration } from "@/lib/trip-regen-rules";
 function purchaseAmountCentsForTrip(trip: {
@@ -183,12 +187,16 @@ export class BillingService {
 
       try {
         const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
+        const userLocale = normalizeEmailLocale(user.language);
         await sendTransactionalEmail({
           to: user.email,
-          subject: `Viaggio attivato con crediti — ${trip.destination}`,
+          subject: trEmail("subject.purchaseConfirmed", userLocale, {
+            destination: trip.destination,
+          }),
           html: purchaseConfirmedHtml({
             destination: trip.destination,
             tripUrl,
+            locale: userLocale,
           }),
         });
       } catch {
@@ -623,16 +631,20 @@ export class BillingService {
 
       const organizer = await prisma.user.findUnique({
         where: { id: appUserId },
-        select: { email: true },
+        select: { email: true, language: true },
       });
       if (organizer?.email) {
         const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
+        const organizerLocale = normalizeEmailLocale(organizer.language);
         await sendTransactionalEmail({
           to: organizer.email,
-          subject: `Pagamento ricevuto — ${trip.destination}`,
+          subject: trEmail("subject.purchaseConfirmed", organizerLocale, {
+            destination: trip.destination,
+          }),
           html: purchaseConfirmedHtml({
             destination: trip.destination,
             tripUrl,
+            locale: organizerLocale,
           }),
         });
       }
@@ -676,17 +688,21 @@ export class BillingService {
 
       const organizer = await prisma.user.findUnique({
         where: { id: trip.organizerId },
-        select: { email: true },
+        select: { email: true, language: true },
       });
       if (organizer?.email) {
         const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
+        const organizerLocale = normalizeEmailLocale(organizer.language);
         try {
           await sendTransactionalEmail({
             to: organizer.email,
-            subject: `Completa l'acquisto — ${trip.destination}`,
+            subject: trEmail("subject.abandonedCheckout", organizerLocale, {
+              destination: trip.destination,
+            }),
             html: abandonedCheckoutHtml({
               destination: trip.destination,
               tripUrl,
+              locale: organizerLocale,
             }),
           });
         } catch {

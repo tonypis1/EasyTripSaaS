@@ -1,6 +1,12 @@
 import { roundCoordForAi } from "@/lib/geo-privacy";
 import { prisma } from "@/lib/prisma";
 import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
+import {
+  normalizeAiLocale,
+  systemLanguageDirective,
+  userLanguageReminder,
+  type SupportedAiLocale,
+} from "@/lib/ai/prompt-locale";
 import { AppError } from "@/server/errors/AppError";
 import { z } from "zod";
 
@@ -83,7 +89,7 @@ function slotSummary(raw: string | null, label: string): string {
   }
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(locale: SupportedAiLocale): string {
   return [
     "Sei EasyTrip AI in modalità assistente live durante il viaggio.",
     "L'utente è FISICAMENTE sul posto e ha bisogno di aiuto ORA.",
@@ -91,6 +97,7 @@ function buildSystemPrompt(): string {
     "Priorità assoluta: distanza breve, apertura garantita, esperienza di qualità.",
     "NON suggerire posti che richiedono trasporto pubblico o taxi se non esplicitamente richiesto.",
     "Rispondi SOLO con JSON valido, zero testo extra, zero markdown.",
+    systemLanguageDirective(locale),
   ].join(" ");
 }
 
@@ -106,6 +113,7 @@ function buildUserPrompt(args: {
   budgetLevel: string;
   style: string | null;
   timeOfDay: string;
+  locale: SupportedAiLocale;
 }): string {
   return `
 SITUAZIONE LIVE
@@ -163,7 +171,7 @@ REGOLE FONDAMENTALI
 - Se il motivo è "affollato", suggerisci posti meno turistici / gemme locali.
 - Se il motivo è "tempo libero", suggerisci esperienze complementari al programma.
 - Usa SOLO posti reali e conosciuti della destinazione.
-- Testi in italiano chiaro, conciso e utile.
+- LINGUA DI RISPOSTA: ${userLanguageReminder(args.locale)} Tutti i campi testuali liberi del JSON (contextNote, suggestions[].why, suggestions[].tips, suggestions[].budgetHint, suggestions[].type, suggestions[].distance, ecc.) DEVONO essere in questa lingua.
 `.trim();
 }
 
@@ -181,7 +189,13 @@ export class LiveSuggestService {
       where: { id: input.dayId },
       include: {
         tripVersion: {
-          include: { trip: true },
+          include: {
+            trip: {
+              include: {
+                organizer: { select: { language: true } },
+              },
+            },
+          },
         },
       },
     });
@@ -219,6 +233,7 @@ export class LiveSuggestService {
     const hour = new Date().getUTCHours() + 1;
     const timeOfDay = hour < 12 ? "mattina" : hour < 17 ? "pomeriggio" : "sera";
 
+    const locale = normalizeAiLocale(trip.organizer?.language);
     const prompt = buildUserPrompt({
       destination: trip.destination,
       dayNumber: day.dayNumber,
@@ -231,13 +246,14 @@ export class LiveSuggestService {
       budgetLevel: trip.budgetLevel ?? "moderate",
       style: trip.style,
       timeOfDay,
+      locale,
     });
 
     const response = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: 3000,
       temperature: 0.4,
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(locale),
       messages: [{ role: "user", content: prompt }],
     });
 

@@ -328,7 +328,7 @@ export class TripRepository {
     return prisma.trip.findUnique({
       where: { inviteToken: token },
       include: {
-        organizer: { select: { name: true, email: true } },
+        organizer: { select: { name: true, email: true, language: true } },
         members: {
           include: { user: { select: { id: true, name: true, email: true } } },
         },

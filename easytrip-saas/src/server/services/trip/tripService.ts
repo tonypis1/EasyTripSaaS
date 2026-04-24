@@ -11,6 +11,10 @@ import {
   tripMemberJoinedMemberHtml,
   tripMemberJoinedOrganizerHtml,
 } from "@/lib/email/transactional";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/observability";
 import { prisma } from "@/lib/prisma";
@@ -568,24 +572,28 @@ export class TripService {
     await this.tripRepository.addMember(trip.id, user.id);
 
     const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
+    const memberLocale = normalizeEmailLocale(user.language);
+    const organizerLocale = normalizeEmailLocale(trip.organizer.language);
     void (async () => {
       try {
         await sendTransactionalEmail({
           to: user.email,
-          subject: `Sei nel gruppo — ${trip.destination}`,
+          subject: `${trEmail("memberJoined.memberTitle", memberLocale, { destination: trip.destination })}`,
           html: tripMemberJoinedMemberHtml({
             destination: trip.destination,
             organizerName: trip.organizer.name,
             tripUrl,
+            locale: memberLocale,
           }),
         });
         await sendTransactionalEmail({
           to: trip.organizer.email,
-          subject: `Nuovo membro — ${trip.destination}`,
+          subject: `${trEmail("memberJoined.organizerTitle", organizerLocale, { destination: trip.destination })}`,
           html: tripMemberJoinedOrganizerHtml({
             destination: trip.destination,
             memberEmail: user.email,
             tripUrl,
+            locale: organizerLocale,
           }),
         });
       } catch (err) {
@@ -686,14 +694,16 @@ export class TripService {
 
     if (result.creditAmount > 0) {
       try {
+        const userLocale = normalizeEmailLocale(user.language);
         await sendTransactionalEmail({
           to: user.email,
-          subject: `Viaggio annullato — €${result.creditAmount.toFixed(2)} di credito per te`,
+          subject: trEmail("subject.cancelConfirmed", userLocale),
           html: cancelConfirmedHtml({
             destination: result.destination,
             creditAmount: result.creditAmount,
             creditExpiresAt: toDateOnlyIsoUtc(result.creditExpiresAt),
             tripsUrl: `${config.app.baseUrl}/app/trips?new=1`,
+            locale: userLocale,
           }),
         });
       } catch {

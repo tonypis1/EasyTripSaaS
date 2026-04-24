@@ -12,7 +12,7 @@ test.describe("carousel version pills (visual)", () => {
   test.use({ storageState: authState! });
 
   test("version pills layout snapshot @visual", async ({ page }) => {
-    await page.goto(`/app/trips/${tripId}`);
+    await page.goto(`/it/app/trips/${tripId}`);
 
     const pills = page.getByTestId("trip-version-pills");
     const visible = await pills.isVisible().catch(() => false);

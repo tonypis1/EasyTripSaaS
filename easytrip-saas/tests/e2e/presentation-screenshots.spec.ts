@@ -97,7 +97,7 @@ test.describe("Screenshot per presentation.html (pubblici)", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
 
     // Primo avvio Next (compile) può superare 60s; NS_ERROR_NET_TIMEOUT se il dev non è in ascolto.
-    await page.goto("/", { waitUntil: "domcontentloaded", timeout: 120_000 });
+    await page.goto("/it", { waitUntil: "domcontentloaded", timeout: 120_000 });
     await page.waitForLoadState("load");
     await page.waitForTimeout(1500);
     const landingPath = path.join(OUT_DIR, "01-landing.png");
@@ -115,7 +115,7 @@ test.describe("Screenshot per presentation.html (pubblici)", () => {
       });
     }
 
-    await page.goto("/app/trips", {
+    await page.goto("/it/app/trips", {
       waitUntil: "domcontentloaded",
       timeout: 120_000,
     });
@@ -142,12 +142,12 @@ if (hasValidStorage && storagePath) {
       fs.mkdirSync(OUT_DIR, { recursive: true });
       await page.setViewportSize({ width: 1440, height: 900 });
 
-      await page.goto("/app", {
+      await page.goto("/it/app", {
         waitUntil: "domcontentloaded",
         timeout: 60_000,
       });
       await page.waitForLoadState("load");
-      await waitForAppOriginPath(page, "/app");
+      await waitForAppOriginPath(page, "/it/app");
 
       await expect(
         page.getByRole("heading", { name: /la tua dashboard/i }),
@@ -164,11 +164,11 @@ if (hasValidStorage && storagePath) {
       // Il nav ha "I miei viaggi" come link, non come heading: l'h1 è univoco. Stringa lunga = contenuto reale della pagina (non solo nav).
       const tripsPageMarker =
         "generazione e lo sblocco giorno per giorno";
-      await page.goto("/app/trips", {
+      await page.goto("/it/app/trips", {
         waitUntil: "load",
         timeout: 120_000,
       });
-      await waitForAppOriginPath(page, "/app/trips");
+      await waitForAppOriginPath(page, "/it/app/trips");
       const tripsTitle = page.getByRole("heading", {
         level: 1,
         name: "I miei viaggi",
@@ -201,11 +201,11 @@ if (hasValidStorage && storagePath) {
 
       if (tripId && tripId.trim()) {
         const id = tripId.trim();
-        await gotoWithBindingRetry(page, `/app/trips/${id}`, {
+        await gotoWithBindingRetry(page, `/it/app/trips/${id}`, {
           timeout: 120_000,
           retries: 3,
         });
-        await expect(page).toHaveURL(new RegExp(`/app/trips/${id}(\\?|$)`));
+        await expect(page).toHaveURL(new RegExp(`/it/app/trips/${id}(\\?|$)`));
         await page
           .getByRole("heading", { level: 1 })
           .first()
@@ -259,7 +259,7 @@ if (hasValidStorage && storagePath) {
             } catch {
               // Trip già pagato, importo zero, o Stripe non configurato: salta 10
             }
-            await page.goto("/app/trips", {
+            await page.goto("/it/app/trips", {
               waitUntil: "domcontentloaded",
               timeout: 60_000,
             });
@@ -267,12 +267,12 @@ if (hasValidStorage && storagePath) {
         }
       }
 
-      await page.goto("/app/referral", {
+      await page.goto("/it/app/referral", {
         waitUntil: "domcontentloaded",
         timeout: 60_000,
       });
       await page.waitForLoadState("load");
-      await waitForAppOriginPath(page, "/app/referral");
+      await waitForAppOriginPath(page, "/it/app/referral");
       await expect(
         page.getByRole("heading", { name: /invita un amico/i }),
       ).toBeVisible({ timeout: 45_000 });
@@ -285,7 +285,7 @@ if (hasValidStorage && storagePath) {
 
       const joinToken = joinTokenRaw?.trim();
       if (joinToken) {
-        await page.goto(`/join/${joinToken}`, {
+        await page.goto(`/it/join/${joinToken}`, {
           waitUntil: "domcontentloaded",
           timeout: 60_000,
         });
@@ -298,12 +298,12 @@ if (hasValidStorage && storagePath) {
         });
       }
 
-      await page.goto("/app/account/privacy", {
+      await page.goto("/it/app/account/privacy", {
         waitUntil: "domcontentloaded",
         timeout: 60_000,
       });
       await page.waitForLoadState("load");
-      await waitForAppOriginPath(page, "/app/account/privacy");
+      await waitForAppOriginPath(page, "/it/app/account/privacy");
       await expect(
         page.getByRole("heading", { name: /privacy e dati personali/i }),
       ).toBeVisible({ timeout: 45_000 });

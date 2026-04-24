@@ -32,7 +32,7 @@
 
 ## 6. CI
 
-- Pipeline GitHub Actions (repo root `.github/workflows/ci.yml`) — esito job come gate qualità; non sostituisce APM.
+- Pipeline GitHub Actions (repo root `.github/workflows/main.yml`) — esito job come gate qualità; non sostituisce APM.
 
 ## 7. Limiti attuali
 

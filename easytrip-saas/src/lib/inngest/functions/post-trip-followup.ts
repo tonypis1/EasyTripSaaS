@@ -7,6 +7,7 @@ import {
   postTripFeedbackHtml,
   postTripReengageHtml,
 } from "@/lib/email/transactional";
+import { normalizeEmailLocale, t as tr } from "@/lib/email/email-i18n";
 
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
@@ -48,19 +49,23 @@ export const postTripFollowup = inngest.createFunction(
         select: {
           id: true,
           destination: true,
-          organizer: { select: { email: true } },
+          organizer: { select: { email: true, language: true } },
         },
       });
 
       let count = 0;
       for (const t of trips) {
         try {
+          const locale = normalizeEmailLocale(t.organizer.language);
           await sendTransactionalEmail({
             to: t.organizer.email,
-            subject: `💭 Com'è andato il viaggio a ${t.destination}?`,
+            subject: tr("subject.postTripFeedback", locale, {
+              destination: t.destination,
+            }),
             html: postTripFeedbackHtml({
               destination: t.destination,
               newTripUrl,
+              locale,
             }),
           });
           count++;
@@ -86,7 +91,7 @@ export const postTripFollowup = inngest.createFunction(
         },
         select: {
           id: true,
-          organizer: { select: { email: true } },
+          organizer: { select: { email: true, language: true } },
         },
       });
 
@@ -96,10 +101,11 @@ export const postTripFollowup = inngest.createFunction(
         if (emailsSent.has(t.organizer.email)) continue;
         emailsSent.add(t.organizer.email);
         try {
+          const locale = normalizeEmailLocale(t.organizer.language);
           await sendTransactionalEmail({
             to: t.organizer.email,
-            subject: "🌤️ Dove vai il prossimo weekend?",
-            html: postTripReengageHtml({ newTripUrl }),
+            subject: tr("subject.postTripReengage", locale),
+            html: postTripReengageHtml({ newTripUrl, locale }),
           });
           count++;
         } catch (err) {

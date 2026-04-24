@@ -1,0 +1,528 @@
+{
+  "meta": {
+    "root": {
+      "title": "EasyTrip — Itinerarios AI para viajes cortos",
+      "description": "Planifica escapadas y fines de semana con itinerarios impulsados por IA, gastos compartidos y versiones guardadas. Elige un idioma y empieza en minutos."
+    },
+    "app": {
+      "title": "Panel de EasyTrip",
+      "description": "Gestiona tus itinerarios, gastos compartidos y versiones guardadas."
+    }
+  },
+  "common": {
+    "appName": "EasyTrip",
+    "tagline": "Itinerarios con IA para viajes cortos",
+    "back": "Atrás",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "loading": "Cargando...",
+    "retry": "Reintentar",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "nav": {
+    "home": "Inicio",
+    "myTrips": "Mis viajes",
+    "newTrip": "Nuevo viaje",
+    "account": "Cuenta",
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar sesión"
+  },
+  "locale": {
+    "switcher": {
+      "label": "Idioma",
+      "it": "Italiano",
+      "en": "Inglés",
+      "es": "Español",
+      "fr": "Francés",
+      "de": "Alemán"
+    }
+  },
+  "home": {
+    "metadata": {
+      "title": "EasyTrip — Itinerarios con IA para escapadas en Europa | Planifica en 30 segundos",
+      "description": "Planifica viajes cortos de 2–5 días o más con IA. Itinerarios optimizados por distancias, restaurantes locales y joyas ocultas.",
+      "ogLocale": "es_ES",
+      "ogImageAlt": "EasyTrip — Itinerarios con IA para viajes cortos"
+    },
+    "nav": {
+      "howItWorks": "Cómo funciona",
+      "pricing": "Precios",
+      "faq": "FAQ",
+      "myTrips": "Mis viajes",
+      "signIn": "Iniciar sesión",
+      "signUp": "Registrarse",
+      "reservedArea": "Área de socios"
+    },
+    "hero": {
+      "badge": "Itinerarios inteligentes",
+      "titleLine1": "Itinerarios con IA para viajes cortos.",
+      "titleLine2": "Planifica en 30 segundos.",
+      "subtitle": "La IA crea un plan día a día, optimizado geográficamente, con restaurantes locales y joyas ocultas. Acceso temporal: el día 2 se desbloquea el día 2.",
+      "signupCard": {
+        "title": "Crea tu primer itinerario",
+        "body": "Regístrate gratis y accede directamente al panel: sin lista de espera.",
+        "ctaSignUp": "Empezar ahora",
+        "ctaSignIn": "Iniciar sesión",
+        "authFooter": "Tras iniciar sesión, accede a <em>creación de viajes y al panel</em>."
+      },
+      "benefitsCard": {
+        "title": "Lo que obtienes al instante",
+        "item1": "Generación de itinerario con IA para 2–5 días o más",
+        "item2": "Mapas y rutas optimizadas (minimiza desplazamientos)",
+        "item3": "Regenera: 3 gratis → 7 máx → carrusel",
+        "footer": "Cancelación: crédito para usar en un año."
+      }
+    },
+    "heroAuth": {
+      "greetingPrefix": "Hola,",
+      "greetingFallback": "viajero",
+      "planLabel": "Plan",
+      "subExpiresPrefix": "hasta el",
+      "welcomeBack": "Bienvenido de nuevo",
+      "titleLine2": "Tu centro de viajes.",
+      "subtitle": "Retoma un itinerario o crea uno nuevo: generación con IA, desbloqueo día por día, mapas y regeneraciones como en el área reservada.",
+      "createNewCta": "Crear nuevo itinerario",
+      "viewAllCta": "Todos los viajes →"
+    },
+    "dashboard": {
+      "emptyTitle": "Tus itinerarios",
+      "emptyBody": "Aún no tienes itinerarios. Usa el formulario de abajo para crear uno.",
+      "eyebrow": "Panel rápido",
+      "title": "Últimos itinerarios",
+      "viewAll": "Ver todos →",
+      "carouselLabel": "Carrusel · hasta v{version}",
+      "noVersions": "Aún no hay versiones.",
+      "generatedAt": "Generada {when}",
+      "status": {
+        "pending": "Pendiente",
+        "active": "Activo",
+        "expired": "Caducado",
+        "cancelled": "Cancelado"
+      }
+    },
+    "features": {
+      "eyebrow": "01 — Estructura y valor",
+      "title": "No compras un producto. Compras una experiencia a lo largo del tiempo.",
+      "body": "La caducidad es el producto en sí: que el día 2 solo se desbloquee el día 2 significa que el usuario abre la app cada mañana del viaje. Eso genera un compromiso que ningún PDF puede replicar.",
+      "box1": {
+        "title": "Desbloqueo progresivo",
+        "body": "El día 1 solo se ve el día 1. El día 2 se desbloquea el día 2."
+      },
+      "box2": {
+        "title": "Acceso ≠ Archivo",
+        "body": "No compras un PDF. Compras el acceso a un sistema dinámico que sabe dónde estás y qué pasa hoy."
+      },
+      "rightTitle": "Los 3 puntos que cuentan",
+      "item1": {
+        "title": "Generación de itinerario con IA",
+        "body": "Entrada: destino + fechas + estilo. Salida: plan día a día desbloqueado progresivamente."
+      },
+      "item2": {
+        "title": "Mapas en vivo",
+        "body": "Rutas optimizadas para minimizar desplazamientos. Un clic para abrir Google Maps."
+      },
+      "item3": {
+        "title": "PackedUp (grupo)",
+        "body": "Itinerario compartido, votaciones in-app y reparto de gastos integrado."
+      },
+      "footer": "Regenera: 3 gratis → 7 máx → carrusel. Así dejas de cambiarlo todo el tiempo, eliges el mejor itinerario y empiezas a disfrutar del viaje."
+    },
+    "pricing": {
+      "eyebrow": "02 — Precios claros",
+      "title": "Precio simple. Valor inmediato.",
+      "subtitle": "Paga por viaje o elige una suscripción.",
+      "plans": {
+        "solo": {
+          "name": "Viaje Solo / Pareja",
+          "badge": "Core",
+          "priceDisplay": "€9,99/viaje",
+          "desc": "TripGenius básico, 1–2 personas.",
+          "feature1": "Desbloqueo progresivo diario",
+          "feature2": "Itinerario optimizado geográficamente",
+          "feature3": "Restaurantes locales + joyas ocultas",
+          "feature4": "Regenera: 3 gratis → 7 máx → carrusel",
+          "cta": "Regístrate y crea un viaje →",
+          "highlightFooter": "3 gratis → 7 máx → carrusel: regenera sin agobio, con un límite claro."
+        },
+        "group": {
+          "name": "Viaje en Grupo (3–5 personas)",
+          "badge": "PackedUp",
+          "priceDisplay": "€14,99/viaje",
+          "desc": "TripGenius + PackedUp. Un grupo que ya reparte los gastos.",
+          "feature1": "Itinerario compartido",
+          "feature2": "Reparto automático de gastos",
+          "feature3": "Chat de viaje integrado",
+          "feature4": "Todos los miembros ven el mismo desbloqueo",
+          "cta": "Crea una cuenta y organiza el grupo →"
+        },
+        "frequent": {
+          "name": "Viajero frecuente",
+          "badge": "Suscripción",
+          "priceDisplay": "€14,99/mes",
+          "desc": "Viajes ilimitados solo/pareja durante 1 mes.",
+          "feature1": "Ideal si viajas a menudo",
+          "feature2": "Menos tiempo replanificando",
+          "feature3": "Coherente con los precios del checkout",
+          "feature4": "Add-on LocalPass: +€3,99 por ciudad (insider, joyas ocultas)",
+          "cta": "Regístrate y descubre los planes →"
+        }
+      },
+      "addon": {
+        "title": "Además (Premium)",
+        "body": "Cualquier plan + <accent>€3,99 add-on por ciudad</accent> con LocalPass: lugares curados por insiders locales, joyas ocultas y consejos no turísticos."
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Respuestas rápidas, antes de que lo dudes.",
+      "subtitle": "Cancelación: crédito para usar en un año. Los contenidos están pensados para vivirlos en el tiempo, no para coleccionarlos como archivos.",
+      "items": {
+        "q1": {
+          "q": "¿Cómo funciona el desbloqueo diario?",
+          "a": "El día 1 solo se ve el día 1. El día 2 se desbloquea el día 2. El acceso expira al final del viaje + 1 día (end_date + 1d)."
+        },
+        "q2": {
+          "q": "¿Cuánto tarda en estar listo el plan completo?",
+          "a": "El itinerario se crea en 30 segundos. El sistema usa prompts distintos según el momento: generación, adaptación en vivo y sustitución de slots."
+        },
+        "q3": {
+          "q": "¿Cuántas veces puedo regenerar un itinerario?",
+          "a": "3 regeneraciones gratis. Después 4–7 de pago (€1,99). Tras el máximo: carrusel (vuelves a la versión 1, eliges el mejor itinerario y empiezas a disfrutar)."
+        },
+        "q4": {
+          "q": "¿Funciona sin conexión?",
+          "a": "Generar el itinerario y las funciones en vivo necesitan conexión. Durante el viaje puedes consultar el plan ya desbloqueado, pero generar/adaptar requiere red."
+        },
+        "q5": {
+          "q": "¿En qué se diferencia LocalPass de otras plataformas de viajes?",
+          "a": "LocalPass trae contenido auténtico de insiders locales: sitios curados, joyas ocultas y consejos no turísticos. El objetivo es evitar los sitios que la mayoría de turistas ve en otras plataformas."
+        }
+      }
+    },
+    "testimonials": {
+      "eyebrow": "Confianza",
+      "title": "Las frases que escuchas antes de comprar.",
+      "subtitle": "Cuando entiendes que el plan no es un PDF estático, sino un sistema que se adapta al viaje, dejas de perder tiempo y empiezas a explorar.",
+      "caption": "Feedback de investigación de usuarios y viajeros",
+      "items": {
+        "t1": {
+          "label": "Viajero frecuente",
+          "quote": "Pierdo 8 horas planificando cada viaje. Solo quiero decir adónde voy y tener un plan que funcione."
+        },
+        "t2": {
+          "label": "Grupo (3-5 amigos)",
+          "quote": "Organizar un viaje entre cinco es peor que trabajar: votaciones, gastos, quién reserva qué."
+        },
+        "t3": {
+          "label": "Estilo LocalPass",
+          "quote": "A menudo acabo en trampas para turistas. Quiero saber adónde va de verdad la gente del lugar."
+        }
+      }
+    },
+    "cta": {
+      "eyebrow": "Listo para viajar",
+      "titleLine1": "Regístrate gratis.",
+      "titleLine2": "Tu itinerario en pocos minutos.",
+      "subtitle": "Toda la experiencia de viaje está pensada para vivirse día a día.",
+      "bonus": "Bonus: Invita a un amigo → <strong>1 viaje gratis</strong>."
+    },
+    "footer": {
+      "tagline": "Itinerarios con IA para viajes cortos en Europa. Planifica en 30 segundos.",
+      "howItWorks": "Cómo funciona",
+      "pricing": "Precios",
+      "faq": "FAQ",
+      "reservedArea": "Área de socios",
+      "rights": "© {year} EasyTrip. Todos los derechos reservados."
+    }
+  },
+  "app": {
+    "nav": {
+      "myTrips": "Mis viajes",
+      "inviteFriends": "Invitar amigos",
+      "privacy": "Privacidad"
+    },
+    "dashboard": {
+      "eyebrow": "Área reservada",
+      "title": "Tu panel",
+      "description": "Crea un viaje, completa el pago, espera la generación y consulta los días con desbloqueo progresivo.",
+      "ctaViewTrips": "Ir a los viajes →",
+      "noTrips": "Aún no tienes viajes.",
+      "viewAll": "Ver todos"
+    },
+    "trips": {
+      "list": {
+        "eyebrow": "Itinerarios",
+        "title": "Mis viajes",
+        "hint": "Crea un viaje, completa el pago y sigue la generación y el desbloqueo día a día.",
+        "listHeading": "Lista",
+        "empty": "Aún no hay viajes: usa el formulario de arriba para crear uno.",
+        "createCta": "Crea tu primer viaje",
+        "createdAt": "Creado el",
+        "paid": "Pagado",
+        "unpaid": "Por pagar",
+        "activeDaysSuffix": "{count} días en borrador",
+        "localPassTitle": "LocalPass activo en este viaje",
+        "status": {
+          "draft": "Borrador",
+          "ready": "Listo",
+          "inProgress": "En curso",
+          "completed": "Completado"
+        }
+      },
+      "create": {
+        "title": "Nuevo viaje",
+        "subtitle": "Tras la creación podrás pagar e iniciar la generación del itinerario con IA.",
+        "destinationLabel": "Destino",
+        "destinationPlaceholder": "p. ej. Lisboa",
+        "startDateLabel": "Inicio",
+        "endDateLabel": "Fin",
+        "tripTypeLabel": "Tipo",
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Pareja",
+          "group": "Grupo (3–5)"
+        },
+        "styleLabel": "Estilo (opc.)",
+        "stylePlaceholder": "foodie, cultura…",
+        "budgetLabel": "Presupuesto",
+        "budget": {
+          "economy": "Económico",
+          "economyHint": "Comida callejera, museos gratuitos, transporte público",
+          "moderate": "Estándar",
+          "moderateHint": "Equilibrio calidad/precio, mix de experiencias",
+          "premium": "Premium",
+          "premiumHint": "Restaurantes top, tours privados, experiencias VIP"
+        },
+        "localPassLabel": "LocalPass (opcional)",
+        "localPassHint": "Añade 3,99 € por cada ciudad donde quieras consejos de insider, gemas ocultas y sugerencias no turísticas (LocalPass).",
+        "submit": "Crear viaje",
+        "submitting": "Creando…",
+        "errorGeneric": "No se pudo crear el viaje",
+        "errorNetwork": "Error de red. Inténtalo de nuevo."
+      },
+      "detail": {
+        "back": "Volver a los viajes",
+        "regenerateDay": "Regenerar día",
+        "loading": "Cargando itinerario...",
+        "dayLabel": "Día",
+        "lockedDay": "Este día se desbloquea el {date}",
+        "expensesTab": "Gastos",
+        "itineraryTab": "Itinerario",
+        "headerBack": "Todos los viajes",
+        "localPassActive": "LocalPass activo",
+        "localPassCities": "{count} ciudades",
+        "localPassTooltip": "Este viaje incluye el complemento LocalPass: el itinerario se generó con instrucciones extra para consejos de insider.",
+        "localPassTagline": "Joyas ocultas, consejos fuera del circuito turístico y restaurantes con sabor local — ya incluidos en la generación de este viaje.",
+        "statusLabel": "Estado:",
+        "paid": "Pagado",
+        "unpaid": "Pendiente de pago",
+        "countdownPre": "El viaje empieza en",
+        "daysPlural": "{count, plural, one {día} other {días}}",
+        "countdownPreHint": "El contenido se desbloquea día a día a partir de la fecha de salida.",
+        "countdownOngoing": "El viaje está en curso —",
+        "countdownOngoingDay": "Día {current} de {total}",
+        "countdownOngoingHint": "¡Buen viaje! Los días futuros se desbloquearán automáticamente.",
+        "countdownCompleted": "Viaje completado — todo el contenido está disponible.",
+        "editPrefs": "Editar preferencias",
+        "closePrefs": "Cerrar preferencias",
+        "savePrefs": "Guardar preferencias",
+        "saving": "Guardando…",
+        "regenerate": "Regenerar itinerario",
+        "generating": "Generando…",
+        "redirecting": "Redirigiendo…",
+        "regenerateWithCost": "Regenerar (1,99 €)",
+        "gpsUse": "Usar GPS",
+        "gpsAcquiring": "Obteniendo ubicación…",
+        "gpsHint": "Mejora «Cambiar franja» con tu ubicación",
+        "regenerationCanceled": "Pago de regeneración cancelado.",
+        "priceLabel": "Precio del viaje",
+        "creditDiscount": "Descuento con créditos",
+        "total": "Total",
+        "itineraryTitle": "Itinerario",
+        "devPreview": "Vista previa de desarrollo",
+        "dayRoute": "Ruta del día",
+        "group": "Grupo",
+        "closeReplacement": "Cerrar detalles de sustitución",
+        "lunch": "Almuerzo",
+        "dinner": "Cena",
+        "closeSuggestions": "Cerrar sugerencias",
+        "refreshMembers": "Actualizar lista de miembros",
+        "copyLink": "Copiar enlace",
+        "members": {
+          "refresh": "Actualizar",
+          "roleOrganizer": "Organizador",
+          "roleMember": "Miembro",
+          "inviteLinkLabel": "Enlace de invitación",
+          "linkCopied": "¡Enlace copiado!",
+          "generateInviteLink": "Generar enlace de invitación",
+          "inviteLinkHint": "Comparte el enlace con quien quieras invitar. El miembro tendrá acceso de solo lectura al itinerario y podrá participar en la división de gastos.",
+          "readOnlyNotice": "Acceso de solo lectura. Solo el organizador puede editar el itinerario."
+        },
+        "expenses": {
+          "title": "División de gastos",
+          "subtitle": "Registra los gastos y descubre quién le debe qué a quién"
+        },
+        "budget": {
+          "economy": "Económico",
+          "moderate": "Estándar",
+          "premium": "Premium"
+        },
+        "slot": {
+          "morning": "Mañana",
+          "afternoon": "Tarde",
+          "evening": "Noche",
+          "morningShort": "M",
+          "afternoonShort": "T",
+          "eveningShort": "N",
+          "changePrefix": "Cambiar"
+        },
+        "errors": {
+          "generic": "Operación fallida",
+          "checkoutUnavailable": "Pago no disponible",
+          "network": "Error de red",
+          "networkCheckout": "Error de red durante el pago",
+          "networkRetry": "Error de red. Inténtalo de nuevo.",
+          "geoUnsupported": "El navegador no admite geolocalización.",
+          "geoUnsupportedShort": "Geolocalización no compatible",
+          "geoReadFailed": "No se pudo leer la ubicación. Revisa los permisos.",
+          "suggestError": "Error al sugerir"
+        },
+        "status": {
+          "geoAcquired": "Ubicación obtenida (precisión reducida por privacidad).",
+          "prefsUpdated": "Preferencias actualizadas. Puedes regenerar el itinerario gratis."
+        },
+        "unlockTitle": "Desbloquear la generación",
+        "unlockCreditMsg": "¡Tienes suficientes créditos para activar este viaje gratis!",
+        "unlockPayMsg": "Completa el pago para empezar a crear tu itinerario personalizado.",
+        "localPassIncluded": "Incluido en el precio",
+        "localPassIncludedCount": "LocalPass ({count} ciudades)",
+        "localPassIncludedSuffix": ": consejos de expertos y un tono más local en el itinerario.",
+        "creditBalance": "Tienes {amount} en créditos EasyTrip",
+        "free": "Gratis",
+        "activating": "Activando…",
+        "useCreditsFree": "Usa tus créditos — Gratis",
+        "payNow": "Ir al pago",
+        "payNowWithAmount": "Ir al pago — {amount}",
+        "startGenDev": "Iniciar generación (dev)",
+        "sending": "Enviando…",
+        "dayTitle": "Día {n}",
+        "soonUnlocking": "Desbloqueando pronto…",
+        "preview": "Vista previa",
+        "role": {
+          "org": "Organizador",
+          "member": "Miembro"
+        },
+        "ticket": {
+          "describeProblem": "Describe brevemente el problema:",
+          "additionalDetails": "Detalles adicionales (opcional):",
+          "sent": "¡Ticket enviado! Te responderemos lo antes posible.",
+          "error": "Error al enviar el ticket",
+          "open": "Abrir ticket"
+        },
+        "devModeTitle": "Solo desarrollo local",
+        "devModeRun": "Requiere <code>npm run inngest:dev</code> en una segunda terminal."
+      },
+      "delete": {
+        "cancelButton": "Cancelar viaje",
+        "cancelConfirmPaid": "¿Cancelar «{destination}»?\n\nEl importe pagado se convertirá en crédito EasyTrip (válido 365 días) para usar en tu próximo viaje.",
+        "cancelConfirmFree": "¿Eliminar «{destination}» de tu lista?",
+        "cancelErrorFallback": "No se puede cancelar el viaje",
+        "cancelTooltipPaid": "Cancela el viaje y recibe crédito EasyTrip",
+        "cancelTooltipFree": "Elimina el viaje de tu lista",
+        "notCancellable": "No cancelable",
+        "notCancellableTooltip": "No puedes cancelar un viaje que ya ha comenzado",
+        "archiveButton": "Quitar de la lista",
+        "archiveConfirm": "¿Ocultar «{destination}» de la lista?\n\nEl viaje se eliminará de tu lista. Todos los datos y pagos permanecen guardados en el sistema.{hint}",
+        "archiveHint": "\n\n⚠️ Nota: esta acción oculta el viaje pero NO genera créditos.\nPara cancelar el viaje y recibir créditos EasyTrip, usa en su lugar «Cancelar viaje».",
+        "archiveErrorFallback": "No se puede ocultar el viaje",
+        "archiveTooltip": "Oculta el viaje de la lista (ningún dato se elimina)",
+        "archived": "Oculto de la lista",
+        "creditGranted": "€{amount} acreditados"
+      },
+      "postTrip": {
+        "backToTrips": "Todos los viajes",
+        "eyebrow": "Viaje completado",
+        "heroLine1": "Tu viaje a",
+        "heroLine2": "fue inolvidable",
+        "heroBody": "Cada viaje deja huella. Los lugares que descubriste, los sabores que probaste, los momentos que viviste — están todos aquí, listos para revivirse.",
+        "daysSingular": "día de aventura",
+        "daysPlural": "días de aventura",
+        "expiryPrefix": "El acceso a tu itinerario expiró el",
+        "expirySuffix": "Pero los recuerdos duran para siempre.",
+        "reactivateTitle": "Revive los recuerdos",
+        "reactivateBody": "Reactiva el acceso completo a tu itinerario por <strong>30 días</strong>. Revive cada día, cada restaurante, cada joya oculta que descubriste.",
+        "reactivateCta": "Reactivar acceso — €2,90",
+        "reactivateError": "Error durante la reactivación",
+        "reactivateNetworkError": "Error de red. Inténtalo de nuevo.",
+        "newTripTitle": "Planifica tu próximo viaje",
+        "newTripBody": "Ya has vivido la magia de un itinerario a medida. La próxima aventura te espera — con un <accent>20% de descuento</accent> dedicado a ti.",
+        "newTripCta": "Nuevo viaje — 20% de descuento",
+        "footerNote": "Tu itinerario está seguro. Puedes reactivar el acceso en cualquier momento."
+      },
+      "expenses": {
+        "totalLabel": "Total gastos",
+        "addButton": "Añadir gasto",
+        "descriptionLabel": "Descripción",
+        "descriptionPlaceholder": "p. ej. Cena en Mario",
+        "amountLabel": "Importe (€)",
+        "amountPlaceholder": "0.00",
+        "categoryLabel": "Categoría",
+        "dayLabel": "Día (opcional)",
+        "dayNone": "— Ninguno —",
+        "dayOption": "Día {day}",
+        "saveButton": "Guardar",
+        "cancelButton": "Cancelar",
+        "paidBy": "Pagado por",
+        "dayPrefix": "Día",
+        "deleteTooltip": "Eliminar gasto",
+        "emptyState": "Ningún gasto registrado todavía.",
+        "groupBalance": "Balance del grupo",
+        "paidTotal": "Pagado: €{amount}",
+        "whoOwesWho": "Quién debe qué a quién",
+        "categories": {
+          "cibo": "Comida",
+          "trasporti": "Transporte",
+          "attivita": "Actividades",
+          "alloggio": "Alojamiento",
+          "altro": "Otros"
+        }
+      }
+    },
+    "account": {
+      "privacy": {
+        "title": "Privacidad y datos",
+        "description": "Gestiona tus datos personales y la privacidad de tu cuenta.",
+        "exportTitle": "Exporta tus datos",
+        "exportBody": "Descarga una copia de tus datos en formato JSON.",
+        "exportCta": "Exportar datos",
+        "deleteTitle": "Eliminar cuenta",
+        "deleteBody": "Acción irreversible: se borrarán la cuenta, los viajes y los datos asociados.",
+        "deleteCta": "Eliminar cuenta",
+        "deleteConfirm": "¿Confirmas la eliminación definitiva de la cuenta?",
+        "deleting": "Eliminando..."
+      }
+    },
+    "notFound": {
+      "title": "Página no encontrada (404)",
+      "body": "La URL no coincide con ninguna página de la app.",
+      "back": "Volver al inicio"
+    }
+  },
+  "join": {
+    "loading": "Cargando invitación...",
+    "invalidTitle": "Invitación no válida",
+    "invalidBody": "El enlace de invitación ya no es válido o ha caducado.",
+    "needAccountTitle": "Inicia sesión para unirte al viaje",
+    "needAccountBody": "Para aceptar la invitación debes iniciar sesión o registrarte.",
+    "signInCta": "Iniciar sesión",
+    "signUpCta": "Registrarse",
+    "joinCta": "Unirme al viaje",
+    "joining": "Uniéndote al viaje..."
+  }
+}

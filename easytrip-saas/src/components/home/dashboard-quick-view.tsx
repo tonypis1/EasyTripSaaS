@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 export type HomeTripRow = {
   id: string;
@@ -37,31 +38,15 @@ function formatGeneratedAtLabel(iso: string): string {
   return `${da}/${mo}/${yy}, ${hh}:${mm}`;
 }
 
-function statusLabel(s: string): string {
-  switch (s) {
-    case "pending":
-      return "In attesa";
-    case "active":
-      return "Attivo";
-    case "expired":
-      return "Scaduto";
-    case "cancelled":
-      return "Annullato";
-    default:
-      return s;
-  }
-}
-
 function TripVersionCarousel(props: {
   tripId: string;
   versions: HomeTripRow["versions"];
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const t = useTranslations("home.dashboard");
 
   if (props.versions.length === 0) {
-    return (
-      <p className="text-et-ink/50 mt-2 text-xs">Nessuna versione ancora.</p>
-    );
+    return <p className="text-et-ink/50 mt-2 text-xs">{t("noVersions")}</p>;
   }
 
   return (
@@ -79,7 +64,9 @@ function TripVersionCarousel(props: {
                 ? "border-et-accent/50 bg-et-accent/15 text-et-accent"
                 : "border-et-border text-et-ink/70 hover:border-et-accent/30 bg-black/15"
             }`}
-            title={`Generata ${formatGeneratedAtLabel(v.generatedAt)}`}
+            title={t("generatedAt", {
+              when: formatGeneratedAtLabel(v.generatedAt),
+            })}
           >
             v{v.versionNum}
             {v.geoScore != null ? ` · ${v.geoScore}` : ""}
@@ -91,61 +78,71 @@ function TripVersionCarousel(props: {
 }
 
 export function DashboardQuickView(props: { trips: HomeTripRow[] }) {
+  const t = useTranslations("home.dashboard");
+
   if (props.trips.length === 0) {
     return (
       <div className="border-et-border bg-et-card rounded-3xl border p-6">
-        <p className="text-et-ink/80 text-sm font-semibold">I tuoi itinerari</p>
-        <p className="text-et-ink/60 mt-2 text-sm">
-          Non hai ancora itinerari. Usa il form qui sotto per crearne uno.
+        <p className="text-et-ink/80 text-sm font-semibold">
+          {t("emptyTitle")}
         </p>
+        <p className="text-et-ink/60 mt-2 text-sm">{t("emptyBody")}</p>
       </div>
     );
   }
+
+  const statusLabel = (s: string): string => {
+    if (s === "pending" || s === "active" || s === "expired" || s === "cancelled") {
+      return t(`status.${s}`);
+    }
+    return s;
+  };
 
   return (
     <div className="border-et-border bg-et-card rounded-3xl border p-6 shadow-[0_24px_80px_-48px_rgba(0,0,0,0.85)]">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-et-accent/88 text-xs font-semibold tracking-[0.2em] uppercase">
-            Dashboard rapida
+            {t("eyebrow")}
           </p>
           <h2 className="font-display text-et-ink mt-1 text-xl font-normal tracking-tight sm:text-2xl">
-            Ultimi itinerari
+            {t("title")}
           </h2>
         </div>
         <Link
           href="/app/trips"
           className="text-et-accent text-sm font-semibold hover:underline"
         >
-          Vedi tutti →
+          {t("viewAll")}
         </Link>
       </div>
       <ul className="mt-6 space-y-6">
-        {props.trips.map((t) => (
+        {props.trips.map((tr) => (
           <li
-            key={t.id}
+            key={tr.id}
             className="border-et-border rounded-2xl border bg-black/10 p-4"
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <Link
-                  href={`/app/trips/${t.id}`}
+                  href={`/app/trips/${tr.id}`}
                   className="text-et-ink hover:text-et-accent text-lg font-semibold transition"
                 >
-                  {t.destination}
+                  {tr.destination}
                 </Link>
                 <p className="text-et-ink/60 mt-1 text-sm">
-                  {formatTripDayIt(t.startDate)} — {formatTripDayIt(t.endDate)} ·{" "}
+                  {formatTripDayIt(tr.startDate)} —{" "}
+                  {formatTripDayIt(tr.endDate)} ·{" "}
                   <span className="text-et-ink/80">
-                    {statusLabel(t.status)}
+                    {statusLabel(tr.status)}
                   </span>
                 </p>
               </div>
               <span className="text-et-ink/50 shrink-0 text-xs">
-                Carosello · fino a v{t.currentVersion}
+                {t("carouselLabel", { version: tr.currentVersion })}
               </span>
             </div>
-            <TripVersionCarousel tripId={t.id} versions={t.versions} />
+            <TripVersionCarousel tripId={tr.id} versions={tr.versions} />
           </li>
         ))}
       </ul>

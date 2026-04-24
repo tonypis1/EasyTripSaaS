@@ -1,0 +1,528 @@
+{
+  "meta": {
+    "root": {
+      "title": "EasyTrip — AI itineraries for short trips",
+      "description": "Plan weekends and short getaways with AI-powered itineraries, shared expenses and saved versions. Pick a language and start in minutes."
+    },
+    "app": {
+      "title": "EasyTrip Dashboard",
+      "description": "Manage your itineraries, shared expenses and saved versions."
+    }
+  },
+  "common": {
+    "appName": "EasyTrip",
+    "tagline": "AI itineraries for short trips",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "home": "Home",
+    "myTrips": "My trips",
+    "newTrip": "New trip",
+    "account": "Account",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out"
+  },
+  "locale": {
+    "switcher": {
+      "label": "Language",
+      "it": "Italian",
+      "en": "English",
+      "es": "Spanish",
+      "fr": "French",
+      "de": "German"
+    }
+  },
+  "home": {
+    "metadata": {
+      "title": "EasyTrip — AI Itineraries for Weekends in Europe | Plan in 30 seconds",
+      "description": "Plan short trips of 2–5 or more days with AI. Itineraries optimized for distances, local restaurants and hidden gems.",
+      "ogLocale": "en_US",
+      "ogImageAlt": "EasyTrip — AI itineraries for short trips"
+    },
+    "nav": {
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "myTrips": "My trips",
+      "signIn": "Sign in",
+      "signUp": "Sign up",
+      "reservedArea": "Member area"
+    },
+    "hero": {
+      "badge": "Smart itineraries",
+      "titleLine1": "AI itineraries for short trips.",
+      "titleLine2": "Plan in 30 seconds.",
+      "subtitle": "AI creates a day-by-day plan, geographically optimized, with local restaurants and hidden gems. Time-bound access: day 2 unlocks on day 2.",
+      "signupCard": {
+        "title": "Create your first itinerary",
+        "body": "Sign up for free and jump straight into the dashboard — no waiting list.",
+        "ctaSignUp": "Start now",
+        "ctaSignIn": "Sign in",
+        "authFooter": "After you sign in, use <em>trip creation and the dashboard</em>."
+      },
+      "benefitsCard": {
+        "title": "What you get right away",
+        "item1": "AI itinerary generation for 2–5 or more days",
+        "item2": "Maps and routes optimized to minimize travel time",
+        "item3": "Regenerate: 3 free → 7 max → carousel",
+        "footer": "Cancellation: credit to use within a year."
+      }
+    },
+    "heroAuth": {
+      "greetingPrefix": "Hi,",
+      "greetingFallback": "traveler",
+      "planLabel": "Plan",
+      "subExpiresPrefix": "until",
+      "welcomeBack": "Welcome back",
+      "titleLine2": "Your travel hub.",
+      "subtitle": "Resume an itinerary or create a new one: AI generation, day-by-day unlock, maps and regenerations just like in the reserved area.",
+      "createNewCta": "Create new itinerary",
+      "viewAllCta": "All trips →"
+    },
+    "dashboard": {
+      "emptyTitle": "Your itineraries",
+      "emptyBody": "You don't have any itineraries yet. Use the form below to create one.",
+      "eyebrow": "Quick dashboard",
+      "title": "Latest itineraries",
+      "viewAll": "View all →",
+      "carouselLabel": "Carousel · up to v{version}",
+      "noVersions": "No versions yet.",
+      "generatedAt": "Generated {when}",
+      "status": {
+        "pending": "Pending",
+        "active": "Active",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      }
+    },
+    "features": {
+      "eyebrow": "01 — Structure & value",
+      "title": "You're not buying a product. You're buying an experience over time.",
+      "body": "The expiration is the product itself: day 2 only unlocking on day 2 means users open the app every morning of their trip. That creates engagement no PDF can replicate.",
+      "box1": {
+        "title": "Progressive unlock",
+        "body": "Day 1 only shows day 1. Day 2 unlocks on day 2."
+      },
+      "box2": {
+        "title": "Access ≠ File",
+        "body": "You're not buying a PDF. You're buying access to a dynamic system that knows where you are and what's happening today."
+      },
+      "rightTitle": "The 3 things that matter",
+      "item1": {
+        "title": "AI itinerary generation",
+        "body": "Input: destination + dates + style. Output: a day-by-day plan unlocked progressively."
+      },
+      "item2": {
+        "title": "Live maps",
+        "body": "Routes optimized to minimize travel. One click to open in Google Maps."
+      },
+      "item3": {
+        "title": "PackedUp (group)",
+        "body": "Shared itinerary, in-app voting and built-in expense splitting."
+      },
+      "footer": "Regenerate: 3 free → 7 max → carousel. So you stop tweaking forever, pick the best itinerary and start enjoying your trip."
+    },
+    "pricing": {
+      "eyebrow": "02 — Clear pricing",
+      "title": "Simple pricing. Immediate value.",
+      "subtitle": "Pay per trip or choose a subscription.",
+      "plans": {
+        "solo": {
+          "name": "Solo / Couple Trip",
+          "badge": "Core",
+          "priceDisplay": "€9.99/trip",
+          "desc": "TripGenius basics, 1–2 people.",
+          "feature1": "Daily progressive unlock",
+          "feature2": "Geographically optimized itinerary",
+          "feature3": "Local restaurants + hidden gems",
+          "feature4": "Regenerate: 3 free → 7 max → carousel",
+          "cta": "Sign up and create a trip →",
+          "highlightFooter": "3 free → 7 max → carousel: regenerate without anxiety, within a clear limit."
+        },
+        "group": {
+          "name": "Group Trip (3–5 people)",
+          "badge": "PackedUp",
+          "priceDisplay": "€14.99/trip",
+          "desc": "TripGenius + PackedUp. A group that already splits the bill.",
+          "feature1": "Shared itinerary",
+          "feature2": "Automatic expense splitting",
+          "feature3": "Built-in trip chat",
+          "feature4": "Every member sees the same unlock",
+          "cta": "Create an account and organize the group →"
+        },
+        "frequent": {
+          "name": "Frequent traveler",
+          "badge": "Subscription",
+          "priceDisplay": "€14.99/month",
+          "desc": "Unlimited solo/couple trips for 1 month.",
+          "feature1": "Ideal if you travel often",
+          "feature2": "Less time spent re-planning",
+          "feature3": "Consistent with prices shown at checkout",
+          "feature4": "LocalPass add-on: +€3.99 per city (insider, hidden gems)",
+          "cta": "Sign up and explore the plans →"
+        }
+      },
+      "addon": {
+        "title": "Extra (Premium)",
+        "body": "Any plan + <accent>€3.99 add-on per city</accent> with LocalPass: places curated by local insiders, hidden gems and non-tourist tips."
+      }
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Quick answers, before you second-guess.",
+      "subtitle": "Cancellation: credit to use within a year. Content is meant to be experienced over time, not collected like files.",
+      "items": {
+        "q1": {
+          "q": "How does the daily unlock work?",
+          "a": "Day 1 shows only day 1. Day 2 unlocks on day 2. Access expires at the end of the trip + 1 day (end_date + 1d)."
+        },
+        "q2": {
+          "q": "How long does it take to get the full plan?",
+          "a": "The itinerary is created in 30 seconds. The system uses different prompts for different moments: generation, live adaptation and slot replacement."
+        },
+        "q3": {
+          "q": "How many times can I regenerate an itinerary?",
+          "a": "3 free regenerations. Then 4–7 paid (€1.99). After the maximum: carousel (back to version 1, pick the best itinerary and start enjoying your trip)."
+        },
+        "q4": {
+          "q": "Does it work offline?",
+          "a": "Generating the itinerary and live features need a connection. During the trip you can consult the unlocked plan, but generation/adaptation needs the network."
+        },
+        "q5": {
+          "q": "How is LocalPass different from other travel platforms?",
+          "a": "LocalPass brings authentic content from local insiders: curated places, hidden gems and non-tourist tips. The goal is to avoid the places most tourists see on other platforms."
+        }
+      }
+    },
+    "testimonials": {
+      "eyebrow": "Trust",
+      "title": "The things you hear before buying.",
+      "subtitle": "Once you realize the plan isn't a static PDF but a system that adapts to your trip, you stop wasting time and start exploring.",
+      "caption": "Feedback from user research and travelers",
+      "items": {
+        "t1": {
+          "label": "Frequent traveler",
+          "quote": "I lose 8 hours planning every trip. I just want to say where I'm going and get a plan that works."
+        },
+        "t2": {
+          "label": "Group (3-5 friends)",
+          "quote": "Organizing a trip for five is harder than work: voting, expenses, who books what."
+        },
+        "t3": {
+          "label": "LocalPass style",
+          "quote": "I often end up in tourist traps. I want to know where locals actually go."
+        }
+      }
+    },
+    "cta": {
+      "eyebrow": "Ready to go",
+      "titleLine1": "Sign up for free.",
+      "titleLine2": "Your itinerary in minutes.",
+      "subtitle": "The whole travel experience is designed to be lived day after day.",
+      "bonus": "Bonus: Invite a friend → <strong>1 free trip</strong>."
+    },
+    "footer": {
+      "tagline": "AI itineraries for short trips in Europe. Plan in 30 seconds.",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "reservedArea": "Member area",
+      "rights": "© {year} EasyTrip. All rights reserved."
+    }
+  },
+  "app": {
+    "nav": {
+      "myTrips": "My trips",
+      "inviteFriends": "Invite friends",
+      "privacy": "Privacy"
+    },
+    "dashboard": {
+      "eyebrow": "Reserved area",
+      "title": "Your dashboard",
+      "description": "Create a trip, complete payment, wait for generation and browse days with progressive unlock.",
+      "ctaViewTrips": "Go to trips →",
+      "noTrips": "You don't have any trips yet.",
+      "viewAll": "View all"
+    },
+    "trips": {
+      "list": {
+        "eyebrow": "Itineraries",
+        "title": "My trips",
+        "hint": "Create a trip, complete payment, then follow generation and day-by-day unlock.",
+        "listHeading": "List",
+        "empty": "No trips yet: use the form above to create one.",
+        "createCta": "Create your first trip",
+        "createdAt": "Created on",
+        "paid": "Paid",
+        "unpaid": "To pay",
+        "activeDaysSuffix": "{count} days in draft",
+        "localPassTitle": "LocalPass active on this trip",
+        "status": {
+          "draft": "Draft",
+          "ready": "Ready",
+          "inProgress": "In progress",
+          "completed": "Completed"
+        }
+      },
+      "create": {
+        "title": "New trip",
+        "subtitle": "After creation you can pay and start the AI itinerary generation.",
+        "destinationLabel": "Destination",
+        "destinationPlaceholder": "e.g. Lisbon",
+        "startDateLabel": "Start",
+        "endDateLabel": "End",
+        "tripTypeLabel": "Type",
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Couple",
+          "group": "Group (3–5)"
+        },
+        "styleLabel": "Style (opt.)",
+        "stylePlaceholder": "foodie, culture…",
+        "budgetLabel": "Budget",
+        "budget": {
+          "economy": "Economy",
+          "economyHint": "Street food, free museums, public transport",
+          "moderate": "Standard",
+          "moderateHint": "Balanced price/quality, mix of experiences",
+          "premium": "Premium",
+          "premiumHint": "Top restaurants, private tours, VIP experiences"
+        },
+        "localPassLabel": "LocalPass (optional)",
+        "localPassHint": "Add €3.99 for each city where you want insider tips, hidden gems and non-touristy suggestions (LocalPass).",
+        "submit": "Create trip",
+        "submitting": "Creating…",
+        "errorGeneric": "Unable to create the trip",
+        "errorNetwork": "Network error. Please try again."
+      },
+      "detail": {
+        "back": "Back to trips",
+        "regenerateDay": "Regenerate day",
+        "loading": "Loading itinerary...",
+        "dayLabel": "Day",
+        "lockedDay": "This day unlocks on {date}",
+        "expensesTab": "Expenses",
+        "itineraryTab": "Itinerary",
+        "headerBack": "All trips",
+        "localPassActive": "LocalPass active",
+        "localPassCities": "{count} cities",
+        "localPassTooltip": "This trip includes the LocalPass add-on: the itinerary was generated with extra instructions for insider tips.",
+        "localPassTagline": "Hidden gems, off-the-tourist-path advice and restaurants with a more local feel — already included in the generation of this trip.",
+        "statusLabel": "Status:",
+        "paid": "Paid",
+        "unpaid": "Unpaid",
+        "countdownPre": "Trip starts in",
+        "daysPlural": "{count, plural, one {day} other {days}}",
+        "countdownPreHint": "Content unlocks day by day starting from the departure date.",
+        "countdownOngoing": "Trip is in progress —",
+        "countdownOngoingDay": "Day {current} of {total}",
+        "countdownOngoingHint": "Have a great trip! Future days will unlock automatically.",
+        "countdownCompleted": "Trip completed — all content is available.",
+        "editPrefs": "Edit preferences",
+        "closePrefs": "Close preferences",
+        "savePrefs": "Save preferences",
+        "saving": "Saving…",
+        "regenerate": "Regenerate itinerary",
+        "generating": "Generating…",
+        "redirecting": "Redirecting…",
+        "regenerateWithCost": "Regenerate (€1.99)",
+        "gpsUse": "Use GPS",
+        "gpsAcquiring": "Acquiring…",
+        "gpsHint": "Improve “Swap slot” with your location",
+        "regenerationCanceled": "Regeneration payment cancelled.",
+        "priceLabel": "Trip price",
+        "creditDiscount": "Credit discount",
+        "total": "Total",
+        "itineraryTitle": "Itinerary",
+        "devPreview": "Development preview",
+        "dayRoute": "Day route",
+        "group": "Group",
+        "closeReplacement": "Close replacement details",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "closeSuggestions": "Close suggestions",
+        "refreshMembers": "Refresh member list",
+        "copyLink": "Copy link",
+        "members": {
+          "refresh": "Refresh",
+          "roleOrganizer": "Organizer",
+          "roleMember": "Member",
+          "inviteLinkLabel": "Invite link",
+          "linkCopied": "Link copied!",
+          "generateInviteLink": "Generate invite link",
+          "inviteLinkHint": "Share the link with whoever you want to invite. The member will have read-only access to the itinerary and can join the expense split.",
+          "readOnlyNotice": "Read-only access. Only the organizer can edit the itinerary."
+        },
+        "expenses": {
+          "title": "Expense split",
+          "subtitle": "Log expenses and see who owes what to whom"
+        },
+        "budget": {
+          "economy": "Economy",
+          "moderate": "Standard",
+          "premium": "Premium"
+        },
+        "slot": {
+          "morning": "Morning",
+          "afternoon": "Afternoon",
+          "evening": "Evening",
+          "morningShort": "M",
+          "afternoonShort": "A",
+          "eveningShort": "E",
+          "changePrefix": "Change"
+        },
+        "errors": {
+          "generic": "Operation failed",
+          "checkoutUnavailable": "Checkout unavailable",
+          "network": "Network error",
+          "networkCheckout": "Network error during checkout",
+          "networkRetry": "Network error. Please try again.",
+          "geoUnsupported": "Geolocation is not supported by the browser.",
+          "geoUnsupportedShort": "Geolocation not supported",
+          "geoReadFailed": "Unable to read location. Check your permissions.",
+          "suggestError": "Error while suggesting"
+        },
+        "status": {
+          "geoAcquired": "Location acquired (reduced precision for privacy).",
+          "prefsUpdated": "Preferences updated. You can regenerate the itinerary for free."
+        },
+        "unlockTitle": "Unlock generation",
+        "unlockCreditMsg": "You have enough credits to activate this trip for free!",
+        "unlockPayMsg": "Complete payment to start creating your personalized itinerary.",
+        "localPassIncluded": "Included in the price",
+        "localPassIncludedCount": "LocalPass ({count} cities)",
+        "localPassIncludedSuffix": ": insider tips and a more local tone in the itinerary.",
+        "creditBalance": "You have {amount} in EasyTrip credits",
+        "free": "Free",
+        "activating": "Activating…",
+        "useCreditsFree": "Use your credits — Free",
+        "payNow": "Go to checkout",
+        "payNowWithAmount": "Go to checkout — {amount}",
+        "startGenDev": "Start generation (dev)",
+        "sending": "Sending…",
+        "dayTitle": "Day {n}",
+        "soonUnlocking": "Unlocking soon…",
+        "preview": "Preview",
+        "role": {
+          "org": "Organizer",
+          "member": "Member"
+        },
+        "ticket": {
+          "describeProblem": "Briefly describe the issue:",
+          "additionalDetails": "Additional details (optional):",
+          "sent": "Ticket sent! We will reply as soon as possible.",
+          "error": "Error sending the ticket",
+          "open": "Open ticket"
+        },
+        "devModeTitle": "Local development only",
+        "devModeRun": "Requires <code>npm run inngest:dev</code> in a second terminal."
+      },
+      "delete": {
+        "cancelButton": "Cancel trip",
+        "cancelConfirmPaid": "Cancel «{destination}»?\n\nThe paid amount will be converted to EasyTrip credit (valid for 365 days) to use on your next trip.",
+        "cancelConfirmFree": "Remove «{destination}» from your list?",
+        "cancelErrorFallback": "Unable to cancel the trip",
+        "cancelTooltipPaid": "Cancel the trip and receive EasyTrip credit",
+        "cancelTooltipFree": "Remove the trip from your list",
+        "notCancellable": "Cannot be cancelled",
+        "notCancellableTooltip": "You cannot cancel a trip that has already started",
+        "archiveButton": "Remove from list",
+        "archiveConfirm": "Hide «{destination}» from the list?\n\nThe trip will be removed from your list. All data and payments remain stored in the system.{hint}",
+        "archiveHint": "\n\n⚠️ Note: this action hides the trip but does NOT generate credits.\nTo cancel the trip and receive EasyTrip credits, use «Cancel trip» instead.",
+        "archiveErrorFallback": "Unable to hide the trip",
+        "archiveTooltip": "Hides the trip from the list (no data is deleted)",
+        "archived": "Hidden from list",
+        "creditGranted": "€{amount} credited"
+      },
+      "postTrip": {
+        "backToTrips": "All trips",
+        "eyebrow": "Trip completed",
+        "heroLine1": "Your trip to",
+        "heroLine2": "was unforgettable",
+        "heroBody": "Every trip leaves a mark. The places you discovered, the flavors you tasted, the moments you lived — they're all here, ready to be relived.",
+        "daysSingular": "day of adventure",
+        "daysPlural": "days of adventure",
+        "expiryPrefix": "Access to your itinerary expired on",
+        "expirySuffix": "But memories last forever.",
+        "reactivateTitle": "Relive the memories",
+        "reactivateBody": "Reactivate full access to your itinerary for <strong>30 days</strong>. Relive every day, every restaurant, every hidden gem you discovered.",
+        "reactivateCta": "Reactivate access — €2.90",
+        "reactivateError": "Error during reactivation",
+        "reactivateNetworkError": "Network error. Please retry.",
+        "newTripTitle": "Plan your next trip",
+        "newTripBody": "You've already experienced the magic of a tailored itinerary. The next adventure awaits — with a <accent>20% discount</accent> just for you.",
+        "newTripCta": "New trip — 20% off",
+        "footerNote": "Your itinerary is safe. You can reactivate access at any time."
+      },
+      "expenses": {
+        "totalLabel": "Total expenses",
+        "addButton": "Add expense",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "e.g. Dinner at Mario's",
+        "amountLabel": "Amount (€)",
+        "amountPlaceholder": "0.00",
+        "categoryLabel": "Category",
+        "dayLabel": "Day (optional)",
+        "dayNone": "— None —",
+        "dayOption": "Day {day}",
+        "saveButton": "Save",
+        "cancelButton": "Cancel",
+        "paidBy": "Paid by",
+        "dayPrefix": "Day",
+        "deleteTooltip": "Delete expense",
+        "emptyState": "No expenses recorded yet.",
+        "groupBalance": "Group balance",
+        "paidTotal": "Paid: €{amount}",
+        "whoOwesWho": "Who owes what to whom",
+        "categories": {
+          "cibo": "Food",
+          "trasporti": "Transport",
+          "attivita": "Activities",
+          "alloggio": "Lodging",
+          "altro": "Other"
+        }
+      }
+    },
+    "account": {
+      "privacy": {
+        "title": "Privacy and data",
+        "description": "Manage your personal data and your account privacy.",
+        "exportTitle": "Export your data",
+        "exportBody": "Download a copy of your data in JSON format.",
+        "exportCta": "Export data",
+        "deleteTitle": "Delete account",
+        "deleteBody": "Irreversible action: account, trips and related data will be deleted.",
+        "deleteCta": "Delete account",
+        "deleteConfirm": "Do you confirm the permanent deletion of the account?",
+        "deleting": "Deleting..."
+      }
+    },
+    "notFound": {
+      "title": "Page not found (404)",
+      "body": "This URL does not match any page in the app.",
+      "back": "Back to home"
+    }
+  },
+  "join": {
+    "loading": "Loading invitation...",
+    "invalidTitle": "Invalid invitation",
+    "invalidBody": "This invitation link is no longer valid or has expired.",
+    "needAccountTitle": "Sign in to join the trip",
+    "needAccountBody": "To accept the invitation you need to sign in or sign up.",
+    "signInCta": "Sign in",
+    "signUpCta": "Sign up",
+    "joinCta": "Join the trip",
+    "joining": "Joining the trip..."
+  }
+}

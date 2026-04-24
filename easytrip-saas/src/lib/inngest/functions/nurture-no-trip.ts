@@ -7,6 +7,7 @@ import {
   nurtureNoTripHtml,
   sendMarketingEmail,
 } from "@/lib/email/transactional";
+import { normalizeEmailLocale, t as tr } from "@/lib/email/email-i18n";
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -41,6 +42,7 @@ async function runNurturePhase(phase: Phase): Promise<number> {
     select: {
       id: true,
       email: true,
+      language: true,
     },
   });
 
@@ -49,13 +51,14 @@ async function runNurturePhase(phase: Phase): Promise<number> {
 
   for (const u of users) {
     try {
+      const locale = normalizeEmailLocale(u.language);
       await sendMarketingEmail({
         to: u.email,
         subject:
           phase === 3
-            ? "Il tuo primo itinerario EasyTrip ti aspetta"
-            : "Pronto a pianificare un viaggio con EasyTrip?",
-        html: nurtureNoTripHtml({ phase, appUrl }),
+            ? tr("subject.nurtureNoTrip3", locale)
+            : tr("subject.nurtureNoTrip7", locale),
+        html: nurtureNoTripHtml({ phase, appUrl, locale }),
       });
       await prisma.user.update({
         where: { id: u.id },

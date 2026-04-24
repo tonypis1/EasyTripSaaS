@@ -7,6 +7,10 @@ import {
   preTripCountdownHtml,
   tripStartTodayHtml,
 } from "@/lib/email/transactional";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
@@ -49,20 +53,22 @@ export const preTripReminders = inngest.createFunction(
         select: {
           id: true,
           destination: true,
-          organizer: { select: { email: true } },
+          organizer: { select: { email: true, language: true } },
         },
       });
 
       let count = 0;
       for (const t of trips) {
         try {
+          const locale = normalizeEmailLocale(t.organizer.language);
           await sendTransactionalEmail({
             to: t.organizer.email,
-            subject: `🗓️ Il viaggio a ${t.destination} inizia tra 3 giorni!`,
+            subject: `🗓️ ${trEmail("subject.preTripCountdown", locale)} — ${t.destination}`,
             html: preTripCountdownHtml({
               destination: t.destination,
               daysLeft: 3,
               tripUrl: `${baseUrl}/app/trips/${t.id}`,
+              locale,
             }),
           });
           count++;
@@ -90,19 +96,21 @@ export const preTripReminders = inngest.createFunction(
         select: {
           id: true,
           destination: true,
-          organizer: { select: { email: true } },
+          organizer: { select: { email: true, language: true } },
         },
       });
 
       let count = 0;
       for (const t of trips) {
         try {
+          const locale = normalizeEmailLocale(t.organizer.language);
           await sendTransactionalEmail({
             to: t.organizer.email,
-            subject: `✈️ Buon viaggio a ${t.destination}!`,
+            subject: `✈️ ${trEmail("subject.tripStartToday", locale)} — ${t.destination}`,
             html: tripStartTodayHtml({
               destination: t.destination,
               tripUrl: `${baseUrl}/app/trips/${t.id}`,
+              locale,
             }),
           });
           count++;

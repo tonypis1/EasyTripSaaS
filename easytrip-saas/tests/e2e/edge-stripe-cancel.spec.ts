@@ -12,7 +12,7 @@ test.describe("Stripe checkout edge cases", () => {
   test.use({ storageState: authState! });
 
   test("user can leave Stripe checkout via browser back", async ({ page }) => {
-    await page.goto(`/app/trips/${tripId}`);
+    await page.goto(`/it/app/trips/${tripId}`);
 
     const payBtn = page.getByRole("button", { name: /vai al pagamento/i });
     const visible = await payBtn.isVisible().catch(() => false);
@@ -27,6 +27,6 @@ test.describe("Stripe checkout edge cases", () => {
     ]);
 
     await page.goBack();
-    await expect(page).toHaveURL(new RegExp(`/app/trips/${tripId}`));
+    await expect(page).toHaveURL(new RegExp(`/it/app/trips/${tripId}`));
   });
 });

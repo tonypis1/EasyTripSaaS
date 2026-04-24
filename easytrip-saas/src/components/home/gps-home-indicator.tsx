@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useSyncExternalStore } from "react";
+import { Link } from "@/i18n/navigation";
 
 const GPS_AI_CONSENT_KEY = "easytrip_gps_ai_consent_v1";
 

@@ -52,6 +52,8 @@ model User {
   subExpiresAt      DateTime? @map("sub_expires_at")
   stripeCustomerId  String?   @map("stripe_customer_id")
   totalTrips        Int       @default(0) @map("total_trips")
+  /// Lingua preferita dell'utente (BCP-47 semplificato). Usata per email transazionali e prompt AI quando l'utente è offline.
+  language          String    @default("it") @map("language")
   /// Consenso email marketing (nurture, promemoria commerciali). Default false (opt-in esplicito).
   marketingOptIn    Boolean   @default(false) @map("marketing_opt_in")
   marketingOptInAt  DateTime? @map("marketing_opt_in_at")

@@ -12,7 +12,7 @@ test.describe("checkout flow", () => {
   test.use({ storageState: authState! });
 
   test("user can start checkout from trip detail", async ({ page }) => {
-    await page.goto(`/app/trips/${tripId}`);
+    await page.goto(`/it/app/trips/${tripId}`);
 
     await expect(
       page.getByRole("button", { name: /vai al pagamento/i }),

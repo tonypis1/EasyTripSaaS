@@ -2,6 +2,10 @@ import { verifyWebhook } from "@clerk/backend/webhooks";
 import { NextResponse } from "next/server";
 import { config } from "@/config/unifiedConfig";
 import { welcomeEmailHtml, sendTransactionalEmail } from "@/lib/email/transactional";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 import { tryClaimWebhookDelivery } from "@/lib/email/webhookDelivery";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/observability";
@@ -78,11 +82,12 @@ export async function POST(req: Request) {
   }
 
   const appUrl = config.app.baseUrl;
+  const locale = normalizeEmailLocale(user.language);
   try {
     await sendTransactionalEmail({
       to: email,
-      subject: "Benvenuto in EasyTrip",
-      html: welcomeEmailHtml({ name, appUrl }),
+      subject: trEmail("subject.welcome", locale),
+      html: welcomeEmailHtml({ name, appUrl, locale }),
     });
     await prisma.user.update({
       where: { id: user.id },

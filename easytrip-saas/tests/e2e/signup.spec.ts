@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("signup guard redirects anonymous user @smoke", async ({ page }) => {
-  await page.goto("/app/trips");
+  await page.goto("/it/app/trips");
 
   // Clerk protegge /app: ci aspettiamo redirect verso signin/signup
   await expect(page).toHaveURL(/sign-in|sign-up|clerk/i);
