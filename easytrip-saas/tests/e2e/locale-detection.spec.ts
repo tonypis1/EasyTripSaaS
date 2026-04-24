@@ -65,7 +65,9 @@ test.describe("@smoke locale auto-detection", () => {
     await context.close();
   });
 
-  test("francese → redirect a /fr e pagina in francese", async ({ browser }) => {
+  test("francese → redirect a /fr e pagina in francese", async ({
+    browser,
+  }) => {
     const context = await browser.newContext({
       locale: "fr-FR",
       extraHTTPHeaders: {
@@ -200,9 +202,10 @@ test.describe("LocaleSwitcher", () => {
       timeout: navTimeout,
     });
     // toContainText sull’h1 è più robusto di getByText su una stringa piena (nodi sotto <br/>, ecc.).
-    await expect(
-      page.getByRole("heading", { level: 1 }),
-    ).toContainText(/AI itineraries for short trips/i, { timeout: navTimeout });
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      /AI itineraries for short trips/i,
+      { timeout: navTimeout },
+    );
 
     const cookies = await context.cookies();
     const localeCookie = cookies.find((c) => c.name === "NEXT_LOCALE");

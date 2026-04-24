@@ -590,9 +590,7 @@ export function TripDetailClient({
         setLiveSuggest({ dayId, data: d });
       }
     } catch (err) {
-      setMsg(
-        err instanceof Error ? err.message : td("errors.suggestError"),
-      );
+      setMsg(err instanceof Error ? err.message : td("errors.suggestError"));
     } finally {
       setBusy(null);
     }
@@ -690,7 +688,7 @@ export function TripDetailClient({
             >
               <Ticket className="h-3.5 w-3.5 shrink-0 text-amber-300/90" />
               <span>{td("localPassActive")}</span>
-              <span className="text-amber-200/75 font-normal">
+              <span className="font-normal text-amber-200/75">
                 · {td("localPassCities", { count: trip.localPassCityCount })}
               </span>
             </p>
@@ -1145,9 +1143,7 @@ export function TripDetailClient({
                   {td("unlockTitle")}
                 </h2>
                 <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-                  {fullyByCredit
-                    ? td("unlockCreditMsg")
-                    : td("unlockPayMsg")}
+                  {fullyByCredit ? td("unlockCreditMsg") : td("unlockPayMsg")}
                 </p>
 
                 {trip.localPassCityCount > 0 ? (
@@ -1296,9 +1292,7 @@ export function TripDetailClient({
           <h2 className="font-display text-et-ink text-xl">
             {td("itineraryTitle")}
           </h2>
-          <p className="text-et-ink/55 text-sm">
-            {td("itineraryUnlockHint")}
-          </p>
+          <p className="text-et-ink/55 text-sm">{td("itineraryUnlockHint")}</p>
           {DEV_PREVIEW_UNLOCK_CONTENT ? (
             <p
               className="rounded-xl border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90"
@@ -1756,7 +1750,9 @@ export function TripDetailClient({
                                           {r.reservationNeeded ? (
                                             <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/35 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-100/90">
                                               <Clock className="h-3 w-3" />
-                                              {td("restaurants.reservationRecommended")}
+                                              {td(
+                                                "restaurants.reservationRecommended",
+                                              )}
                                             </span>
                                           ) : (
                                             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200/90">
@@ -2323,13 +2319,9 @@ export function TripDetailClient({
                   type="button"
                   disabled={busy !== null}
                   onClick={async () => {
-                    const subject = window.prompt(
-                      td("support.promptSubject"),
-                    );
+                    const subject = window.prompt(td("support.promptSubject"));
                     if (!subject || subject.trim().length < 3) return;
-                    const message = window.prompt(
-                      td("support.promptDetails"),
-                    );
+                    const message = window.prompt(td("support.promptDetails"));
                     setBusy("support");
                     setMsg(null);
                     try {

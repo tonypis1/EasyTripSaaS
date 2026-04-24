@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export async function GET() {
   const inngestConfigured = Boolean(
     process.env.INNGEST_SIGNING_KEY?.trim() &&
-      process.env.INNGEST_EVENT_KEY?.trim(),
+    process.env.INNGEST_EVENT_KEY?.trim(),
   );
 
   try {

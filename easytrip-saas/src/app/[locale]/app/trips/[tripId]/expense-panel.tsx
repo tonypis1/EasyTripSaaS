@@ -42,7 +42,13 @@ type Settlement = {
 };
 
 // Chiavi delle categorie (valori persistiti lato DB); label/emoji sono localizzati runtime.
-const CATEGORY_KEYS = ["cibo", "trasporti", "attivita", "alloggio", "altro"] as const;
+const CATEGORY_KEYS = [
+  "cibo",
+  "trasporti",
+  "attivita",
+  "alloggio",
+  "altro",
+] as const;
 const CATEGORY_EMOJI: Record<string, string> = {
   cibo: "🍕",
   trasporti: "🚕",
@@ -289,7 +295,9 @@ export function ExpensePanel({ tripId, totalDays }: Props) {
                       <strong>
                         {exp.paidBy.name ?? exp.paidBy.email.split("@")[0]}
                       </strong>
-                      {exp.dayNumber ? ` · ${t("dayPrefix")} ${exp.dayNumber}` : ""}
+                      {exp.dayNumber
+                        ? ` · ${t("dayPrefix")} ${exp.dayNumber}`
+                        : ""}
                     </p>
                   </div>
                 </div>

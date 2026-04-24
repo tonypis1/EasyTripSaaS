@@ -1,9 +1,9 @@
 # 10 — Inngest, sostituzione slot e GPS
 
-| Documento | Percorso |
-|-----------|----------|
-| Indice | [README_00.md](../README_00.md) |
-| Architettura | [02_ARCHITECTURE.md](02_ARCHITECTURE.md) |
+| Documento     | Percorso                                   |
+| ------------- | ------------------------------------------ |
+| Indice        | [README_00.md](../README_00.md)            |
+| Architettura  | [02_ARCHITECTURE.md](02_ARCHITECTURE.md)   |
 | Osservabilità | [11_OBSERVABILITY.md](11_OBSERVABILITY.md) |
 
 ## 1. Client e endpoint
@@ -13,8 +13,8 @@
 
 ## 2. Eventi di dominio rilevanti
 
-| Evento | Emesso da | Effetto |
-|--------|-----------|---------|
+| Evento                    | Emesso da                                     | Effetto                          |
+| ------------------------- | --------------------------------------------- | -------------------------------- |
 | `trip/generate.requested` | Webhook Stripe (post-pagamento), flussi regen | Avvio catena `generateItinerary` |
 
 ## 3. Funzione `generateItinerary`

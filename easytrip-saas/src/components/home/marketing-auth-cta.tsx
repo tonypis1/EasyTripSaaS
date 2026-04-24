@@ -48,4 +48,3 @@ export function MarketingAuthCta(props: Props) {
     </div>
   );
 }
-

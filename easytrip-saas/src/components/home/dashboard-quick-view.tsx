@@ -92,7 +92,12 @@ export function DashboardQuickView(props: { trips: HomeTripRow[] }) {
   }
 
   const statusLabel = (s: string): string => {
-    if (s === "pending" || s === "active" || s === "expired" || s === "cancelled") {
+    if (
+      s === "pending" ||
+      s === "active" ||
+      s === "expired" ||
+      s === "cancelled"
+    ) {
       return t(`status.${s}`);
     }
     return s;

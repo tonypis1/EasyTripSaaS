@@ -24,7 +24,9 @@ function withLocale(path: string, locale: AppLocale): string {
   return `/${locale}${clean === "/" ? "" : clean}`;
 }
 
-export function SignInLocaleButton(props: CommonProps & { mode?: "modal" | "redirect" }) {
+export function SignInLocaleButton(
+  props: CommonProps & { mode?: "modal" | "redirect" },
+) {
   const locale = useLocale() as AppLocale;
   const target = withLocale(props.appPath ?? "/app", locale);
   return (
@@ -34,7 +36,9 @@ export function SignInLocaleButton(props: CommonProps & { mode?: "modal" | "redi
   );
 }
 
-export function SignUpLocaleButton(props: CommonProps & { mode?: "modal" | "redirect" }) {
+export function SignUpLocaleButton(
+  props: CommonProps & { mode?: "modal" | "redirect" },
+) {
   const locale = useLocale() as AppLocale;
   const target = withLocale(props.appPath ?? "/app", locale);
   return (

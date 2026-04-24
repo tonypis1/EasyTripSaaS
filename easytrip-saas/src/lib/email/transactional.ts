@@ -67,10 +67,13 @@ export async function sendMarketingEmail(args: SendArgs): Promise<void> {
   const from = config.email.from;
   const unsub = marketingUnsubscribeUrl();
   if (!key || !from) {
-    logger.info("Email marketing (mock — configura RESEND_API_KEY e EMAIL_FROM)", {
-      to: redactEmail(args.to),
-      subject: args.subject,
-    });
+    logger.info(
+      "Email marketing (mock — configura RESEND_API_KEY e EMAIL_FROM)",
+      {
+        to: redactEmail(args.to),
+        subject: args.subject,
+      },
+    );
     return;
   }
 

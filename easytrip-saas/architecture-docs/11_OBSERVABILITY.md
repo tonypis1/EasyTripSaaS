@@ -1,10 +1,10 @@
 # 11 — Osservabilità e monitoraggio
 
-| Documento | Percorso |
-|-----------|----------|
-| Indice | [README_00.md](../README_00.md) |
-| Inngest | [10_INNGEST_SLOTS.md](10_INNGEST_SLOTS.md) |
-| Deploy | [12_DEPLOYMENT.md](12_DEPLOYMENT.md) |
+| Documento | Percorso                                   |
+| --------- | ------------------------------------------ |
+| Indice    | [README_00.md](../README_00.md)            |
+| Inngest   | [10_INNGEST_SLOTS.md](10_INNGEST_SLOTS.md) |
+| Deploy    | [12_DEPLOYMENT.md](12_DEPLOYMENT.md)       |
 
 ## 1. Analytics prodotto (client)
 

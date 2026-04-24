@@ -11,10 +11,7 @@ import {
   tripMemberJoinedMemberHtml,
   tripMemberJoinedOrganizerHtml,
 } from "@/lib/email/transactional";
-import {
-  normalizeEmailLocale,
-  t as trEmail,
-} from "@/lib/email/email-i18n";
+import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/observability";
 import { prisma } from "@/lib/prisma";
@@ -349,12 +346,15 @@ export class TripService {
       currentVersion: trip.currentVersion,
       isPaid: trip.amountPaid != null,
       userCreditBalanceCents,
-      localPassCityCount: (trip as { localPassCityCount?: number | null }).localPassCityCount ?? 0,
+      localPassCityCount:
+        (trip as { localPassCityCount?: number | null }).localPassCityCount ??
+        0,
       tripPriceCents:
         (trip.tripType === "gruppo"
           ? config.billing.priceGroupCents
           : config.billing.priceSoloCoupleCents) +
-        ((trip as { localPassCityCount?: number | null }).localPassCityCount ?? 0) *
+        ((trip as { localPassCityCount?: number | null }).localPassCityCount ??
+          0) *
           config.billing.priceLocalPassCents,
       inviteToken: isOrganizer ? (trip.inviteToken ?? null) : null,
       isOrganizer,

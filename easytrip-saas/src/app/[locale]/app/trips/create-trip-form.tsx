@@ -18,23 +18,24 @@ export function CreateTripForm() {
 
   // Le opzioni di budget vengono tradotte dinamicamente: label e hint provengono
   // dai file messages/*.json sotto `trips.create.budget.*`.
-  const BUDGET_OPTIONS: { value: BudgetLevel; label: string; hint: string }[] = [
-    {
-      value: "economy",
-      label: t("budget.economy"),
-      hint: t("budget.economyHint"),
-    },
-    {
-      value: "moderate",
-      label: t("budget.moderate"),
-      hint: t("budget.moderateHint"),
-    },
-    {
-      value: "premium",
-      label: t("budget.premium"),
-      hint: t("budget.premiumHint"),
-    },
-  ];
+  const BUDGET_OPTIONS: { value: BudgetLevel; label: string; hint: string }[] =
+    [
+      {
+        value: "economy",
+        label: t("budget.economy"),
+        hint: t("budget.economyHint"),
+      },
+      {
+        value: "moderate",
+        label: t("budget.moderate"),
+        hint: t("budget.moderateHint"),
+      },
+      {
+        value: "premium",
+        label: t("budget.premium"),
+        hint: t("budget.premiumHint"),
+      },
+    ];
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -229,7 +230,10 @@ export function CreateTripForm() {
             value={localPassCities}
             onChange={(e) =>
               setLocalPassCities(
-                Math.min(30, Math.max(0, Number.parseInt(e.target.value || "0", 10) || 0)),
+                Math.min(
+                  30,
+                  Math.max(0, Number.parseInt(e.target.value || "0", 10) || 0),
+                ),
               )
             }
             className="border-et-border bg-et-deep text-et-ink focus:border-et-accent/50 mt-1.5 w-full max-w-[120px] rounded-xl border px-3 py-2.5 text-sm outline-none"

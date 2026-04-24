@@ -98,8 +98,7 @@ export function PostTripScreen({ trip }: Props) {
         <div className="border-et-border bg-et-card flex items-center gap-2 rounded-xl border px-4 py-2.5">
           <MapPin className="text-et-ink/40 h-4 w-4" />
           <span className="text-et-ink/70 text-sm">
-            {totalDays}{" "}
-            {totalDays === 1 ? t("daysSingular") : t("daysPlural")}
+            {totalDays} {totalDays === 1 ? t("daysSingular") : t("daysPlural")}
           </span>
         </div>
         <div className="border-et-border bg-et-card flex items-center gap-2 rounded-xl border px-4 py-2.5">

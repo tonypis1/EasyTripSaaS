@@ -81,7 +81,9 @@ export async function generateMetadata({
   // restituiamo un fallback neutro per non crashare durante la fase metadata.
   if (!hasLocale(routing.locales, locale)) {
     return {
-      metadataBase: new URL(process.env.APP_BASE_URL ?? "http://localhost:3000"),
+      metadataBase: new URL(
+        process.env.APP_BASE_URL ?? "http://localhost:3000",
+      ),
       title: "EasyTrip",
       description: "AI travel itineraries",
     };

@@ -6,10 +6,7 @@ import {
   sendTransactionalEmail,
   tripExpiredHtml,
 } from "@/lib/email/transactional";
-import {
-  normalizeEmailLocale,
-  t as trEmail,
-} from "@/lib/email/email-i18n";
+import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
 
 /**
  * Cron job giornaliero (02:00 UTC).
