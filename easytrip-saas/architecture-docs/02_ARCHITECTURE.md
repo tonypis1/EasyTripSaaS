@@ -74,15 +74,15 @@ Funzioni registrate:
 
 ## 5. Integrazioni esterne
 
-| Servizio  | Uso                                         |
-| --------- | ------------------------------------------- |
-| Clerk     | Autenticazione sessione, protezione `/app`  |
-| Stripe    | Checkout, webhook, subscription (opzionale) |
-| Anthropic | Completamenti itinerario e slot             |
-| Upstash   | Rate limit (opzionale se env assenti)       |
-| Resend    | Email (opzionale)                           |
-| PostHog   | Analytics client (`posthog-js`)             |
-| Vercel Web Analytics | Visite e pagine viste (dashboard Vercel); pacchetto `@vercel/analytics` nel layout radice |
+| Servizio              | Uso                                                                                           |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| Clerk                 | Autenticazione sessione, protezione `/app`                                                    |
+| Stripe                | Checkout, webhook, subscription (opzionale)                                                   |
+| Anthropic             | Completamenti itinerario e slot                                                               |
+| Upstash               | Rate limit (opzionale se env assenti)                                                         |
+| Resend                | Email (opzionale)                                                                             |
+| PostHog               | Analytics client (`posthog-js`)                                                               |
+| Vercel Web Analytics  | Visite e pagine viste (dashboard Vercel); pacchetto `@vercel/analytics` nel layout radice     |
 | Vercel Speed Insights | Core Web Vitals da traffico reale (RUM); pacchetto `@vercel/speed-insights` nel layout radice |
 
 Dettaglio pagamenti: [07_PAYMENTS_STRIPE.md](07_PAYMENTS_STRIPE.md).  

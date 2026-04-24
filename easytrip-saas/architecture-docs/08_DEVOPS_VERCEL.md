@@ -19,14 +19,14 @@
 
 ## 3. Servizi collegati (esterni)
 
-| Servizio      | Funzione                                          |
-| ------------- | ------------------------------------------------- |
-| PostgreSQL    | Database Prisma (es. Neon, RDS, Supabase)         |
-| Clerk         | Auth                                              |
-| Stripe        | Pagamenti                                         |
-| Inngest Cloud | Orchestrazione job (`inngest:dev` per dev locale) |
-| Upstash Redis | Rate limit (opzionale)                            |
-| Resend        | Email (opzionale)                                 |
+| Servizio                           | Funzione                                                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PostgreSQL                         | Database Prisma (es. Neon, RDS, Supabase)                                                                                                                            |
+| Clerk                              | Auth                                                                                                                                                                 |
+| Stripe                             | Pagamenti                                                                                                                                                            |
+| Inngest Cloud                      | Orchestrazione job (`inngest:dev` per dev locale)                                                                                                                    |
+| Upstash Redis                      | Rate limit (opzionale)                                                                                                                                               |
+| Resend                             | Email (opzionale)                                                                                                                                                    |
 | Vercel (Analytics, Speed Insights) | Metriche web e Core Web Vitals nella dashboard del progetto; nessuna env aggiuntiva se l’app è deployata su Vercel (vedi [11_OBSERVABILITY.md](11_OBSERVABILITY.md)) |
 
 ## 4. Variabili d’ambiente obbligatorie (schema Zod)

@@ -19,21 +19,21 @@ I due artefatti sono **incrociati**: `openapi.yaml` espone `externalDocs` verso 
 
 ## Mappa documenti (`architecture-docs/`)
 
-| #   | File                                                                                         | Contenuto                                                 |
-| --- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| 01  | [architecture-docs/01_PRODUCT_DEFINITION.md](architecture-docs/01_PRODUCT_DEFINITION.md)     | Prodotto: generatore JSON, rigenerazione, GPS/slot        |
-| 02  | [architecture-docs/02_ARCHITECTURE.md](architecture-docs/02_ARCHITECTURE.md)                 | Architettura: Next.js, DI, Inngest, integrazioni          |
-| 03  | [architecture-docs/03_DATABASE.md](architecture-docs/03_DATABASE.md)                         | Database: ER Prisma, enum, retention                      |
-| 04  | [architecture-docs/04_API_SPECIFICATION.md](architecture-docs/04_API_SPECIFICATION.md)       | API REST, integrazione OpenAPI, assenza di Server Actions |
-| 05  | [architecture-docs/05_VALIDATION_ZOD.md](architecture-docs/05_VALIDATION_ZOD.md)             | Validazione Zod (env, trip, AI)                           |
-| 06  | [architecture-docs/06_DESIGN_SYSTEM.md](architecture-docs/06_DESIGN_SYSTEM.md)               | UI: Tailwind v4, Lucide; nessuno shadcn/ui                |
-| 07  | [architecture-docs/07_PAYMENTS_STRIPE.md](architecture-docs/07_PAYMENTS_STRIPE.md)           | Stripe: checkout, webhook, subscription opzionale         |
-| 08  | [architecture-docs/08_DEVOPS_VERCEL.md](architecture-docs/08_DEVOPS_VERCEL.md)               | Vercel, env, servizi esterni                              |
-| 09  | [architecture-docs/09_SECURITY_CLERK.md](architecture-docs/09_SECURITY_CLERK.md)             | Clerk, rate limit, privacy API                            |
-| 10  | [architecture-docs/10_INNGEST_SLOTS.md](architecture-docs/10_INNGEST_SLOTS.md)               | Inngest, generazione, slot/GPS, live suggest              |
+| #   | File                                                                                         | Contenuto                                                     |
+| --- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 01  | [architecture-docs/01_PRODUCT_DEFINITION.md](architecture-docs/01_PRODUCT_DEFINITION.md)     | Prodotto: generatore JSON, rigenerazione, GPS/slot            |
+| 02  | [architecture-docs/02_ARCHITECTURE.md](architecture-docs/02_ARCHITECTURE.md)                 | Architettura: Next.js, DI, Inngest, integrazioni              |
+| 03  | [architecture-docs/03_DATABASE.md](architecture-docs/03_DATABASE.md)                         | Database: ER Prisma, enum, retention                          |
+| 04  | [architecture-docs/04_API_SPECIFICATION.md](architecture-docs/04_API_SPECIFICATION.md)       | API REST, integrazione OpenAPI, assenza di Server Actions     |
+| 05  | [architecture-docs/05_VALIDATION_ZOD.md](architecture-docs/05_VALIDATION_ZOD.md)             | Validazione Zod (env, trip, AI)                               |
+| 06  | [architecture-docs/06_DESIGN_SYSTEM.md](architecture-docs/06_DESIGN_SYSTEM.md)               | UI: Tailwind v4, Lucide; nessuno shadcn/ui                    |
+| 07  | [architecture-docs/07_PAYMENTS_STRIPE.md](architecture-docs/07_PAYMENTS_STRIPE.md)           | Stripe: checkout, webhook, subscription opzionale             |
+| 08  | [architecture-docs/08_DEVOPS_VERCEL.md](architecture-docs/08_DEVOPS_VERCEL.md)               | Vercel, env, servizi esterni                                  |
+| 09  | [architecture-docs/09_SECURITY_CLERK.md](architecture-docs/09_SECURITY_CLERK.md)             | Clerk, rate limit, privacy API                                |
+| 10  | [architecture-docs/10_INNGEST_SLOTS.md](architecture-docs/10_INNGEST_SLOTS.md)               | Inngest, generazione, slot/GPS, live suggest                  |
 | 11  | [architecture-docs/11_OBSERVABILITY.md](architecture-docs/11_OBSERVABILITY.md)               | PostHog, Vercel Analytics/Speed Insights, log, Inngest/Stripe |
-| 12  | [architecture-docs/12_DEPLOYMENT.md](architecture-docs/12_DEPLOYMENT.md)                     | CI/CD GitHub Actions, go-live                             |
-| 13  | [architecture-docs/13_CICD_SECRETS_AND_DNS.md](architecture-docs/13_CICD_SECRETS_AND_DNS.md) | Segreti Vercel/GitHub, post-deploy, DNS Hostinger         |
+| 12  | [architecture-docs/12_DEPLOYMENT.md](architecture-docs/12_DEPLOYMENT.md)                     | CI/CD GitHub Actions, go-live                                 |
+| 13  | [architecture-docs/13_CICD_SECRETS_AND_DNS.md](architecture-docs/13_CICD_SECRETS_AND_DNS.md) | Segreti Vercel/GitHub, post-deploy, DNS Hostinger             |
 
 ---
 

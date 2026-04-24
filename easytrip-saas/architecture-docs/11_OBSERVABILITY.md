@@ -8,15 +8,15 @@
 
 ## Panoramica strumenti
 
-| Strumento | Cosa misura | Configurazione tipica | Dove nel codice |
-| --------- | ----------- | --------------------- | --------------- |
-| **PostHog** | Analytics prodotto: eventi, funnel, feature flags, (opz.) session replay | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` (vedi `.env.example`) | `src/app/[locale]/layout.tsx` → `PostHogProvider` |
-| **Vercel Web Analytics** | Visite, pagine viste, percorso utente aggregato (dashboard Vercel) | Nessuna variabile d’ambiente dedicata: il progetto Vercel è associato al deploy | `src/app/layout.tsx` → `<Analytics />` da `@vercel/analytics/next` |
-| **Vercel Speed Insights** | Core Web Vitals da traffico reale (LCP, INP, CLS, ecc.) | Come sopra; abilitare Speed Insights dal pannello progetto se richiesto | `src/app/layout.tsx` → `<SpeedInsights />` da `@vercel/speed-insights/next` |
-| **Log runtime** | Errori e messaggi strutturati lato server | — | `src/lib/observability.ts`; consumo in **Vercel → Logs** |
-| **Inngest Cloud** | Esecuzioni job, retry, errori workflow | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | Dashboard Inngest; sync su `/api/inngest` |
-| **Stripe** | Pagamenti, consegna webhook | Dashboard Stripe | Webhook e log eventi |
-| **Prisma (dev)** | Query SQL verbose | Solo sviluppo | `src/lib/prisma.ts` |
+| Strumento                 | Cosa misura                                                              | Configurazione tipica                                                           | Dove nel codice                                                             |
+| ------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **PostHog**               | Analytics prodotto: eventi, funnel, feature flags, (opz.) session replay | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` (vedi `.env.example`)     | `src/app/[locale]/layout.tsx` → `PostHogProvider`                           |
+| **Vercel Web Analytics**  | Visite, pagine viste, percorso utente aggregato (dashboard Vercel)       | Nessuna variabile d’ambiente dedicata: il progetto Vercel è associato al deploy | `src/app/layout.tsx` → `<Analytics />` da `@vercel/analytics/next`          |
+| **Vercel Speed Insights** | Core Web Vitals da traffico reale (LCP, INP, CLS, ecc.)                  | Come sopra; abilitare Speed Insights dal pannello progetto se richiesto         | `src/app/layout.tsx` → `<SpeedInsights />` da `@vercel/speed-insights/next` |
+| **Log runtime**           | Errori e messaggi strutturati lato server                                | —                                                                               | `src/lib/observability.ts`; consumo in **Vercel → Logs**                    |
+| **Inngest Cloud**         | Esecuzioni job, retry, errori workflow                                   | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`                                      | Dashboard Inngest; sync su `/api/inngest`                                   |
+| **Stripe**                | Pagamenti, consegna webhook                                              | Dashboard Stripe                                                                | Webhook e log eventi                                                        |
+| **Prisma (dev)**          | Query SQL verbose                                                        | Solo sviluppo                                                                   | `src/lib/prisma.ts`                                                         |
 
 **Nota**: PostHog e i due prodotti Vercel possono convivere: PostHog è orientato a **eventi di prodotto** e sperimentazione; Vercel Analytics / Speed Insights sono integrati nella **dashboard di hosting** e non richiedono chiavi pubbliche nel client oltre al deploy sulla piattaforma.
 
