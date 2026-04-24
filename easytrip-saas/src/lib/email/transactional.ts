@@ -1,13 +1,7 @@
 import { config } from "@/config/unifiedConfig";
 import { logger } from "@/lib/observability";
 import { redactEmail } from "@/lib/redact-pii";
-import {
-  daysLabel,
-  formatEmailDate,
-  normalizeEmailLocale,
-  t as tr,
-  type EmailLocale,
-} from "./email-i18n";
+import { daysLabel, normalizeEmailLocale, t as tr } from "./email-i18n";
 
 export type { EmailLocale } from "./email-i18n";
 export { normalizeEmailLocale } from "./email-i18n";
