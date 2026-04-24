@@ -25,7 +25,9 @@ const geistMono = Geist_Mono({
  * a livello root — eredita da qui <html> e <body>. I layout sotto [locale] non
  * devono ridefinire questi tag.
  */
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="it" suppressHydrationWarning>
       <body
