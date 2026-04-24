@@ -27,6 +27,7 @@
 | Inngest Cloud | Orchestrazione job (`inngest:dev` per dev locale) |
 | Upstash Redis | Rate limit (opzionale)                            |
 | Resend        | Email (opzionale)                                 |
+| Vercel (Analytics, Speed Insights) | Metriche web e Core Web Vitals nella dashboard del progetto; nessuna env aggiuntiva se l’app è deployata su Vercel (vedi [11_OBSERVABILITY.md](11_OBSERVABILITY.md)) |
 
 ## 4. Variabili d’ambiente obbligatorie (schema Zod)
 
@@ -51,10 +52,12 @@ Opzionali / default: prezzi Stripe in centesimi, `ANTHROPIC_MODEL`, `STRIPE_SUBS
 | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | Inngest Cloud → sync con `/api/inngest` |
 | `UPSTASH_REDIS_REST_URL`                   | Rate limit                              |
 | `UPSTASH_REDIS_REST_TOKEN`                 | Rate limit                              |
-| `NEXT_PUBLIC_POSTHOG_*`                    | Analytics (`posthog-provider.tsx`)      |
+| `NEXT_PUBLIC_POSTHOG_*`                    | PostHog (`posthog-provider.tsx`)        |
 | `NEXT_PUBLIC_CRISP_WEBSITE_ID`             | Chat (`crisp-chat.tsx`)                 |
 | `NEXT_PUBLIC_*` affiliate                  | `src/lib/affiliate.ts` (partner ID)     |
 | `E2E_*`                                    | Playwright (CI / test)                  |
+
+**Vercel Web Analytics e Speed Insights** non aggiungono chiavi in `.env`: i componenti sono in [`src/app/layout.tsx`](../src/app/layout.tsx) e si associano al progetto Vercel al deploy (abilitare le tab **Analytics** / **Speed Insights** se necessario). Dettaglio: [11_OBSERVABILITY.md](11_OBSERVABILITY.md).
 
 Template completo: [`.env.example`](../.env.example). Validazione manuale: `node scripts/check-env.mjs` (vedi `--strict` / `--production`).
 

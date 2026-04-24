@@ -31,7 +31,7 @@ I due artefatti sono **incrociati**: `openapi.yaml` espone `externalDocs` verso 
 | 08  | [architecture-docs/08_DEVOPS_VERCEL.md](architecture-docs/08_DEVOPS_VERCEL.md)               | Vercel, env, servizi esterni                              |
 | 09  | [architecture-docs/09_SECURITY_CLERK.md](architecture-docs/09_SECURITY_CLERK.md)             | Clerk, rate limit, privacy API                            |
 | 10  | [architecture-docs/10_INNGEST_SLOTS.md](architecture-docs/10_INNGEST_SLOTS.md)               | Inngest, generazione, slot/GPS, live suggest              |
-| 11  | [architecture-docs/11_OBSERVABILITY.md](architecture-docs/11_OBSERVABILITY.md)               | PostHog, log, dashboard Inngest/Stripe                    |
+| 11  | [architecture-docs/11_OBSERVABILITY.md](architecture-docs/11_OBSERVABILITY.md)               | PostHog, Vercel Analytics/Speed Insights, log, Inngest/Stripe |
 | 12  | [architecture-docs/12_DEPLOYMENT.md](architecture-docs/12_DEPLOYMENT.md)                     | CI/CD GitHub Actions, go-live                             |
 | 13  | [architecture-docs/13_CICD_SECRETS_AND_DNS.md](architecture-docs/13_CICD_SECRETS_AND_DNS.md) | Segreti Vercel/GitHub, post-deploy, DNS Hostinger         |
 

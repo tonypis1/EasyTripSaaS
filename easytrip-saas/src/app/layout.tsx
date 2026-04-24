@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cookies, headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Geist_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import { routing, type AppLocale } from "@/i18n/routing";
 import "./globals.css";
@@ -63,6 +64,7 @@ export default async function RootLayout({
       >
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

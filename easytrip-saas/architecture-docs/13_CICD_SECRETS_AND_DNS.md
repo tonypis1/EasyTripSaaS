@@ -123,9 +123,13 @@ Dopo il go-live DNS, aggiorna:
 
 ## 6. Monitoraggio
 
-- **Vercel**: tab **Logs** (runtime) — il logger applicativo scrive JSON su stdout ([`src/lib/observability.ts`](../src/lib/observability.ts)).
+- **Vercel → Logs**: runtime delle funzioni — il logger applicativo scrive JSON su stdout ([`src/lib/observability.ts`](../src/lib/observability.ts)).
+- **Vercel → Analytics**: page views e visitatori (richiede deploy su Vercel e componente `<Analytics />` in [`src/app/layout.tsx`](../src/app/layout.tsx)).
+- **Vercel → Speed Insights**: Core Web Vitals da utenti reali (stesso deploy; componente `<SpeedInsights />` nel layout radice). Abilitare il prodotto dal pannello se non compare ancora.
 - **Inngest Cloud**: run, retry, alert.
 - **PostHog**: sessioni e funnel dopo aver impostato `NEXT_PUBLIC_POSTHOG_KEY` in Production.
+
+Elenco completo e matrice strumenti: [11_OBSERVABILITY.md](11_OBSERVABILITY.md).
 
 ## 7. Riferimenti rapidi
 
