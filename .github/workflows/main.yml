@@ -125,10 +125,29 @@ jobs:
       - name: Install Playwright (Chromium)
         run: npx playwright install chromium
 
+      # Clerk rifiuta chiavi fittizie: servono le stesse test key del .env
+      # (Settings → API Keys). Aggiungile in Repo → Settings → Secrets → Actions.
+      - name: Check Clerk secrets for E2E
+        run: |
+          if [ -z "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ] || [ -z "$CLERK_SECRET_KEY" ]; then
+            echo "::error::Imposta i repository secrets NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY e CLERK_SECRET_KEY (chiavi *test* dalla Clerk Dashboard) per lo job e2e-smoke-local. Vedi easytrip-saas/architecture-docs/13_CICD_SECRETS_AND_DNS.md"
+            exit 1
+          fi
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
       - name: Smoke E2E (@smoke, chromium)
         run: npm run test:e2e:smoke -- --project chromium
         env:
           CI: true
+          # Allineate a `verify-env` e a unifiedConfig: senza, Playwright avvia
+          # next con placeholder e Clerk risponde "Publishable key not valid."
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Upload Playwright report (on failure)
         if: failure()

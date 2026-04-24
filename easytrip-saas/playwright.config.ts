@@ -5,28 +5,49 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000";
 /**
  * In CI (GitHub Actions) non c’è `.env`: `next dev` deve comunque soddisfare
  * `unifiedConfig` (zod) altrimenti l’import della home/DI lancia e il webServer
- * non diventa pronto. Valori fittizi — non chiamate reali a servizi a pagamento
- * nei test @smoke guest; in locale Next carica ancora `.env` e vince su questi.
+ * non diventa pronto.
+ *
+ * - Clerk: la publishable key **non** può essere inventata; va da Clerk
+ *   (test) e in CI va passata con GitHub Actions secrets → env dello step
+ *   E2E (vedi `main.yml`, `13_CICD_SECRETS_AND_DNS.md`).
+ * - Altri: fallback solo se `unifiedConfig` le richiede; Stripe/Anthropic
+ *   non vengono validati come Clerk all’avvio; in locale Next legge ancora
+ *   `.env` e sovrascrive nel processo `next dev`.
  */
+function firstNonEmpty(
+  name: keyof NodeJS.ProcessEnv,
+  fallback: string,
+): string {
+  const v = process.env[name];
+  return v != null && v.trim() !== "" ? v : fallback;
+}
+
 const devServerEnv = {
   ...process.env,
-  DATABASE_URL:
-    process.env.DATABASE_URL ??
+  DATABASE_URL: firstNonEmpty(
+    "DATABASE_URL",
     "postgresql://postgres:postgres@127.0.0.1:5432/e2e_smoke_ci",
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ??
-    "pk_test_e2e_smoke_placeholder",
-  CLERK_SECRET_KEY:
-    process.env.CLERK_SECRET_KEY ??
-    "sk_test_e2e_smoke_placeholder_min_32________",
-  STRIPE_SECRET_KEY:
-    process.env.STRIPE_SECRET_KEY ?? "sk_test_e2e_smoke_placeholder_32ch______",
-  STRIPE_WEBHOOK_SECRET:
-    process.env.STRIPE_WEBHOOK_SECRET ??
+  ),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: firstNonEmpty(
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    "pk_test_e2e_smoke_local_without_env",
+  ),
+  CLERK_SECRET_KEY: firstNonEmpty(
+    "CLERK_SECRET_KEY",
+    "sk_test_e2e_smoke_local_without_env_32b_________",
+  ),
+  STRIPE_SECRET_KEY: firstNonEmpty(
+    "STRIPE_SECRET_KEY",
+    "sk_test_e2e_smoke_placeholder_32ch______",
+  ),
+  STRIPE_WEBHOOK_SECRET: firstNonEmpty(
+    "STRIPE_WEBHOOK_SECRET",
     "whsec_e2e_smoke_ci_placeholder_32b___",
-  ANTHROPIC_API_KEY:
-    process.env.ANTHROPIC_API_KEY ??
+  ),
+  ANTHROPIC_API_KEY: firstNonEmpty(
+    "ANTHROPIC_API_KEY",
     "sk-ant-api03-e2e-smoke-not-used-0000000000000000",
+  ),
 } satisfies NodeJS.ProcessEnv;
 
 export default defineConfig({
