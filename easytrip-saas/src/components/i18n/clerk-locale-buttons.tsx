@@ -10,20 +10,24 @@ import {
   type ReactNode,
 } from "react";
 import type { AppLocale } from "@/i18n/routing";
+import {
+  accountPortalUrlWithReturn,
+  clerkAccountPortalSignInPageUrl,
+  clerkAccountPortalSignUpPageUrl,
+} from "@/lib/clerk-account-portal-urls";
 
 /**
- * Wrapper dei bottoni Clerk che calcola la destinazione post-auth dal locale.
+ * Bottoni Accedi / Registrati / Inizia ora.
  *
- * Per Account Portal su **altro host** (es. `accounts.easytripsaas.com` vs `easytripsaas.com`)
- * usiamo `useClerk().redirectToSignUp` / `redirectToSignIn` con URL **assoluti**
- * (`window.location.origin` + path). I componenti `<SignUpButton mode="redirect">` a volte
- * non navigano in questo scenario; il metodo sul Clerk object segue la config Dashboard.
- *
- * `mode="modal"` resta sui componenti Clerk ufficiali (iframe; richiede CSP adeguata).
+ * In produzione con Account Portal su **altro host**, se `clerk-js` non arriva a
+ * inizializzarsi (`useAuth().isLoaded` resta false), in passato i bottoni restavano
+ * `disabled` e il click non faceva nulla. Qui:
+ * - **non** disabilitiamo più in base a `isLoaded`;
+ * - se sono impostate `NEXT_PUBLIC_CLERK_ACCOUNT_PORTAL_ORIGIN` o `NEXT_PUBLIC_CLERK_SIGN_*_URL`,
+ *   usiamo navigazione diretta `window.location` verso il portal con `redirect_url` (documentato da Clerk).
  */
 
 type CommonProps = {
-  /** Path applicativo SENZA prefisso locale, es. "/app" o `/join/${token}`. */
   appPath?: string;
   children: React.ReactNode;
 };
@@ -38,7 +42,6 @@ function withLocale(path: string, locale: AppLocale): string {
   return `/${locale}${clean === "/" ? "" : clean}`;
 }
 
-/** URL assoluto per il ritorno dopo auth (cross-subdomain / Account Portal). */
 function absoluteReturnUrl(path: string): string {
   if (typeof window === "undefined") return path;
   return `${window.location.origin}${path}`;
@@ -47,12 +50,10 @@ function absoluteReturnUrl(path: string): string {
 function mergeClickableChild(
   children: ReactNode,
   onActivate: () => void,
-  extraDisabled: boolean,
 ): ReactNode {
   if (!isValidElement(children)) return children;
   const el = children as ReactElement<ClickableChildProps>;
   return cloneElement(el, {
-    disabled: Boolean(el.props.disabled) || extraDisabled,
     onClick: (e: ReactMouseEvent) => {
       el.props.onClick?.(e);
       onActivate();
@@ -81,15 +82,20 @@ export function SignInLocaleButton(
   }
 
   const after = () => {
-    if (!isLoaded) return;
     const url = absoluteReturnUrl(targetPath);
+    const portal = clerkAccountPortalSignInPageUrl();
+    if (portal) {
+      window.location.assign(accountPortalUrlWithReturn(portal, url));
+      return;
+    }
+    if (!isLoaded) return;
     void clerk.redirectToSignIn({
       signInForceRedirectUrl: url,
       signUpForceRedirectUrl: url,
     });
   };
 
-  return mergeClickableChild(props.children, after, !isLoaded);
+  return mergeClickableChild(props.children, after);
 }
 
 export function SignUpLocaleButton(
@@ -113,13 +119,18 @@ export function SignUpLocaleButton(
   }
 
   const after = () => {
-    if (!isLoaded) return;
     const url = absoluteReturnUrl(targetPath);
+    const portal = clerkAccountPortalSignUpPageUrl();
+    if (portal) {
+      window.location.assign(accountPortalUrlWithReturn(portal, url));
+      return;
+    }
+    if (!isLoaded) return;
     void clerk.redirectToSignUp({
       signUpForceRedirectUrl: url,
       signInForceRedirectUrl: url,
     });
   };
 
-  return mergeClickableChild(props.children, after, !isLoaded);
+  return mergeClickableChild(props.children, after);
 }
