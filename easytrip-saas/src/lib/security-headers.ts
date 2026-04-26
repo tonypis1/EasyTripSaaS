@@ -2,6 +2,11 @@
  * Valori per Content-Security-Policy e header complementari (OWASP).
  * Aggiornare quando si aggiungono nuovi script/domini di terze parti (Clerk, Turnstile/CAPTCHA, PostHog, Crisp, mappe).
  *
+ * Clerk: in **produzione** (chiavi `pk_live_` / FAPI su clerk.com) il componente
+ * SignUp/SignIn in modalità `modal` può aprire iframe sotto `https://*.clerk.com`.
+ * `frame-src` deve includerlo: altrimenti il browser blocca il frame e il bottone
+ * "Registrati" non mostra nulla (solo in prod; in dev basta spesso `*.clerk.accounts.dev`).
+ *
  * Nota: Next.js usa script inline per l’idratazione; in molti setup restano necessari
  * 'unsafe-inline' / 'unsafe-eval' — per restringere ulteriormente usare nonce via middleware.
  */
@@ -54,6 +59,7 @@ export const CONTENT_SECURITY_POLICY = [
   "worker-src 'self' blob: https://*.crisp.chat",
   [
     "frame-src 'self'",
+    "https://*.clerk.com",
     "https://*.clerk.accounts.dev",
     "https://challenges.cloudflare.com",
     "https://*.crisp.chat",
