@@ -1,13 +1,7 @@
 import { config } from "@/config/unifiedConfig";
 import { logger } from "@/lib/observability";
 import { redactEmail } from "@/lib/redact-pii";
-import {
-  daysLabel,
-  formatEmailDate,
-  normalizeEmailLocale,
-  t as tr,
-  type EmailLocale,
-} from "./email-i18n";
+import { daysLabel, normalizeEmailLocale, t as tr } from "./email-i18n";
 
 export type { EmailLocale } from "./email-i18n";
 export { normalizeEmailLocale } from "./email-i18n";
@@ -67,10 +61,13 @@ export async function sendMarketingEmail(args: SendArgs): Promise<void> {
   const from = config.email.from;
   const unsub = marketingUnsubscribeUrl();
   if (!key || !from) {
-    logger.info("Email marketing (mock — configura RESEND_API_KEY e EMAIL_FROM)", {
-      to: redactEmail(args.to),
-      subject: args.subject,
-    });
+    logger.info(
+      "Email marketing (mock — configura RESEND_API_KEY e EMAIL_FROM)",
+      {
+        to: redactEmail(args.to),
+        subject: args.subject,
+      },
+    );
     return;
   }
 

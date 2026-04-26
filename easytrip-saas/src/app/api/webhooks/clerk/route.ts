@@ -1,11 +1,11 @@
 import { verifyWebhook } from "@clerk/backend/webhooks";
 import { NextResponse } from "next/server";
 import { config } from "@/config/unifiedConfig";
-import { welcomeEmailHtml, sendTransactionalEmail } from "@/lib/email/transactional";
 import {
-  normalizeEmailLocale,
-  t as trEmail,
-} from "@/lib/email/email-i18n";
+  welcomeEmailHtml,
+  sendTransactionalEmail,
+} from "@/lib/email/transactional";
+import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
 import { tryClaimWebhookDelivery } from "@/lib/email/webhookDelivery";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/observability";
@@ -94,7 +94,9 @@ export async function POST(req: Request) {
       data: { welcomeEmailSentAt: new Date() },
     });
   } catch (e) {
-    logger.error("Invio email benvenuto fallito", e as Error, { userId: user.id });
+    logger.error("Invio email benvenuto fallito", e as Error, {
+      userId: user.id,
+    });
     throw e;
   }
 

@@ -1,10 +1,10 @@
 # 07 — Pagamenti: Stripe
 
-| Documento | Percorso |
-|-----------|----------|
-| Indice | [README_00.md](../README_00.md) |
-| API | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
-| Deploy | [12_DEPLOYMENT.md](12_DEPLOYMENT.md) |
+| Documento | Percorso                                           |
+| --------- | -------------------------------------------------- |
+| Indice    | [README_00.md](../README_00.md)                    |
+| API       | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
+| Deploy    | [12_DEPLOYMENT.md](12_DEPLOYMENT.md)               |
 
 ## 1. Libreria e configurazione
 
@@ -15,11 +15,11 @@
 
 Implementazione in `src/server/services/billing/billingService.ts`:
 
-| Flusso | Endpoint API | Metadata tipici |
-|--------|--------------|-----------------|
-| Acquisto viaggio | `POST /api/billing/checkout` | `tripId`, `appUserId`, importi, crediti applicabili |
-| Rigenerazione extra | `POST /api/billing/regen-checkout` | `paymentType: regen` |
-| Riattivazione accesso | `POST /api/billing/reactivate-checkout` | `paymentType: reactivate` |
+| Flusso                | Endpoint API                            | Metadata tipici                                     |
+| --------------------- | --------------------------------------- | --------------------------------------------------- |
+| Acquisto viaggio      | `POST /api/billing/checkout`            | `tripId`, `appUserId`, importi, crediti applicabili |
+| Rigenerazione extra   | `POST /api/billing/regen-checkout`      | `paymentType: regen`                                |
+| Riattivazione accesso | `POST /api/billing/reactivate-checkout` | `paymentType: reactivate`                           |
 
 Le sessioni usano `stripe.checkout.sessions.create` (modalità e line_items secondo implementazione corrente).
 
@@ -31,11 +31,11 @@ Le sessioni usano `stripe.checkout.sessions.create` (modalità e line_items seco
 
 ### Eventi gestiti
 
-| Evento Stripe | Azione |
-|---------------|--------|
-| `checkout.session.completed` | Idempotenza su `stripePaymentId`; ramo `purchase` (registra pagamento, `markAsPaid`, email, `trip/generate.requested` Inngest); ramo `regen` (pagamento + evento generazione); ramo `reactivate` (estensione accesso +30 giorni); applicazione crediti da metadata se presente |
-| `customer.subscription.updated` | `syncSubscriptionPlanFromStripe` |
-| `customer.subscription.deleted` | `syncSubscriptionPlanFromStripe` |
+| Evento Stripe                   | Azione                                                                                                                                                                                                                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `checkout.session.completed`    | Idempotenza su `stripePaymentId`; ramo `purchase` (registra pagamento, `markAsPaid`, email, `trip/generate.requested` Inngest); ramo `regen` (pagamento + evento generazione); ramo `reactivate` (estensione accesso +30 giorni); applicazione crediti da metadata se presente |
+| `customer.subscription.updated` | `syncSubscriptionPlanFromStripe`                                                                                                                                                                                                                                               |
+| `customer.subscription.deleted` | `syncSubscriptionPlanFromStripe`                                                                                                                                                                                                                                               |
 
 ### Subscription opzionale
 
@@ -43,16 +43,16 @@ Le sessioni usano `stripe.checkout.sessions.create` (modalità e line_items seco
 
 ## 4. Variabili d’ambiente (billing)
 
-| Variabile | Ruolo |
-|-----------|--------|
-| `STRIPE_SECRET_KEY` | API server |
-| `STRIPE_WEBHOOK_SECRET` | Verifica firma webhook |
+| Variabile                        | Ruolo                               |
+| -------------------------------- | ----------------------------------- |
+| `STRIPE_SECRET_KEY`              | API server                          |
+| `STRIPE_WEBHOOK_SECRET`          | Verifica firma webhook              |
 | `STRIPE_PRICE_SOLO_COUPLE_CENTS` | Prezzo base solo/coppia (centesimi) |
-| `STRIPE_PRICE_GROUP_CENTS` | Prezzo gruppo |
-| `STRIPE_PRICE_REGEN_CENTS` | Rigenerazione |
-| `STRIPE_PRICE_REACTIVATE_CENTS` | Riattivazione |
-| `STRIPE_PRICE_LOCALPASS_CENTS` | Add-on LocalPass (per città) |
-| `STRIPE_SUBSCRIPTION_PRICE_ID` | Opzionale — abbonamento |
+| `STRIPE_PRICE_GROUP_CENTS`       | Prezzo gruppo                       |
+| `STRIPE_PRICE_REGEN_CENTS`       | Rigenerazione                       |
+| `STRIPE_PRICE_REACTIVATE_CENTS`  | Riattivazione                       |
+| `STRIPE_PRICE_LOCALPASS_CENTS`   | Add-on LocalPass (per città)        |
+| `STRIPE_SUBSCRIPTION_PRICE_ID`   | Opzionale — abbonamento             |
 
 ## 5. Modello dati
 

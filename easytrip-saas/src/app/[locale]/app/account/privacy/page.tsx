@@ -25,7 +25,12 @@ export default function AccountPrivacyPage() {
           ok?: boolean;
           marketingOptIn?: boolean;
         };
-        if (!cancelled && res.ok && json.ok && typeof json.marketingOptIn === "boolean") {
+        if (
+          !cancelled &&
+          res.ok &&
+          json.ok &&
+          typeof json.marketingOptIn === "boolean"
+        ) {
           setMarketingOptIn(json.marketingOptIn);
         }
       } catch {
@@ -113,8 +118,8 @@ export default function AccountPrivacyPage() {
           Privacy e dati personali
         </h1>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Esporta una copia dei tuoi dati (diritto alla portabilità) o richiedi la
-          cancellazione coordinata del tuo account (diritto all&apos;oblio).
+          Esporta una copia dei tuoi dati (diritto alla portabilità) o richiedi
+          la cancellazione coordinata del tuo account (diritto all&apos;oblio).
         </p>
       </div>
 
@@ -129,9 +134,9 @@ export default function AccountPrivacyPage() {
           Comunicazioni email
         </h2>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Le email su pagamenti e viaggi restano sempre attive. Puoi scegliere se
-          ricevere anche suggerimenti e promemoria promozionali (es. se non hai
-          ancora creato un viaggio).
+          Le email su pagamenti e viaggi restano sempre attive. Puoi scegliere
+          se ricevere anche suggerimenti e promemoria promozionali (es. se non
+          hai ancora creato un viaggio).
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <label className="text-et-ink/88 flex cursor-pointer items-center gap-2 text-sm">
@@ -149,7 +154,7 @@ export default function AccountPrivacyPage() {
           ) : null}
         </div>
         {marketingError ? (
-          <p className="text-red-300/90 mt-2 text-sm" role="alert">
+          <p className="mt-2 text-sm text-red-300/90" role="alert">
             {marketingError}
           </p>
         ) : null}
@@ -190,9 +195,10 @@ export default function AccountPrivacyPage() {
           Cancella account
         </h2>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Questa azione è <strong className="text-et-ink/80">definitiva</strong>:
-          eliminiamo i dati nel database, le relazioni con Stripe (se presenti) e
-          l&apos;utente in Clerk. Non potrai recuperare l&apos;account.
+          Questa azione è <strong className="text-et-ink/80">definitiva</strong>
+          : eliminiamo i dati nel database, le relazioni con Stripe (se
+          presenti) e l&apos;utente in Clerk. Non potrai recuperare
+          l&apos;account.
         </p>
         <label
           htmlFor="delete-confirm"
@@ -213,12 +219,12 @@ export default function AccountPrivacyPage() {
           type="button"
           onClick={() => void onDeleteAccount()}
           disabled={busy}
-          className="border-red-500/50 bg-red-500/10 text-red-200 hover:bg-red-500/15 mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? "Cancellazione…" : "Cancella definitivamente il mio account"}
         </button>
         {error ? (
-          <p className="text-red-300/90 mt-3 text-sm" role="alert">
+          <p className="mt-3 text-sm text-red-300/90" role="alert">
             {error}
           </p>
         ) : null}

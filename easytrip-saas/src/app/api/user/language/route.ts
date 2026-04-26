@@ -17,7 +17,10 @@ export async function GET() {
   } catch (e) {
     if (e instanceof AppError && e.statusCode === 401) {
       return NextResponse.json(
-        { ok: false, error: { message: "Non autenticato", code: "UNAUTHORIZED" } },
+        {
+          ok: false,
+          error: { message: "Non autenticato", code: "UNAUTHORIZED" },
+        },
         { status: 401 },
       );
     }
@@ -68,7 +71,10 @@ export async function PATCH(req: Request) {
   } catch (e) {
     if (e instanceof AppError && e.statusCode === 401) {
       return NextResponse.json(
-        { ok: false, error: { message: "Non autenticato", code: "UNAUTHORIZED" } },
+        {
+          ok: false,
+          error: { message: "Non autenticato", code: "UNAUTHORIZED" },
+        },
         { status: 401 },
       );
     }

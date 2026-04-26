@@ -165,4 +165,3 @@ export default async function Home({ params }: LocalePageProps) {
     </div>
   );
 }
-

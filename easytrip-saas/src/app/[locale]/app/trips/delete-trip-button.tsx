@@ -114,7 +114,9 @@ export function DeleteTripButton({
     return (
       <div className="flex items-center gap-2 rounded-lg border border-sky-400/30 bg-sky-500/10 px-3 py-1.5">
         <EyeOff className="h-3.5 w-3.5 text-sky-400" />
-        <span className="text-xs font-medium text-sky-300">{t("archived")}</span>
+        <span className="text-xs font-medium text-sky-300">
+          {t("archived")}
+        </span>
       </div>
     );
   }

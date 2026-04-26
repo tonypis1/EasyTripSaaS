@@ -35,7 +35,11 @@ const envSchema = z.object({
     .positive()
     .default(290),
   /** Add-on LocalPass per città (default €3,99). */
-  STRIPE_PRICE_LOCALPASS_CENTS: z.coerce.number().int().nonnegative().default(399),
+  STRIPE_PRICE_LOCALPASS_CENTS: z.coerce
+    .number()
+    .int()
+    .nonnegative()
+    .default(399),
 
   /**
    * Price ID Stripe dell'abbonamento mensile (se impostato, il webhook subscription
@@ -52,7 +56,6 @@ const envSchema = z.object({
    * Riferimento: https://docs.anthropic.com/en/docs/about-claude/models
    */
   ANTHROPIC_MODEL: z.string().min(1).optional(),
-
 
   /** Giorni dopo cui eliminare versioni itinerario non attive (solo storico carosello). */
   RETENTION_INACTIVE_TRIP_VERSION_DAYS: z.coerce

@@ -7,10 +7,7 @@ import {
   preTripCountdownHtml,
   tripStartTodayHtml,
 } from "@/lib/email/transactional";
-import {
-  normalizeEmailLocale,
-  t as trEmail,
-} from "@/lib/email/email-i18n";
+import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
 
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);

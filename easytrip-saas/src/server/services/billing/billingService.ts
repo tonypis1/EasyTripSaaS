@@ -14,10 +14,7 @@ import {
   purchaseConfirmedHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
-import {
-  normalizeEmailLocale,
-  t as trEmail,
-} from "@/lib/email/email-i18n";
+import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
 import { tryClaimWebhookDelivery } from "@/lib/email/webhookDelivery";
 import { isPaidRegeneration } from "@/lib/trip-regen-rules";
 function purchaseAmountCentsForTrip(trip: {
@@ -45,9 +42,7 @@ function purchaseProductCopy(trip: {
       ? "EasyTrip — Viaggio Gruppo"
       : "EasyTrip — Viaggio Solo/Coppia";
   const productName =
-    lpCount > 0
-      ? `${baseName} + LocalPass (${lpCount} città)`
-      : baseName;
+    lpCount > 0 ? `${baseName} + LocalPass (${lpCount} città)` : baseName;
   const dates = `${toDateOnlyIsoUtc(trip.startDate)} - ${toDateOnlyIsoUtc(trip.endDate)}`;
   const lpExtra =
     lpCount > 0
@@ -56,7 +51,6 @@ function purchaseProductCopy(trip: {
   const description = `${trip.destination} (${dates})${lpExtra}`;
   return { productName, description };
 }
-
 
 type CheckoutInput = {
   tripId: string;

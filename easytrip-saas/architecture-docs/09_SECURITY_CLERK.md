@@ -1,10 +1,10 @@
 # 09 — Sicurezza e protezione route
 
-| Documento | Percorso |
-|-----------|----------|
-| Indice | [README_00.md](../README_00.md) |
-| API | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
-| Osservabilità | [11_OBSERVABILITY.md](11_OBSERVABILITY.md) |
+| Documento     | Percorso                                           |
+| ------------- | -------------------------------------------------- |
+| Indice        | [README_00.md](../README_00.md)                    |
+| API           | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
+| Osservabilità | [11_OBSERVABILITY.md](11_OBSERVABILITY.md)         |
 
 ## 1. Autenticazione (Clerk)
 

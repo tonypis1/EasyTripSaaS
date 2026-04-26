@@ -1,21 +1,21 @@
 # 13 — CI/CD: segreti GitHub/Vercel, post-deploy, DNS Hostinger
 
-| Documento | Percorso |
-|-----------|----------|
-| Indice | [README_00.md](../README_00.md) |
-| Deploy | [12_DEPLOYMENT.md](12_DEPLOYMENT.md) |
-| DevOps | [08_DEVOPS_VERCEL.md](08_DEVOPS_VERCEL.md) |
+| Documento | Percorso                                   |
+| --------- | ------------------------------------------ |
+| Indice    | [README_00.md](../README_00.md)            |
+| Deploy    | [12_DEPLOYMENT.md](12_DEPLOYMENT.md)       |
+| DevOps    | [08_DEVOPS_VERCEL.md](08_DEVOPS_VERCEL.md) |
 
 ## 1. Matrice ambienti (Vercel)
 
-| Variabile | Development (locale) | Preview (Vercel) | Production |
-|-----------|----------------------|------------------|------------|
-| `APP_BASE_URL` | `http://localhost:3000` | URL Preview (`*.vercel.app`) | `https://easytripsaas.com` |
-| `DATABASE_URL` | DB locale / dev | **DB dedicato** (branch Neon o altro) — **non** produzione | DB produzione |
-| `STRIPE_*` | Chiavi test (`sk_test_`, `whsec_` test) | Test o chiavi dedicate preview | Chiavi **live** + webhook endpoint produzione |
-| `CLERK_*` | Istanza dev | Stesso progetto o ambiente Clerk “preview” | Produzione |
-| `INNGEST_*` | Dev server (`npm run inngest:dev`) | App Inngest collegata all’URL Preview | App Inngest → `https://easytripsaas.com/api/inngest` |
-| `NEXT_PUBLIC_*` | Qualsiasi | Allineato all’ambiente | Valori pubblici produzione |
+| Variabile       | Development (locale)                    | Preview (Vercel)                                           | Production                                           |
+| --------------- | --------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
+| `APP_BASE_URL`  | `http://localhost:3000`                 | URL Preview (`*.vercel.app`)                               | `https://easytripsaas.com`                           |
+| `DATABASE_URL`  | DB locale / dev                         | **DB dedicato** (branch Neon o altro) — **non** produzione | DB produzione                                        |
+| `STRIPE_*`      | Chiavi test (`sk_test_`, `whsec_` test) | Test o chiavi dedicate preview                             | Chiavi **live** + webhook endpoint produzione        |
+| `CLERK_*`       | Istanza dev                             | Stesso progetto o ambiente Clerk “preview”                 | Produzione                                           |
+| `INNGEST_*`     | Dev server (`npm run inngest:dev`)      | App Inngest collegata all’URL Preview                      | App Inngest → `https://easytripsaas.com/api/inngest` |
+| `NEXT_PUBLIC_*` | Qualsiasi                               | Allineato all’ambiente                                     | Valori pubblici produzione                           |
 
 **Regola**: non usare mai `NEXT_PUBLIC_` per segreti: finiscono nel bundle client. Clerk publishable, PostHog key, ID affiliate sono volutamente pubblici.
 
@@ -43,7 +43,6 @@ Il workflow [`.github/workflows/main.yml`](../../.github/workflows/main.yml) esp
 
 1. **GitHub** → repository → **Settings** → **Secrets and variables** → **Actions**.
 2. Crea **Repository secrets** con gli **stessi nomi** usati in Vercel Production (almeno quelli richiesti da `npm run check:env:production`):
-
    - `DATABASE_URL`
    - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
    - `CLERK_SECRET_KEY`
@@ -124,16 +123,20 @@ Dopo il go-live DNS, aggiorna:
 
 ## 6. Monitoraggio
 
-- **Vercel**: tab **Logs** (runtime) — il logger applicativo scrive JSON su stdout ([`src/lib/observability.ts`](../src/lib/observability.ts)).
+- **Vercel → Logs**: runtime delle funzioni — il logger applicativo scrive JSON su stdout ([`src/lib/observability.ts`](../src/lib/observability.ts)).
+- **Vercel → Analytics**: page views e visitatori (richiede deploy su Vercel e componente `<Analytics />` in [`src/app/layout.tsx`](../src/app/layout.tsx)).
+- **Vercel → Speed Insights**: Core Web Vitals da utenti reali (stesso deploy; componente `<SpeedInsights />` nel layout radice). Abilitare il prodotto dal pannello se non compare ancora.
 - **Inngest Cloud**: run, retry, alert.
 - **PostHog**: sessioni e funnel dopo aver impostato `NEXT_PUBLIC_POSTHOG_KEY` in Production.
 
+Elenco completo e matrice strumenti: [11_OBSERVABILITY.md](11_OBSERVABILITY.md).
+
 ## 7. Riferimenti rapidi
 
-| Risorsa | Path |
-|---------|------|
-| Workflow CI/CD | [`.github/workflows/main.yml`](../../.github/workflows/main.yml) |
-| Template env | [`.env.example`](../.env.example) |
-| Check env | `npm run check:env` / `check:env:strict` / `check:env:production` |
-| Post deploy | `npm run postdeploy:check` |
-| Health HTTP | `GET /api/health` |
+| Risorsa        | Path                                                              |
+| -------------- | ----------------------------------------------------------------- |
+| Workflow CI/CD | [`.github/workflows/main.yml`](../../.github/workflows/main.yml)  |
+| Template env   | [`.env.example`](../.env.example)                                 |
+| Check env      | `npm run check:env` / `check:env:strict` / `check:env:production` |
+| Post deploy    | `npm run postdeploy:check`                                        |
+| Health HTTP    | `GET /api/health`                                                 |

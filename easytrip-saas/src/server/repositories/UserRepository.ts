@@ -12,7 +12,9 @@ type UpsertUserInput = {
  * Normalizza un eventuale valore di lingua (es. da Accept-Language o cookie)
  * verso uno dei locali supportati; ritorna null se non mappabile.
  */
-export function normalizeLanguage(input: string | null | undefined): AppLocale | null {
+export function normalizeLanguage(
+  input: string | null | undefined,
+): AppLocale | null {
   if (!input) return null;
   const short = input.toLowerCase().split(/[-_]/)[0];
   return (routing.locales as readonly string[]).includes(short)
