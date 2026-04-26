@@ -11,6 +11,12 @@ import type { AppLocale } from "@/i18n/routing";
  * poi farebbe redirect verso `/{locale}/app`, aggiungendo un hop in più e
  * rischi di flash. Qui passiamo direttamente `/{locale}{path}` come URL di
  * destinazione post-auth.
+ *
+ * **Modalità default `redirect`:** con Account Portal su sottodominio dedicato
+ * (es. `accounts.tuodominio.com` in Clerk Dashboard) la modalità `modal` apre
+ * un iframe verso quell’origine; se non è consentita dalla CSP del sito principale,
+ * il bottone sembra “morto”. Il redirect a pagina intera è allineato a “Sign-up
+ * on Account Portal” e non dipende da `frame-src`.
  */
 
 type CommonProps = {
@@ -30,7 +36,7 @@ export function SignInLocaleButton(
   const locale = useLocale() as AppLocale;
   const target = withLocale(props.appPath ?? "/app", locale);
   return (
-    <SignInButton mode={props.mode ?? "modal"} forceRedirectUrl={target}>
+    <SignInButton mode={props.mode ?? "redirect"} forceRedirectUrl={target}>
       {props.children}
     </SignInButton>
   );
@@ -42,7 +48,7 @@ export function SignUpLocaleButton(
   const locale = useLocale() as AppLocale;
   const target = withLocale(props.appPath ?? "/app", locale);
   return (
-    <SignUpButton mode={props.mode ?? "modal"} forceRedirectUrl={target}>
+    <SignUpButton mode={props.mode ?? "redirect"} forceRedirectUrl={target}>
       {props.children}
     </SignUpButton>
   );
