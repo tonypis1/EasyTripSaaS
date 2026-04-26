@@ -1,7 +1,6 @@
-import { NextRequest } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import createIntlMiddleware from "next-intl/middleware";
-import { routing, type AppLocale } from "@/i18n/routing";
+import { routing } from "@/i18n/routing";
 
 /**
  * Middleware "intl": legge l'URL e decide se servire la pagina o fare redirect
@@ -20,24 +19,6 @@ const intlMiddleware = createIntlMiddleware(routing);
  * accettare qualsiasi locale prima di "/app".
  */
 const isProtectedRoute = createRouteMatcher(["/(it|en|es|fr|de)/app(.*)"]);
-
-const LOCALE_IN_PATH = /^\/(it|en|es|fr|de)(?:\/|$)/;
-
-/**
- * Passa al layout radice (SSR) quale `lang` usare su <html>, allineato al segmento
- * `/[locale]/…`. Il root layout non ha `params` del locale: senza header resterebbe
- * fisso a `it` e i test (e a11y) vedrebbero `lang` sbagliato finché l’idrazione
- * non gira. `SetDocumentLang` resta per navigazioni client senza full reload.
- */
-function withLocalePathHeader(request: NextRequest): NextRequest {
-  const m = request.nextUrl.pathname.match(LOCALE_IN_PATH);
-  if (!m) return request;
-  const locale = m[1] as AppLocale;
-  if (!routing.locales.includes(locale)) return request;
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-easytrip-locale", locale);
-  return new NextRequest(request.nextUrl, { headers: requestHeaders });
-}
 
 /**
  * Composizione: prima Clerk stabilisce il contesto auth e protegge /app,
@@ -64,7 +45,7 @@ export default clerkMiddleware(async (auth, req) => {
     return;
   }
 
-  return intlMiddleware(withLocalePathHeader(req));
+  return intlMiddleware(req);
 });
 
 export const config = {

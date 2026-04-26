@@ -15,7 +15,7 @@ type Props = {
  */
 export function SignupCtaButton(props: Props) {
   return (
-    <SignUpLocaleButton appPath="/app">
+    <SignUpLocaleButton mode="modal" appPath="/app">
       <button type="button" className={props.className}>
         {props.children}
       </button>

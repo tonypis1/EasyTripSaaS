@@ -23,7 +23,7 @@ export function MarketingAuthCta(props: Props) {
             : "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
         }
       >
-        <SignUpButton appPath="/app">
+        <SignUpButton mode="modal" appPath="/app">
           <button
             type="button"
             className="bg-et-accent text-et-accent-ink hover:bg-et-accent/88 w-full min-w-[140px] rounded-xl px-5 py-3 text-sm font-semibold transition sm:w-auto"
@@ -31,7 +31,7 @@ export function MarketingAuthCta(props: Props) {
             {t("ctaSignUp")}
           </button>
         </SignUpButton>
-        <SignInButton appPath="/app">
+        <SignInButton mode="modal" appPath="/app">
           <button
             type="button"
             className="border-et-border text-et-ink hover:bg-et-ink/[0.06] w-full min-w-[140px] rounded-xl border bg-transparent px-5 py-3 text-sm font-semibold transition sm:w-auto"
@@ -48,3 +48,4 @@ export function MarketingAuthCta(props: Props) {
     </div>
   );
 }
+

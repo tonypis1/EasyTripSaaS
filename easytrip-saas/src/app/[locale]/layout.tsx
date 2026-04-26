@@ -15,9 +15,10 @@ import {
   getTranslations,
   setRequestLocale,
 } from "next-intl/server";
+import { Geist_Mono, Instrument_Serif, Manrope } from "next/font/google";
 import PostHogProvider from "../posthog-provider";
-import { SetDocumentLang } from "@/components/i18n/set-document-lang";
 import { routing, type AppLocale } from "@/i18n/routing";
+import "../globals.css";
 
 /**
  * Layout "per locale" dell'App Router.
@@ -27,10 +28,28 @@ import { routing, type AppLocale } from "@/i18n/routing";
  *  1. valida che il locale sia uno di quelli supportati (altrimenti 404);
  *  2. imposta il locale per le funzioni server di next-intl (setRequestLocale);
  *  3. carica i messaggi JSON della lingua;
- *  4. allinea `document.documentElement.lang` al locale (SetDocumentLang);
+ *  4. monta <html lang={locale}> così screen reader e SEO vedono la lingua giusta;
  *  5. avvolge tutto in ClerkProvider (con la traduzione Clerk corrispondente)
  *     e in NextIntlClientProvider (per useTranslations nei Client Component).
  */
+
+const instrument = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 /**
  * Mappa locale -> bundle di stringhe UI di Clerk.
@@ -62,9 +81,7 @@ export async function generateMetadata({
   // restituiamo un fallback neutro per non crashare durante la fase metadata.
   if (!hasLocale(routing.locales, locale)) {
     return {
-      metadataBase: new URL(
-        process.env.APP_BASE_URL ?? "http://localhost:3000",
-      ),
+      metadataBase: new URL(process.env.APP_BASE_URL ?? "http://localhost:3000"),
       title: "EasyTrip",
       description: "AI travel itineraries",
     };
@@ -110,12 +127,17 @@ export default async function LocaleLayout({
 
   return (
     <ClerkProvider localization={clerkLocalizations[locale]}>
-      <SetDocumentLang locale={locale} />
-      <NextIntlClientProvider locale={locale} messages={messages}>
-        <Suspense fallback={null}>
-          <PostHogProvider>{children}</PostHogProvider>
-        </Suspense>
-      </NextIntlClientProvider>
+      <html lang={locale}>
+        <body
+          className={`${manrope.className} ${instrument.variable} ${manrope.variable} ${geistMono.variable} antialiased`}
+        >
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <Suspense fallback={null}>
+              <PostHogProvider>{children}</PostHogProvider>
+            </Suspense>
+          </NextIntlClientProvider>
+        </body>
+      </html>
     </ClerkProvider>
   );
 }

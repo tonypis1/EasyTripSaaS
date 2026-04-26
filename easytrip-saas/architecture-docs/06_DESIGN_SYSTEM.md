@@ -1,18 +1,18 @@
 # 06 — Design system e UI
 
-| Documento   | Percorso                                     |
-| ----------- | -------------------------------------------- |
-| Indice      | [README_00.md](../README_00.md)              |
+| Documento | Percorso |
+|-----------|----------|
+| Indice | [README_00.md](../README_00.md) |
 | Validazione | [05_VALIDATION_ZOD.md](05_VALIDATION_ZOD.md) |
 
 ## 1. Stack UI (verificato)
 
-| Tecnologia                  | Ruolo                                        |
-| --------------------------- | -------------------------------------------- |
-| **Tailwind CSS** v4         | Utility-first; `@tailwindcss/postcss` in dev |
-| **lucide-react**            | Icone                                        |
-| **React 19**                | Componenti                                   |
-| **Leaflet / react-leaflet** | Mappe (coordinate sui giorni)                |
+| Tecnologia | Ruolo |
+|------------|--------|
+| **Tailwind CSS** v4 | Utility-first; `@tailwindcss/postcss` in dev |
+| **lucide-react** | Icone |
+| **React 19** | Componenti |
+| **Leaflet / react-leaflet** | Mappe (coordinate sui giorni) |
 
 **Nota**: nel repository **non** è presente `components.json` né dipendenze `@radix-ui/*` tipiche di **shadcn/ui**. L’interfaccia si basa su componenti applicativi custom sotto `src/components/` (es. `src/components/home/*`) e layout Next.js.
 
@@ -23,11 +23,11 @@
 
 ## 3. Struttura cartelle UI (indicativa)
 
-| Percorso              | Contenuto                                     |
-| --------------------- | --------------------------------------------- |
-| `src/app/`            | App Router: `page.tsx`, layout, route segment |
-| `src/components/`     | Componenti riutilizzabili e sezioni marketing |
-| `src/app/globals.css` | Stili globali (se presente)                   |
+| Percorso | Contenuto |
+|----------|-----------|
+| `src/app/` | App Router: `page.tsx`, layout, route segment |
+| `src/components/` | Componenti riutilizzabili e sezioni marketing |
+| `src/app/globals.css` | Stili globali (se presente) |
 
 ## 4. Accessibilità e UX
 

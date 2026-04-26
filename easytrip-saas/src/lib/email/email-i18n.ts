@@ -218,11 +218,11 @@ const DICT: EmailDict = {
     de: "Reise nach {destination} storniert",
   },
   "cancelConfirmed.body": {
-    it: 'Abbiamo cancellato il tuo viaggio. Non preoccuparti: l\'importo pagato è stato convertito in <strong style="color:#16a34a">{amount} di credito EasyTrip</strong>.',
-    en: 'We\'ve cancelled your trip. No worries: the amount you paid has been converted into <strong style="color:#16a34a">{amount} of EasyTrip credit</strong>.',
-    es: 'Hemos cancelado tu viaje. No te preocupes: el importe pagado se ha convertido en <strong style="color:#16a34a">{amount} de crédito EasyTrip</strong>.',
-    fr: 'Nous avons annulé votre voyage. Pas d\'inquiétude : le montant payé a été converti en <strong style="color:#16a34a">{amount} de crédit EasyTrip</strong>.',
-    de: 'Wir haben deine Reise storniert. Keine Sorge: Der gezahlte Betrag wurde in <strong style="color:#16a34a">{amount} EasyTrip-Guthaben</strong> umgewandelt.',
+    it: "Abbiamo cancellato il tuo viaggio. Non preoccuparti: l'importo pagato è stato convertito in <strong style=\"color:#16a34a\">{amount} di credito EasyTrip</strong>.",
+    en: "We've cancelled your trip. No worries: the amount you paid has been converted into <strong style=\"color:#16a34a\">{amount} of EasyTrip credit</strong>.",
+    es: "Hemos cancelado tu viaje. No te preocupes: el importe pagado se ha convertido en <strong style=\"color:#16a34a\">{amount} de crédito EasyTrip</strong>.",
+    fr: "Nous avons annulé votre voyage. Pas d'inquiétude : le montant payé a été converti en <strong style=\"color:#16a34a\">{amount} de crédit EasyTrip</strong>.",
+    de: "Wir haben deine Reise storniert. Keine Sorge: Der gezahlte Betrag wurde in <strong style=\"color:#16a34a\">{amount} EasyTrip-Guthaben</strong> umgewandelt.",
   },
   "cancelConfirmed.creditLabel": {
     it: "Il tuo credito",
@@ -413,9 +413,9 @@ const DICT: EmailDict = {
     de: "Öffne den Tagesplan, um Aktivitäten und Karte zu sehen",
   },
   "tripStart.reminder2": {
-    it: 'Usa il bottone <strong>"Cosa faccio adesso?"</strong> se qualcosa va storto',
-    en: 'Use the <strong>"What do I do now?"</strong> button if something goes wrong',
-    es: 'Usa el botón <strong>"¿Qué hago ahora?"</strong> si algo sale mal',
+    it: "Usa il bottone <strong>\"Cosa faccio adesso?\"</strong> se qualcosa va storto",
+    en: "Use the <strong>\"What do I do now?\"</strong> button if something goes wrong",
+    es: "Usa el botón <strong>\"¿Qué hago ahora?\"</strong> si algo sale mal",
     fr: "Utilisez le bouton <strong>« Que faire maintenant ? »</strong> si quelque chose ne va pas",
     de: "Nutze die Schaltfläche <strong>„Was mache ich jetzt?“</strong>, wenn etwas schiefgeht",
   },
@@ -598,11 +598,11 @@ const DICT: EmailDict = {
     de: "Dein EasyTrip-Guthaben verfällt in {days}",
   },
   "creditExpiry.body": {
-    it: 'Hai ancora <strong style="color:#16a34a">{amount}</strong> di credito da usare. Non lasciarlo scadere!',
-    en: 'You still have <strong style="color:#16a34a">{amount}</strong> of credit to use. Don\'t let it expire!',
-    es: 'Todavía tienes <strong style="color:#16a34a">{amount}</strong> de crédito por usar. ¡No dejes que venza!',
-    fr: 'Il vous reste <strong style="color:#16a34a">{amount}</strong> de crédit à utiliser. Ne le laissez pas expirer !',
-    de: 'Du hast noch <strong style="color:#16a34a">{amount}</strong> Guthaben übrig. Lass es nicht verfallen!',
+    it: "Hai ancora <strong style=\"color:#16a34a\">{amount}</strong> di credito da usare. Non lasciarlo scadere!",
+    en: "You still have <strong style=\"color:#16a34a\">{amount}</strong> of credit to use. Don't let it expire!",
+    es: "Todavía tienes <strong style=\"color:#16a34a\">{amount}</strong> de crédito por usar. ¡No dejes que venza!",
+    fr: "Il vous reste <strong style=\"color:#16a34a\">{amount}</strong> de crédit à utiliser. Ne le laissez pas expirer !",
+    de: "Du hast noch <strong style=\"color:#16a34a\">{amount}</strong> Guthaben übrig. Lass es nicht verfallen!",
   },
   "creditExpiry.expiryLabel": {
     it: "Scadenza credito",
@@ -964,7 +964,5 @@ export function formatEmailDate(
 
 /** Helper per "X giorno/giorni" nelle varie lingue. */
 export function daysLabel(count: number, locale: EmailLocale): string {
-  return count === 1
-    ? t("unit.dayOne", locale)
-    : t("unit.daysMany", locale, { count });
+  return count === 1 ? t("unit.dayOne", locale) : t("unit.daysMany", locale, { count });
 }

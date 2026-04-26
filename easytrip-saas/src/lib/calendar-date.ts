@@ -81,7 +81,15 @@ const DOW_BY_LOCALE: Record<string, readonly string[]> = {
     "viernes",
     "sábado",
   ],
-  fr: ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
+  fr: [
+    "dimanche",
+    "lundi",
+    "mardi",
+    "mercredi",
+    "jeudi",
+    "vendredi",
+    "samedi",
+  ],
   de: [
     "Sonntag",
     "Montag",
@@ -97,10 +105,7 @@ const DOW_BY_LOCALE: Record<string, readonly string[]> = {
  * Nome del giorno della settimana per un locale supportato.
  * Fallback su italiano se il locale non è mappato.
  */
-export function dayOfWeekForLocale(
-  d: Date,
-  locale: string | null | undefined,
-): string {
+export function dayOfWeekForLocale(d: Date, locale: string | null | undefined): string {
   const key = (locale ?? "it").toLowerCase().split(/[-_]/)[0];
   const table = DOW_BY_LOCALE[key] ?? DOW_BY_LOCALE.it;
   return table[d.getUTCDay()];

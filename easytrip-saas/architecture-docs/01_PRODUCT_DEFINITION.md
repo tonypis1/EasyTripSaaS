@@ -1,10 +1,10 @@
 # 01 — Definizione prodotto
 
-| Documento    | Percorso                                 |
-| ------------ | ---------------------------------------- |
-| Indice       | [README_00.md](../README_00.md)          |
+| Documento | Percorso |
+|-----------|----------|
+| Indice | [README_00.md](../README_00.md) |
 | Architettura | [02_ARCHITECTURE.md](02_ARCHITECTURE.md) |
-| Database     | [03_DATABASE.md](03_DATABASE.md)         |
+| Database | [03_DATABASE.md](03_DATABASE.md) |
 
 ## 1. Sintesi
 
@@ -12,12 +12,12 @@ EasyTrip è un’applicazione SaaS che genera **itinerari di viaggio in formato 
 
 ## 2. Proposta di valore
 
-| Dimensione                  | Descrizione                                                                                                                                                                                                                                                                                            |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Generazione AI**          | Prompt di sistema e utente in `generate-itinerary` (Inngest): risposta **solo JSON** validato (`parseAndValidateModelJson`, `itinerary-model-schema`).                                                                                                                                                 |
-| **Rigenerazione**           | Fino a 7 versioni per trip (`regenCount`, `currentVersion`); logica business in `trip-regen-rules`; rigenerazioni a pagamento via Stripe (`paymentType: regen`).                                                                                                                                       |
+| Dimensione | Descrizione |
+|--------------|-------------|
+| **Generazione AI** | Prompt di sistema e utente in `generate-itinerary` (Inngest): risposta **solo JSON** validato (`parseAndValidateModelJson`, `itinerary-model-schema`). |
+| **Rigenerazione** | Fino a 7 versioni per trip (`regenCount`, `currentVersion`); logica business in `trip-regen-rules`; rigenerazioni a pagamento via Stripe (`paymentType: regen`). |
 | **GPS / geolocalizzazione** | Coordinate sui giorni (`mapCenterLat`, `mapCenterLng`); **sostituzione slot** con input lat/lng opzionale (`SlotReplaceService`, schema `replaceSlotSchema`); **live suggest** con posizione obbligatoria (`liveSuggestSchema`). Privacy coordinate arrotondate in contesti sensibili (`geo-privacy`). |
-| **Gruppo**                  | Tipologie `solo` / `coppia` / `gruppo`; membri, inviti, spese e bilanci (vedi [03_DATABASE.md](03_DATABASE.md)).                                                                                                                                                                                       |
+| **Gruppo** | Tipologie `solo` / `coppia` / `gruppo`; membri, inviti, spese e bilanci (vedi [03_DATABASE.md](03_DATABASE.md)). |
 
 ## 3. Segmento target
 
@@ -32,9 +32,9 @@ EasyTrip è un’applicazione SaaS che genera **itinerari di viaggio in formato 
 
 ## 5. Riferimenti codice
 
-| Area            | Percorso                                            |
-| --------------- | --------------------------------------------------- |
-| Config AI       | `src/config/unifiedConfig.ts` (`ai.anthropicModel`) |
-| Job generazione | `src/lib/inngest/functions/generate-itinerary.ts`   |
-| Schema giorni   | `src/lib/itinerary-model-schema.ts`                 |
-| API generazione | `src/app/api/trips/[tripId]/generate/route.ts`      |
+| Area | Percorso |
+|------|----------|
+| Config AI | `src/config/unifiedConfig.ts` (`ai.anthropicModel`) |
+| Job generazione | `src/lib/inngest/functions/generate-itinerary.ts` |
+| Schema giorni | `src/lib/itinerary-model-schema.ts` |
+| API generazione | `src/app/api/trips/[tripId]/generate/route.ts` |

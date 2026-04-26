@@ -72,7 +72,7 @@ export default async function TripsPage() {
                     )}
                     {tr.localPassCityCount > 0 ? (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full border border-amber-400/35 bg-amber-500/10 px-2 py-0.5 text-amber-100/95"
+                        className="border-amber-400/35 bg-amber-500/10 text-amber-100/95 inline-flex items-center gap-1 rounded-full border px-2 py-0.5"
                         title={t("localPassTitle")}
                       >
                         <Ticket

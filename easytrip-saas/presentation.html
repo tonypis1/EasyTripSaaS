@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
@@ -48,10 +48,12 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   </head>
-  <body class="bg-surface min-h-screen font-sans text-slate-100 antialiased">
+  <body
+    class="min-h-screen bg-surface font-sans text-slate-100 antialiased"
+  >
     <!-- Sticky nav -->
     <header
-      class="border-border bg-surface/95 sticky top-0 z-50 border-b backdrop-blur-md"
+      class="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-md"
     >
       <div
         class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6"
@@ -67,27 +69,27 @@
         >
           <a
             href="#panoramica"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
+            class="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface-elevated hover:text-primary md:px-3"
             >Panoramica</a
           >
           <a
             href="#strategia"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
+            class="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface-elevated hover:text-primary md:px-3"
             >Strategia</a
           >
           <a
             href="#operativi"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
+            class="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface-elevated hover:text-primary md:px-3"
             >Operativi</a
           >
           <a
             href="#mercato"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
+            class="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface-elevated hover:text-primary md:px-3"
             >Mercato</a
           >
           <a
             href="#tecnico"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
+            class="rounded-md px-2 py-1.5 text-muted transition hover:bg-surface-elevated hover:text-primary md:px-3"
             >Tecnico</a
           >
         </nav>
@@ -97,23 +99,19 @@
     <main class="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
       <!-- Hero -->
       <div
-        class="border-border from-surface-elevated to-surface mb-16 rounded-2xl border bg-gradient-to-br p-8 md:p-12"
+        class="mb-16 rounded-2xl border border-border bg-gradient-to-br from-surface-elevated to-surface p-8 md:p-12"
       >
         <p
-          class="text-primary mb-2 font-mono text-xs tracking-widest uppercase"
+          class="mb-2 font-mono text-xs uppercase tracking-widest text-primary"
         >
           SaaS · Travel planning
         </p>
-        <h1
-          class="mb-4 text-3xl font-bold tracking-tight text-white md:text-4xl"
-        >
+        <h1 class="mb-4 text-3xl font-bold tracking-tight text-white md:text-4xl">
           EasyTrip
         </h1>
         <p class="max-w-3xl text-lg leading-relaxed text-slate-300">
           Applicazione web per organizzare viaggi con
-          <strong class="font-medium text-white"
-            >itinerari generati da IA</strong
-          >
+          <strong class="font-medium text-white">itinerari generati da IA</strong>
           (Anthropic Claude), collaborazione di gruppo, spese condivise e
           monetizzazione tramite Stripe — con job asincroni Inngest e dati su
           PostgreSQL.
@@ -123,7 +121,7 @@
       <!-- 1. Panoramica -->
       <section id="panoramica" class="mb-20 scroll-mt-24">
         <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+          class="mb-2 font-mono text-sm font-medium uppercase tracking-wider text-accent"
         >
           01 · Panoramica
         </h2>
@@ -132,36 +130,31 @@
         </h3>
         <div class="grid gap-6 md:grid-cols-2">
           <div
-            class="border-border bg-surface-elevated rounded-xl border p-6 shadow-lg shadow-black/20"
+            class="rounded-xl border border-border bg-surface-elevated p-6 shadow-lg shadow-black/20"
           >
-            <h4 class="text-primary mb-3 font-semibold">Descrizione</h4>
+            <h4 class="mb-3 font-semibold text-primary">Descrizione</h4>
             <p class="text-sm leading-relaxed text-slate-300">
-              EasyTrip è un prodotto
-              <strong class="text-white">full-stack</strong>
+              EasyTrip è un prodotto <strong class="text-white">full-stack</strong>
               (Next.js App Router) che permette di creare
               <strong class="text-white">trip</strong> con destinazione, date,
-              tipologia (solo / coppia / gruppo), stile e livello di budget.
-              Dopo il pagamento, un workflow Inngest invoca il modello AI per
-              produrre versioni di itinerario strutturate (giorni, slot
-              mattina/pomeriggio/sera, suggerimenti ristoranti, coordinate
-              mappa), con
-              <strong class="text-white">sblocco progressivo</strong> dei giorni
-              e fino a
-              <strong class="text-white">sette rigenerazioni</strong> con regole
-              dedicate (<code class="rounded bg-black/40 px-1 font-mono text-xs"
-                >trip-regen-rules</code
-              >).
+              tipologia (solo / coppia / gruppo), stile e livello di budget. Dopo
+              il pagamento, un workflow Inngest invoca il modello AI per produrre
+              versioni di itinerario strutturate (giorni, slot mattina/pomeriggio/sera,
+              suggerimenti ristoranti, coordinate mappa), con
+              <strong class="text-white">sblocco progressivo</strong> dei giorni e
+              fino a <strong class="text-white">sette rigenerazioni</strong> con
+              regole dedicate (<code class="rounded bg-black/40 px-1 font-mono text-xs">trip-regen-rules</code>).
             </p>
           </div>
           <div
-            class="border-border bg-surface-elevated rounded-xl border p-6 shadow-lg shadow-black/20"
+            class="rounded-xl border border-border bg-surface-elevated p-6 shadow-lg shadow-black/20"
           >
-            <h4 class="text-primary mb-3 font-semibold">Problema risolto</h4>
+            <h4 class="mb-3 font-semibold text-primary">Problema risolto</h4>
             <ul class="list-inside list-disc space-y-2 text-sm text-slate-300">
               <li>
                 Riduce il tempo per passare da “idea di viaggio” a
-                <strong class="text-white">piano giornaliero coerente</strong>
-                con budget e stile.
+                <strong class="text-white">piano giornaliero coerente</strong> con
+                budget e stile.
               </li>
               <li>
                 Supporta <strong class="text-white">gruppi</strong>: inviti,
@@ -171,23 +164,23 @@
               </li>
               <li>
                 Offre percorsi di monetizzazione chiari (checkout Stripe, add-on
-                rigenerazione, riattivazione, LocalPass multi-città) nel codice
-                di configurazione.
+                rigenerazione, riattivazione, LocalPass multi-città) nel codice di
+                configurazione.
               </li>
             </ul>
           </div>
         </div>
         <div
-          class="border-border bg-surface-elevated/50 mt-6 rounded-xl border border-dashed p-6"
+          class="mt-6 rounded-xl border border-dashed border-border bg-surface-elevated/50 p-6"
         >
           <h4 class="mb-2 font-semibold text-white">Target utenti</h4>
           <p class="text-sm text-slate-300">
-            <strong class="text-primary">Organizzatori</strong> di viaggi brevi
-            o medi (coppie, famiglie, piccoli gruppi) che vogliono un piano
+            <strong class="text-primary">Organizzatori</strong> di viaggi brevi o
+            medi (coppie, famiglie, piccoli gruppi) che vogliono un piano
             dettagliato senza ore di ricerca manuale;
-            <strong class="text-primary">partecipanti</strong> invitati via
-            token (<code class="font-mono text-xs">/join/[token]</code>) che
-            consultano l’itinerario e contribuiscono alle spese.
+            <strong class="text-primary">partecipanti</strong> invitati via token
+            (<code class="font-mono text-xs">/join/[token]</code>) che consultano
+            l’itinerario e contribuiscono alle spese.
           </p>
         </div>
       </section>
@@ -195,7 +188,7 @@
       <!-- 2. Strategia -->
       <section id="strategia" class="mb-20 scroll-mt-24">
         <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+          class="mb-2 font-mono text-sm font-medium uppercase tracking-wider text-accent"
         >
           02 · Strategia di prodotto
         </h2>
@@ -203,7 +196,7 @@
           Personas, value proposition, modello di business
         </h3>
 
-        <div class="border-border mb-8 overflow-x-auto rounded-xl border">
+        <div class="mb-8 overflow-x-auto rounded-xl border border-border">
           <table class="w-full min-w-[640px] text-left text-sm">
             <thead class="bg-surface-elevated font-medium text-slate-200">
               <tr>
@@ -212,31 +205,23 @@
                 <th class="px-4 py-3">Feature chiave nel codice</th>
               </tr>
             </thead>
-            <tbody class="divide-border divide-y text-slate-300">
+            <tbody class="divide-y divide-border text-slate-300">
               <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Sofia — viaggiatrice solo
-                </td>
-                <td class="px-4 py-3">
-                  Itinerario focalizzato, budget controllato
-                </td>
+                <td class="px-4 py-3 font-medium text-white">Sofia — viaggiatrice solo</td>
+                <td class="px-4 py-3">Itinerario focalizzato, budget controllato</td>
                 <td class="px-4 py-3 font-mono text-xs">
                   TripType.solo, budgetLevel, generate-itinerary prompt
                 </td>
               </tr>
               <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Marco &amp; Elena — coppia
-                </td>
+                <td class="px-4 py-3 font-medium text-white">Marco &amp; Elena — coppia</td>
                 <td class="px-4 py-3">Condividere un piano senza stress</td>
                 <td class="px-4 py-3 font-mono text-xs">
                   TripType.coppia, TripDetailDto, versioni attive
                 </td>
               </tr>
               <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Luca — organizzatore gruppo
-                </td>
+                <td class="px-4 py-3 font-medium text-white">Luca — organizzatore gruppo</td>
                 <td class="px-4 py-3">Invitare amici e gestire spese</td>
                 <td class="px-4 py-3 font-mono text-xs">
                   invite, join, ExpenseService, balances API
@@ -247,39 +232,35 @@
         </div>
 
         <div class="mb-8 grid gap-6 md:grid-cols-2">
-          <div class="border-border bg-surface-elevated rounded-xl border p-6">
-            <h4 class="text-primary mb-3 font-semibold">Value proposition</h4>
+          <div class="rounded-xl border border-border bg-surface-elevated p-6">
+            <h4 class="mb-3 font-semibold text-primary">Value proposition</h4>
             <ul class="space-y-2 text-sm text-slate-300">
               <li class="flex gap-2">
                 <span class="text-primary">→</span>
                 <span
-                  ><strong class="text-white">Piano AI personalizzato</strong>
-                  per destinazione, calendario reale, budget (economy / moderate
-                  / premium) e stile.</span
+                  ><strong class="text-white">Piano AI personalizzato</strong> per
+                  destinazione, calendario reale, budget (economy / moderate /
+                  premium) e stile.</span
                 >
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">→</span>
                 <span
                   ><strong class="text-white">Iterazione controllata</strong>:
-                  carosello versioni, geo score, zone già usate in
-                  rigenerazione.</span
+                  carosello versioni, geo score, zone già usate in rigenerazione.</span
                 >
               </li>
               <li class="flex gap-2">
                 <span class="text-primary">→</span>
                 <span
-                  ><strong class="text-white">Gruppo &amp; trust</strong>:
-                  crediti, referral, export dati e cancellazione account (API
-                  privacy).</span
+                  ><strong class="text-white">Gruppo &amp; trust</strong>: crediti,
+                  referral, export dati e cancellazione account (API privacy).</span
                 >
               </li>
             </ul>
           </div>
-          <div class="border-border bg-surface-elevated rounded-xl border p-6">
-            <h4 class="text-primary mb-3 font-semibold">
-              Modello di business (dal codice)
-            </h4>
+          <div class="rounded-xl border border-border bg-surface-elevated p-6">
+            <h4 class="mb-3 font-semibold text-primary">Modello di business (dal codice)</h4>
             <p class="mb-3 text-sm text-slate-300">
               Prezzi in centesimi configurabili via env in
               <code class="rounded bg-black/40 px-1 font-mono text-xs"
@@ -290,12 +271,8 @@
               <li>STRIPE_PRICE_SOLO_COUPLE_CENTS (default 999)</li>
               <li>STRIPE_PRICE_GROUP_CENTS (default 1499)</li>
               <li>STRIPE_PRICE_REGEN_CENTS — rigenerazione (default 199)</li>
-              <li>
-                STRIPE_PRICE_REACTIVATE_CENTS — post-viaggio (default 290)
-              </li>
-              <li>
-                STRIPE_PRICE_LOCALPASS_CENTS — add-on per città (default 399)
-              </li>
+              <li>STRIPE_PRICE_REACTIVATE_CENTS — post-viaggio (default 290)</li>
+              <li>STRIPE_PRICE_LOCALPASS_CENTS — add-on per città (default 399)</li>
               <li>STRIPE_SUBSCRIPTION_PRICE_ID — abbonamento opzionale</li>
             </ul>
           </div>
@@ -305,7 +282,7 @@
       <!-- 3. Operativi -->
       <section id="operativi" class="mb-20 scroll-mt-24">
         <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+          class="mb-2 font-mono text-sm font-medium uppercase tracking-wider text-accent"
         >
           03 · Dettagli operativi
         </h2>
@@ -314,7 +291,7 @@
         </h3>
 
         <div
-          class="border-border bg-surface-elevated mb-8 rounded-xl border p-6 md:p-8"
+          class="mb-8 rounded-xl border border-border bg-surface-elevated p-6 md:p-8"
         >
           <h4 class="mb-4 font-semibold text-white">
             Flusso end-to-end (autenticazione → itinerario)
@@ -333,19 +310,17 @@
             </li>
             <li>
               <strong class="text-primary">Checkout Stripe</strong>
-              <code class="font-mono text-xs">POST /api/billing/checkout</code>
-              (e varianti regen/reactivate); webhook
+              <code class="font-mono text-xs">POST /api/billing/checkout</code> (e
+              varianti regen/reactivate); webhook
               <code class="font-mono text-xs">POST /api/webhooks/stripe</code>
               allinea pagamenti e stato trip.
             </li>
             <li>
               <strong class="text-primary">Generazione</strong>:
-              <code class="font-mono text-xs"
-                >POST /api/trips/[tripId]/generate</code
-              >
+              <code class="font-mono text-xs">POST /api/trips/[tripId]/generate</code>
               (rate limit Upstash) → evento Inngest →
-              <code class="font-mono text-xs">generateItinerary</code> che
-              chiama Anthropic, valida JSON con schema itinerario, persiste
+              <code class="font-mono text-xs">generateItinerary</code> che chiama
+              Anthropic, valida JSON con schema itinerario, persiste
               <code class="font-mono text-xs">TripVersion</code> e
               <code class="font-mono text-xs">Day</code>; email transazionale
               opzionale (Resend).
@@ -362,86 +337,72 @@
         </div>
 
         <div class="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">
-              Trip &amp; AI
-            </h5>
+          <div class="rounded-lg border border-border p-4">
+            <h5 class="mb-2 text-sm font-semibold text-primary">Trip &amp; AI</h5>
             <p class="text-xs text-slate-400">
               Lista/dettaglio, preferenze PATCH, versione attiva, replace-slot,
               live-suggest, archiviazione.
             </p>
           </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">
-              Gruppo &amp; spese
-            </h5>
+          <div class="rounded-lg border border-border p-4">
+            <h5 class="mb-2 text-sm font-semibold text-primary">Gruppo &amp; spese</h5>
             <p class="text-xs text-slate-400">
               Inviti, join token, spese CRUD, bilanci, saldi membri.
             </p>
           </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">
-              Growth &amp; supporto
-            </h5>
+          <div class="rounded-lg border border-border p-4">
+            <h5 class="mb-2 text-sm font-semibold text-primary">Growth &amp; supporto</h5>
             <p class="text-xs text-slate-400">
               Referral GET/track, ticket support API, referral nel modello User.
             </p>
           </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">Privacy</h5>
+          <div class="rounded-lg border border-border p-4">
+            <h5 class="mb-2 text-sm font-semibold text-primary">Privacy</h5>
             <p class="text-xs text-slate-400">
               data-export, delete-account, retention Inngest su versioni e soft
               delete.
             </p>
           </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">UI mappa</h5>
+          <div class="rounded-lg border border-border p-4">
+            <h5 class="mb-2 text-sm font-semibold text-primary">UI mappa</h5>
             <p class="text-xs text-slate-400">
               Leaflet / react-leaflet per centri mappa sui giorni (dipendenze
               package.json).
             </p>
           </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">Analytics</h5>
+          <div class="rounded-lg border border-border p-4">
+            <h5 class="mb-2 text-sm font-semibold text-primary">Analytics</h5>
             <p class="text-xs text-slate-400">
-              posthog-js lato client per eventi prodotto (dipendenza
-              dichiarata).
+              posthog-js lato client per eventi prodotto (dipendenza dichiarata).
             </p>
           </div>
         </div>
 
-        <div
-          class="border-primary/30 bg-primary/5 rounded-xl border border-dashed p-6"
-        >
-          <h4 class="mb-3 font-semibold text-white">
-            Metriche di successo (da misurare)
-          </h4>
+        <div class="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
+          <h4 class="mb-3 font-semibold text-white">Metriche di successo (da misurare)</h4>
           <p class="mb-4 text-sm text-slate-400">
-            North Star suggerita:
-            <strong class="text-primary"
-              >trip pagati con itinerario generato con successo</strong
-            >
+            North Star suggerita: <strong class="text-primary">trip pagati con itinerario generato con successo</strong>
             (evento completamento Inngest + stato trip). KPI SaaS complementari:
           </p>
           <ul class="grid gap-2 text-sm text-slate-300 md:grid-cols-2">
             <li>
-              <span class="text-primary font-mono text-xs">Attivazione</span> —
+              <span class="font-mono text-xs text-primary">Attivazione</span> —
               % utenti che completano checkout dopo creazione trip.
             </li>
             <li>
-              <span class="text-primary font-mono text-xs">Generazione</span> —
+              <span class="font-mono text-xs text-primary">Generazione</span> —
               tasso successo job generate-itinerary vs errori / retry.
             </li>
             <li>
-              <span class="text-primary font-mono text-xs">Expansion</span> —
+              <span class="font-mono text-xs text-primary">Expansion</span> —
               ricavi add-on (regen, reactivate, LocalPass) per trip.
             </li>
             <li>
-              <span class="text-primary font-mono text-xs">Retention</span> —
+              <span class="font-mono text-xs text-primary">Retention</span> —
               riattivazioni e secondi viaggi (referralCode, totalTrips).
             </li>
             <li>
-              <span class="text-primary font-mono text-xs">Advocacy</span> —
+              <span class="font-mono text-xs text-primary">Advocacy</span> —
               referral tracciati e conversioni da codice invito.
             </li>
           </ul>
@@ -451,7 +412,7 @@
       <!-- 4. Mercato -->
       <section id="mercato" class="mb-20 scroll-mt-24">
         <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+          class="mb-2 font-mono text-sm font-medium uppercase tracking-wider text-accent"
         >
           04 · Mercato
         </h2>
@@ -459,11 +420,11 @@
           Differenziazione e monetizzazione
         </h3>
         <p class="mb-6 text-sm text-slate-500">
-          Posizionamento basato sulle capacità implementate nel repository — non
-          su ricerche di mercato esterne.
+          Posizionamento basato sulle capacità implementate nel repository — non su
+          ricerche di mercato esterne.
         </p>
 
-        <div class="border-border mb-8 overflow-x-auto rounded-xl border">
+        <div class="mb-8 overflow-x-auto rounded-xl border border-border">
           <table class="w-full min-w-[600px] text-left text-sm">
             <thead class="bg-surface-elevated font-medium text-slate-200">
               <tr>
@@ -472,7 +433,7 @@
                 <th class="px-4 py-3">EasyTrip (nel codice)</th>
               </tr>
             </thead>
-            <tbody class="divide-border divide-y text-slate-300">
+            <tbody class="divide-y divide-border text-slate-300">
               <tr>
                 <td class="px-4 py-3 font-medium text-white">Output</td>
                 <td class="px-4 py-3">Liste statiche, articoli generici</td>
@@ -482,9 +443,7 @@
                 </td>
               </tr>
               <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Personalizzazione
-                </td>
+                <td class="px-4 py-3 font-medium text-white">Personalizzazione</td>
                 <td class="px-4 py-3">Poca o manuale</td>
                 <td class="px-4 py-3">
                   Prompt con calendario, budget, stile, LocalPass, zone usate
@@ -501,8 +460,7 @@
                 <td class="px-4 py-3 font-medium text-white">Monetizzazione</td>
                 <td class="px-4 py-3">Ads / affiliations</td>
                 <td class="px-4 py-3">
-                  Stripe per trip, add-on, subscription opzionale, crediti
-                  utente
+                  Stripe per trip, add-on, subscription opzionale, crediti utente
                 </td>
               </tr>
               <tr>
@@ -516,21 +474,17 @@
           </table>
         </div>
 
-        <div class="border-border bg-surface-elevated rounded-xl border p-6">
-          <h4 class="text-primary mb-2 font-semibold">
-            Strategia di monetizzazione
-          </h4>
+        <div class="rounded-xl border border-border bg-surface-elevated p-6">
+          <h4 class="mb-2 font-semibold text-primary">Strategia di monetizzazione</h4>
           <p class="text-sm leading-relaxed text-slate-300">
-            Il codice implementa un modello
-            <strong class="text-white">pay-per-trip</strong>
+            Il codice implementa un modello <strong class="text-white">pay-per-trip</strong>
             differenziato per tipologia (solo/coppia vs gruppo), più
-            <strong class="text-white">micro-transazioni</strong> per
-            rigenerazioni oltre soglia gratuita, riattivazione dell’accesso dopo
-            scadenza e <strong class="text-white">LocalPass</strong> come
-            moltiplicatore di valore per chi visita più contesti urbani.
-            L’abbonamento Stripe è previsto come percorso opzionale se è
-            configurato il price ID. I crediti utente e i referral rafforzano
-            LTV e acquisizione organica.
+            <strong class="text-white">micro-transazioni</strong> per rigenerazioni
+            oltre soglia gratuita, riattivazione dell’accesso dopo scadenza e
+            <strong class="text-white">LocalPass</strong> come moltiplicatore di
+            valore per chi visita più contesti urbani. L’abbonamento Stripe è
+            previsto come percorso opzionale se è configurato il price ID. I crediti
+            utente e i referral rafforzano LTV e acquisizione organica.
           </p>
         </div>
       </section>
@@ -538,7 +492,7 @@
       <!-- 5. Tecnico -->
       <section id="tecnico" class="mb-20 scroll-mt-24">
         <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+          class="mb-2 font-mono text-sm font-medium uppercase tracking-wider text-accent"
         >
           05 · Specifiche tecniche
         </h2>
@@ -546,7 +500,7 @@
           Stack, user stories, MVP, architettura
         </h3>
 
-        <div class="border-border mb-8 overflow-x-auto rounded-xl border">
+        <div class="mb-8 overflow-x-auto rounded-xl border border-border">
           <table class="w-full min-w-[560px] text-left text-sm">
             <thead class="bg-surface-elevated font-medium text-slate-200">
               <tr>
@@ -554,14 +508,10 @@
                 <th class="px-4 py-3">Tecnologia (package.json / codice)</th>
               </tr>
             </thead>
-            <tbody
-              class="divide-border divide-y font-mono text-xs text-slate-400"
-            >
+            <tbody class="divide-y divide-border font-mono text-xs text-slate-400">
               <tr>
                 <td class="px-4 py-3 text-slate-300">Framework UI</td>
-                <td class="px-4 py-3">
-                  next@16.1.7, react@19.2.3, lucide-react
-                </td>
+                <td class="px-4 py-3">next@16.1.7, react@19.2.3, lucide-react</td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Stile</td>
@@ -612,123 +562,127 @@
         </div>
 
         <div class="mb-8">
-          <h4 class="mb-3 font-semibold text-white">
-            User stories (derivate da route e pagine)
-          </h4>
+          <h4 class="mb-3 font-semibold text-white">User stories (derivate da route e pagine)</h4>
           <ul class="space-y-3 text-sm text-slate-300">
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-01</span>
+            <li class="flex gap-3 rounded-lg border border-border bg-surface-elevated/80 p-4">
+              <span class="font-mono text-xs text-accent">US-01</span>
               <span
-                >Come
-                <strong class="text-white">utente autenticato</strong> voglio
-                <strong class="text-primary">creare un viaggio</strong> e
-                vederlo in elenco così posso procedere al pagamento (<code
-                  class="font-mono text-xs"
-                  >POST /api/trips</code
-                >, <code class="font-mono text-xs">/app/trips</code>).</span
+                >Come <strong class="text-white">utente autenticato</strong> voglio
+                <strong class="text-primary">creare un viaggio</strong> e vederlo in
+                elenco così posso procedere al pagamento
+                (<code class="font-mono text-xs">POST /api/trips</code>,
+                <code class="font-mono text-xs">/app/trips</code>).</span
               >
             </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-02</span>
+            <li class="flex gap-3 rounded-lg border border-border bg-surface-elevated/80 p-4">
+              <span class="font-mono text-xs text-accent">US-02</span>
               <span
                 >Come <strong class="text-white">organizzatore</strong> voglio
                 <strong class="text-primary">avviare la generazione IA</strong>
-                dopo il pagamento così ricevo l’itinerario strutturato (<code
-                  class="font-mono text-xs"
-                  >POST .../generate</code
-                >, Inngest
-                <code class="font-mono text-xs">generateItinerary</code>).</span
+                dopo il pagamento così ricevo l’itinerario strutturato
+                (<code class="font-mono text-xs">POST .../generate</code>,
+                Inngest <code class="font-mono text-xs">generateItinerary</code>).</span
               >
             </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-03</span>
+            <li class="flex gap-3 rounded-lg border border-border bg-surface-elevated/80 p-4">
+              <span class="font-mono text-xs text-accent">US-03</span>
               <span
-                >Come
-                <strong class="text-white">membro del gruppo</strong> voglio
-                <strong class="text-primary">unirmi con un link</strong> così
-                vedo il trip condiviso (<code class="font-mono text-xs"
-                  >/join/[token]</code
-                >,
+                >Come <strong class="text-white">membro del gruppo</strong> voglio
+                <strong class="text-primary">unirmi con un link</strong> così vedo
+                il trip condiviso
+                (<code class="font-mono text-xs">/join/[token]</code>,
                 <code class="font-mono text-xs">/api/join/[token]</code>).</span
               >
             </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-04</span>
+            <li class="flex gap-3 rounded-lg border border-border bg-surface-elevated/80 p-4">
+              <span class="font-mono text-xs text-accent">US-04</span>
               <span
                 >Come <strong class="text-white">partecipante</strong> voglio
-                <strong class="text-primary"
-                  >registrare spese e vedere i bilanci</strong
-                >
+                <strong class="text-primary">registrare spese e vedere i bilanci</strong>
                 (<code class="font-mono text-xs">.../expenses</code>,
                 <code class="font-mono text-xs">.../balances</code>).</span
               >
             </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-05</span>
+            <li class="flex gap-3 rounded-lg border border-border bg-surface-elevated/80 p-4">
+              <span class="font-mono text-xs text-accent">US-05</span>
               <span
-                >Come
-                <strong class="text-white">utente privacy-conscious</strong>
-                voglio
-                <strong class="text-primary">esportare o cancellare</strong> i
-                miei dati (<code class="font-mono text-xs"
-                  >/api/user/data-export</code
-                >,
-                <code class="font-mono text-xs">/api/user/delete-account</code
-                >).</span
+                >Come <strong class="text-white">utente privacy-conscious</strong>
+                voglio <strong class="text-primary">esportare o cancellare</strong>
+                i miei dati
+                (<code class="font-mono text-xs">/api/user/data-export</code>,
+                <code class="font-mono text-xs">/api/user/delete-account</code>).</span
               >
             </li>
           </ul>
         </div>
 
-        <div
-          class="border-border bg-surface-elevated mb-10 rounded-xl border p-6"
-        >
-          <h4 class="text-primary mb-2 font-semibold">
-            Ambito MVP (implementato nel repo)
-          </h4>
+        <div class="mb-10 rounded-xl border border-border bg-surface-elevated p-6">
+          <h4 class="mb-2 font-semibold text-primary">Ambito MVP (implementato nel repo)</h4>
           <p class="mb-3 text-sm text-slate-400">
-            Funzionalità effettivamente presenti: autenticazione Clerk; CRUD
-            trip e versioni; generazione/rigenerazione con regole e checkout;
-            billing Stripe; spese e bilanci; support ticket; referral; retention
-            e reminder Inngest; export/cancellazione utente; rate limiting; test
-            unit ed E2E configurati negli script npm.
+            Funzionalità effettivamente presenti: autenticazione Clerk; CRUD trip e
+            versioni; generazione/rigenerazione con regole e checkout; billing
+            Stripe; spese e bilanci; support ticket; referral; retention e reminder
+            Inngest; export/cancellazione utente; rate limiting; test unit ed E2E
+            configurati negli script npm.
           </p>
         </div>
 
         <h4 class="mb-4 font-semibold text-white">Diagramma architettura</h4>
         <div
-          class="border-border overflow-x-auto rounded-xl border bg-[#0d1117] p-4 md:p-8"
+          class="overflow-x-auto rounded-xl border border-border bg-[#0d1117] p-4 md:p-8"
         >
           <div class="mermaid text-sm">
-            flowchart TB subgraph clientLayer ["Client"] Browser["Browser
-            React"] PostHog["posthog-js"] end subgraph nextLayer ["Next.js App
-            Router"] Pages["pagine app e join"] API["API Routes"] end subgraph
-            serverLayer ["Server layer"] C["Controllers"] S["Services"]
-            R["Repositories"] end subgraph dataLayer ["Data"] Prisma["Prisma
-            ORM"] PG[(PostgreSQL)] end subgraph asyncLayer ["Async Inngest"]
-            InngestAPI["/api/inngest"] Jobs["generateItinerary e altri job"] end
-            subgraph extLayer ["Integrazioni"] Clerk["Clerk"] Stripe["Stripe"]
-            Anthropic["Anthropic API"] Upstash["Upstash Redis"] Resend["Resend
-            opzionale"] end Browser --> Pages Browser --> PostHog Pages -->
-            Clerk API --> C C --> S S --> R R --> Prisma Prisma --> PG API -->
-            InngestAPI InngestAPI --> Jobs Jobs --> Anthropic Jobs --> Prisma
-            API --> Stripe S --> Stripe API --> Upstash Jobs --> Resend
+flowchart TB
+  subgraph clientLayer ["Client"]
+    Browser["Browser React"]
+    PostHog["posthog-js"]
+  end
+  subgraph nextLayer ["Next.js App Router"]
+    Pages["pagine app e join"]
+    API["API Routes"]
+  end
+  subgraph serverLayer ["Server layer"]
+    C["Controllers"]
+    S["Services"]
+    R["Repositories"]
+  end
+  subgraph dataLayer ["Data"]
+    Prisma["Prisma ORM"]
+    PG[(PostgreSQL)]
+  end
+  subgraph asyncLayer ["Async Inngest"]
+    InngestAPI["/api/inngest"]
+    Jobs["generateItinerary e altri job"]
+  end
+  subgraph extLayer ["Integrazioni"]
+    Clerk["Clerk"]
+    Stripe["Stripe"]
+    Anthropic["Anthropic API"]
+    Upstash["Upstash Redis"]
+    Resend["Resend opzionale"]
+  end
+  Browser --> Pages
+  Browser --> PostHog
+  Pages --> Clerk
+  API --> C
+  C --> S
+  S --> R
+  R --> Prisma
+  Prisma --> PG
+  API --> InngestAPI
+  InngestAPI --> Jobs
+  Jobs --> Anthropic
+  Jobs --> Prisma
+  API --> Stripe
+  S --> Stripe
+  API --> Upstash
+  Jobs --> Resend
           </div>
         </div>
       </section>
 
       <footer
-        class="border-border border-t pt-8 text-center text-xs text-slate-500"
+        class="border-t border-border pt-8 text-center text-xs text-slate-500"
       >
         <p>
           Documento generato per descrivere l’implementazione nel repository

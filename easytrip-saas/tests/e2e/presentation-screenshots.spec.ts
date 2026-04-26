@@ -162,7 +162,8 @@ if (hasValidStorage && storagePath) {
 
       // /app/trips: SSR + Prisma (listMyTrips). Non usare locator('main'): in errore globale o shell strana può non esserci <main>.
       // Il nav ha "I miei viaggi" come link, non come heading: l'h1 è univoco. Stringa lunga = contenuto reale della pagina (non solo nav).
-      const tripsPageMarker = "generazione e lo sblocco giorno per giorno";
+      const tripsPageMarker =
+        "generazione e lo sblocco giorno per giorno";
       await page.goto("/it/app/trips", {
         waitUntil: "load",
         timeout: 120_000,
@@ -188,10 +189,7 @@ if (hasValidStorage && storagePath) {
       });
 
       const form = page.locator("#create-trip-form");
-      await expect(
-        form,
-        "Form creazione viaggio (#create-trip-form).",
-      ).toBeVisible({
+      await expect(form, "Form creazione viaggio (#create-trip-form).").toBeVisible({
         timeout: 15_000,
       });
       await form.scrollIntoViewIfNeeded();
@@ -245,12 +243,7 @@ if (hasValidStorage && storagePath) {
           const payBtn = page.getByRole("button", {
             name: /vai al pagamento|usa i tuoi crediti/i,
           });
-          if (
-            await payBtn
-              .first()
-              .isVisible()
-              .catch(() => false)
-          ) {
+          if (await payBtn.first().isVisible().catch(() => false)) {
             try {
               await Promise.all([
                 page.waitForURL(/checkout\.stripe\.com/i, { timeout: 45_000 }),

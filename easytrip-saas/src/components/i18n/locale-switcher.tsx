@@ -113,9 +113,7 @@ export function LocaleSwitcher({ variant = "header", className }: Props) {
           <span aria-hidden className="text-base leading-none">
             {FLAGS[locale]}
           </span>
-          <span className="max-w-[8rem] truncate sm:max-w-none">
-            {t(locale)}
-          </span>
+          <span className="max-w-[8rem] truncate sm:max-w-none">{t(locale)}</span>
           <ChevronDown
             className={`h-3.5 w-3.5 shrink-0 opacity-70 transition ${open ? "rotate-180" : ""}`}
             aria-hidden

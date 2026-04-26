@@ -36,15 +36,13 @@ async function ensureOnAppDashboard(page: Page) {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (
-        (msg.includes("NS_BINDING_ABORTED") ||
-          msg.includes("net::ERR_ABORTED")) &&
+        (msg.includes("NS_BINDING_ABORTED") || msg.includes("net::ERR_ABORTED")) &&
         pathnameIsApp(page.url())
       ) {
         return;
       }
       if (
-        (msg.includes("NS_BINDING_ABORTED") ||
-          msg.includes("net::ERR_ABORTED")) &&
+        (msg.includes("NS_BINDING_ABORTED") || msg.includes("net::ERR_ABORTED")) &&
         attempt < 2
       ) {
         await page.waitForTimeout(1500);

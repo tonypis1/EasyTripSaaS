@@ -24,7 +24,10 @@ import {
   itineraryReadyMemberHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
-import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+} from "@/lib/email/email-i18n";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
 import { config } from "@/config/unifiedConfig";
 
@@ -271,8 +274,7 @@ export const generateItinerary = inngest.createFunction(
           budgetLevel: t.budgetLevel ?? "moderate",
           regenCount: t.regenCount ?? 0,
           usedZones: t.usedZones,
-          localPassCityCount:
-            (t as { localPassCityCount?: number }).localPassCityCount ?? 0,
+          localPassCityCount: (t as { localPassCityCount?: number }).localPassCityCount ?? 0,
           organizerLanguage: normalizeAiLocale(t.organizer?.language),
         };
       },

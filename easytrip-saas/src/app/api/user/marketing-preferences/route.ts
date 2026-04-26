@@ -18,10 +18,7 @@ export async function GET() {
   } catch (e) {
     if (e instanceof AppError && e.statusCode === 401) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: { message: "Non autenticato", code: "UNAUTHORIZED" },
-        },
+        { ok: false, error: { message: "Non autenticato", code: "UNAUTHORIZED" } },
         { status: 401 },
       );
     }
@@ -46,7 +43,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: { message: 'Invia { "marketingOptIn": true|false }' },
+        error: { message: "Invia { \"marketingOptIn\": true|false }" },
       },
       { status: 400 },
     );
@@ -54,10 +51,7 @@ export async function PATCH(req: Request) {
 
   try {
     const me = await auth.getOrCreateCurrentUser();
-    const updated = await users.updateMarketingOptIn(
-      me.id,
-      body.marketingOptIn,
-    );
+    const updated = await users.updateMarketingOptIn(me.id, body.marketingOptIn);
     return NextResponse.json({
       ok: true,
       marketingOptIn: updated.marketingOptIn,
@@ -66,10 +60,7 @@ export async function PATCH(req: Request) {
   } catch (e) {
     if (e instanceof AppError && e.statusCode === 401) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: { message: "Non autenticato", code: "UNAUTHORIZED" },
-        },
+        { ok: false, error: { message: "Non autenticato", code: "UNAUTHORIZED" } },
         { status: 401 },
       );
     }

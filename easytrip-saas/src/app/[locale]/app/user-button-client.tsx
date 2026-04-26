@@ -1,18 +1,11 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 
-function useIsClient() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
-
 export function UserButtonClient() {
-  const isClient = useIsClient();
-  if (!isClient) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
   return <UserButton afterSignOutUrl="/" />;
 }

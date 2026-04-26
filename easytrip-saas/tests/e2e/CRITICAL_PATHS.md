@@ -46,4 +46,4 @@
 
 ## See also
 
-- [tests/e2e/README.md](./README.md) — progetti Playwright (`chromium` vs `mobile-chromium`), perché alcuni test risultano _skipped_ senza `E2E_AUTH_STORAGE_STATE` / `E2E_TRIP_ID`, e come abilitarli.
+- [tests/e2e/README.md](./README.md) — progetti Playwright (`chromium` vs `mobile-chromium`), perché alcuni test risultano *skipped* senza `E2E_AUTH_STORAGE_STATE` / `E2E_TRIP_ID`, e come abilitarli.

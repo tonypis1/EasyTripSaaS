@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLiveSuggestModelJson } from "@/lib/trip/liveSuggestModel";
+import { parseLiveSuggestModelJson } from "@/server/services/trip/liveSuggestService";
 
 const validJson = JSON.stringify({
   contextNote: "Ecco tre alternative vicine.",

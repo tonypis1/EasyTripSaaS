@@ -35,14 +35,12 @@ for (const l of locales) {
     if (missing.length) {
       console.log(`  Missing keys (${missing.length}):`);
       missing.slice(0, 30).forEach((k) => console.log(`    - ${k}`));
-      if (missing.length > 30)
-        console.log(`    ... and ${missing.length - 30} more`);
+      if (missing.length > 30) console.log(`    ... and ${missing.length - 30} more`);
     }
     if (extra.length) {
       console.log(`  Extra keys (${extra.length}):`);
       extra.slice(0, 30).forEach((k) => console.log(`    + ${k}`));
-      if (extra.length > 30)
-        console.log(`    ... and ${extra.length - 30} more`);
+      if (extra.length > 30) console.log(`    ... and ${extra.length - 30} more`);
     }
   }
 }

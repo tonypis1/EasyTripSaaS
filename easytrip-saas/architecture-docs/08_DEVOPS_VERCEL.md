@@ -1,10 +1,10 @@
 # 08 — DevOps: hosting e ambiente
 
-| Documento   | Percorso                                       |
-| ----------- | ---------------------------------------------- |
-| Indice      | [README_00.md](../README_00.md)                |
-| Pagamenti   | [07_PAYMENTS_STRIPE.md](07_PAYMENTS_STRIPE.md) |
-| Deploy / CI | [12_DEPLOYMENT.md](12_DEPLOYMENT.md)           |
+| Documento | Percorso |
+|-----------|----------|
+| Indice | [README_00.md](../README_00.md) |
+| Pagamenti | [07_PAYMENTS_STRIPE.md](07_PAYMENTS_STRIPE.md) |
+| Deploy / CI | [12_DEPLOYMENT.md](12_DEPLOYMENT.md) |
 
 ## 1. Piattaforma di esecuzione
 
@@ -19,52 +19,49 @@
 
 ## 3. Servizi collegati (esterni)
 
-| Servizio                           | Funzione                                                                                                                                                             |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PostgreSQL                         | Database Prisma (es. Neon, RDS, Supabase)                                                                                                                            |
-| Clerk                              | Auth                                                                                                                                                                 |
-| Stripe                             | Pagamenti                                                                                                                                                            |
-| Inngest Cloud                      | Orchestrazione job (`inngest:dev` per dev locale)                                                                                                                    |
-| Upstash Redis                      | Rate limit (opzionale)                                                                                                                                               |
-| Resend                             | Email (opzionale)                                                                                                                                                    |
-| Vercel (Analytics, Speed Insights) | Metriche web e Core Web Vitals nella dashboard del progetto; nessuna env aggiuntiva se l’app è deployata su Vercel (vedi [11_OBSERVABILITY.md](11_OBSERVABILITY.md)) |
+| Servizio | Funzione |
+|----------|----------|
+| PostgreSQL | Database Prisma (es. Neon, RDS, Supabase) |
+| Clerk | Auth |
+| Stripe | Pagamenti |
+| Inngest Cloud | Orchestrazione job (`inngest:dev` per dev locale) |
+| Upstash Redis | Rate limit (opzionale) |
+| Resend | Email (opzionale) |
 
 ## 4. Variabili d’ambiente obbligatorie (schema Zod)
 
 Definite in `src/config/unifiedConfig.ts` — devono essere presenti in produzione (Vercel → Environment Variables):
 
-| Variabile                           | Descrizione                                                   |
-| ----------------------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`                      | Connection string PostgreSQL                                  |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk pubblico                                                |
-| `CLERK_SECRET_KEY`                  | Clerk server                                                  |
-| `STRIPE_SECRET_KEY`                 | Stripe segreta                                                |
-| `STRIPE_WEBHOOK_SECRET`             | Verifica webhook                                              |
-| `ANTHROPIC_API_KEY`                 | Generazione itinerari                                         |
-| `APP_BASE_URL`                      | URL pubblico (redirect Stripe, link email); default localhost |
+| Variabile | Descrizione |
+|-----------|-------------|
+| `DATABASE_URL` | Connection string PostgreSQL |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk pubblico |
+| `CLERK_SECRET_KEY` | Clerk server |
+| `STRIPE_SECRET_KEY` | Stripe segreta |
+| `STRIPE_WEBHOOK_SECRET` | Verifica webhook |
+| `ANTHROPIC_API_KEY` | Generazione itinerari |
+| `APP_BASE_URL` | URL pubblico (redirect Stripe, link email); default localhost |
 
 Opzionali / default: prezzi Stripe in centesimi, `ANTHROPIC_MODEL`, `STRIPE_SUBSCRIPTION_PRICE_ID`, `RESEND_API_KEY`, `EMAIL_FROM`, retention days.
 
 ## 5. Variabili opzionali non nello schema Zod
 
-| Variabile                                  | Uso                                     |
-| ------------------------------------------ | --------------------------------------- |
+| Variabile | Uso |
+|-----------|-----|
 | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | Inngest Cloud → sync con `/api/inngest` |
-| `UPSTASH_REDIS_REST_URL`                   | Rate limit                              |
-| `UPSTASH_REDIS_REST_TOKEN`                 | Rate limit                              |
-| `NEXT_PUBLIC_POSTHOG_*`                    | PostHog (`posthog-provider.tsx`)        |
-| `NEXT_PUBLIC_CRISP_WEBSITE_ID`             | Chat (`crisp-chat.tsx`)                 |
-| `NEXT_PUBLIC_*` affiliate                  | `src/lib/affiliate.ts` (partner ID)     |
-| `E2E_*`                                    | Playwright (CI / test)                  |
-
-**Vercel Web Analytics e Speed Insights** non aggiungono chiavi in `.env`: i componenti sono in [`src/app/layout.tsx`](../src/app/layout.tsx) e si associano al progetto Vercel al deploy (abilitare le tab **Analytics** / **Speed Insights** se necessario). Dettaglio: [11_OBSERVABILITY.md](11_OBSERVABILITY.md).
+| `UPSTASH_REDIS_REST_URL` | Rate limit |
+| `UPSTASH_REDIS_REST_TOKEN` | Rate limit |
+| `NEXT_PUBLIC_POSTHOG_*` | Analytics (`posthog-provider.tsx`) |
+| `NEXT_PUBLIC_CRISP_WEBSITE_ID` | Chat (`crisp-chat.tsx`) |
+| `NEXT_PUBLIC_*` affiliate | `src/lib/affiliate.ts` (partner ID) |
+| `E2E_*` | Playwright (CI / test) |
 
 Template completo: [`.env.example`](../.env.example). Validazione manuale: `node scripts/check-env.mjs` (vedi `--strict` / `--production`).
 
 ## 6. Comandi operativi
 
-| Comando               | Scopo                                    |
-| --------------------- | ---------------------------------------- |
-| `npm run db:generate` | `prisma generate`                        |
-| `npx prisma migrate`  | Migrazioni (operatore)                   |
+| Comando | Scopo |
+|---------|--------|
+| `npm run db:generate` | `prisma generate` |
+| `npx prisma migrate` | Migrazioni (operatore) |
 | `npm run inngest:dev` | Dev server Inngest contro `/api/inngest` |

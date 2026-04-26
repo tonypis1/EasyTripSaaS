@@ -1,10 +1,10 @@
 # 05 — Validazione con Zod
 
-| Documento     | Percorso                                           |
-| ------------- | -------------------------------------------------- |
-| Indice        | [README_00.md](../README_00.md)                    |
-| API           | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
-| Design system | [06_DESIGN_SYSTEM.md](06_DESIGN_SYSTEM.md)         |
+| Documento | Percorso |
+|-----------|----------|
+| Indice | [README_00.md](../README_00.md) |
+| API | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
+| Design system | [06_DESIGN_SYSTEM.md](06_DESIGN_SYSTEM.md) |
 
 ## 1. Principi
 
@@ -14,14 +14,14 @@
 
 ## 2. Schemi trip (estratto)
 
-| Schema                    | Scopo                                                                                        |
-| ------------------------- | -------------------------------------------------------------------------------------------- |
-| `createTripSchema`        | POST creazione: destinazione, date, `tripType`, `style`, `budgetLevel`, `localPassCityCount` |
-| `tripIdParamSchema`       | Validazione `tripId`                                                                         |
-| `setActiveVersionSchema`  | `versionNum` 1..7                                                                            |
-| `replaceSlotSchema`       | `dayId`, `slot` (morning/afternoon/evening), `lat`/`lng` opzionali                           |
-| `updatePreferencesSchema` | `style`, `budgetLevel`                                                                       |
-| `liveSuggestSchema`       | `dayId`, `lat`/`lng` obbligatori, `reason`, `currentSlot` opzionale                          |
+| Schema | Scopo |
+|--------|--------|
+| `createTripSchema` | POST creazione: destinazione, date, `tripType`, `style`, `budgetLevel`, `localPassCityCount` |
+| `tripIdParamSchema` | Validazione `tripId` |
+| `setActiveVersionSchema` | `versionNum` 1..7 |
+| `replaceSlotSchema` | `dayId`, `slot` (morning/afternoon/evening), `lat`/`lng` opzionali |
+| `updatePreferencesSchema` | `style`, `budgetLevel` |
+| `liveSuggestSchema` | `dayId`, `lat`/`lng` obbligatori, `reason`, `currentSlot` opzionale |
 
 ## 3. Costanti budget
 
@@ -42,9 +42,9 @@ Default creazione: `moderate`.
 
 ## 6. Riferimenti
 
-| File                                             | Contenuto                 |
-| ------------------------------------------------ | ------------------------- |
-| `src/config/unifiedConfig.ts`                    | Env Zod                   |
-| `src/server/validators/trip.schema.ts`           | Trip API                  |
-| `src/server/services/trip/slotReplaceService.ts` | Validazione slot AI       |
-| `src/lib/itinerary-model-schema.ts`              | Modello giorni/itinerario |
+| File | Contenuto |
+|------|-----------|
+| `src/config/unifiedConfig.ts` | Env Zod |
+| `src/server/validators/trip.schema.ts` | Trip API |
+| `src/server/services/trip/slotReplaceService.ts` | Validazione slot AI |
+| `src/lib/itinerary-model-schema.ts` | Modello giorni/itinerario |

@@ -1,10 +1,10 @@
 # 03 — Modello dati (Prisma)
 
-| Documento    | Percorso                                           |
-| ------------ | -------------------------------------------------- |
-| Indice       | [README_00.md](../README_00.md)                    |
-| Architettura | [02_ARCHITECTURE.md](02_ARCHITECTURE.md)           |
-| API          | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
+| Documento | Percorso |
+|-----------|----------|
+| Indice | [README_00.md](../README_00.md) |
+| Architettura | [02_ARCHITECTURE.md](02_ARCHITECTURE.md) |
+| API | [04_API_SPECIFICATION.md](04_API_SPECIFICATION.md) |
 
 ## 1. Fonte di verità
 
@@ -86,14 +86,14 @@ erDiagram
 
 ## 3. Enumerazioni principali
 
-| Enum                             | Valori                                     | Impiego                   |
-| -------------------------------- | ------------------------------------------ | ------------------------- |
-| `TripStatus`                     | pending, active, expired, cancelled        | Ciclo di vita trip        |
-| `TripType`                       | solo, coppia, gruppo                       | Pricing e prompt AI       |
-| `PaymentType`                    | purchase, regen, reactivate                | Stripe + record `Payment` |
-| `ExpenseCategory`                | cibo, trasporti, attivita, alloggio, altro | Spese                     |
-| `TicketStatus` / `TicketChannel` | —                                          | Supporto                  |
-| `ReferralStatus`                 | pending, signed_up, converted              | Referral                  |
+| Enum | Valori | Impiego |
+|------|--------|---------|
+| `TripStatus` | pending, active, expired, cancelled | Ciclo di vita trip |
+| `TripType` | solo, coppia, gruppo | Pricing e prompt AI |
+| `PaymentType` | purchase, regen, reactivate | Stripe + record `Payment` |
+| `ExpenseCategory` | cibo, trasporti, attivita, alloggio, altro | Spese |
+| `TicketStatus` / `TicketChannel` | — | Supporto |
+| `ReferralStatus` | pending, signed_up, converted | Referral |
 
 ## 4. Note su itinerari e JSON
 

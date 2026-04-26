@@ -8,12 +8,12 @@ Guida passo-passo per verificare in locale (o in staging) che webhook, Resend e 
 
 ## Prerequisiti comuni
 
-| Cosa                                               | Perché                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `npm run dev`                                      | App Next su `http://localhost:3000`                                            |
-| `ngrok http 3000` (tunnel attivo)                  | Clerk deve raggiungere `https://TUO-DOMINIO.ngrok-free.app/api/webhooks/clerk` |
-| Endpoint Clerk = URL ngrok + `/api/webhooks/clerk` | Vedi [Clerk Webhooks](https://dashboard.clerk.com)                             |
-| `CLERK_WEBHOOK_SIGNING_SECRET` in `.env`           | Stesso secret dell’endpoint in Clerk; riavvia `npm run dev` dopo modifiche     |
+| Cosa | Perché |
+|------|--------|
+| `npm run dev` | App Next su `http://localhost:3000` |
+| `ngrok http 3000` (tunnel attivo) | Clerk deve raggiungere `https://TUO-DOMINIO.ngrok-free.app/api/webhooks/clerk` |
+| Endpoint Clerk = URL ngrok + `/api/webhooks/clerk` | Vedi [Clerk Webhooks](https://dashboard.clerk.com) |
+| `CLERK_WEBHOOK_SIGNING_SECRET` in `.env` | Stesso secret dell’endpoint in Clerk; riavvia `npm run dev` dopo modifiche |
 
 ---
 
@@ -44,7 +44,7 @@ Guida passo-passo per verificare in locale (o in staging) che webhook, Resend e 
 4. Esegui una **nuova registrazione** utente (o un utente mai visto dal webhook) per far scattare di nuovo `user.created`.
 5. Controlla:
    - **Casella email** del cliente (anche cartella **Spam**).
-   - **Dashboard Resend** → **Emails** / **Logs**: stato _delivered_ o eventuali errori API.
+   - **Dashboard Resend** → **Emails** / **Logs**: stato *delivered* o eventuali errori API.
 
 **Senza** `RESEND_API_KEY` / `EMAIL_FROM`, in sviluppo l’app **logga** solo un messaggio tipo “Email transazionale (mock)” (vedi [`transactional.ts`](../src/lib/email/transactional.ts)) e **non** invia posta reale.
 
@@ -95,13 +95,13 @@ Se **`WebhookDelivery` è vuoto** ma i Log Clerk mostrano 200, controlla che **P
 
 Esegui in ordine (con **ngrok** + **Clerk** configurati; **Resend** attivo per email vere; **Inngest dev** per itinerario e cron):
 
-| Passo | Azione                                                   | Email / effetto atteso (vedi [`EMAIL_LIFECYCLE.md`](EMAIL_LIFECYCLE.md))              |
-| ----- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| A     | Registrazione con **tonypis0@libero.it** (account nuovo) | Benvenuto (webhook Clerk)                                                             |
-| B     | Crea un viaggio e completa **checkout Stripe** (test)    | Pagamento ricevuto                                                                    |
-| C     | Con Inngest dev attivo, attendi generazione              | Itinerario pronto                                                                     |
-| D     | **Privacy** → attiva opt-in **email marketing**          | Abilita nurture D+3 / D+7 (richiede giorni e condizioni DB)                           |
-| E     | Test avanzati (opzionale)                                | Checkout scaduto (Stripe), pre-trip/post-trip/crediti (date e cron), referral, gruppo |
+| Passo | Azione | Email / effetto atteso (vedi [`EMAIL_LIFECYCLE.md`](EMAIL_LIFECYCLE.md)) |
+|-------|--------|------------------------------------------------------------------------|
+| A | Registrazione con **tonypis0@libero.it** (account nuovo) | Benvenuto (webhook Clerk) |
+| B | Crea un viaggio e completa **checkout Stripe** (test) | Pagamento ricevuto |
+| C | Con Inngest dev attivo, attendi generazione | Itinerario pronto |
+| D | **Privacy** → attiva opt-in **email marketing** | Abilita nurture D+3 / D+7 (richiede giorni e condizioni DB) |
+| E | Test avanzati (opzionale) | Checkout scaduto (Stripe), pre-trip/post-trip/crediti (date e cron), referral, gruppo |
 
 Controlla sempre **posta in arrivo e spam** su Libero.
 
@@ -111,12 +111,12 @@ Controlla sempre **posta in arrivo e spam** su Libero.
 
 ## Riepilogo rapido
 
-| Controllo                  | Dove                                                         |
-| -------------------------- | ------------------------------------------------------------ |
-| HTTP 200 su `user.created` | Clerk → Webhooks → Logs → dettaglio messaggio                |
-| Email inviate              | Resend dashboard + inbox utente                              |
-| Idempotenza Clerk          | Prisma → `WebhookDelivery` (`provider` = `clerk`)            |
-| Benvenuto inviato          | Prisma → `User.welcome_email_sent_at`                        |
-| Job Inngest                | Terminale `npm run inngest:dev` + dashboard `localhost:8288` |
+| Controllo | Dove |
+|-----------|------|
+| HTTP 200 su `user.created` | Clerk → Webhooks → Logs → dettaglio messaggio |
+| Email inviate | Resend dashboard + inbox utente |
+| Idempotenza Clerk | Prisma → `WebhookDelivery` (`provider` = `clerk`) |
+| Benvenuto inviato | Prisma → `User.welcome_email_sent_at` |
+| Job Inngest | Terminale `npm run inngest:dev` + dashboard `localhost:8288` |
 
 Per Stripe in locale ricorda anche: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` e `STRIPE_WEBHOOK_SECRET` allineato al `whsec_` della CLI (vedi [`MASTER_TESTING_CHECKLIST.md`](MASTER_TESTING_CHECKLIST.md)).
