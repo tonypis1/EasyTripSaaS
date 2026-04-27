@@ -249,7 +249,9 @@ export default function AccountPrivacyPage() {
               disabled={busy}
               className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {busy ? "Cancellazione…" : "Cancella definitivamente il mio account"}
+              {busy
+                ? "Cancellazione…"
+                : "Cancella definitivamente il mio account"}
             </button>
             {error ? (
               <p className="mt-3 text-sm text-red-300/90" role="alert">
