@@ -195,8 +195,7 @@ export class UserDataService {
         "errors" in e &&
         Array.isArray((e as { errors: unknown }).errors)
           ? String(
-              (e as { errors: Array<{ code?: string }> }).errors[0]?.code ??
-                "",
+              (e as { errors: Array<{ code?: string }> }).errors[0]?.code ?? "",
             )
           : "";
       const msg = e instanceof Error ? e.message : String(e);
