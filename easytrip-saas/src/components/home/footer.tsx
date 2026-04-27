@@ -20,21 +20,27 @@ export function MarketingFooter() {
             <p className="text-et-ink/60 mt-2 text-sm">{t("tagline")}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <a
+            <Link
               className="text-et-ink/70 hover:text-et-ink text-sm"
-              href="#come-funziona"
+              href="/#come-funziona"
+              scroll
             >
               {t("howItWorks")}
-            </a>
-            <a
+            </Link>
+            <Link
               className="text-et-ink/70 hover:text-et-ink text-sm"
-              href="#prezzi"
+              href="/#prezzi"
+              scroll
             >
               {t("pricing")}
-            </a>
-            <a className="text-et-ink/70 hover:text-et-ink text-sm" href="#faq">
+            </Link>
+            <Link
+              className="text-et-ink/70 hover:text-et-ink text-sm"
+              href="/#faq"
+              scroll
+            >
               {t("faq")}
-            </a>
+            </Link>
             <Link
               className="text-et-ink/70 hover:text-et-ink text-sm"
               href="/app"

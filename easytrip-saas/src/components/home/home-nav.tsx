@@ -27,15 +27,19 @@ export function HomeNavBar(props: { mode: Mode }) {
           {tCommon("appName")}
         </Link>
         <nav className="text-et-ink/70 hidden items-center gap-5 text-sm md:flex">
-          <a href="#come-funziona" className="hover:text-et-ink shrink-0">
+          <Link
+            href="/#come-funziona"
+            className="hover:text-et-ink shrink-0"
+            scroll
+          >
             {t("howItWorks")}
-          </a>
-          <a href="#prezzi" className="hover:text-et-ink shrink-0">
+          </Link>
+          <Link href="/#prezzi" className="hover:text-et-ink shrink-0" scroll>
             {t("pricing")}
-          </a>
-          <a href="#faq" className="hover:text-et-ink shrink-0">
+          </Link>
+          <Link href="/#faq" className="hover:text-et-ink shrink-0" scroll>
             {t("faq")}
-          </a>
+          </Link>
           {props.mode === "authenticated" ? (
             <Link
               href="/app/trips"

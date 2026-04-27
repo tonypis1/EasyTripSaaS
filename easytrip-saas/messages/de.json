@@ -252,6 +252,13 @@
       "marketingOptIn": "Ich möchte Marketing- und Onboarding-E-Mails von {appName} erhalten"
     },
     "privacyDelete": {
+      "sectionTitle": "Konto löschen",
+      "sectionBody": "Diese Aktion ist endgültig: Wir löschen Daten in der Datenbank, Stripe-Beziehungen (falls vorhanden) und den Benutzer bei Clerk. Du kannst das Konto nicht wiederherstellen.",
+      "confirmFieldLabel": "Bestätigung (genauen Text eingeben)",
+      "confirmPhrase": "Konto löschen",
+      "confirmMismatch": "Gib genau «{phrase}» ein, um die endgültige Löschung zu bestätigen.",
+      "confirmButton": "Mein Konto endgültig löschen",
+      "confirmBusy": "Wird gelöscht…",
       "successTitle": "Konto gelöscht",
       "successBody": "Die Löschung war erfolgreich. In wenigen Sekunden wirst du abgemeldet und zur Startseite weitergeleitet.",
       "redirecting": "Abmeldung läuft…"

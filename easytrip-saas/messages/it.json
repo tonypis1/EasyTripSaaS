@@ -252,6 +252,13 @@
       "marketingOptIn": "Accetto email di marketing e onboarding da {appName}"
     },
     "privacyDelete": {
+      "sectionTitle": "Cancella account",
+      "sectionBody": "Questa azione è definitiva: eliminiamo i dati nel database, le relazioni con Stripe (se presenti) e l'utente in Clerk. Non potrai recuperare l'account.",
+      "confirmFieldLabel": "Conferma (digita il testo esatto)",
+      "confirmPhrase": "Cancella account",
+      "confirmMismatch": "Digita esattamente «{phrase}» per confermare la cancellazione definitiva.",
+      "confirmButton": "Cancella definitivamente il mio account",
+      "confirmBusy": "Cancellazione…",
       "successTitle": "Account eliminato",
       "successBody": "La cancellazione è stata completata correttamente. Tra pochi secondi verrai disconnesso e reindirizzato alla home.",
       "redirecting": "Disconnessione in corso…"

@@ -1,13 +1,12 @@
 "use client";
 
 import { useClerk } from "@clerk/nextjs";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 
-const CONFIRM_PHRASE = "DELETE_MY_ACCOUNT";
-
 export default function AccountPrivacyPage() {
+  const locale = useLocale();
   const tPrivacy = useTranslations("app.privacyPage");
   const tDelete = useTranslations("app.privacyDelete");
   const tCommon = useTranslations("common");
@@ -78,10 +77,9 @@ export default function AccountPrivacyPage() {
   }
 
   async function onDeleteAccount() {
-    if (phrase.trim() !== CONFIRM_PHRASE) {
-      setError(
-        `Digita esattamente ${CONFIRM_PHRASE} nel campo per confermare la cancellazione definitiva.`,
-      );
+    const expectedPhrase = tDelete("confirmPhrase");
+    if (phrase.trim() !== expectedPhrase) {
+      setError(tDelete("confirmMismatch", { phrase: expectedPhrase }));
       return;
     }
 
@@ -91,7 +89,7 @@ export default function AccountPrivacyPage() {
       const res = await fetch("/api/user/delete-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm: CONFIRM_PHRASE }),
+        body: JSON.stringify({ confirm: phrase.trim() }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
@@ -105,10 +103,11 @@ export default function AccountPrivacyPage() {
       setPhrase("");
       await new Promise((r) => setTimeout(r, 2200));
       try {
-        await clerk.signOut({ redirectUrl: "/" });
+        await clerk.signOut();
       } catch {
-        window.location.href = "/";
+        /* session may already be invalid */
       }
+      window.location.assign(`/${locale}`);
     } catch {
       setError("Errore di rete. Riprova.");
     } finally {
@@ -220,19 +219,16 @@ export default function AccountPrivacyPage() {
               id="delete-heading"
               className="font-display text-et-ink text-lg font-normal"
             >
-              Cancella account
+              {tDelete("sectionTitle")}
             </h2>
             <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-              Questa azione è{" "}
-              <strong className="text-et-ink/80">definitiva</strong>: eliminiamo
-              i dati nel database, le relazioni con Stripe (se presenti) e
-              l&apos;utente in Clerk. Non potrai recuperare l&apos;account.
+              {tDelete("sectionBody")}
             </p>
             <label
               htmlFor="delete-confirm"
               className="text-et-accent/88 mt-6 block text-xs font-semibold tracking-wider uppercase"
             >
-              Conferma (digita il testo esatto)
+              {tDelete("confirmFieldLabel")}
             </label>
             <input
               id="delete-confirm"
@@ -240,7 +236,7 @@ export default function AccountPrivacyPage() {
               autoComplete="off"
               value={phrase}
               onChange={(e) => setPhrase(e.target.value)}
-              placeholder={CONFIRM_PHRASE}
+              placeholder={tDelete("confirmPhrase")}
               className="border-et-border bg-et-deep text-et-ink placeholder:text-et-ink/40 focus:border-et-accent/50 mt-1.5 w-full max-w-md rounded-xl border px-3 py-2.5 text-sm outline-none"
             />
             <button
@@ -249,9 +245,7 @@ export default function AccountPrivacyPage() {
               disabled={busy}
               className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {busy
-                ? "Cancellazione…"
-                : "Cancella definitivamente il mio account"}
+              {busy ? tDelete("confirmBusy") : tDelete("confirmButton")}
             </button>
             {error ? (
               <p className="mt-3 text-sm text-red-300/90" role="alert">

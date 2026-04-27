@@ -252,6 +252,13 @@
       "marketingOptIn": "I agree to receive marketing and onboarding emails from {appName}"
     },
     "privacyDelete": {
+      "sectionTitle": "Delete account",
+      "sectionBody": "This action is permanent: we delete data in the database, Stripe relationships (if any), and the user in Clerk. You will not be able to recover the account.",
+      "confirmFieldLabel": "Confirm (type the exact text)",
+      "confirmPhrase": "Delete account",
+      "confirmMismatch": "Type exactly «{phrase}» to confirm permanent deletion.",
+      "confirmButton": "Permanently delete my account",
+      "confirmBusy": "Deleting…",
       "successTitle": "Account deleted",
       "successBody": "Your account has been removed successfully. You will be signed out and redirected to the home page in a few seconds.",
       "redirecting": "Signing you out…"

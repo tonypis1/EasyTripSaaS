@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { container } from "@/server/di/container";
 import { AppError } from "@/server/errors/AppError";
-
-const CONFIRM_PHRASE = "DELETE_MY_ACCOUNT";
+import { DELETE_ACCOUNT_CONFIRM_PHRASES } from "@/lib/user/delete-account-confirm-phrases";
 
 /**
  * Cancellazione account coordinata: Stripe → database → Clerk (diritto all’oblio).
@@ -21,12 +20,14 @@ export async function POST(req: Request) {
     );
   }
 
-  if (body.confirm !== CONFIRM_PHRASE) {
+  const trimmed = body.confirm?.trim() ?? "";
+  if (!DELETE_ACCOUNT_CONFIRM_PHRASES.has(trimmed)) {
     return NextResponse.json(
       {
         ok: false,
         error: {
-          message: `Invia { "confirm": "${CONFIRM_PHRASE}" } per confermare la cancellazione definitiva.`,
+          message:
+            "Frase di conferma non valida. Digita la formula esatta mostrata nella pagina, nella tua lingua.",
           code: "CONFIRMATION_REQUIRED",
         },
       },

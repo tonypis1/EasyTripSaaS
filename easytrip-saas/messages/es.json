@@ -252,6 +252,13 @@
       "marketingOptIn": "Acepto recibir emails de marketing e incorporación de {appName}"
     },
     "privacyDelete": {
+      "sectionTitle": "Eliminar cuenta",
+      "sectionBody": "Esta acción es definitiva: eliminamos los datos en la base de datos, las relaciones con Stripe (si las hay) y el usuario en Clerk. No podrás recuperar la cuenta.",
+      "confirmFieldLabel": "Confirmación (escribe el texto exacto)",
+      "confirmPhrase": "Eliminar cuenta",
+      "confirmMismatch": "Escribe exactamente «{phrase}» para confirmar la eliminación definitiva.",
+      "confirmButton": "Eliminar mi cuenta definitivamente",
+      "confirmBusy": "Eliminando…",
       "successTitle": "Cuenta eliminada",
       "successBody": "La eliminación se ha completado correctamente. En unos segundos cerraremos tu sesión y te redirigiremos al inicio.",
       "redirecting": "Cerrando sesión…"

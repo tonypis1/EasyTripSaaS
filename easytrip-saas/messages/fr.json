@@ -252,6 +252,13 @@
       "marketingOptIn": "J'accepte de recevoir des e-mails marketing et d'onboarding de {appName}"
     },
     "privacyDelete": {
+      "sectionTitle": "Supprimer le compte",
+      "sectionBody": "Cette action est définitive : nous supprimons les données en base, les liens Stripe (le cas échéant) et l'utilisateur dans Clerk. Vous ne pourrez pas récupérer le compte.",
+      "confirmFieldLabel": "Confirmation (saisissez le texte exact)",
+      "confirmPhrase": "Supprimer le compte",
+      "confirmMismatch": "Saisissez exactement «{phrase}» pour confirmer la suppression définitive.",
+      "confirmButton": "Supprimer définitivement mon compte",
+      "confirmBusy": "Suppression…",
       "successTitle": "Compte supprimé",
       "successBody": "La suppression est terminée. Vous serez déconnecté et redirigé vers l'accueil dans quelques secondes.",
       "redirecting": "Déconnexion en cours…"

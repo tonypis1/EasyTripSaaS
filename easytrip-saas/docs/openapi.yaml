@@ -466,8 +466,9 @@ paths:
       tags: [user]
       summary: Cancellazione account definitiva
       description: |
-        Richiede conferma esplicita nel body JSON con la frase costante `DELETE_MY_ACCOUNT`
-        (vedi implementazione `src/app/api/user/delete-account/route.ts`).
+        Richiede conferma esplicita nel body JSON con la frase mostrata in UI nella lingua
+        dell'utente (es. `Cancella account`, `Delete account`, …; vedi
+        `src/lib/user/delete-account-confirm-phrases.ts` e `messages/*/app.privacyDelete.confirmPhrase`).
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -598,8 +599,13 @@ components:
       properties:
         confirm:
           type: string
-          enum: [DELETE_MY_ACCOUNT]
-          description: Deve essere esattamente DELETE_MY_ACCOUNT per confermare la cancellazione
+          enum:
+            - Cancella account
+            - Delete account
+            - Eliminar cuenta
+            - Supprimer le compte
+            - Konto löschen
+          description: Frase esatta dalla pagina Privacy (stessa lingua dell'interfaccia)
 
     UpdatePreferencesBody:
       type: object
