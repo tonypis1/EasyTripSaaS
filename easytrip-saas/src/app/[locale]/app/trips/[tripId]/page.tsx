@@ -50,7 +50,12 @@ export default async function TripDetailPage({
   ) {
     logger.info(
       "Checkout success URL senza session_id: aggiorna APP_BASE_URL e rideploy, oppure correggi il webhook Stripe",
-      { tripId, checkout: sp.checkout, regen: sp.regen, reactivate: sp.reactivate },
+      {
+        tripId,
+        checkout: sp.checkout,
+        regen: sp.regen,
+        reactivate: sp.reactivate,
+      },
     );
   }
 

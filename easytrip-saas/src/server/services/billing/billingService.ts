@@ -505,11 +505,7 @@ export class BillingService {
         : session.id;
 
     if (!tripId || !appUserId) {
-      throw new AppError(
-        "Metadata Stripe incompleto",
-        400,
-        "INVALID_METADATA",
-      );
+      throw new AppError("Metadata Stripe incompleto", 400, "INVALID_METADATA");
     }
 
     const existingPayment =
