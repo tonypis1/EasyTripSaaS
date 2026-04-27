@@ -411,7 +411,15 @@
         },
         "status": {
           "geoAcquired": "Posizione acquisita (precisione ridotta per la privacy).",
-          "prefsUpdated": "Preferenze aggiornate. Puoi rigenerare l'itinerario gratuitamente."
+          "prefsUpdated": "Preferenze aggiornate. Puoi rigenerare l'itinerario gratuitamente.",
+          "generationStarted": "Generazione avviata."
+        },
+        "flash": {
+          "checkoutSuccess": "Pagamento ricevuto. Stiamo avviando la generazione del tuo itinerario.",
+          "checkoutCancel": "Pagamento annullato. Puoi riprovare quando vuoi.",
+          "regenSuccess": "Pagamento ricevuto. Stiamo rigenerando l’itinerario.",
+          "reactivateSuccess": "Accesso riattivato. Buona lettura!",
+          "reactivateCancel": "Riattivazione annullata."
         },
         "unlockTitle": "Sblocca la generazione",
         "unlockCreditMsg": "Hai abbastanza crediti per attivare questo viaggio gratuitamente!",

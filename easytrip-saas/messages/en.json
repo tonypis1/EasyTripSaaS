@@ -411,7 +411,15 @@
         },
         "status": {
           "geoAcquired": "Location acquired (reduced precision for privacy).",
-          "prefsUpdated": "Preferences updated. You can regenerate the itinerary for free."
+          "prefsUpdated": "Preferences updated. You can regenerate the itinerary for free.",
+          "generationStarted": "Generation started."
+        },
+        "flash": {
+          "checkoutSuccess": "Payment received. We're starting to generate your itinerary.",
+          "checkoutCancel": "Payment cancelled. You can try again anytime.",
+          "regenSuccess": "Payment received. We're regenerating your itinerary.",
+          "reactivateSuccess": "Access reactivated. Enjoy revisiting your trip!",
+          "reactivateCancel": "Reactivation cancelled."
         },
         "unlockTitle": "Unlock generation",
         "unlockCreditMsg": "You have enough credits to activate this trip for free!",

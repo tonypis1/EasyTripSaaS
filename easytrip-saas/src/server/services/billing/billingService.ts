@@ -220,7 +220,7 @@ export class BillingService {
       mode: "payment",
       success_url:
         input.successUrl ??
-        `${config.app.baseUrl}/app/trips/${trip.id}?checkout=success`,
+        `${config.app.baseUrl}/app/trips/${trip.id}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:
         input.cancelUrl ??
         `${config.app.baseUrl}/app/trips/${trip.id}?checkout=cancel`,
@@ -304,7 +304,7 @@ export class BillingService {
       mode: "payment",
       success_url:
         input.successUrl ??
-        `${config.app.baseUrl}/app/trips/${trip.id}?regen=success`,
+        `${config.app.baseUrl}/app/trips/${trip.id}?regen=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:
         input.cancelUrl ??
         `${config.app.baseUrl}/app/trips/${trip.id}?regen=cancel`,
@@ -372,7 +372,7 @@ export class BillingService {
       mode: "payment",
       success_url:
         input.successUrl ??
-        `${config.app.baseUrl}/app/trips/${trip.id}?reactivate=success`,
+        `${config.app.baseUrl}/app/trips/${trip.id}?reactivate=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:
         input.cancelUrl ??
         `${config.app.baseUrl}/app/trips/${trip.id}?reactivate=cancel`,
@@ -484,6 +484,214 @@ export class BillingService {
     });
   }
 
+  /**
+   * Elabora una Checkout Session pagata (stessa logica del webhook).
+   * Idempotente tramite `findByStripePaymentId` / trip già pagato.
+   */
+  private async fulfillCheckoutSessionCompleted(
+    session: Stripe.Checkout.Session,
+    context: { stripeEventId?: string; source: "webhook" | "return_redirect" },
+  ): Promise<
+    | { received: true; skipped?: "duplicate_payment" | "already_paid" }
+    | { received: true }
+  > {
+    const tripId = session.metadata?.tripId;
+    const appUserId = session.metadata?.appUserId;
+    const paymentType = session.metadata?.paymentType ?? "purchase";
+
+    const stripePaymentId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.id;
+
+    if (!tripId || !appUserId) {
+      throw new AppError(
+        "Metadata Stripe incompleto",
+        400,
+        "INVALID_METADATA",
+      );
+    }
+
+    const existingPayment =
+      await this.paymentRepository.findByStripePaymentId(stripePaymentId);
+    if (existingPayment) {
+      logger.info("Checkout session già elaborata (idempotente)", {
+        tripId,
+        stripeEventId: context.stripeEventId,
+        source: context.source,
+      });
+      return { received: true, skipped: "duplicate_payment" };
+    }
+
+    const trip = await this.tripRepository.findById(tripId);
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    if (paymentType === "regen") {
+      if (trip.amountPaid == null) {
+        throw new AppError("Trip non acquistato", 400, "TRIP_NOT_PAID");
+      }
+
+      const amount = (session.amount_total ?? 0) / 100;
+      await this.paymentRepository.create({
+        userId: appUserId,
+        tripId,
+        type: "regen",
+        stripePaymentId,
+        amount,
+      });
+
+      await inngest.send({
+        name: "trip/generate.requested",
+        data: { tripId },
+      });
+
+      return { received: true };
+    }
+
+    if (paymentType === "reactivate") {
+      const amount = (session.amount_total ?? 0) / 100;
+      await this.paymentRepository.create({
+        userId: appUserId,
+        tripId,
+        type: "reactivate",
+        stripePaymentId,
+        amount,
+      });
+
+      await this.tripRepository.extendAccess(tripId, 30);
+
+      logger.info("Accesso riattivato (+30 giorni)", { tripId });
+      return { received: true };
+    }
+
+    if (trip.paymentId != null && trip.amountPaid != null) {
+      logger.info("Acquisto già elaborato (idempotente)", {
+        tripId,
+        stripeEventId: context.stripeEventId,
+        source: context.source,
+      });
+      return { received: true, skipped: "already_paid" };
+    }
+
+    const creditApplyCents = parseInt(
+      session.metadata?.creditApplyCents ?? "0",
+      10,
+    );
+    if (creditApplyCents > 0) {
+      const applied = await this.applyCredits(
+        appUserId,
+        tripId,
+        creditApplyCents,
+      );
+      logger.info("Crediti applicati al checkout (parziale)", {
+        tripId,
+        requestedCents: creditApplyCents,
+        appliedCents: applied,
+        source: context.source,
+      });
+    }
+
+    const stripeAmount = (session.amount_total ?? 0) / 100;
+    await this.paymentRepository.create({
+      userId: appUserId,
+      tripId,
+      type: "purchase",
+      stripePaymentId,
+      amount: stripeAmount,
+    });
+
+    await this.tripRepository.markAsPaid(tripId, {
+      paymentId: stripePaymentId,
+      amountPaid: stripeAmount,
+    });
+
+    const organizer = await prisma.user.findUnique({
+      where: { id: appUserId },
+      select: { email: true, language: true },
+    });
+    if (organizer?.email) {
+      const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
+      const organizerLocale = normalizeEmailLocale(organizer.language);
+      await sendTransactionalEmail({
+        to: organizer.email,
+        subject: trEmail("subject.purchaseConfirmed", organizerLocale, {
+          destination: trip.destination,
+        }),
+        html: purchaseConfirmedHtml({
+          destination: trip.destination,
+          tripUrl,
+          locale: organizerLocale,
+        }),
+      });
+    }
+
+    await inngest.send({
+      name: "trip/generate.requested",
+      data: { tripId },
+    });
+
+    try {
+      const { container } = await import("@/server/di/container");
+      await container.services.referralService.tryGrantReward(appUserId);
+    } catch {
+      logger.warn("Referral reward check failed (non-blocking)", {
+        appUserId,
+      });
+    }
+
+    return { received: true };
+  }
+
+  /**
+   * Fallback quando il webhook Stripe non arriva (secret errato, timeout, ecc.):
+   * dopo il redirect l’utente ha `session_id` nell’URL; recuperiamo la sessione e applichiamo lo stesso fulfillment.
+   */
+  async syncCheckoutSessionAfterRedirect(input: {
+    tripId: string;
+    sessionId: string;
+  }): Promise<
+    | { ok: true; skipped?: "duplicate_payment" | "already_paid" }
+    | { ok: false; reason: "not_paid" | "mismatch" }
+  > {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const session = await stripe.checkout.sessions.retrieve(input.sessionId);
+
+    if (session.payment_status !== "paid") {
+      logger.warn("syncCheckoutSessionAfterRedirect: session not paid", {
+        sessionId: input.sessionId,
+        paymentStatus: session.payment_status,
+      });
+      return { ok: false, reason: "not_paid" };
+    }
+
+    const tripId = session.metadata?.tripId;
+    const appUserId = session.metadata?.appUserId;
+    if (!tripId || !appUserId) {
+      return { ok: false, reason: "mismatch" };
+    }
+    if (tripId !== input.tripId || appUserId !== user.id) {
+      logger.warn("syncCheckoutSessionAfterRedirect: metadata mismatch", {
+        sessionId: input.sessionId,
+        expectedTripId: input.tripId,
+        tripId,
+        appUserId,
+        userId: user.id,
+      });
+      return { ok: false, reason: "mismatch" };
+    }
+
+    const result = await this.fulfillCheckoutSessionCompleted(session, {
+      source: "return_redirect",
+    });
+
+    if ("skipped" in result && result.skipped) {
+      return { ok: true, skipped: result.skipped };
+    }
+    return { ok: true };
+  }
+
   async handleStripeWebhook(rawBody: string, signature: string | null) {
     if (!signature) {
       throw new AppError(
@@ -510,152 +718,10 @@ export class BillingService {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      const tripId = session.metadata?.tripId;
-      const appUserId = session.metadata?.appUserId;
-      const paymentType = session.metadata?.paymentType ?? "purchase";
-
-      const stripePaymentId =
-        typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : session.id;
-
-      if (!tripId || !appUserId) {
-        throw new AppError(
-          "Metadata Stripe incompleto",
-          400,
-          "INVALID_METADATA",
-        );
-      }
-
-      const existingPayment =
-        await this.paymentRepository.findByStripePaymentId(stripePaymentId);
-      if (existingPayment) {
-        logger.info("Webhook Stripe idempotente (pagamento già registrato)", {
-          tripId,
-          stripeEventId: event.id,
-        });
-        return { received: true, skipped: "duplicate_payment" as const };
-      }
-
-      const trip = await this.tripRepository.findById(tripId);
-      if (!trip) {
-        throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
-      }
-
-      if (paymentType === "regen") {
-        if (trip.amountPaid == null) {
-          throw new AppError("Trip non acquistato", 400, "TRIP_NOT_PAID");
-        }
-
-        const amount = (session.amount_total ?? 0) / 100;
-        await this.paymentRepository.create({
-          userId: appUserId,
-          tripId,
-          type: "regen",
-          stripePaymentId,
-          amount,
-        });
-
-        await inngest.send({
-          name: "trip/generate.requested",
-          data: { tripId },
-        });
-
-        return { received: true };
-      }
-
-      if (paymentType === "reactivate") {
-        const amount = (session.amount_total ?? 0) / 100;
-        await this.paymentRepository.create({
-          userId: appUserId,
-          tripId,
-          type: "reactivate",
-          stripePaymentId,
-          amount,
-        });
-
-        await this.tripRepository.extendAccess(tripId, 30);
-
-        logger.info("Accesso riattivato (+30 giorni)", { tripId });
-        return { received: true };
-      }
-
-      /**
-       * Acquisto iniziale viaggio
-       */
-      if (trip.paymentId != null && trip.amountPaid != null) {
-        logger.info("Webhook acquisto già elaborato (idempotente)", {
-          tripId,
-          stripeEventId: event.id,
-        });
-        return { received: true, skipped: "already_paid" as const };
-      }
-
-      /* ── Applica crediti parziali se presenti nei metadata ── */
-      const creditApplyCents = parseInt(
-        session.metadata?.creditApplyCents ?? "0",
-        10,
-      );
-      if (creditApplyCents > 0) {
-        const applied = await this.applyCredits(
-          appUserId,
-          tripId,
-          creditApplyCents,
-        );
-        logger.info("Crediti applicati al checkout (parziale)", {
-          tripId,
-          requestedCents: creditApplyCents,
-          appliedCents: applied,
-        });
-      }
-
-      const stripeAmount = (session.amount_total ?? 0) / 100;
-      await this.paymentRepository.create({
-        userId: appUserId,
-        tripId,
-        type: "purchase",
-        stripePaymentId,
-        amount: stripeAmount,
+      await this.fulfillCheckoutSessionCompleted(session, {
+        stripeEventId: event.id,
+        source: "webhook",
       });
-
-      await this.tripRepository.markAsPaid(tripId, {
-        paymentId: stripePaymentId,
-        amountPaid: stripeAmount,
-      });
-
-      const organizer = await prisma.user.findUnique({
-        where: { id: appUserId },
-        select: { email: true, language: true },
-      });
-      if (organizer?.email) {
-        const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
-        const organizerLocale = normalizeEmailLocale(organizer.language);
-        await sendTransactionalEmail({
-          to: organizer.email,
-          subject: trEmail("subject.purchaseConfirmed", organizerLocale, {
-            destination: trip.destination,
-          }),
-          html: purchaseConfirmedHtml({
-            destination: trip.destination,
-            tripUrl,
-            locale: organizerLocale,
-          }),
-        });
-      }
-
-      await inngest.send({
-        name: "trip/generate.requested",
-        data: { tripId },
-      });
-
-      try {
-        const { container } = await import("@/server/di/container");
-        await container.services.referralService.tryGrantReward(appUserId);
-      } catch {
-        logger.warn("Referral reward check failed (non-blocking)", {
-          appUserId,
-        });
-      }
     } else if (event.type === "checkout.session.expired") {
       const firstTime = await tryClaimWebhookDelivery("stripe", event.id);
       if (!firstTime) {

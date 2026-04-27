@@ -89,10 +89,13 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
+/** Evita `https://dominio.com//app/...` se `APP_BASE_URL` ha slash finale in Vercel. */
+const appBaseUrl = env.APP_BASE_URL.replace(/\/+$/, "");
+
 export const config = {
   app: {
     env: env.NODE_ENV,
-    baseUrl: env.APP_BASE_URL,
+    baseUrl: appBaseUrl,
   },
   db: {
     url: env.DATABASE_URL,

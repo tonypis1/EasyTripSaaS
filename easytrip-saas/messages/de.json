@@ -411,7 +411,15 @@
         },
         "status": {
           "geoAcquired": "Standort erfasst (reduzierte Genauigkeit aus Datenschutzgründen).",
-          "prefsUpdated": "Einstellungen aktualisiert. Du kannst den Reiseplan kostenlos neu erstellen."
+          "prefsUpdated": "Einstellungen aktualisiert. Du kannst den Reiseplan kostenlos neu erstellen.",
+          "generationStarted": "Generierung gestartet."
+        },
+        "flash": {
+          "checkoutSuccess": "Zahlung erhalten. Wir starten die Erstellung deines Reiseplans.",
+          "checkoutCancel": "Zahlung abgebrochen. Du kannst es jederzeit erneut versuchen.",
+          "regenSuccess": "Zahlung erhalten. Wir generieren deinen Reiseplan neu.",
+          "reactivateSuccess": "Zugriff reaktiviert. Viel Spaß beim Erinnern!",
+          "reactivateCancel": "Reaktivierung abgebrochen."
         },
         "unlockTitle": "Erstellung freischalten",
         "unlockCreditMsg": "Du hast genug Guthaben, um diese Reise kostenlos zu aktivieren!",
