@@ -9,7 +9,7 @@ export default function RootNotFound() {
   return (
     <div className="bg-et-deep text-et-ink mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-6 px-6 py-16">
       <div>
-        <p className="text-et-accent text-sm font-semibold">EasyTrip</p>
+        <p className="text-et-accent text-sm font-semibold">EasyTripSaaS</p>
         <h1 className="font-display mt-2 text-3xl tracking-tight">
           Pagina non trovata (404)
         </h1>

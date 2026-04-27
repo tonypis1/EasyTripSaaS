@@ -14,6 +14,7 @@ type Mode = "guest" | "authenticated";
 
 export function HomeNavBar(props: { mode: Mode }) {
   const t = useTranslations("home.nav");
+  const tCommon = useTranslations("common");
 
   return (
     <header className="border-et-border bg-et-deep/80 sticky top-0 z-50 border-b backdrop-blur">
@@ -23,7 +24,7 @@ export function HomeNavBar(props: { mode: Mode }) {
           className="font-display text-et-accent inline-flex min-w-0 items-center gap-2 text-xl font-normal tracking-tight"
         >
           <IconGlobe className="text-et-accent h-7 w-7 shrink-0" />
-          EasyTrip
+          {tCommon("appName")}
         </Link>
         <nav className="text-et-ink/70 hidden items-center gap-5 text-sm md:flex">
           <a href="#come-funziona" className="hover:text-et-ink shrink-0">

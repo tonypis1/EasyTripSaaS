@@ -1,16 +1,16 @@
 {
   "meta": {
     "root": {
-      "title": "EasyTrip — Itinerari AI per viaggi brevi",
+      "title": "EasyTripSaaS — Itinerari AI per viaggi brevi",
       "description": "Pianifica weekend e brevi trasferte con itinerari AI, stima spese e conservazione delle versioni. Scegli una lingua e parti in pochi minuti."
     },
     "app": {
-      "title": "Dashboard EasyTrip",
+      "title": "Dashboard EasyTripSaaS",
       "description": "Gestisci i tuoi itinerari, spese condivise e versioni salvate."
     }
   },
   "common": {
-    "appName": "EasyTrip",
+    "appName": "EasyTripSaaS",
     "tagline": "Itinerari AI per viaggi brevi",
     "back": "Indietro",
     "save": "Salva",
@@ -45,10 +45,10 @@
   },
   "home": {
     "metadata": {
-      "title": "EasyTrip — Itinerari AI per Weekend in Europa | Pianifica in 30 secondi",
+      "title": "EasyTripSaaS — Itinerari AI per Weekend in Europa | Pianifica in 30 secondi",
       "description": "Pianifica viaggi brevi di 2–5 o più giorni con l'AI. Itinerari ottimizzati per distanze, ristoranti locali e gemme nascoste.",
       "ogLocale": "it_IT",
-      "ogImageAlt": "EasyTrip — Itinerari AI per viaggi brevi"
+      "ogImageAlt": "EasyTripSaaS — Itinerari AI per viaggi brevi"
     },
     "nav": {
       "howItWorks": "Come funziona",
@@ -238,14 +238,23 @@
       "pricing": "Prezzi",
       "faq": "FAQ",
       "reservedArea": "Area riservata",
-      "rights": "© {year} EasyTrip. Tutti i diritti riservati."
+      "rights": "© {year} EasyTripSaaS. Tutti i diritti riservati."
     }
   },
   "app": {
     "nav": {
       "myTrips": "I miei viaggi",
       "inviteFriends": "Invita amici",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "reservedArea": "Area riservata"
+    },
+    "privacyPage": {
+      "marketingOptIn": "Accetto email di marketing e onboarding da {appName}"
+    },
+    "privacyDelete": {
+      "successTitle": "Account eliminato",
+      "successBody": "La cancellazione è stata completata correttamente. Tra pochi secondi verrai disconnesso e reindirizzato alla home.",
+      "redirecting": "Disconnessione in corso…"
     },
     "dashboard": {
       "eyebrow": "Area riservata",

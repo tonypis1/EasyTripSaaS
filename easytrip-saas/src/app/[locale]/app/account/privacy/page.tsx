@@ -1,14 +1,19 @@
 "use client";
 
 import { useClerk } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 
 const CONFIRM_PHRASE = "DELETE_MY_ACCOUNT";
 
 export default function AccountPrivacyPage() {
+  const tPrivacy = useTranslations("app.privacyPage");
+  const tDelete = useTranslations("app.privacyDelete");
+  const tCommon = useTranslations("common");
   const [phrase, setPhrase] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [marketingLoaded, setMarketingLoaded] = useState(false);
@@ -96,6 +101,9 @@ export default function AccountPrivacyPage() {
         setError(json.error?.message ?? "Operazione non riuscita.");
         return;
       }
+      setDeleteSuccess(true);
+      setPhrase("");
+      await new Promise((r) => setTimeout(r, 2200));
       try {
         await clerk.signOut({ redirectUrl: "/" });
       } catch {
@@ -147,7 +155,7 @@ export default function AccountPrivacyPage() {
               onChange={(e) => void onMarketingToggle(e.target.checked)}
               className="border-et-border h-4 w-4 rounded"
             />
-            Accetto email di marketing e onboarding da EasyTrip
+            {tPrivacy("marketingOptIn", { appName: tCommon("appName") })}
           </label>
           {!marketingLoaded ? (
             <span className="text-et-ink/45 text-xs">Caricamento…</span>
@@ -188,46 +196,68 @@ export default function AccountPrivacyPage() {
         aria-labelledby="delete-heading"
         className="border-et-border bg-et-card rounded-2xl border p-6"
       >
-        <h2
-          id="delete-heading"
-          className="font-display text-et-ink text-lg font-normal"
-        >
-          Cancella account
-        </h2>
-        <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Questa azione è <strong className="text-et-ink/80">definitiva</strong>
-          : eliminiamo i dati nel database, le relazioni con Stripe (se
-          presenti) e l&apos;utente in Clerk. Non potrai recuperare
-          l&apos;account.
-        </p>
-        <label
-          htmlFor="delete-confirm"
-          className="text-et-accent/88 mt-6 block text-xs font-semibold tracking-wider uppercase"
-        >
-          Conferma (digita il testo esatto)
-        </label>
-        <input
-          id="delete-confirm"
-          type="text"
-          autoComplete="off"
-          value={phrase}
-          onChange={(e) => setPhrase(e.target.value)}
-          placeholder={CONFIRM_PHRASE}
-          className="border-et-border bg-et-deep text-et-ink placeholder:text-et-ink/40 focus:border-et-accent/50 mt-1.5 w-full max-w-md rounded-xl border px-3 py-2.5 text-sm outline-none"
-        />
-        <button
-          type="button"
-          onClick={() => void onDeleteAccount()}
-          disabled={busy}
-          className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? "Cancellazione…" : "Cancella definitivamente il mio account"}
-        </button>
-        {error ? (
-          <p className="mt-3 text-sm text-red-300/90" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {deleteSuccess ? (
+          <div
+            role="status"
+            className="border-et-accent/35 bg-et-accent/8 rounded-xl border p-5"
+          >
+            <h2
+              id="delete-heading"
+              className="font-display text-et-ink text-lg font-normal"
+            >
+              {tDelete("successTitle")}
+            </h2>
+            <p className="text-et-ink/80 mt-2 max-w-xl text-sm">
+              {tDelete("successBody")}
+            </p>
+            <p className="text-et-accent/88 mt-3 text-sm font-medium">
+              {tDelete("redirecting")}
+            </p>
+          </div>
+        ) : (
+          <>
+            <h2
+              id="delete-heading"
+              className="font-display text-et-ink text-lg font-normal"
+            >
+              Cancella account
+            </h2>
+            <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
+              Questa azione è{" "}
+              <strong className="text-et-ink/80">definitiva</strong>: eliminiamo
+              i dati nel database, le relazioni con Stripe (se presenti) e
+              l&apos;utente in Clerk. Non potrai recuperare l&apos;account.
+            </p>
+            <label
+              htmlFor="delete-confirm"
+              className="text-et-accent/88 mt-6 block text-xs font-semibold tracking-wider uppercase"
+            >
+              Conferma (digita il testo esatto)
+            </label>
+            <input
+              id="delete-confirm"
+              type="text"
+              autoComplete="off"
+              value={phrase}
+              onChange={(e) => setPhrase(e.target.value)}
+              placeholder={CONFIRM_PHRASE}
+              className="border-et-border bg-et-deep text-et-ink placeholder:text-et-ink/40 focus:border-et-accent/50 mt-1.5 w-full max-w-md rounded-xl border px-3 py-2.5 text-sm outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => void onDeleteAccount()}
+              disabled={busy}
+              className="mt-4 inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-red-500/50 bg-red-500/10 px-5 py-3 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy ? "Cancellazione…" : "Cancella definitivamente il mio account"}
+            </button>
+            {error ? (
+              <p className="mt-3 text-sm text-red-300/90" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </>
+        )}
       </section>
 
       <p className="text-et-ink/45 text-sm">

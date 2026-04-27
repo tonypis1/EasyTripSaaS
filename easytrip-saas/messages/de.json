@@ -1,16 +1,16 @@
 {
   "meta": {
     "root": {
-      "title": "EasyTrip — KI-Reisepläne für Kurztrips",
+      "title": "EasyTripSaaS — KI-Reisepläne für Kurztrips",
       "description": "Plane Wochenenden und Kurzreisen mit KI-gestützten Reiseplänen, geteilten Ausgaben und gespeicherten Versionen. Wähle eine Sprache und starte in wenigen Minuten."
     },
     "app": {
-      "title": "EasyTrip-Dashboard",
+      "title": "EasyTripSaaS-Dashboard",
       "description": "Verwalte deine Reisepläne, geteilten Ausgaben und gespeicherten Versionen."
     }
   },
   "common": {
-    "appName": "EasyTrip",
+    "appName": "EasyTripSaaS",
     "tagline": "KI-Reiserouten für Kurztrips",
     "back": "Zurück",
     "save": "Speichern",
@@ -45,10 +45,10 @@
   },
   "home": {
     "metadata": {
-      "title": "EasyTrip — KI-Reiserouten für Europa-Wochenenden | In 30 Sekunden planen",
+      "title": "EasyTripSaaS — KI-Reiserouten für Europa-Wochenenden | In 30 Sekunden planen",
       "description": "Plane Kurztrips von 2–5 Tagen oder länger mit KI. Optimierte Routen, lokale Restaurants und versteckte Perlen.",
       "ogLocale": "de_DE",
-      "ogImageAlt": "EasyTrip — KI-Reiserouten für Kurztrips"
+      "ogImageAlt": "EasyTripSaaS — KI-Reiserouten für Kurztrips"
     },
     "nav": {
       "howItWorks": "So funktioniert's",
@@ -238,14 +238,23 @@
       "pricing": "Preise",
       "faq": "FAQ",
       "reservedArea": "Mitgliederbereich",
-      "rights": "© {year} EasyTrip. Alle Rechte vorbehalten."
+      "rights": "© {year} EasyTripSaaS. Alle Rechte vorbehalten."
     }
   },
   "app": {
     "nav": {
       "myTrips": "Meine Reisen",
       "inviteFriends": "Freunde einladen",
-      "privacy": "Datenschutz"
+      "privacy": "Datenschutz",
+      "reservedArea": "Mitgliederbereich"
+    },
+    "privacyPage": {
+      "marketingOptIn": "Ich möchte Marketing- und Onboarding-E-Mails von {appName} erhalten"
+    },
+    "privacyDelete": {
+      "successTitle": "Konto gelöscht",
+      "successBody": "Die Löschung war erfolgreich. In wenigen Sekunden wirst du abgemeldet und zur Startseite weitergeleitet.",
+      "redirecting": "Abmeldung läuft…"
     },
     "dashboard": {
       "eyebrow": "Geschützter Bereich",

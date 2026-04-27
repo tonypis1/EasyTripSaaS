@@ -65,7 +65,7 @@ export async function generateMetadata({
       metadataBase: new URL(
         process.env.APP_BASE_URL ?? "http://localhost:3000",
       ),
-      title: "EasyTrip",
+      title: "EasyTripSaaS",
       description: "AI travel itineraries",
     };
   }

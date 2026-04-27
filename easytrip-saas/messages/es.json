@@ -1,16 +1,16 @@
 {
   "meta": {
     "root": {
-      "title": "EasyTrip — Itinerarios AI para viajes cortos",
+      "title": "EasyTripSaaS — Itinerarios AI para viajes cortos",
       "description": "Planifica escapadas y fines de semana con itinerarios impulsados por IA, gastos compartidos y versiones guardadas. Elige un idioma y empieza en minutos."
     },
     "app": {
-      "title": "Panel de EasyTrip",
+      "title": "Panel de EasyTripSaaS",
       "description": "Gestiona tus itinerarios, gastos compartidos y versiones guardadas."
     }
   },
   "common": {
-    "appName": "EasyTrip",
+    "appName": "EasyTripSaaS",
     "tagline": "Itinerarios con IA para viajes cortos",
     "back": "Atrás",
     "save": "Guardar",
@@ -45,10 +45,10 @@
   },
   "home": {
     "metadata": {
-      "title": "EasyTrip — Itinerarios con IA para escapadas en Europa | Planifica en 30 segundos",
+      "title": "EasyTripSaaS — Itinerarios con IA para escapadas en Europa | Planifica en 30 segundos",
       "description": "Planifica viajes cortos de 2–5 días o más con IA. Itinerarios optimizados por distancias, restaurantes locales y joyas ocultas.",
       "ogLocale": "es_ES",
-      "ogImageAlt": "EasyTrip — Itinerarios con IA para viajes cortos"
+      "ogImageAlt": "EasyTripSaaS — Itinerarios con IA para viajes cortos"
     },
     "nav": {
       "howItWorks": "Cómo funciona",
@@ -238,14 +238,23 @@
       "pricing": "Precios",
       "faq": "FAQ",
       "reservedArea": "Área de socios",
-      "rights": "© {year} EasyTrip. Todos los derechos reservados."
+      "rights": "© {year} EasyTripSaaS. Todos los derechos reservados."
     }
   },
   "app": {
     "nav": {
       "myTrips": "Mis viajes",
       "inviteFriends": "Invitar amigos",
-      "privacy": "Privacidad"
+      "privacy": "Privacidad",
+      "reservedArea": "Área de miembros"
+    },
+    "privacyPage": {
+      "marketingOptIn": "Acepto recibir emails de marketing e incorporación de {appName}"
+    },
+    "privacyDelete": {
+      "successTitle": "Cuenta eliminada",
+      "successBody": "La eliminación se ha completado correctamente. En unos segundos cerraremos tu sesión y te redirigiremos al inicio.",
+      "redirecting": "Cerrando sesión…"
     },
     "dashboard": {
       "eyebrow": "Área reservada",

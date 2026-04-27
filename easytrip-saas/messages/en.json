@@ -1,16 +1,16 @@
 {
   "meta": {
     "root": {
-      "title": "EasyTrip — AI itineraries for short trips",
+      "title": "EasyTripSaaS — AI itineraries for short trips",
       "description": "Plan weekends and short getaways with AI-powered itineraries, shared expenses and saved versions. Pick a language and start in minutes."
     },
     "app": {
-      "title": "EasyTrip Dashboard",
+      "title": "EasyTripSaaS Dashboard",
       "description": "Manage your itineraries, shared expenses and saved versions."
     }
   },
   "common": {
-    "appName": "EasyTrip",
+    "appName": "EasyTripSaaS",
     "tagline": "AI itineraries for short trips",
     "back": "Back",
     "save": "Save",
@@ -45,10 +45,10 @@
   },
   "home": {
     "metadata": {
-      "title": "EasyTrip — AI Itineraries for Weekends in Europe | Plan in 30 seconds",
+      "title": "EasyTripSaaS — AI Itineraries for Weekends in Europe | Plan in 30 seconds",
       "description": "Plan short trips of 2–5 or more days with AI. Itineraries optimized for distances, local restaurants and hidden gems.",
       "ogLocale": "en_US",
-      "ogImageAlt": "EasyTrip — AI itineraries for short trips"
+      "ogImageAlt": "EasyTripSaaS — AI itineraries for short trips"
     },
     "nav": {
       "howItWorks": "How it works",
@@ -238,14 +238,23 @@
       "pricing": "Pricing",
       "faq": "FAQ",
       "reservedArea": "Member area",
-      "rights": "© {year} EasyTrip. All rights reserved."
+      "rights": "© {year} EasyTripSaaS. All rights reserved."
     }
   },
   "app": {
     "nav": {
       "myTrips": "My trips",
       "inviteFriends": "Invite friends",
-      "privacy": "Privacy"
+      "privacy": "Privacy",
+      "reservedArea": "Member area"
+    },
+    "privacyPage": {
+      "marketingOptIn": "I agree to receive marketing and onboarding emails from {appName}"
+    },
+    "privacyDelete": {
+      "successTitle": "Account deleted",
+      "successBody": "Your account has been removed successfully. You will be signed out and redirected to the home page in a few seconds.",
+      "redirecting": "Signing you out…"
     },
     "dashboard": {
       "eyebrow": "Reserved area",

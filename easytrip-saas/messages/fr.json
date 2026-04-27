@@ -1,16 +1,16 @@
 {
   "meta": {
     "root": {
-      "title": "EasyTrip — Itinéraires IA pour courts séjours",
+      "title": "EasyTripSaaS — Itinéraires IA pour courts séjours",
       "description": "Planifiez week-ends et escapades avec des itinéraires générés par l'IA, gestion des dépenses partagées et versions sauvegardées. Choisissez une langue et démarrez en quelques minutes."
     },
     "app": {
-      "title": "Tableau de bord EasyTrip",
+      "title": "Tableau de bord EasyTripSaaS",
       "description": "Gérez vos itinéraires, dépenses partagées et versions sauvegardées."
     }
   },
   "common": {
-    "appName": "EasyTrip",
+    "appName": "EasyTripSaaS",
     "tagline": "Itinéraires IA pour voyages courts",
     "back": "Retour",
     "save": "Enregistrer",
@@ -45,10 +45,10 @@
   },
   "home": {
     "metadata": {
-      "title": "EasyTrip — Itinéraires IA pour week-ends en Europe | Planifiez en 30 secondes",
+      "title": "EasyTripSaaS — Itinéraires IA pour week-ends en Europe | Planifiez en 30 secondes",
       "description": "Planifiez des voyages courts de 2–5 jours ou plus grâce à l'IA. Itinéraires optimisés pour les distances, restaurants locaux et trésors cachés.",
       "ogLocale": "fr_FR",
-      "ogImageAlt": "EasyTrip — Itinéraires IA pour voyages courts"
+      "ogImageAlt": "EasyTripSaaS — Itinéraires IA pour voyages courts"
     },
     "nav": {
       "howItWorks": "Comment ça marche",
@@ -238,14 +238,23 @@
       "pricing": "Tarifs",
       "faq": "FAQ",
       "reservedArea": "Espace membre",
-      "rights": "© {year} EasyTrip. Tous droits réservés."
+      "rights": "© {year} EasyTripSaaS. Tous droits réservés."
     }
   },
   "app": {
     "nav": {
       "myTrips": "Mes voyages",
       "inviteFriends": "Inviter des amis",
-      "privacy": "Confidentialité"
+      "privacy": "Confidentialité",
+      "reservedArea": "Espace membre"
+    },
+    "privacyPage": {
+      "marketingOptIn": "J'accepte de recevoir des e-mails marketing et d'onboarding de {appName}"
+    },
+    "privacyDelete": {
+      "successTitle": "Compte supprimé",
+      "successBody": "La suppression est terminée. Vous serez déconnecté et redirigé vers l'accueil dans quelques secondes.",
+      "redirecting": "Déconnexion en cours…"
     },
     "dashboard": {
       "eyebrow": "Espace réservé",
