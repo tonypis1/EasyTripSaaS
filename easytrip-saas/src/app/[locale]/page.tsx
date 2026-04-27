@@ -135,6 +135,12 @@ export default async function Home({ params }: LocalePageProps) {
             <CreateTripForm />
           </section>
         </div>
+        <div id="come-funziona" className="scroll-mt-28">
+          <FeaturesSection />
+        </div>
+        <PricingSection />
+        <TestimonialsSection />
+        <FAQSection />
         <MarketingFooter />
       </>
     );

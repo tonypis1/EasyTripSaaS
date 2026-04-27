@@ -107,7 +107,7 @@ export default function AccountPrivacyPage() {
       } catch {
         /* session may already be invalid */
       }
-      window.location.assign(`/${locale}`);
+      window.location.replace(`${window.location.origin}/${locale}`);
     } catch {
       setError("Errore di rete. Riprova.");
     } finally {

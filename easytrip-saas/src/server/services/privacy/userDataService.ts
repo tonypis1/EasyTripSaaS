@@ -161,7 +161,12 @@ export class UserDataService {
   }
 
   /**
-   * Diritto all'oblio: Stripe → DB (cascade) → Clerk.
+   * Diritto all'oblio: Stripe → Clerk → DB (cascade).
+   *
+   * Clerk va prima del DB: se il DB sparisse prima ancora che Clerk elimini
+   * l’utente, una sessione ancora valida potrebbe far ricreare il record via
+   * getOrCreateCurrentUser. Inoltre, se deleteUser fallisce dopo il delete DB,
+   * l’utente resta in Clerk senza riga Prisma (stato incoerente).
    */
   async deleteAccountForUser(input: {
     prismaUserId: string;
@@ -176,11 +181,44 @@ export class UserDataService {
       }
     }
 
+    const clerk = await clerkClient();
+    try {
+      await clerk.users.deleteUser(input.clerkUserId);
+    } catch (e) {
+      const status =
+        e && typeof e === "object" && "status" in e
+          ? Number((e as { status: unknown }).status)
+          : undefined;
+      const code =
+        e &&
+        typeof e === "object" &&
+        "errors" in e &&
+        Array.isArray((e as { errors: unknown }).errors)
+          ? String(
+              (e as { errors: Array<{ code?: string }> }).errors[0]?.code ??
+                "",
+            )
+          : "";
+      const msg = e instanceof Error ? e.message : String(e);
+      const looksNotFound =
+        status === 404 ||
+        code === "resource_not_found" ||
+        /not\s*found|404/i.test(msg);
+      if (!looksNotFound) {
+        logger.error("Clerk user delete failed", e);
+        throw new AppError(
+          "Impossibile completare la cancellazione dell’account. Riprova tra qualche minuto o contatta il supporto.",
+          502,
+          "CLERK_DELETE_FAILED",
+        );
+      }
+      logger.warn("Clerk user already absent; continuing with DB delete", {
+        clerkUserId: input.clerkUserId,
+      });
+    }
+
     await prisma.user.delete({
       where: { id: input.prismaUserId },
     });
-
-    const clerk = await clerkClient();
-    await clerk.users.deleteUser(input.clerkUserId);
   }
 }
