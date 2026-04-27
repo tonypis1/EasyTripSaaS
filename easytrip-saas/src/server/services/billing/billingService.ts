@@ -520,6 +520,38 @@ export class BillingService {
         stripeEventId: context.stripeEventId,
         source: context.source,
       });
+      /**
+       * Se il primo tentativo ha scritto il pagamento ma la risposta HTTP non è
+       * arrivata a Stripe (timeout, crash dopo il write), Stripe riconsegna: qui
+       * evitiamo doppi insert ma ripetiamo l’evento Inngest se il viaggio è
+       * ancora in attesa di generazione.
+       */
+      if (paymentType === "purchase") {
+        const t = await this.tripRepository.findById(tripId);
+        if (
+          t &&
+          t.status === "pending" &&
+          t.paymentId != null &&
+          t.amountPaid != null
+        ) {
+          try {
+            await inngest.send({
+              name: "trip/generate.requested",
+              data: { tripId },
+            });
+            logger.info(
+              "trip/generate.requested reinviato (trip ancora pending dopo webhook duplicato)",
+              { tripId },
+            );
+          } catch (e) {
+            logger.error(
+              "inngest.send fallito nel recovery post-webhook duplicato",
+              e,
+              { tripId },
+            );
+          }
+        }
+      }
       return { received: true, skipped: "duplicate_payment" };
     }
 
