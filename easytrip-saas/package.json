@@ -54,7 +54,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "inngest": "^4",
     "leaflet": "^1.9.4",
-    "lucide-react": "^0.475",
+    "lucide-react": "^1.11",
     "next": "16.2.4",
     "next-intl": "^4.9.1",
     "posthog-js": "^1.364.1",
