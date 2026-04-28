@@ -61,7 +61,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-leaflet": "^5.0.0",
-    "stripe": "^17",
+    "stripe": "^22",
     "zod": "^3"
   },
   "devDependencies": {
