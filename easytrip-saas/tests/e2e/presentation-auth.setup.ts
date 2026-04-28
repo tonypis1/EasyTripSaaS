@@ -17,7 +17,9 @@ function isItalianLocalePath(pathname: string): boolean {
 }
 
 function isBindingAbortError(message: string): boolean {
-  return /NS_BINDING_ABORTED|net::ERR_ABORTED|frame was detached/i.test(message);
+  return /NS_BINDING_ABORTED|net::ERR_ABORTED|frame was detached/i.test(
+    message,
+  );
 }
 
 /**
@@ -111,7 +113,9 @@ setup("clerk session → e2e/.auth/user.json", async ({ page }) => {
 
   await clerkSetup();
 
-  await gotoWithBindingRetry(page, "/it", { acceptablePath: isItalianLocalePath });
+  await gotoWithBindingRetry(page, "/it", {
+    acceptablePath: isItalianLocalePath,
+  });
 
   const secretKey = process.env.CLERK_SECRET_KEY?.trim();
   const password = process.env.E2E_CLERK_USER_PASSWORD?.trim();

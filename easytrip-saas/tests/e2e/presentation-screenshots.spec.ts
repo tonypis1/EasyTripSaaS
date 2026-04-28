@@ -16,7 +16,8 @@ function normalizeJoinToken(raw?: string): string | undefined {
     if (/^https?:\/\//i.test(t)) {
       const p = new URL(t).pathname.replace(/\/$/, "");
       const m =
-        p.match(/\/(?:it|en|de|es|fr)\/join\/([^/]+)/) ?? p.match(/\/join\/([^/]+)/);
+        p.match(/\/(?:it|en|de|es|fr)\/join\/([^/]+)/) ??
+        p.match(/\/join\/([^/]+)/);
       return m?.[1]?.trim();
     }
   } catch {
@@ -213,9 +214,11 @@ test.describe("Screenshot per presentation.html (pubblici)", () => {
 
     /** Best effort: Sign-up CTA (hero) → schermata registrazione Clerk. */
     try {
-      const signUpBtn = page.getByRole("button", {
-        name: /^(Inizia ora|Start now|Empezar ahora|Commencer|Jetzt starten)$/i,
-      }).first();
+      const signUpBtn = page
+        .getByRole("button", {
+          name: /^(Inizia ora|Start now|Empezar ahora|Commencer|Jetzt starten)$/i,
+        })
+        .first();
       await signUpBtn.waitFor({ state: "visible", timeout: 10_000 });
       await Promise.all([
         page.waitForURL((u) => isClerkHostedUrl(u.href), {
@@ -373,7 +376,9 @@ if (hasValidStorage && storagePath) {
         if (await expensesHeading.isVisible().catch(() => false)) {
           await expensesHeading.scrollIntoViewIfNeeded();
           await page.waitForTimeout(500);
-          const expensesSection = expensesHeading.locator("xpath=ancestor::section[1]");
+          const expensesSection = expensesHeading.locator(
+            "xpath=ancestor::section[1]",
+          );
           await expensesSection.screenshot({
             path: path.join(OUT_DIR, "05c-trip-expenses.png"),
             timeout: 30_000,
@@ -433,7 +438,9 @@ if (hasValidStorage && storagePath) {
           retries: 4,
           waitUntil: "domcontentloaded",
         });
-        await page.waitForLoadState("load", { timeout: 90_000 }).catch(() => {});
+        await page
+          .waitForLoadState("load", { timeout: 90_000 })
+          .catch(() => {});
         await page.waitForTimeout(2000);
         await page.screenshot({
           path: path.join(OUT_DIR, "08-join-trip.png"),

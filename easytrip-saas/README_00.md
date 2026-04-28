@@ -110,16 +110,16 @@ Generazione PNG end-to-end con Playwright ([`tests/e2e/presentation-screenshots.
 
 Variabili d’ambiente rilevanti:
 
-| Variabile                 | Descrizione                                                                                                                                                                                                                               |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `E2E_BASE_URL`            | Base URL dell’app (default `http://127.0.0.1:3000`); deve coincidere con l’URL usato per creare la sessione Clerk.                                                                                                                        |
-| `E2E_AUTH_STORAGE_STATE`  | Percorso del file JSON di storage Playwright (es. `e2e/.auth/user.json`) dopo login; senza questo file vengono generati solo la parte pubblica: `01-landing.png`, `02-auth-clerk.png`, `02b-auth-clerk-signup.png` (best effort) e eventuali fallimenti successivi. |
+| Variabile                 | Descrizione                                                                                                                                                                                                                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E2E_BASE_URL`            | Base URL dell’app (default `http://127.0.0.1:3000`); deve coincidere con l’URL usato per creare la sessione Clerk.                                                                                                                                                                  |
+| `E2E_AUTH_STORAGE_STATE`  | Percorso del file JSON di storage Playwright (es. `e2e/.auth/user.json`) dopo login; senza questo file vengono generati solo la parte pubblica: `01-landing.png`, `02-auth-clerk.png`, `02b-auth-clerk-signup.png` (best effort) e eventuali fallimenti successivi.                 |
 | `E2E_TRIP_ID`             | ID (`cuid`/id Prisma) di un viaggio esistente per `05-trip-detail.png`, `05b-trip-detail-checkout-cta.png` (CTA solo se trip non pagato), `05c-trip-expenses.png` (solo tipologia **gruppo** o **coppia**, pagato, ≥2 membri, con giorni) e opzionalmente `10-checkout-stripe.png`. |
-| `E2E_JOIN_TOKEN`          | Token invito gruppo (`08-join-trip.png`, opzionale): solo il segmento dopo `/join/`, oppure un URL completo del link — viene estratto automaticamente.                                                                                                                             |
-| `E2E_SCREENSHOT_STRIPE`   | Se `1` o `true`, dopo il dettaglio viaggio prova il click sul checkout e salva `10-checkout-stripe.png` su Stripe (richiede trip idoneo e Stripe in modalità test).                                                                       |
-| `E2E_CLERK_USER_EMAIL`    | (Per `screenshots:clerk-session`) Email dell’utente esistente in Clerk — obbligatoria per `e2e/.auth/user.json`.                                                                                                                         |
-| `CLERK_SECRET_KEY`       | (**Consigliata** per gli screenshot): deve essere caricata nel processo Playwright (di solito da `.env` accanto ai `pk_test_`/`sk_test_`). Con la chiave, il login usa il **ticket** API (stabile); senza, serve password sotto (meno affidabile). |
-| `E2E_CLERK_USER_PASSWORD` | Solo fallback se **`CLERK_SECRET_KEY`** non è disponibile: login tramite password lato browser (può fallire con redirect su Clerk ospitato).                                                                                              |
+| `E2E_JOIN_TOKEN`          | Token invito gruppo (`08-join-trip.png`, opzionale): solo il segmento dopo `/join/`, oppure un URL completo del link — viene estratto automaticamente.                                                                                                                              |
+| `E2E_SCREENSHOT_STRIPE`   | Se `1` o `true`, dopo il dettaglio viaggio prova il click sul checkout e salva `10-checkout-stripe.png` su Stripe (richiede trip idoneo e Stripe in modalità test).                                                                                                                 |
+| `E2E_CLERK_USER_EMAIL`    | (Per `screenshots:clerk-session`) Email dell’utente esistente in Clerk — obbligatoria per `e2e/.auth/user.json`.                                                                                                                                                                    |
+| `CLERK_SECRET_KEY`        | (**Consigliata** per gli screenshot): deve essere caricata nel processo Playwright (di solito da `.env` accanto ai `pk_test_`/`sk_test_`). Con la chiave, il login usa il **ticket** API (stabile); senza, serve password sotto (meno affidabile).                                  |
+| `E2E_CLERK_USER_PASSWORD` | Solo fallback se **`CLERK_SECRET_KEY`** non è disponibile: login tramite password lato browser (può fallire con redirect su Clerk ospitato).                                                                                                                                        |
 
 Ordine consigliato per la serie completa `03`–`09`: avviare `npm run dev` (o attendere che `reuseExistingServer` trovi l’URL); eseguire `npm run screenshots:clerk-session` con le variabili Clerk; impostare `E2E_AUTH_STORAGE_STATE=e2e/.auth/user.json` e `E2E_TRIP_ID=...`; poi `npm run screenshots:presentation`.
 
@@ -127,22 +127,22 @@ Ordine consigliato per la serie completa `03`–`09`: avviare `npm run dev` (o a
 
 #### Inventario file PNG (ordine UX)
 
-| File | Contenuto |
-| ---- | --------- |
-| `01-landing.png` | Landing marketing `/it` |
-| `02-auth-clerk.png` | Gate Clerk su `/it/app/trips` (non autenticato) |
-| `02b-auth-clerk-signup.png` | Schermata registrazione Clerk (click “Inizia ora” / best effort) |
-| `03-app-dashboard.png` | Dashboard `/app` |
-| `04-app-trips-list.png` | Elenco viaggi |
-| `05-trip-detail.png` | Dettaglio viaggio (richiede `E2E_TRIP_ID`) |
-| `05b-trip-detail-checkout-cta.png` | CTA pagamento se presente |
-| `05c-trip-expenses.png` | Sezione split spese se presente nel trip |
-| `06-trips-create-form.png` | Form creazione viaggio (crop) |
-| `07-referral.png` | Referral |
-| `08-join-trip.png` | Join invito (opzionale, `E2E_JOIN_TOKEN`) |
-| `09-account-privacy.png` | Privacy, export, marketing |
-| `09b-account-delete-form.png` | Modulo cancellazione account (crop, senza invio) |
-| `10-checkout-stripe.png` | Stripe hosted (opzionale, `E2E_SCREENSHOT_STRIPE`) |
+| File                               | Contenuto                                                        |
+| ---------------------------------- | ---------------------------------------------------------------- |
+| `01-landing.png`                   | Landing marketing `/it`                                          |
+| `02-auth-clerk.png`                | Gate Clerk su `/it/app/trips` (non autenticato)                  |
+| `02b-auth-clerk-signup.png`        | Schermata registrazione Clerk (click “Inizia ora” / best effort) |
+| `03-app-dashboard.png`             | Dashboard `/app`                                                 |
+| `04-app-trips-list.png`            | Elenco viaggi                                                    |
+| `05-trip-detail.png`               | Dettaglio viaggio (richiede `E2E_TRIP_ID`)                       |
+| `05b-trip-detail-checkout-cta.png` | CTA pagamento se presente                                        |
+| `05c-trip-expenses.png`            | Sezione split spese se presente nel trip                         |
+| `06-trips-create-form.png`         | Form creazione viaggio (crop)                                    |
+| `07-referral.png`                  | Referral                                                         |
+| `08-join-trip.png`                 | Join invito (opzionale, `E2E_JOIN_TOKEN`)                        |
+| `09-account-privacy.png`           | Privacy, export, marketing                                       |
+| `09b-account-delete-form.png`      | Modulo cancellazione account (crop, senza invio)                 |
+| `10-checkout-stripe.png`           | Stripe hosted (opzionale, `E2E_SCREENSHOT_STRIPE`)               |
 
 #### Procedura passo passo (PNG sopra, incluse le opzionali)
 
