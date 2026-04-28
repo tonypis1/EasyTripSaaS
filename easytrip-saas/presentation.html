@@ -71,6 +71,11 @@
             >Panoramica</a
           >
           <a
+            href="#percorsoutente"
+            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
+            >Percorso utente</a
+          >
+          <a
             href="#strategia"
             class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
             >Strategia</a
@@ -119,6 +124,220 @@
           PostgreSQL.
         </p>
       </div>
+
+      <!-- Percorso utente: screenshot PNG (README_00 · npm run screenshots:presentation) -->
+      <section id="percorsoutente" class="mb-20 scroll-mt-24">
+        <h2
+          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+        >
+          00 · Percorso utente
+        </h2>
+        <h3 class="mb-3 text-2xl font-semibold text-white">
+          Schermate reali dall’app
+        </h3>
+        <p class="text-muted mb-8 max-w-3xl text-sm leading-relaxed">
+          Le immagini sotto sono prodotte da Playwright in
+          <code class="font-mono text-xs text-slate-400"
+            >docs/presentation-screenshots/</code
+          >
+          (vedi
+          <code class="font-mono text-xs text-slate-400">README_00.md</code>).
+          Apri questo file HTML dalla cartella
+          <code class="font-mono text-xs text-slate-400">easytrip-saas/</code>
+          così i percorsi relativi alle PNG funzionano. Alcune schermate sono
+          condizionali (es. split spese su trip coppia/gruppo, checkout Stripe,
+          invito join).
+        </p>
+        <div
+          class="border-border grid gap-8 rounded-2xl border bg-surface-elevated/40 p-6 md:grid-cols-2 md:p-8"
+        >
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/01-landing.png"
+              alt="Landing marketing"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              01 · Landing pubblica
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/02-auth-clerk.png"
+              alt="Accesso Clerk"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              02 · Accesso tramite Clerk (finestra pubblica / trip)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/02b-auth-clerk-signup.png"
+              alt="Registrazione Clerk"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              02b · Registrazione (hosted Clerk, best effort)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/03-app-dashboard.png"
+              alt="Dashboard app"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              03 · Dashboard dopo login
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/04-app-trips-list.png"
+              alt="Elenco viaggi"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              04 · I miei viaggi
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/06-trips-create-form.png"
+              alt="Form creazione viaggio"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              06 · Creazione viaggio (form)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/05-trip-detail.png"
+              alt="Dettaglio viaggio"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              05 · Dettaglio trip (richiede
+              <code class="font-mono">E2E_TRIP_ID</code>)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/05b-trip-detail-checkout-cta.png"
+              alt="Checkout trip"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              05b · CTA pagamento (se trip non pagato)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/05c-trip-expenses.png"
+              alt="Split spese"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              05c · Split spese (coppia/gruppo pagati, membri ≥2)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/10-checkout-stripe.png"
+              alt="Stripe checkout"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              10 · Stripe hosted (
+              <code class="font-mono">E2E_SCREENSHOT_STRIPE</code>)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/07-referral.png"
+              alt="Referral"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              07 · Invita un amico
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/08-join-trip.png"
+              alt="Join invito viaggio"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              08 · Join con token (
+              <code class="font-mono">E2E_JOIN_TOKEN</code>)
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/09-account-privacy.png"
+              alt="Privacy e export dati"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              09 · Privacy, export GDPR, comunicazioni email
+            </figcaption>
+          </figure>
+          <figure class="border-border flex flex-col overflow-hidden rounded-xl border">
+            <img
+              src="docs/presentation-screenshots/09b-account-delete-form.png"
+              alt="Modulo cancellazione account"
+              class="bg-surface w-full object-cover object-top"
+              loading="lazy"
+              width="1440"
+              height="900"
+            />
+            <figcaption class="text-muted border-border border-t p-3 text-xs">
+              09b · Diritto all’oblio: modulo di conferma (nessun invio nello script)
+            </figcaption>
+          </figure>
+        </div>
+      </section>
 
       <!-- 1. Panoramica -->
       <section id="panoramica" class="mb-20 scroll-mt-24">
@@ -560,20 +779,27 @@
               <tr>
                 <td class="px-4 py-3 text-slate-300">Framework UI</td>
                 <td class="px-4 py-3">
-                  next@16.1.7, react@19.2.3, lucide-react
+                  next@16.2.4, react@19.2.3, next-intl@^4.9.1,
+                  lucide-react@^0.475
                 </td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Stile</td>
-                <td class="px-4 py-3">tailwindcss@4, @tailwindcss/postcss</td>
+                <td class="px-4 py-3">
+                  tailwindcss@^4, @tailwindcss/postcss@^4
+                </td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Auth</td>
-                <td class="px-4 py-3">@clerk/nextjs@^6</td>
+                <td class="px-4 py-3">
+                  @clerk/nextjs@^6.39.3, @clerk/localizations@^4.5.3
+                </td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Database</td>
-                <td class="px-4 py-3">@prisma/client@6.19.0, PostgreSQL</td>
+                <td class="px-4 py-3">
+                  @prisma/client@6.19.3, prisma@6.19.3, PostgreSQL
+                </td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Pagamenti</td>
@@ -585,7 +811,7 @@
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">LLM</td>
-                <td class="px-4 py-3">@anthropic-ai/sdk@^0.80.0</td>
+                <td class="px-4 py-3">@anthropic-ai/sdk@^0.91.0</td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Validazione</td>
@@ -601,11 +827,16 @@
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Analytics</td>
-                <td class="px-4 py-3">posthog-js</td>
+                <td class="px-4 py-3">
+                  posthog-js@^1.364.1, @vercel/analytics, @vercel/speed-insights
+                </td>
               </tr>
               <tr>
                 <td class="px-4 py-3 text-slate-300">Test</td>
-                <td class="px-4 py-3">vitest@^4, @playwright/test@^1.58</td>
+                <td class="px-4 py-3">
+                  vitest@^4.1.3, @playwright/test@^1.58.2,
+                  @clerk/testing@^2.0.11
+                </td>
               </tr>
             </tbody>
           </table>

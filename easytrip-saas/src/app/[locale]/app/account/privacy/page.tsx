@@ -192,6 +192,7 @@ export default function AccountPrivacyPage() {
       </section>
 
       <section
+        id="account-delete-section"
         aria-labelledby="delete-heading"
         className="border-et-border bg-et-card rounded-2xl border p-6"
       >

@@ -2,8 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 import { config as loadEnv } from "dotenv";
 import path from "path";
 
-loadEnv({ path: path.join(process.cwd(), ".env.local") });
 loadEnv({ path: path.join(process.cwd(), ".env") });
+loadEnv({ path: path.join(process.cwd(), ".env.local"), override: true });
 
 /**
  * Solo test screenshot per presentation.html.

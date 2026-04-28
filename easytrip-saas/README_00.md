@@ -113,25 +113,46 @@ Variabili d’ambiente rilevanti:
 | Variabile                 | Descrizione                                                                                                                                                                                                                               |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `E2E_BASE_URL`            | Base URL dell’app (default `http://127.0.0.1:3000`); deve coincidere con l’URL usato per creare la sessione Clerk.                                                                                                                        |
-| `E2E_AUTH_STORAGE_STATE`  | Percorso del file JSON di storage Playwright (es. `e2e/.auth/user.json`) dopo login; senza questo file vengono generati solo `01-landing.png` e `02-auth-clerk.png`.                                                                      |
-| `E2E_TRIP_ID`             | ID (`uuid`) di un viaggio esistente per `05-trip-detail.png`, `05b-trip-detail-checkout-cta.png` (sezione pagamento visibile solo se il viaggio non è ancora pagato e l’utente è organizzatore) e opzionalmente `10-checkout-stripe.png`. |
-| `E2E_JOIN_TOKEN`          | Token invito gruppo per `08-join-trip.png` (opzionale).                                                                                                                                                                                   |
+| `E2E_AUTH_STORAGE_STATE`  | Percorso del file JSON di storage Playwright (es. `e2e/.auth/user.json`) dopo login; senza questo file vengono generati solo la parte pubblica: `01-landing.png`, `02-auth-clerk.png`, `02b-auth-clerk-signup.png` (best effort) e eventuali fallimenti successivi. |
+| `E2E_TRIP_ID`             | ID (`cuid`/id Prisma) di un viaggio esistente per `05-trip-detail.png`, `05b-trip-detail-checkout-cta.png` (CTA solo se trip non pagato), `05c-trip-expenses.png` (solo tipologia **gruppo** o **coppia**, pagato, ≥2 membri, con giorni) e opzionalmente `10-checkout-stripe.png`. |
+| `E2E_JOIN_TOKEN`          | Token invito gruppo (`08-join-trip.png`, opzionale): solo il segmento dopo `/join/`, oppure un URL completo del link — viene estratto automaticamente.                                                                                                                             |
 | `E2E_SCREENSHOT_STRIPE`   | Se `1` o `true`, dopo il dettaglio viaggio prova il click sul checkout e salva `10-checkout-stripe.png` su Stripe (richiede trip idoneo e Stripe in modalità test).                                                                       |
-| `E2E_CLERK_USER_EMAIL`    | (Solo per `screenshots:clerk-session`) Email utente Clerk dev/test — obbligatoria per generare `e2e/.auth/user.json` ([`presentation-auth.setup.ts`](tests/e2e/presentation-auth.setup.ts)).                                              |
-| `E2E_CLERK_USER_PASSWORD` | Opzionale: se impostata, login con strategia password; altrimenti Clerk usa il flusso email-only.                                                                                                                                         |
+| `E2E_CLERK_USER_EMAIL`    | (Per `screenshots:clerk-session`) Email dell’utente esistente in Clerk — obbligatoria per `e2e/.auth/user.json`.                                                                                                                         |
+| `CLERK_SECRET_KEY`       | (**Consigliata** per gli screenshot): deve essere caricata nel processo Playwright (di solito da `.env` accanto ai `pk_test_`/`sk_test_`). Con la chiave, il login usa il **ticket** API (stabile); senza, serve password sotto (meno affidabile). |
+| `E2E_CLERK_USER_PASSWORD` | Solo fallback se **`CLERK_SECRET_KEY`** non è disponibile: login tramite password lato browser (può fallire con redirect su Clerk ospitato).                                                                                              |
 
 Ordine consigliato per la serie completa `03`–`09`: avviare `npm run dev` (o attendere che `reuseExistingServer` trovi l’URL); eseguire `npm run screenshots:clerk-session` con le variabili Clerk; impostare `E2E_AUTH_STORAGE_STATE=e2e/.auth/user.json` e `E2E_TRIP_ID=...`; poi `npm run screenshots:presentation`.
 
-**Nota:** lo script **non** invia la cancellazione account: `09-account-privacy.png` mostra solo la pagina Privacy e dati personali (`/app/account/privacy`) con export e modulo di conferma. Eseguire la cancellazione reale invalida la sessione salvata e va evitato nei run automatici di screenshot.
+**Nota:** lo script **non** invia la cancellazione account (`POST /api/user/delete-account`): `09-account-privacy.png` è la pagina intera; `09b-account-delete-form.png` ritaglia solo la sezione con il modulo di conferma (stesso stato, nessun invio). Eseguire la cancellazione reale invalida la sessione salvata e va evitato nei run automatici.
 
-#### Procedura passo passo (PNG `01`–`10`, incluse le opzionali)
+#### Inventario file PNG (ordine UX)
+
+| File | Contenuto |
+| ---- | --------- |
+| `01-landing.png` | Landing marketing `/it` |
+| `02-auth-clerk.png` | Gate Clerk su `/it/app/trips` (non autenticato) |
+| `02b-auth-clerk-signup.png` | Schermata registrazione Clerk (click “Inizia ora” / best effort) |
+| `03-app-dashboard.png` | Dashboard `/app` |
+| `04-app-trips-list.png` | Elenco viaggi |
+| `05-trip-detail.png` | Dettaglio viaggio (richiede `E2E_TRIP_ID`) |
+| `05b-trip-detail-checkout-cta.png` | CTA pagamento se presente |
+| `05c-trip-expenses.png` | Sezione split spese se presente nel trip |
+| `06-trips-create-form.png` | Form creazione viaggio (crop) |
+| `07-referral.png` | Referral |
+| `08-join-trip.png` | Join invito (opzionale, `E2E_JOIN_TOKEN`) |
+| `09-account-privacy.png` | Privacy, export, marketing |
+| `09b-account-delete-form.png` | Modulo cancellazione account (crop, senza invio) |
+| `10-checkout-stripe.png` | Stripe hosted (opzionale, `E2E_SCREENSHOT_STRIPE`) |
+
+#### Procedura passo passo (PNG sopra, incluse le opzionali)
 
 1. **Terminale** (da `easytrip-saas/`): avvia **`npm run dev`** e attendi `Ready` (o lascia che Playwright avvii il server: può richiedere fino a ~3 minuti al primo avvio).
 2. **Chiavi Clerk in modalità test** (`pk_test_…` / `sk_test_…` in `.env`): lo script `screenshots:clerk-session` usa `@clerk/testing` (Testing Token).
 3. **Crea o modifica** `.env.local` (non committare) con almeno:
    - `E2E_BASE_URL=http://127.0.0.1:3000` (stesso host usato in browser; se usi `localhost`, usa quello ovunque).
-   - `E2E_CLERK_USER_EMAIL=tua@email.com` — utente **esistente** in Clerk dev/test (stesso progetto delle chiavi nell’`.env`).
-   - `E2E_CLERK_USER_PASSWORD=…` — **consigliato** se l’utente ha login password; altrimenti il setup usa email-only (può richiedere interazione manuale).
+   - `E2E_CLERK_USER_EMAIL=tua@email.com` — utente **esistente** in Clerk (stesso progetto delle chiavi).
+   - **`CLERK_SECRET_KEY`** in `.env` (o duplicata in `.env.local` solo in locale) — permette login automatico stabile (**ticket**) senza digitare password. Se Playwright non vede `.env`, copia almeno `CLERK_SECRET_KEY` in `.env.local`.
+   - `E2E_CLERK_USER_PASSWORD` — fallback solo senza secret key (flusso meno affidabile).
    - `E2E_TRIP_ID=…` — ID del viaggio (es. `cmnmc2u4e0004u9z4cowzy5cw`): deve essere un viaggio dell’utente sopra, altrimenti il dettaglio fallisce.
    - `E2E_AUTH_STORAGE_STATE=e2e/.auth/user.json` — dopo il passo 5 il file esiste e questa riga serve a `screenshots:presentation`.
    - Opzionale **`E2E_JOIN_TOKEN`** — token reale da un link invito `…/join/<token>` per generare `08-join-trip.png`; senza token, lo `08` non viene creato.
@@ -143,13 +164,13 @@ Ordine consigliato per la serie completa `03`–`09`: avviare `npm run dev` (o a
    npm run screenshots:clerk-session
    ```
 
-6. **Tutti gli screenshot** (inclusi `03`–`09`, `05b`, e `10` se abilitato):
+6. **Tutti gli screenshot** (inclusi `02b`, `03`–`09`, `05b`, `05c`, `09b`, e `10` se abilitato):
 
    ```bash
    npm run screenshots:presentation
    ```
 
-Output atteso in `docs/presentation-screenshots/`: `01`–`02` sempre; `03`–`07`, `09` con sessione valida; `05`/`05b`/`10` con `E2E_TRIP_ID` e condizioni trip; `08` solo con `E2E_JOIN_TOKEN`.
+Output atteso in `docs/presentation-screenshots/`: `01`–`02` e di solito `02b` senza sessione; con sessione valida `03`–`07`, `09`, `09b`; con `E2E_TRIP_ID` anche `05`/`05b`/`05c` (quest’ultimo se il trip è coppia/gruppo pagato con ≥2 membri) e opzionalmente `10`; `08` solo con `E2E_JOIN_TOKEN`.
 
 ---
 

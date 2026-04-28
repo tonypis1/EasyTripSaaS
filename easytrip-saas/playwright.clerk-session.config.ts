@@ -2,8 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 import { config as loadEnv } from "dotenv";
 import path from "path";
 
-loadEnv({ path: path.join(process.cwd(), ".env.local") });
+/** Come Next.js: `.env` base, `.env.local` può sovrascrivere (override). */
 loadEnv({ path: path.join(process.cwd(), ".env") });
+loadEnv({ path: path.join(process.cwd(), ".env.local"), override: true });
 
 if (
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
@@ -20,7 +21,8 @@ if (
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "**/presentation-auth.setup.ts",
-  timeout: 120_000,
+  /** Login Clerk + dev server lenti + hydration possono superare 120s (timeout precedente tagliava waitForFunction). */
+  timeout: 360_000,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 0,

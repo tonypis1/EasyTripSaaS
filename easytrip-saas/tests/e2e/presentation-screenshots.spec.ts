@@ -7,6 +7,24 @@ const OUT_DIR = path.join(process.cwd(), "docs", "presentation-screenshots");
 const authEnv = process.env.E2E_AUTH_STORAGE_STATE;
 const tripId = process.env.E2E_TRIP_ID;
 const joinTokenRaw = process.env.E2E_JOIN_TOKEN;
+
+/** Accetta solo il token o un URL completo …/join/&lt;token&gt;. */
+function normalizeJoinToken(raw?: string): string | undefined {
+  const t = raw?.trim();
+  if (!t) return undefined;
+  try {
+    if (/^https?:\/\//i.test(t)) {
+      const p = new URL(t).pathname.replace(/\/$/, "");
+      const m =
+        p.match(/\/(?:it|en|de|es|fr)\/join\/([^/]+)/) ?? p.match(/\/join\/([^/]+)/);
+      return m?.[1]?.trim();
+    }
+  } catch {
+    /* ignore */
+  }
+  const m2 = t.match(/\/join\/([^/?#]+)/);
+  return (m2?.[1] ?? t).trim();
+}
 const screenshotStripeHosted =
   process.env.E2E_SCREENSHOT_STRIPE === "1" ||
   process.env.E2E_SCREENSHOT_STRIPE === "true";
@@ -16,36 +34,77 @@ function resolveStorageState(): string | undefined {
   return path.isAbsolute(authEnv) ? authEnv : path.join(process.cwd(), authEnv);
 }
 
-/** Firefox può lanciare NS_BINDING_ABORTED se la navigazione viene interrotta (redirect Clerk, RSC). Ritenta con backoff. */
+const defaultBaseUrl = () =>
+  process.env.E2E_BASE_URL ?? "http://localhost:3000";
+
+function isTransientGotoFailure(message: string): boolean {
+  return (
+    /NS_BINDING_ABORTED|net::ERR_ABORTED|frame was detached/i.test(message) ||
+    /CONNECTION_REFUSED|NS_ERROR_CONNECTION|ECONNREFUSED|ERR_SOCKET|net::ERR_CONNECTION/i.test(
+      message,
+    )
+  );
+}
+
+/** Backoff: errori connessione (server dev down / riavvio) meritano pause più lunghe dei soli BINDING_ABORTED. */
+function backoffMsAfterAttempt(attempt: number, msg: string): number {
+  if (/CONNECTION_REFUSED|NS_ERROR_CONNECTION/i.test(msg)) {
+    const base = 2000 * (attempt + 1); // 2s, 4s, …
+    return Math.min(base, 20_000);
+  }
+  return 600 * (attempt + 1);
+}
+
+/**
+ * Firefox/App Router: NS_BINDING_ABORTED; dopo molti screenshot il dev può chiudere il socket →
+ * NS_ERROR_CONNECTION_REFUSED (`reuseExistingServer: true` non riavvia `npm run dev`).
+ */
 async function gotoWithBindingRetry(
   page: Page,
   url: string,
-  options: { timeout?: number; retries?: number } = {},
+  options: {
+    timeout?: number;
+    retries?: number;
+    /** `load` è più fragile con App Router + Firefox; il default è più stabile. */
+    waitUntil?: "commit" | "domcontentloaded" | "load";
+  } = {},
 ) {
-  const timeout = options.timeout ?? 90_000;
-  const retries = options.retries ?? 3;
+  const timeout = options.timeout ?? 120_000;
+  const retries = options.retries ?? 8;
+  const waitUntil = options.waitUntil ?? "domcontentloaded";
   let last: unknown;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      await page.goto(url, { waitUntil: "load", timeout });
+      await page.goto(url, { waitUntil, timeout });
       return;
     } catch (e) {
       last = e;
       const msg = e instanceof Error ? e.message : String(e);
-      const retryable =
-        /NS_BINDING_ABORTED|net::ERR_ABORTED|frame was detached/i.test(msg);
-      if (!retryable || attempt === retries - 1) throw e;
-      await page.waitForTimeout(600 * (attempt + 1));
+      const retryable = isTransientGotoFailure(msg);
+      if (!retryable || attempt === retries - 1) {
+        if (/CONNECTION_REFUSED|NS_ERROR_CONNECTION/i.test(msg)) {
+          throw new Error(
+            [
+              "Connessione a ",
+              defaultBaseUrl(),
+              " rifiutata mentre Playwright caricava ",
+              url,
+              ". Il Next dev probabilmente è crashato o non è più in ascolto.",
+              " Tieni aperto solo un `npm run dev`, controlla memoria/OS, poi riesegui.",
+              ` Errore: ${msg.slice(0, 280)}`,
+            ].join(""),
+          );
+        }
+        throw e;
+      }
+      await page.waitForTimeout(backoffMsAfterAttempt(attempt, msg));
     }
   }
   throw last;
 }
 
-const defaultBaseUrl = () =>
-  process.env.E2E_BASE_URL ?? "http://localhost:3000";
-
-/** True se siamo sul login Clerk ospitato (sessione scaduta / storage non valido). */
-function isClerkHostedSignIn(url: string): boolean {
+/** Domini Clerk ospitati (login / sign-up). */
+function isClerkHostedUrl(url: string): boolean {
   try {
     const u = new URL(url);
     if (u.hostname === "localhost" || u.hostname === "127.0.0.1") return false;
@@ -57,6 +116,11 @@ function isClerkHostedSignIn(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** True se siamo sul login Clerk ospitato (sessione scaduta / storage non valido). */
+function isClerkHostedSignIn(url: string): boolean {
+  return isClerkHostedUrl(url);
 }
 
 /** Attende la fine dei redirect (Clerk → stesso host di `E2E_BASE_URL` / default, path richiesto). */
@@ -90,6 +154,38 @@ async function waitForAppOriginPath(
   );
 }
 
+/**
+ * `/it/app/referral` è client-heavy; un `goto` puro spesso supera il timeout su `domcontentloaded`.
+ * Meglio il link di navigazione (Route Next) + fallback `commit`.
+ */
+async function navigateToReferralPage(page: Page): Promise<void> {
+  const invite = page.getByRole("link", { name: /^Invita amici$/ }).first();
+
+  if (await invite.isVisible({ timeout: 12_000 }).catch(() => false)) {
+    try {
+      await Promise.all([
+        page.waitForURL(/\/it\/app\/referral/i, { timeout: 240_000 }),
+        invite.click(),
+      ]);
+      await waitForAppOriginPath(page, "/it/app/referral", 240_000);
+      return;
+    } catch {
+      /* goto sotto */
+    }
+  }
+
+  await gotoWithBindingRetry(page, "/it/app/referral", {
+    timeout: 240_000,
+    retries: 4,
+    /** Si completa appena inizia il documento — meno bloccante di `domcontentloaded` sul dev. */
+    waitUntil: "commit",
+  });
+  await page
+    .waitForLoadState("domcontentloaded", { timeout: 180_000 })
+    .catch(() => {});
+  await waitForAppOriginPath(page, "/it/app/referral", 240_000);
+}
+
 test.describe("Screenshot per presentation.html (pubblici)", () => {
   test("cattura landing e gate autenticazione", async ({ page }) => {
     test.setTimeout(180_000);
@@ -113,6 +209,29 @@ test.describe("Screenshot per presentation.html (pubblici)", () => {
         fullPage: false,
         timeout: 30_000,
       });
+    }
+
+    /** Best effort: Sign-up CTA (hero) → schermata registrazione Clerk. */
+    try {
+      const signUpBtn = page.getByRole("button", {
+        name: /^(Inizia ora|Start now|Empezar ahora|Commencer|Jetzt starten)$/i,
+      }).first();
+      await signUpBtn.waitFor({ state: "visible", timeout: 10_000 });
+      await Promise.all([
+        page.waitForURL((u) => isClerkHostedUrl(u.href), {
+          timeout: 45_000,
+        }),
+        signUpBtn.click(),
+      ]);
+      await page.waitForLoadState("load");
+      await page.waitForTimeout(2000);
+      await page.screenshot({
+        path: path.join(OUT_DIR, "02b-auth-clerk-signup.png"),
+        fullPage: false,
+        timeout: 30_000,
+      });
+    } catch {
+      /** UI Clerk o lingua diversa: 02b opzionale. */
     }
 
     await page.goto("/it/app/trips", {
@@ -139,14 +258,17 @@ if (hasValidStorage && storagePath) {
     test("cattura dashboard, viaggi, form, dettaglio, referral, join, privacy", async ({
       page,
     }) => {
+      /** Supera il default 180s di `playwright.presentation.config` (molte pagine + foto + dev lento). */
+      test.setTimeout(600_000);
       fs.mkdirSync(OUT_DIR, { recursive: true });
       await page.setViewportSize({ width: 1440, height: 900 });
 
-      await page.goto("/it/app", {
+      await gotoWithBindingRetry(page, "/it/app", {
+        timeout: 120_000,
+        retries: 5,
         waitUntil: "domcontentloaded",
-        timeout: 60_000,
       });
-      await page.waitForLoadState("load");
+      await page.waitForLoadState("load", { timeout: 90_000 }).catch(() => {});
       await waitForAppOriginPath(page, "/it/app");
 
       await expect(
@@ -163,9 +285,13 @@ if (hasValidStorage && storagePath) {
       // /app/trips: SSR + Prisma (listMyTrips). Non usare locator('main'): in errore globale o shell strana può non esserci <main>.
       // Il nav ha "I miei viaggi" come link, non come heading: l'h1 è univoco. Stringa lunga = contenuto reale della pagina (non solo nav).
       const tripsPageMarker = "generazione e lo sblocco giorno per giorno";
-      await page.goto("/it/app/trips", {
-        waitUntil: "load",
+      await gotoWithBindingRetry(page, "/it/app/trips", {
         timeout: 120_000,
+        retries: 5,
+        waitUntil: "domcontentloaded",
+      });
+      await page.waitForLoadState("load", { timeout: 60_000 }).catch(() => {
+        /* Next streaming: opzionale dopo domcontentloaded */
       });
       await waitForAppOriginPath(page, "/it/app/trips");
       const tripsTitle = page.getByRole("heading", {
@@ -241,6 +367,19 @@ if (hasValidStorage && storagePath) {
           });
         }
 
+        const expensesHeading = page.getByRole("heading", {
+          name: /^(Split spese|Expense split)$/i,
+        });
+        if (await expensesHeading.isVisible().catch(() => false)) {
+          await expensesHeading.scrollIntoViewIfNeeded();
+          await page.waitForTimeout(500);
+          const expensesSection = expensesHeading.locator("xpath=ancestor::section[1]");
+          await expensesSection.screenshot({
+            path: path.join(OUT_DIR, "05c-trip-expenses.png"),
+            timeout: 30_000,
+          });
+        }
+
         if (screenshotStripeHosted) {
           const payBtn = page.getByRole("button", {
             name: /vai al pagamento|usa i tuoi crediti/i,
@@ -266,23 +405,20 @@ if (hasValidStorage && storagePath) {
             } catch {
               // Trip già pagato, importo zero, o Stripe non configurato: salta 10
             }
-            await page.goto("/it/app/trips", {
+            await gotoWithBindingRetry(page, "/it/app/trips", {
+              timeout: 120_000,
+              retries: 4,
               waitUntil: "domcontentloaded",
-              timeout: 60_000,
             });
           }
         }
       }
 
-      await page.goto("/it/app/referral", {
-        waitUntil: "domcontentloaded",
-        timeout: 60_000,
-      });
-      await page.waitForLoadState("load");
-      await waitForAppOriginPath(page, "/it/app/referral");
+      await navigateToReferralPage(page);
+      await page.waitForLoadState("load", { timeout: 90_000 }).catch(() => {});
       await expect(
         page.getByRole("heading", { name: /invita un amico/i }),
-      ).toBeVisible({ timeout: 45_000 });
+      ).toBeVisible({ timeout: 120_000 });
       await page.waitForTimeout(1000);
       await page.screenshot({
         path: path.join(OUT_DIR, "07-referral.png"),
@@ -290,13 +426,14 @@ if (hasValidStorage && storagePath) {
         timeout: 60_000,
       });
 
-      const joinToken = joinTokenRaw?.trim();
+      const joinToken = normalizeJoinToken(joinTokenRaw);
       if (joinToken) {
-        await page.goto(`/it/join/${joinToken}`, {
+        await gotoWithBindingRetry(page, `/it/join/${joinToken}`, {
+          timeout: 120_000,
+          retries: 4,
           waitUntil: "domcontentloaded",
-          timeout: 60_000,
         });
-        await page.waitForLoadState("load");
+        await page.waitForLoadState("load", { timeout: 90_000 }).catch(() => {});
         await page.waitForTimeout(2000);
         await page.screenshot({
           path: path.join(OUT_DIR, "08-join-trip.png"),
@@ -305,11 +442,12 @@ if (hasValidStorage && storagePath) {
         });
       }
 
-      await page.goto("/it/app/account/privacy", {
+      await gotoWithBindingRetry(page, "/it/app/account/privacy", {
+        timeout: 120_000,
+        retries: 4,
         waitUntil: "domcontentloaded",
-        timeout: 60_000,
       });
-      await page.waitForLoadState("load");
+      await page.waitForLoadState("load", { timeout: 90_000 }).catch(() => {});
       await waitForAppOriginPath(page, "/it/app/account/privacy");
       await expect(
         page.getByRole("heading", { name: /privacy e dati personali/i }),
@@ -319,6 +457,14 @@ if (hasValidStorage && storagePath) {
         path: path.join(OUT_DIR, "09-account-privacy.png"),
         fullPage: true,
         timeout: 60_000,
+      });
+
+      const deleteSection = page.locator("#account-delete-section");
+      await deleteSection.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+      await deleteSection.screenshot({
+        path: path.join(OUT_DIR, "09b-account-delete-form.png"),
+        timeout: 30_000,
       });
     });
   });
