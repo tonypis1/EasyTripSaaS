@@ -90,7 +90,7 @@ const BINDING_RE = new RegExp(
     "|'([^']*)'",
     "|`([^`$]*)`",
     "|\\{[^}]*?namespace\\s*:\\s*",
-    '(?:"([^"]*)"|\'([^\']*)\'|`([^`$]*)`)',
+    "(?:\"([^\"]*)\"|'([^']*)'|`([^`$]*)`)",
     "[^}]*\\}",
     ")?",
     "\\s*\\)",
@@ -269,10 +269,7 @@ for (const [locale, keys] of localeKeys) {
     }
   }
   missingByLocale.set(locale, missing);
-  unusedByLocale.set(
-    locale,
-    [...keys].filter((k) => !usedKeys.has(k)).sort(),
-  );
+  unusedByLocale.set(locale, [...keys].filter((k) => !usedKeys.has(k)).sort());
 }
 
 // ── Output JSON (per CI strutturata) ──────────────────────────────────────

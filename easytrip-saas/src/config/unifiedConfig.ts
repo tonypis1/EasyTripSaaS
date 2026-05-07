@@ -18,9 +18,8 @@ const buildTimeEnvFallbacks: Record<string, string> = {
   ANTHROPIC_API_KEY: "sk-ant-build_placeholder",
 };
 
-const envSource =
-  isNextProductionBuild ?
-    { ...buildTimeEnvFallbacks, ...process.env }
+const envSource = isNextProductionBuild
+  ? { ...buildTimeEnvFallbacks, ...process.env }
   : process.env;
 
 const envSchema = z.object({

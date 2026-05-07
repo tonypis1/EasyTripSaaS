@@ -45,15 +45,20 @@ export default async function AccountUpgradePage(props: {
       typeof error === "object" &&
       "digest" in error &&
       typeof (error as { digest?: unknown }).digest === "string" &&
-      ((error as { digest: string }).digest as string).startsWith("NEXT_REDIRECT")
+      ((error as { digest: string }).digest as string).startsWith(
+        "NEXT_REDIRECT",
+      )
     ) {
       throw error;
     }
     const message =
       error instanceof Error ? error.message : t("errorBodyDefault");
-    logger.error("AccountUpgradePage: createSubscriptionCheckoutSession failed", {
-      error: message,
-    });
+    logger.error(
+      "AccountUpgradePage: createSubscriptionCheckoutSession failed",
+      {
+        error: message,
+      },
+    );
     return <UpgradeFallback t={t} message={message} />;
   }
 }

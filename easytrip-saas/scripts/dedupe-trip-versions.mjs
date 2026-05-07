@@ -106,7 +106,9 @@ async function main() {
     console.log(
       `Trovati ${decisions.length} gruppi (tripId, versionNum) con duplicati.`,
     );
-    console.log(`Righe TripVersion totali da cancellare: ${idsToDelete.length}\n`);
+    console.log(
+      `Righe TripVersion totali da cancellare: ${idsToDelete.length}\n`,
+    );
     for (const d of decisions) {
       console.log(
         `  trip=${d.tripId}  v${d.versionNum}: tengo id=${d.keepId} ` +
