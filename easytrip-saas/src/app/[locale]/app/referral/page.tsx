@@ -132,8 +132,8 @@ export default function ReferralPage() {
         </h1>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
           Per ogni amico che si registra e acquista il primo viaggio, ricevi
-          <strong className="text-et-ink"> €9,99 di credito</strong> = 1 trip
-          gratis.
+          <strong className="text-et-ink"> €3,99 di credito</strong> = 1 trip
+          Solo/Coppia gratis.
         </p>
       </div>
 
@@ -188,7 +188,7 @@ export default function ReferralPage() {
             <Sparkles className="-mt-0.5 mr-1 inline h-4 w-4 text-amber-400" />
             <strong className="text-et-ink/80">Come funziona:</strong> Il tuo
             amico clicca il link → si registra → acquista un viaggio → tu ricevi
-            automaticamente €9,99 di credito. Nessun limite di inviti!
+            automaticamente €3,99 di credito. Nessun limite di inviti!
           </p>
         </div>
       </section>
@@ -292,7 +292,7 @@ export default function ReferralPage() {
                     </span>
                     {r.rewardGranted && (
                       <span className="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400">
-                        +€9,99
+                        +€3,99
                       </span>
                     )}
                   </div>

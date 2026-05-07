@@ -8,7 +8,7 @@ import {
 } from "@/lib/email/transactional";
 import { normalizeEmailLocale, t as tr } from "@/lib/email/email-i18n";
 
-const REWARD_EUROS = 9.99;
+const REWARD_EUROS = 3.99;
 
 export type ReferralDto = {
   id: string;
@@ -108,7 +108,7 @@ export class ReferralService {
 
   /**
    * Chiamato dal webhook Stripe quando l'invitato completa il primo pagamento.
-   * Crea un Credit di €9,99 per il referrer = 1 trip gratis.
+   * Crea un Credit di €3,99 per il referrer = 1 trip Solo/Coppia gratis.
    */
   async tryGrantReward(paidUserId: string) {
     const referral = await this.referralRepo.markConverted(paidUserId);

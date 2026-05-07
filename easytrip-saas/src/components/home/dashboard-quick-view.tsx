@@ -55,9 +55,9 @@ function TripVersionCarousel(props: {
         ref={ref}
         className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {props.versions.map((v) => (
+        {props.versions.map((v, i) => (
           <Link
-            key={v.versionNum}
+            key={`${v.versionNum}-${v.generatedAt}-${i}`}
             href={`/app/trips/${props.tripId}`}
             className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition ${
               v.isActive

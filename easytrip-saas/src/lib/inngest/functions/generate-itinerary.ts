@@ -368,33 +368,112 @@ export const generateItinerary = inngest.createFunction(
       },
     );
 
-    const result = await step.run("salva-versione-e-giorni", async () => {
-      const versionNum = trip.regenCount + 1;
-      const { optimizationScore, days } = gen;
+    // -------------------------------------------------------------------
+    // Persistenza versione + giorni — split in 4 step Inngest idempotenti.
+    //
+    // Inngest memorizza l'output di ogni step.run() completato; in caso di
+    // retry, gli step già completati NON vengono rieseguiti. Spezzando il
+    // vecchio mono-step "salva-versione-e-giorni" in 4 step più piccoli ogni
+    // azione effettuata sul DB resta legata al suo step, e l'incremento di
+    // `regenCount` non viene mai applicato due volte.
+    //
+    // L'invariante di sistema (un solo (tripId, versionNum) per coppia) è
+    // inoltre tutelata a livello DB dal vincolo @@unique introdotto nella
+    // migration `unique_trip_version`. Qui il codice è scritto per essere
+    // idempotente anche senza quel vincolo, ma in caso di race con un altro
+    // job concorrente cattura `P2002` come safety net.
+    // -------------------------------------------------------------------
 
+    /**
+     * Step 1 — riserva atomicamente il prossimo versionNum incrementando
+     * `trip.regenCount` con un UPDATE atomico SQL. Eseguito una sola volta
+     * grazie alla memoizzazione di Inngest.
+     */
+    const versionNum = await step.run("riserva-version-num", async () => {
+      const updated = await prisma.trip.update({
+        where: { id: trip.id },
+        data: { regenCount: { increment: 1 } },
+        select: { regenCount: true },
+      });
+      return updated.regenCount;
+    });
+
+    /**
+     * Step 2 — prepara la riga TripVersion (find-or-create) per la coppia
+     * (tripId, versionNum). Idempotente: al retry trova la riga esistente.
+     * In caso di race con un job concorrente (improbabile ma possibile),
+     * P2002 indica che un'altra esecuzione ha già creato la riga: la
+     * leggiamo e proseguiamo.
+     */
+    const versionId = await step.run("prepara-version-row", async () => {
+      // Disattiva tutte le altre versioni del trip (idempotente).
       await prisma.tripVersion.updateMany({
-        where: { tripId: trip.id },
+        where: { tripId: trip.id, versionNum: { not: versionNum } },
         data: { isActive: false },
       });
 
-      const version = await prisma.tripVersion.create({
-        data: {
-          tripId: trip.id,
-          versionNum,
-          isActive: true,
-          geoScore: optimizationScore,
-        },
+      const existing = await prisma.tripVersion.findFirst({
+        where: { tripId: trip.id, versionNum },
+        select: { id: true },
       });
 
-      const zoneParts: string[] = [];
+      if (existing) {
+        await prisma.tripVersion.update({
+          where: { id: existing.id },
+          data: { isActive: true, geoScore: gen.optimizationScore },
+        });
+        return existing.id;
+      }
 
-      for (const day of days) {
+      try {
+        const created = await prisma.tripVersion.create({
+          data: {
+            tripId: trip.id,
+            versionNum,
+            isActive: true,
+            geoScore: gen.optimizationScore,
+          },
+          select: { id: true },
+        });
+        return created.id;
+      } catch (err) {
+        // P2002 = unique constraint violation. Race con concorrente.
+        if (
+          err &&
+          typeof err === "object" &&
+          "code" in err &&
+          (err as { code?: string }).code === "P2002"
+        ) {
+          const found = await prisma.tripVersion.findFirstOrThrow({
+            where: { tripId: trip.id, versionNum },
+            select: { id: true },
+          });
+          await prisma.tripVersion.update({
+            where: { id: found.id },
+            data: { isActive: true, geoScore: gen.optimizationScore },
+          });
+          return found.id;
+        }
+        throw err;
+      }
+    });
+
+    /**
+     * Step 3 — popola i giorni della TripVersion. Idempotente: pulisce
+     * eventuali Day creati da un tentativo precedente fallito a metà,
+     * poi ricrea l'intero set di Day dal piano corrente.
+     */
+    const zoneParts = await step.run("crea-days", async () => {
+      await prisma.day.deleteMany({ where: { tripVersionId: versionId } });
+
+      const zones: string[] = [];
+      for (const day of gen.days) {
         const unlockDate = addCalendarDaysUtc(startDate, day.dayNumber - 1);
-        if (day.zoneFocus?.trim()) zoneParts.push(day.zoneFocus.trim());
+        if (day.zoneFocus?.trim()) zones.push(day.zoneFocus.trim());
 
         await prisma.day.create({
           data: {
-            tripVersionId: version.id,
+            tripVersionId: versionId,
             dayNumber: day.dayNumber,
             unlockDate,
             title: day.title || `Giorno ${day.dayNumber}`,
@@ -420,7 +499,14 @@ export const generateItinerary = inngest.createFunction(
           },
         });
       }
+      return zones;
+    });
 
+    /**
+     * Step 4 — aggiorna i campi puntatori sul Trip (currentVersion, status,
+     * usedZones). `regenCount` è già stato incrementato nello Step 1.
+     */
+    const result = await step.run("aggiorna-trip", async () => {
       const usedZonesMerged = Array.from(new Set(zoneParts)).join(" | ");
       const usedZonesCombined = [trip.usedZones, usedZonesMerged]
         .filter((s) => s != null && String(s).trim().length > 0)
@@ -429,14 +515,17 @@ export const generateItinerary = inngest.createFunction(
       await prisma.trip.update({
         where: { id: trip.id },
         data: {
-          regenCount: versionNum,
           currentVersion: versionNum,
           status: "active",
           usedZones: usedZonesCombined.length > 0 ? usedZonesCombined : null,
         },
       });
 
-      return { versionNum, daysCreated: numDays, optimizationScore };
+      return {
+        versionNum,
+        daysCreated: numDays,
+        optimizationScore: gen.optimizationScore,
+      };
     });
 
     await step.run("email-itinerario-pronto", async () => {

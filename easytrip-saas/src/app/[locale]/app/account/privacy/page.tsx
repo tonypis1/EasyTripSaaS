@@ -147,12 +147,20 @@ export default function AccountPrivacyPage() {
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <label className="text-et-ink/88 flex cursor-pointer items-center gap-2 text-sm">
+            {/*
+             * suppressHydrationWarning: alcuni password manager e Grammarly
+             * iniettano `style="caret-color: transparent"` (e altri attributi)
+             * sugli `<input>` PRIMA che React idrati. Senza questa direttiva
+             * React stampa un warning "tree hydrated but some attributes…"
+             * non azionabile lato nostro.
+             */}
             <input
               type="checkbox"
               checked={marketingOptIn}
               disabled={!marketingLoaded || marketingSaving}
               onChange={(e) => void onMarketingToggle(e.target.checked)}
               className="border-et-border h-4 w-4 rounded"
+              suppressHydrationWarning
             />
             {tPrivacy("marketingOptIn", { appName: tCommon("appName") })}
           </label>
@@ -231,6 +239,8 @@ export default function AccountPrivacyPage() {
             >
               {tDelete("confirmFieldLabel")}
             </label>
+            {/* Vedi commento sopra: suppressHydrationWarning per gestire input
+                modificati da estensioni browser (password manager, Grammarly). */}
             <input
               id="delete-confirm"
               type="text"
@@ -239,6 +249,7 @@ export default function AccountPrivacyPage() {
               onChange={(e) => setPhrase(e.target.value)}
               placeholder={tDelete("confirmPhrase")}
               className="border-et-border bg-et-deep text-et-ink placeholder:text-et-ink/40 focus:border-et-accent/50 mt-1.5 w-full max-w-md rounded-xl border px-3 py-2.5 text-sm outline-none"
+              suppressHydrationWarning
             />
             <button
               type="button"

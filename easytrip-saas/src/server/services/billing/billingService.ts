@@ -93,6 +93,41 @@ export class BillingService {
   }
 
   /**
+   * Eligibility per lo sconto "Nuovo viaggio – 20%".
+   *
+   * Regola: l'utente ha almeno un trip pagato (`amountPaid != null`) il cui
+   * `endDate` è compreso fra (oggi − 7 giorni) e oggi. In altre parole, il
+   * viaggio è già finito ma da non più di 7 giorni: la finestra emotiva
+   * giusta per proporre la prossima avventura con uno sconto del 20%.
+   *
+   * Il check è **server-side e non manipolabile dal client**: nessun param
+   * di URL può forzare lo sconto.
+   */
+  private async isEligibleForNewTripDiscount(
+    userId: string,
+    excludingTripId: string,
+  ): Promise<boolean> {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const recentlyEndedPaidTrip = await prisma.trip.findFirst({
+      where: {
+        organizerId: userId,
+        amountPaid: { not: null },
+        deletedAt: null,
+        endDate: {
+          lte: now,
+          gte: sevenDaysAgo,
+        },
+        id: { not: excludingTripId },
+      },
+      select: { id: true },
+    });
+
+    return recentlyEndedPaidTrip !== null;
+  }
+
+  /**
    * Consuma crediti in una transazione atomica (FIFO per scadenza).
    * Restituisce il totale in centesimi effettivamente applicato.
    */
@@ -216,6 +251,25 @@ export class BillingService {
     }
 
     /* ── SCENARIO B/C: Stripe (con eventuale sconto crediti) ── */
+
+    /**
+     * Sconto "Nuovo viaggio − 20%" applicato lato Stripe via Promotion Code.
+     * - Eligibility verificata server-side (no manipolazione client).
+     * - Disabilitato se nessun crediti residuo da pagare (Stripe rifiuterebbe
+     *   il discount con amount_total=0; lo skipperemo già nello scenario A).
+     * - Disabilitato se `STRIPE_PROMO_CODE_NEW_TRIP_ID` non è configurato.
+     * Stripe mostra il -20% direttamente nella pagina di pagamento (effetto
+     * sorpresa positiva); `Trip.amountPaid` rifletterà l'importo netto.
+     */
+    const promoCodeId = config.billing.stripePromoCodeNewTripId;
+    let applyNewTripDiscount = false;
+    if (promoCodeId) {
+      applyNewTripDiscount = await this.isEligibleForNewTripDiscount(
+        user.id,
+        trip.id,
+      );
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       success_url:
@@ -232,6 +286,7 @@ export class BillingService {
         ...(creditToApplyCents > 0
           ? { creditApplyCents: String(creditToApplyCents) }
           : {}),
+        ...(applyNewTripDiscount ? { newTripDiscount: "1" } : {}),
       },
       line_items: [
         {
@@ -249,7 +304,18 @@ export class BillingService {
           },
         },
       ],
+      ...(applyNewTripDiscount && promoCodeId
+        ? { discounts: [{ promotion_code: promoCodeId }] }
+        : {}),
     });
+
+    if (applyNewTripDiscount) {
+      logger.info("Applicato sconto 'Nuovo viaggio − 20%' al checkout", {
+        tripId: trip.id,
+        userId: user.id,
+        promoCodeId,
+      });
+    }
 
     if (!session.url) {
       throw new AppError(
@@ -413,6 +479,83 @@ export class BillingService {
   }
 
   /**
+   * Checkout abbonamento mensile "Viaggiatore Frequente" (€6,99/mese).
+   *
+   * Crea una sessione Stripe Checkout in modalità `subscription` legata al
+   * Price ricorrente configurato in `STRIPE_SUBSCRIPTION_PRICE_ID`.
+   * Il piano dell'utente verrà aggiornato a `planType = 'sub'` dal webhook
+   * `customer.subscription.updated/created` (vedi `syncSubscriptionPlanFromStripe`).
+   *
+   * Idempotenza: se l'utente ha già un piano `sub` attivo, blocchiamo qui
+   * per evitare doppi abbonamenti accidentali.
+   */
+  async createSubscriptionCheckoutSession(input: {
+    successUrl?: string;
+    cancelUrl?: string;
+  }) {
+    const user = await this.authService.getOrCreateCurrentUser();
+
+    const subscriptionPriceId = config.billing.stripeSubscriptionPriceId;
+    if (!subscriptionPriceId) {
+      throw new AppError(
+        "Abbonamento non disponibile in questo ambiente. Contatta il supporto.",
+        503,
+        "SUBSCRIPTION_NOT_CONFIGURED",
+      );
+    }
+
+    if (
+      user.planType === "sub" &&
+      user.subExpiresAt &&
+      user.subExpiresAt > new Date()
+    ) {
+      throw new AppError(
+        "Hai già un abbonamento attivo.",
+        400,
+        "SUBSCRIPTION_ALREADY_ACTIVE",
+      );
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      success_url:
+        input.successUrl ??
+        `${config.app.baseUrl}/app?subscribe=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url:
+        input.cancelUrl ?? `${config.app.baseUrl}/app?subscribe=cancel`,
+      customer_email: user.email,
+      metadata: {
+        appUserId: user.id,
+        paymentType: "subscription",
+      },
+      line_items: [
+        {
+          quantity: 1,
+          price: subscriptionPriceId,
+        },
+      ],
+    });
+
+    if (!session.url) {
+      throw new AppError(
+        "Checkout URL non disponibile",
+        500,
+        "CHECKOUT_URL_MISSING",
+      );
+    }
+
+    logger.info("Subscription checkout session creata", {
+      userId: user.id,
+      sessionId: session.id,
+    });
+
+    return {
+      checkoutUrl: session.url,
+      sessionId: session.id,
+    };
+  }
+
+  /**
    * Aggiorna piano abbonamento da eventi Stripe Subscription (webhook).
    */
   private async syncSubscriptionPlanFromStripe(sub: Stripe.Subscription) {
@@ -495,6 +638,27 @@ export class BillingService {
     | { received: true; skipped?: "duplicate_payment" | "already_paid" }
     | { received: true }
   > {
+    /**
+     * Le checkout session in modalità `subscription` non hanno `tripId` nei
+     * metadata (il piano si attiva via `customer.subscription.created/updated`,
+     * gestito da `syncSubscriptionPlanFromStripe`). Skippiamo qui per evitare
+     * di far esplodere il check `INVALID_METADATA`.
+     */
+    if (
+      session.mode === "subscription" ||
+      session.metadata?.paymentType === "subscription"
+    ) {
+      logger.info(
+        "Checkout session subscription: skip fulfillment per-trip (gestita dal webhook subscription)",
+        {
+          sessionId: session.id,
+          stripeEventId: context.stripeEventId,
+          source: context.source,
+        },
+      );
+      return { received: true };
+    }
+
     const tripId = session.metadata?.tripId;
     const appUserId = session.metadata?.appUserId;
     const paymentType = session.metadata?.paymentType ?? "purchase";

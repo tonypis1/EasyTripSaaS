@@ -8,6 +8,7 @@ import {
   SignUpLocaleButton,
 } from "@/components/i18n/clerk-locale-buttons";
 import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
+import { useIsClient } from "@/lib/hooks/use-is-client";
 import { IconGlobe } from "./icons";
 
 type Mode = "guest" | "authenticated";
@@ -15,6 +16,11 @@ type Mode = "guest" | "authenticated";
 export function HomeNavBar(props: { mode: Mode }) {
   const t = useTranslations("home.nav");
   const tCommon = useTranslations("common");
+  // `<UserButton>` di Clerk inietta nel DOM un `<div data-clerk-component>` solo
+  // dopo l'init del SDK lato client → SSR e primo render client divergerebbero,
+  // generando un hydration mismatch. `useIsClient()` ci garantisce di mostrare
+  // un placeholder durante SSR + primo render, e il bottone reale solo dopo.
+  const isClient = useIsClient();
 
   return (
     <header className="border-et-border bg-et-deep/80 sticky top-0 z-50 border-b backdrop-blur">
@@ -78,14 +84,21 @@ export function HomeNavBar(props: { mode: Mode }) {
               >
                 {t("reservedArea")}
               </Link>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "h-9 w-9",
-                  },
-                }}
-              />
+              {isClient ? (
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-9 w-9",
+                    },
+                  }}
+                />
+              ) : (
+                <div
+                  className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-b from-violet-400/45 to-violet-700/55"
+                  aria-hidden
+                />
+              )}
             </>
           )}
         </div>

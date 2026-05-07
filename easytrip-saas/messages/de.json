@@ -141,7 +141,7 @@
         "solo": {
           "name": "Trip Solo / Paar",
           "badge": "Core",
-          "priceDisplay": "9,99 €/Trip",
+          "priceDisplay": "3,99 €/Trip",
           "desc": "TripGenius Basic, 1–2 Personen.",
           "feature1": "Tägliche schrittweise Freischaltung",
           "feature2": "Geografisch optimierte Route",
@@ -153,7 +153,7 @@
         "group": {
           "name": "Gruppen-Trip (3–5 Personen)",
           "badge": "PackedUp",
-          "priceDisplay": "14,99 €/Trip",
+          "priceDisplay": "6,99 €/Trip",
           "desc": "TripGenius + PackedUp. Für Gruppen, die Ausgaben teilen.",
           "feature1": "Geteilte Reiseroute",
           "feature2": "Automatische Kostenaufteilung",
@@ -164,13 +164,14 @@
         "frequent": {
           "name": "Vielreisende",
           "badge": "Abo",
-          "priceDisplay": "14,99 €/Monat",
+          "priceDisplay": "6,99 €/Monat",
           "desc": "Unbegrenzte Solo-/Paar-Trips für 1 Monat.",
           "feature1": "Ideal, wenn du oft reist",
           "feature2": "Weniger Zeit für Umplanung",
           "feature3": "Konsistent mit den Preisen im Checkout",
           "feature4": "LocalPass Add-on: +3,99 € pro Stadt (Insider, versteckte Perlen)",
-          "cta": "Registrieren und Pläne entdecken →"
+          "cta": "Registrieren und Pläne entdecken →",
+          "checkoutError": "Checkout konnte nicht gestartet werden. Bitte später erneut versuchen."
         }
       },
       "addon": {
@@ -250,6 +251,14 @@
     },
     "privacyPage": {
       "marketingOptIn": "Ich möchte Marketing- und Onboarding-E-Mails von {appName} erhalten"
+    },
+    "subscribeBridge": {
+      "loadingTitle": "Sichere Zahlung wird geöffnet…",
+      "loadingBody": "Du wirst zu Stripe weitergeleitet, um das Abo abzuschließen.",
+      "errorTitle": "Zahlung konnte nicht gestartet werden",
+      "errorBodyDefault": "Bitte versuche es in ein paar Minuten erneut. Bei anhaltenden Problemen wende dich an den Support.",
+      "retryCta": "Erneut versuchen",
+      "backToHome": "Zurück zur Startseite"
     },
     "privacyDelete": {
       "sectionTitle": "Konto löschen",
@@ -350,7 +359,12 @@
         "savePrefs": "Präferenzen speichern",
         "saving": "Speichern…",
         "regenerate": "Route neu generieren",
-        "generating": "Wird erstellt…",
+        "generating": {
+          "inline": "Wird erstellt…",
+          "title": "Wir erstellen deine Reiseroute",
+          "description": "Das dauert in der Regel 1–2 Minuten. Du kannst auf dieser Seite warten oder später zurückkommen: sie wird automatisch aktualisiert, sobald sie fertig ist.",
+          "refreshNow": "Jetzt aktualisieren"
+        },
         "redirecting": "Weiterleitung…",
         "regenerateWithCost": "Neu generieren (€1,99)",
         "gpsUse": "GPS verwenden",
@@ -383,6 +397,10 @@
         "expenses": {
           "title": "Kostenaufteilung",
           "subtitle": "Erfasse Ausgaben und sieh, wer wem was schuldet"
+        },
+        "booking": {
+          "title": "Unterkunft in {destination} buchen",
+          "subtitle": "Finde Hotels und B&Bs für deine Reisedaten auf Booking.com"
         },
         "budget": {
           "economy": "Sparsam",
@@ -450,7 +468,71 @@
           "open": "Ticket öffnen"
         },
         "devModeTitle": "Nur lokale Entwicklung",
-        "devModeRun": "Erfordert <code>npm run inngest:dev</code> in einem zweiten Terminal."
+        "devModeRun": "Erfordert <code>npm run inngest:dev</code> in einem zweiten Terminal.",
+        "itineraryUnlockHint": "Die Tage werden automatisch an den Reisedaten freigeschaltet.",
+        "devPreviewHint": "Dev-Modus: alle Tage werden als Vorschau angezeigt.",
+        "dayNumberTitle": "Tag {day}",
+        "localGemLabel": "Local Gem:",
+        "tipsCount": "{count, plural, one {# Tipp} other {# Tipps}}",
+        "contentComing": "Der Inhalt dieses Tages ist bald verfügbar.",
+        "lockedContentTitle": "Gesperrter Inhalt",
+        "unlocksIn": "Wird freigeschaltet in",
+        "dayOne": "Tag",
+        "dayOther": "Tagen",
+        "unlocksSoon": "Wird bald freigeschaltet…",
+        "gpsConsent": {
+          "title": "Standort-Erlaubnis",
+          "description": "Um die Vorschläge beim Slot-Tausch zu verbessern, brauchen wir deinen ungefähren Standort. Er wird nicht auf unseren Servern gespeichert und du kannst die Erlaubnis jederzeit widerrufen.",
+          "cancel": "Abbrechen",
+          "accept": "Einverstanden"
+        },
+        "versions": {
+          "heading": "Reiseplan-Versionen",
+          "atMax": "Du hast die maximale Anzahl an Regenerierungen für diese Reise erreicht.",
+          "next": "Nächste: v{version}",
+          "nextFreePrefChange": "kostenlos (Präferenzen geändert)",
+          "nextPaid": "kostenpflichtig",
+          "nextFree": "kostenlos",
+          "freeRegenBadge": "Kostenlose Regenerierung verfügbar"
+        },
+        "prefs": {
+          "styleLabel": "Reisestil",
+          "stylePlaceholder": "z. B. Kunst und Museen, Nachtleben, Entspannung…",
+          "budgetLabel": "Budget",
+          "freeRegenHint": "Wenn du die Präferenzen änderst, ist die nächste Regenerierung kostenlos."
+        },
+        "dayBadge": {
+          "preview": "Vorschau",
+          "locked": "Gesperrt",
+          "unlocked": "Freigeschaltet"
+        },
+        "replaceResult": {
+          "title": "Austausch abgeschlossen",
+          "whyChange": "Warum wir gewechselt haben:",
+          "routeIntegration": "Integration in die Route:",
+          "routeUpdated": "Tagesroute aktualisiert:",
+          "alternatives": "Alternativen in der Nähe"
+        },
+        "restaurants": {
+          "whereToEat": "Wo essen",
+          "lunchDinnerSeparated": "Mittag- und Abendessen getrennt",
+          "optionsCount": "{count, plural, one {# Option} other {# Optionen}}",
+          "reservationRecommended": "Reservierung empfohlen",
+          "walkInOk": "Walk-in ok",
+          "reservationTip": "Reservierungstipp:"
+        },
+        "support": {
+          "title": "Brauchst du Hilfe?",
+          "description": "Wir sind für alle Fragen zu deiner Reise da: Reiseplan, Zahlungen, alles.",
+          "chatPrefill": "Hallo! Ich habe eine Frage zu meiner Reise nach {destination} (ID: {id}).",
+          "liveChat": "Live-Chat öffnen",
+          "promptSubject": "Ticket-Betreff",
+          "promptDetails": "Details hinzufügen (optional)",
+          "ticketSent": "Ticket gesendet! Wir melden uns so schnell wie möglich.",
+          "ticketError": "Ticket konnte nicht gesendet werden",
+          "sending": "Senden…",
+          "openTicket": "Ticket öffnen"
+        }
       },
       "delete": {
         "cancelButton": "Reise stornieren",

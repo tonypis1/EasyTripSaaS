@@ -968,7 +968,9 @@ export function TripDetailClient({
                         <RefreshCw
                           className={`h-4 w-4 ${busy === "gen" ? "animate-spin" : ""}`}
                         />
-                        {busy === "gen" ? td("generating") : td("regenerate")}
+                        {busy === "gen"
+                          ? td("generating.inline")
+                          : td("regenerate")}
                       </button>
                     ) : null}
                     {trip.regen.needsPaidCheckout ? (

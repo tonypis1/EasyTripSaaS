@@ -12,9 +12,9 @@ datasource db {
 
 // ========== ENUM ==========
 enum TripStatus {
-  pending   // in attesa di pagamento/generazione
-  active    // accessibile
-  expired   // access_expires_at superato
+  pending // in attesa di pagamento/generazione
+  active // accessibile
+  expired // access_expires_at superato
   cancelled
 }
 
@@ -25,9 +25,9 @@ enum TripType {
 }
 
 enum PaymentType {
-  purchase    // acquisto viaggio
-  regen       // rigenerazione extra (€1,99)
-  reactivate  // riattivazione accesso post-trip (€2,90)
+  purchase // acquisto viaggio
+  regen // rigenerazione extra (€1,99)
+  reactivate // riattivazione accesso post-trip (€2,90)
 }
 
 enum WebhookProvider {
@@ -41,72 +41,72 @@ enum WebhookProvider {
 /// purpose: account, fatturazione e referral
 /// retention: vita dell’account; cancellazione su richiesta (export API) o retention legale pagamenti
 model User {
-  id                String    @id @default(cuid())
-  clerkUserId       String    @unique @map("clerk_user_id")
-  email             String
-  name              String?
-  creditBalance     Decimal   @default(0) @map("credit_balance") @db.Decimal(10, 2)
-  referralCode      String?   @unique @map("referral_code") // codice univoco per referral (es. ref_a7b3c9)
-  referredBy        String?   @map("referred_by") // referralCode di chi lo ha invitato
-  planType          String?   @map("plan_type") // free | sub
-  subExpiresAt      DateTime? @map("sub_expires_at")
-  stripeCustomerId  String?   @map("stripe_customer_id")
-  totalTrips        Int       @default(0) @map("total_trips")
+  id                   String    @id @default(cuid())
+  clerkUserId          String    @unique @map("clerk_user_id")
+  email                String
+  name                 String?
+  creditBalance        Decimal   @default(0) @map("credit_balance") @db.Decimal(10, 2)
+  referralCode         String?   @unique @map("referral_code") // codice univoco per referral (es. ref_a7b3c9)
+  referredBy           String?   @map("referred_by") // referralCode di chi lo ha invitato
+  planType             String?   @map("plan_type") // free | sub
+  subExpiresAt         DateTime? @map("sub_expires_at")
+  stripeCustomerId     String?   @map("stripe_customer_id")
+  totalTrips           Int       @default(0) @map("total_trips")
   /// Lingua preferita dell'utente (BCP-47 semplificato). Usata per email transazionali e prompt AI quando l'utente è offline.
-  language          String    @default("it") @map("language")
+  language             String    @default("it") @map("language")
   /// Consenso email marketing (nurture, promemoria commerciali). Default false (opt-in esplicito).
-  marketingOptIn    Boolean   @default(false) @map("marketing_opt_in")
-  marketingOptInAt  DateTime? @map("marketing_opt_in_at")
-  welcomeEmailSentAt DateTime? @map("welcome_email_sent_at")
+  marketingOptIn       Boolean   @default(false) @map("marketing_opt_in")
+  marketingOptInAt     DateTime? @map("marketing_opt_in_at")
+  welcomeEmailSentAt   DateTime? @map("welcome_email_sent_at")
   nurtureNoTrip3SentAt DateTime? @map("nurture_no_trip_3_sent_at")
   nurtureNoTrip7SentAt DateTime? @map("nurture_no_trip_7_sent_at")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
-  tripsAsOrganizer  Trip[]           @relation("OrganizerTrips")
+  tripsAsOrganizer  Trip[]          @relation("OrganizerTrips")
   tripMembers       TripMember[]
   credits           Credit[]
   payments          Payment[]
   supportTickets    SupportTicket[]
-  referralsSent     Referral[]       @relation("ReferrerUser")
-  referralsReceived Referral[]       @relation("ReferredUser")
+  referralsSent     Referral[]      @relation("ReferrerUser")
+  referralsReceived Referral[]      @relation("ReferredUser")
 }
 
 /// purpose: generazione e consultazione itinerari, spese di gruppo
 /// retention: soft-delete + hard-delete dopo RETENTION_SOFT_DELETED_TRIP_DAYS; versioni non attive secondo policy Inngest
 model Trip {
-  id              String     @id @default(cuid())
-  organizerId     String     @map("organizer_id")
-  destination     String
-  startDate       DateTime   @map("start_date") @db.Date
-  endDate         DateTime   @map("end_date") @db.Date
-  accessExpiresAt DateTime   @map("access_expires_at") @db.Date
-  tripType        TripType   @map("trip_type")
-  style           String?    // foodie, cultura, ecc.
-  budgetLevel     String     @default("moderate") @map("budget_level") // economy | moderate | premium
-  status          TripStatus @default(pending)
-  regenCount      Int        @default(0) @map("regen_count") // 0..7
-  currentVersion  Int        @default(1) @map("current_version") // carosello
-  usedZones       String?   @map("used_zones") // zone_focus concatenate per rigenera
-  prefChangedAfterGen Boolean @default(false) @map("pref_changed_after_gen")
+  id                  String     @id @default(cuid())
+  organizerId         String     @map("organizer_id")
+  destination         String
+  startDate           DateTime   @map("start_date") @db.Date
+  endDate             DateTime   @map("end_date") @db.Date
+  accessExpiresAt     DateTime   @map("access_expires_at") @db.Date
+  tripType            TripType   @map("trip_type")
+  style               String? // foodie, cultura, ecc.
+  budgetLevel         String     @default("moderate") @map("budget_level") // economy | moderate | premium
+  status              TripStatus @default(pending)
+  regenCount          Int        @default(0) @map("regen_count") // 0..7
+  currentVersion      Int        @default(1) @map("current_version") // carosello
+  usedZones           String?    @map("used_zones") // zone_focus concatenate per rigenera
+  prefChangedAfterGen Boolean    @default(false) @map("pref_changed_after_gen")
   /// Add-on LocalPass: numero di città coperte (€3,99/città in checkout).
-  localPassCityCount Int      @default(0) @map("local_pass_city_count")
-  inviteToken     String?   @unique @map("invite_token") // token unico per link invito gruppo
-  paymentId       String?   @map("payment_id") // Stripe payment/session
-  amountPaid      Decimal?  @map("amount_paid") @db.Decimal(10, 2)
+  localPassCityCount  Int        @default(0) @map("local_pass_city_count")
+  inviteToken         String?    @unique @map("invite_token") // token unico per link invito gruppo
+  paymentId           String?    @map("payment_id") // Stripe payment/session
+  amountPaid          Decimal?   @map("amount_paid") @db.Decimal(10, 2)
   /// Soft-delete lato utente: il record resta in DB (pagamenti, versioni, audit / fiscale).
-  deletedAt       DateTime? @map("deleted_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime?  @map("deleted_at")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
 
-  organizer       User            @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
-  versions        TripVersion[]
-  members         TripMember[]
-  expenses        Expense[]
-  credits         Credit[]        @relation("CreditOrigin")
-  creditsUsed     Credit[]        @relation("CreditUsed")
-  payments        Payment[]
-  supportTickets  SupportTicket[]
+  organizer      User            @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
+  versions       TripVersion[]
+  members        TripMember[]
+  expenses       Expense[]
+  credits        Credit[]        @relation("CreditOrigin")
+  creditsUsed    Credit[]        @relation("CreditUsed")
+  payments       Payment[]
+  supportTickets SupportTicket[]
 }
 
 model TripVersion {
@@ -118,26 +118,31 @@ model TripVersion {
   geoScore    Decimal? @map("geo_score") @db.Decimal(3, 1) // 1-10
   userRating  Int?     @map("user_rating") // 1-5
 
-  trip  Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  days  Day[]
+  trip Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  days Day[]
+
+  // Garantisce che non possano esistere due righe con lo stesso (trip, versionNum).
+  // Protegge da race condition / retry Inngest in cui versionNum era derivato da
+  // trip.regenCount + 1 senza atomicità. Vedi `dedupe-trip-versions.mjs`.
+  @@unique([tripId, versionNum])
 }
 
 model Day {
-  id             String   @id @default(cuid())
-  tripVersionId  String   @map("trip_version_id")
-  dayNumber      Int      @map("day_number")
-  unlockDate     DateTime @map("unlock_date") @db.Date
-  title          String?
-  morning        String?  // JSON attività
-  afternoon      String?
-  evening        String?
-  restaurants    String?  // JSON
-  mapCenterLat   Decimal? @map("map_center_lat") @db.Decimal(10, 7)
-  mapCenterLng   Decimal? @map("map_center_lng") @db.Decimal(10, 7)
-  zoneFocus      String?  @map("zone_focus") // per used_zones rigenera
-  dowWarning     String?  @map("dow_warning") // day-of-week avvisi
-  localGem       String?  @map("local_gem")
-  tips           String?
+  id            String   @id @default(cuid())
+  tripVersionId String   @map("trip_version_id")
+  dayNumber     Int      @map("day_number")
+  unlockDate    DateTime @map("unlock_date") @db.Date
+  title         String?
+  morning       String? // JSON attività
+  afternoon     String?
+  evening       String?
+  restaurants   String? // JSON
+  mapCenterLat  Decimal? @map("map_center_lat") @db.Decimal(10, 7)
+  mapCenterLng  Decimal? @map("map_center_lng") @db.Decimal(10, 7)
+  zoneFocus     String?  @map("zone_focus") // per used_zones rigenera
+  dowWarning    String?  @map("dow_warning") // day-of-week avvisi
+  localGem      String?  @map("local_gem")
+  tips          String?
 
   tripVersion TripVersion @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
 }
@@ -146,7 +151,7 @@ model TripMember {
   id        String   @id @default(cuid())
   tripId    String   @map("trip_id")
   userId    String   @map("user_id")
-  role      String   // org | member
+  role      String // org | member
   balance   Decimal  @default(0) @db.Decimal(10, 2) // positivo = deve ricevere, negativo = deve dare
   totalPaid Decimal  @default(0) @map("total_paid") @db.Decimal(10, 2) // totale pagato per spese condivise
   joinedAt  DateTime @default(now()) @map("joined_at")
@@ -182,32 +187,32 @@ model Expense {
 }
 
 model Payment {
-  id            String      @id @default(cuid())
-  userId        String      @map("user_id")
-  tripId        String?     @map("trip_id")
-  type          PaymentType
-  stripePaymentId String?  @map("stripe_payment_id")
-  amount        Decimal     @db.Decimal(10, 2)
-  createdAt     DateTime    @default(now()) @map("created_at")
+  id              String      @id @default(cuid())
+  userId          String      @map("user_id")
+  tripId          String?     @map("trip_id")
+  type            PaymentType
+  stripePaymentId String?     @map("stripe_payment_id")
+  amount          Decimal     @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   trip Trip? @relation(fields: [tripId], references: [id], onDelete: SetNull)
 }
 
 model Credit {
-  id           String    @id @default(cuid())
-  userId       String    @map("user_id")
-  amount       Decimal   @db.Decimal(10, 2)
-  originTripId  String?   @map("origin_trip_id")
-  expiresAt     DateTime  @map("expires_at")
-  used          Boolean   @default(false)
-  usedOnTripId  String?   @map("used_on_trip_id")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  amount       Decimal  @db.Decimal(10, 2)
+  originTripId String?  @map("origin_trip_id")
+  expiresAt    DateTime @map("expires_at")
+  used         Boolean  @default(false)
+  usedOnTripId String?  @map("used_on_trip_id")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  originTrip  Trip?      @relation("CreditOrigin", fields: [originTripId], references: [id], onDelete: SetNull)
-  usedOnTrip  Trip?      @relation("CreditUsed", fields: [usedOnTripId], references: [id], onDelete: SetNull)
-  referrals   Referral[]
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originTrip Trip?      @relation("CreditOrigin", fields: [originTripId], references: [id], onDelete: SetNull)
+  usedOnTrip Trip?      @relation("CreditUsed", fields: [usedOnTripId], references: [id], onDelete: SetNull)
+  referrals  Referral[]
 }
 
 // ========== SUPPORTO ==========
@@ -226,16 +231,16 @@ enum TicketChannel {
 }
 
 model SupportTicket {
-  id          String       @id @default(cuid())
-  userId      String       @map("user_id")
-  tripId      String?      @map("trip_id")
-  channel     TicketChannel @default(in_app)
-  status      TicketStatus  @default(open)
-  subject     String
-  crispSessionId String?   @map("crisp_session_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  resolvedAt  DateTime?    @map("resolved_at")
+  id             String        @id @default(cuid())
+  userId         String        @map("user_id")
+  tripId         String?       @map("trip_id")
+  channel        TicketChannel @default(in_app)
+  status         TicketStatus  @default(open)
+  subject        String
+  crispSessionId String?       @map("crisp_session_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  resolvedAt     DateTime?     @map("resolved_at")
 
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   trip     Trip?            @relation(fields: [tripId], references: [id], onDelete: SetNull)
@@ -247,7 +252,7 @@ model SupportTicket {
 model SupportMessage {
   id        String   @id @default(cuid())
   ticketId  String   @map("ticket_id")
-  sender    String   // "user" | "agent" | "system"
+  sender    String // "user" | "agent" | "system"
   body      String   @db.Text
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -259,21 +264,21 @@ model SupportMessage {
 // ========== REFERRAL ==========
 
 enum ReferralStatus {
-  pending     // link condiviso, nessuna azione
-  signed_up   // l'invitato si è registrato
-  converted   // l'invitato ha pagato il primo trip
+  pending // link condiviso, nessuna azione
+  signed_up // l'invitato si è registrato
+  converted // l'invitato ha pagato il primo trip
 }
 
 model Referral {
-  id              String         @id @default(cuid())
-  referrerId      String         @map("referrer_id")
-  referredUserId  String?        @map("referred_user_id")
-  referredEmail   String         @map("referred_email")
-  status          ReferralStatus @default(pending)
-  rewardGranted   Boolean        @default(false) @map("reward_granted")
-  rewardCreditId  String?        @map("reward_credit_id")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  convertedAt     DateTime?      @map("converted_at")
+  id             String         @id @default(cuid())
+  referrerId     String         @map("referrer_id")
+  referredUserId String?        @map("referred_user_id")
+  referredEmail  String         @map("referred_email")
+  status         ReferralStatus @default(pending)
+  rewardGranted  Boolean        @default(false) @map("reward_granted")
+  rewardCreditId String?        @map("reward_credit_id")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  convertedAt    DateTime?      @map("converted_at")
 
   referrer     User    @relation("ReferrerUser", fields: [referrerId], references: [id], onDelete: Cascade)
   referredUser User?   @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: SetNull)

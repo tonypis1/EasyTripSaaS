@@ -27,3 +27,12 @@ export const createReactivateCheckoutSchema = z.object({
 export type CreateReactivateCheckoutInput = z.infer<
   typeof createReactivateCheckoutSchema
 >;
+
+export const createSubscriptionCheckoutSchema = z.object({
+  successUrl: z.string().url().optional(),
+  cancelUrl: z.string().url().optional(),
+});
+
+export type CreateSubscriptionCheckoutInput = z.infer<
+  typeof createSubscriptionCheckoutSchema
+>;

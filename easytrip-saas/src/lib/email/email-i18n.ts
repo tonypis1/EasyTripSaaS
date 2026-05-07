@@ -772,11 +772,11 @@ const DICT: EmailDict = {
     de: "Gute Nachrichten! <strong>{email}</strong> hat sich über deinen Einladungslink bei EasyTrip angemeldet.",
   },
   "referralSignup.reward": {
-    it: "Quando acquisterà il primo viaggio, riceverai automaticamente <strong>€9,99 di credito</strong> (= 1 trip gratis!) sul tuo account.",
-    en: "When they buy their first trip, you'll automatically receive <strong>€9.99 credit</strong> (= 1 free trip!) in your account.",
-    es: "Cuando compre su primer viaje, recibirás automáticamente <strong>9,99 € de crédito</strong> (= ¡1 viaje gratis!) en tu cuenta.",
-    fr: "Lorsqu'il achètera son premier voyage, vous recevrez automatiquement <strong>9,99 € de crédit</strong> (= 1 voyage gratuit !) sur votre compte.",
-    de: "Wenn er seine erste Reise kauft, erhältst du automatisch <strong>9,99 € Guthaben</strong> (= 1 Gratisreise!) auf deinem Konto.",
+    it: "Quando acquisterà il primo viaggio, riceverai automaticamente <strong>€3,99 di credito</strong> (= 1 trip Solo/Coppia gratis!) sul tuo account.",
+    en: "When they buy their first trip, you'll automatically receive <strong>€3.99 credit</strong> (= 1 free Solo/Couple trip!) in your account.",
+    es: "Cuando compre su primer viaje, recibirás automáticamente <strong>3,99 € de crédito</strong> (= ¡1 viaje Solo/Pareja gratis!) en tu cuenta.",
+    fr: "Lorsqu'il achètera son premier voyage, vous recevrez automatiquement <strong>3,99 € de crédit</strong> (= 1 voyage Solo/Duo gratuit !) sur votre compte.",
+    de: "Wenn er seine erste Reise kauft, erhältst du automatisch <strong>3,99 € Guthaben</strong> (= 1 kostenloser Solo/Paar-Trip!) auf deinem Konto.",
   },
   "referralSignup.cta": {
     it: "Vedi i tuoi inviti",

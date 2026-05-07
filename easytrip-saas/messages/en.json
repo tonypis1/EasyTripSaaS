@@ -141,7 +141,7 @@
         "solo": {
           "name": "Solo / Couple Trip",
           "badge": "Core",
-          "priceDisplay": "€9.99/trip",
+          "priceDisplay": "€3.99/trip",
           "desc": "TripGenius basics, 1–2 people.",
           "feature1": "Daily progressive unlock",
           "feature2": "Geographically optimized itinerary",
@@ -153,7 +153,7 @@
         "group": {
           "name": "Group Trip (3–5 people)",
           "badge": "PackedUp",
-          "priceDisplay": "€14.99/trip",
+          "priceDisplay": "€6.99/trip",
           "desc": "TripGenius + PackedUp. A group that already splits the bill.",
           "feature1": "Shared itinerary",
           "feature2": "Automatic expense splitting",
@@ -164,13 +164,14 @@
         "frequent": {
           "name": "Frequent traveler",
           "badge": "Subscription",
-          "priceDisplay": "€14.99/month",
+          "priceDisplay": "€6.99/month",
           "desc": "Unlimited solo/couple trips for 1 month.",
           "feature1": "Ideal if you travel often",
           "feature2": "Less time spent re-planning",
           "feature3": "Consistent with prices shown at checkout",
           "feature4": "LocalPass add-on: +€3.99 per city (insider, hidden gems)",
-          "cta": "Sign up and explore the plans →"
+          "cta": "Sign up and explore the plans →",
+          "checkoutError": "Unable to start checkout. Please try again later."
         }
       },
       "addon": {
@@ -250,6 +251,14 @@
     },
     "privacyPage": {
       "marketingOptIn": "I agree to receive marketing and onboarding emails from {appName}"
+    },
+    "subscribeBridge": {
+      "loadingTitle": "Opening secure payment…",
+      "loadingBody": "You'll be redirected to Stripe to complete the subscription.",
+      "errorTitle": "We couldn't start the payment",
+      "errorBodyDefault": "Please try again in a few minutes. If the issue persists, contact support.",
+      "retryCta": "Try again",
+      "backToHome": "Back to home"
     },
     "privacyDelete": {
       "sectionTitle": "Delete account",
@@ -350,7 +359,12 @@
         "savePrefs": "Save preferences",
         "saving": "Saving…",
         "regenerate": "Regenerate itinerary",
-        "generating": "Generating…",
+        "generating": {
+          "inline": "Generating…",
+          "title": "We're crafting your itinerary",
+          "description": "It usually takes 1–2 minutes. You can wait on this page or come back later: it will refresh automatically when it's ready.",
+          "refreshNow": "Refresh now"
+        },
         "redirecting": "Redirecting…",
         "regenerateWithCost": "Regenerate (€1.99)",
         "gpsUse": "Use GPS",
@@ -383,6 +397,10 @@
         "expenses": {
           "title": "Expense split",
           "subtitle": "Log expenses and see who owes what to whom"
+        },
+        "booking": {
+          "title": "Book a stay in {destination}",
+          "subtitle": "Find hotels and B&Bs for your trip dates on Booking.com"
         },
         "budget": {
           "economy": "Economy",
@@ -450,7 +468,71 @@
           "open": "Open ticket"
         },
         "devModeTitle": "Local development only",
-        "devModeRun": "Requires <code>npm run inngest:dev</code> in a second terminal."
+        "devModeRun": "Requires <code>npm run inngest:dev</code> in a second terminal.",
+        "itineraryUnlockHint": "Days unlock automatically on the dates of your trip.",
+        "devPreviewHint": "Dev mode: all days are shown as preview.",
+        "dayNumberTitle": "Day {day}",
+        "localGemLabel": "Local gem:",
+        "tipsCount": "{count, plural, one {# tip} other {# tips}}",
+        "contentComing": "The content for this day will be available soon.",
+        "lockedContentTitle": "Locked content",
+        "unlocksIn": "Unlocks in",
+        "dayOne": "day",
+        "dayOther": "days",
+        "unlocksSoon": "Unlocking soon…",
+        "gpsConsent": {
+          "title": "Location permission",
+          "description": "To improve suggestions when you swap a slot, we need your approximate location. It is not stored on our servers and you can revoke consent anytime.",
+          "cancel": "Cancel",
+          "accept": "I agree"
+        },
+        "versions": {
+          "heading": "Itinerary versions",
+          "atMax": "You've reached the maximum number of regenerations for this trip.",
+          "next": "Next: v{version}",
+          "nextFreePrefChange": "free (preferences changed)",
+          "nextPaid": "paid",
+          "nextFree": "free",
+          "freeRegenBadge": "Free regen available"
+        },
+        "prefs": {
+          "styleLabel": "Travel style",
+          "stylePlaceholder": "e.g. art and museums, nightlife, relax…",
+          "budgetLabel": "Budget",
+          "freeRegenHint": "If you change preferences, the next regeneration will be free."
+        },
+        "dayBadge": {
+          "preview": "Preview",
+          "locked": "Locked",
+          "unlocked": "Unlocked"
+        },
+        "replaceResult": {
+          "title": "Swap completed",
+          "whyChange": "Why we changed it:",
+          "routeIntegration": "Route integration:",
+          "routeUpdated": "Day route updated:",
+          "alternatives": "Nearby alternatives"
+        },
+        "restaurants": {
+          "whereToEat": "Where to eat",
+          "lunchDinnerSeparated": "Lunch and dinner separated",
+          "optionsCount": "{count, plural, one {# option} other {# options}}",
+          "reservationRecommended": "Reservation recommended",
+          "walkInOk": "Walk-in OK",
+          "reservationTip": "Booking tip:"
+        },
+        "support": {
+          "title": "Need help?",
+          "description": "We're here for any question about your trip: itinerary, payments, anything.",
+          "chatPrefill": "Hi! I have a question about my trip to {destination} (id: {id}).",
+          "liveChat": "Open live chat",
+          "promptSubject": "Ticket subject",
+          "promptDetails": "Add details (optional)",
+          "ticketSent": "Ticket sent! We'll get back to you as soon as possible.",
+          "ticketError": "Failed to send ticket",
+          "sending": "Sending…",
+          "openTicket": "Open a ticket"
+        }
       },
       "delete": {
         "cancelButton": "Cancel trip",

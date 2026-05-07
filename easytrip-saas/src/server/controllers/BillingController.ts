@@ -4,6 +4,7 @@ import {
   createCheckoutSchema,
   createRegenCheckoutSchema,
   createReactivateCheckoutSchema,
+  createSubscriptionCheckoutSchema,
 } from "@/server/validators/billing.schema";
 import { AppError } from "@/server/errors/AppError";
 
@@ -62,6 +63,31 @@ export class BillingController extends BaseController {
         );
       }
       return this.fail(error, "BillingController.createReactivateCheckout");
+    }
+  }
+
+  /**
+   * POST /api/billing/subscribe
+   * Crea una Stripe Checkout Session in modalità `subscription` per il piano
+   * "Viaggiatore Frequente" (€6,99/mese). Il body è opzionale: senza param
+   * l'utente verrà rimandato a `/app?subscribe=success|cancel`.
+   */
+  async createSubscriptionCheckout(req: Request) {
+    try {
+      const text = await req.text();
+      const parsedBody = text.trim().length > 0 ? JSON.parse(text) : {};
+      const input = createSubscriptionCheckoutSchema.parse(parsedBody);
+      const session =
+        await this.billingService.createSubscriptionCheckoutSession(input);
+      return this.ok(session, 201);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return this.fail(
+          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
+          "BillingController.createSubscriptionCheckout",
+        );
+      }
+      return this.fail(error, "BillingController.createSubscriptionCheckout");
     }
   }
 

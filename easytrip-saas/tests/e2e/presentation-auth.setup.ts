@@ -24,6 +24,11 @@ function isBindingAbortError(message: string): boolean {
 
 /**
  * Firefox: dopo redirect Clerk il `goto` può fallire con NS_BINDING_ABORTED anche se la navigazione è comunque finita.
+ *
+ * Il timeout è parametrizzabile perché in dev mode con Webpack la prima
+ * compilazione di rotte App Router pesanti (es. `/[locale]/app`) può
+ * superare i 90s su Windows; per quelle navigazioni il chiamante può
+ * passare un timeout più ampio.
  */
 async function gotoWithBindingRetry(
   page: Page,
@@ -31,14 +36,16 @@ async function gotoWithBindingRetry(
   options: {
     acceptablePath?: (pathname: string) => boolean;
     retries?: number;
+    timeout?: number;
   } = {},
 ) {
   const retries = options.retries ?? 4;
+  const timeout = options.timeout ?? 90_000;
   const acceptablePath = options.acceptablePath;
   let last: unknown;
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90_000 });
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout });
       return;
     } catch (e) {
       last = e;
@@ -84,8 +91,14 @@ function throwIfForeignAuthHost(page: Page): void {
 }
 
 async function gotoItalianAppDashboard(page: Page) {
+  /*
+   * Timeout 180s: copre sia il caso normale (rotta già compilata dal warm-up)
+   * sia eventuali ricompilazioni HMR scatenate da modifiche al codice durante
+   * la sessione di sviluppo.
+   */
   await gotoWithBindingRetry(page, "/it/app", {
     acceptablePath: isItalianAppPath,
+    timeout: 180_000,
   });
 }
 
@@ -112,6 +125,27 @@ setup("clerk session → e2e/.auth/user.json", async ({ page }) => {
   }
 
   await clerkSetup();
+
+  /*
+   * Warm-up cold-compile di `/it/app`.
+   *
+   * In `next dev --webpack` la prima compilazione di una rotta pesante
+   * (App Router + Clerk + Prisma + Leaflet + next-intl) può superare i
+   * 90s su Windows, facendo timeoutare il `gotoItalianAppDashboard` post
+   * sign-in. Qui forziamo Next a compilare la rotta server-side: senza
+   * sessione, il middleware Clerk farà redirect a `/sign-in`, ma a quel
+   * punto i moduli server di `/[locale]/app` sono già in cache. Non ci
+   * importa l'esito (best-effort): accettiamo qualsiasi pathname finale.
+   */
+  try {
+    await gotoWithBindingRetry(page, "/it/app", {
+      acceptablePath: () => true,
+      retries: 1,
+      timeout: 240_000,
+    });
+  } catch {
+    /* Best-effort: se il warm-up fallisce proseguiamo lo stesso. */
+  }
 
   await gotoWithBindingRetry(page, "/it", {
     acceptablePath: isItalianLocalePath,

@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { SectionContainer } from "./section-container";
 import { SignupCtaButton } from "./signup-cta";
+import { SubscribeCtaButton } from "./subscribe-cta";
 
 type PlanKey = "solo" | "group" | "frequent";
 
@@ -8,6 +9,7 @@ const PLAN_KEYS: PlanKey[] = ["solo", "group", "frequent"];
 
 export function PricingSection() {
   const t = useTranslations("home.pricing");
+  const subscribeError = t("plans.frequent.checkoutError");
 
   const plans = PLAN_KEYS.map((key) => ({
     key,
@@ -81,15 +83,28 @@ export function PricingSection() {
               </ul>
 
               <div className="mt-6">
-                <SignupCtaButton
-                  className={`inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition ${
-                    highlighted
-                      ? "bg-et-accent text-et-accent-ink hover:bg-et-accent/88"
-                      : "border-et-ink/14 bg-et-card text-et-ink hover:bg-et-ink/[0.06] border"
-                  }`}
-                >
-                  {plan.cta}
-                </SignupCtaButton>
+                {plan.key === "frequent" ? (
+                  <SubscribeCtaButton
+                    className={`inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition ${
+                      highlighted
+                        ? "bg-et-accent text-et-accent-ink hover:bg-et-accent/88"
+                        : "border-et-ink/14 bg-et-card text-et-ink hover:bg-et-ink/[0.06] border"
+                    }`}
+                    errorLabel={subscribeError}
+                  >
+                    {plan.cta}
+                  </SubscribeCtaButton>
+                ) : (
+                  <SignupCtaButton
+                    className={`inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition ${
+                      highlighted
+                        ? "bg-et-accent text-et-accent-ink hover:bg-et-accent/88"
+                        : "border-et-ink/14 bg-et-card text-et-ink hover:bg-et-ink/[0.06] border"
+                    }`}
+                  >
+                    {plan.cta}
+                  </SignupCtaButton>
+                )}
               </div>
 
               {highlighted ? (

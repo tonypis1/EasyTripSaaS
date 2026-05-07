@@ -1,16 +1,8 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { Link } from "@/i18n/navigation";
-
-function useIsClient() {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
+import { useIsClient } from "@/lib/hooks/use-is-client";
 
 export function AppHeaderUserSection({
   reservedAreaLabel,
