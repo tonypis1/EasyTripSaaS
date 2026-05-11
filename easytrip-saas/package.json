@@ -70,7 +70,7 @@
     "zod": "^3"
   },
   "devDependencies": {
-    "@clerk/testing": "^2.0.11",
+    "@clerk/testing": "^2.0.21",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
