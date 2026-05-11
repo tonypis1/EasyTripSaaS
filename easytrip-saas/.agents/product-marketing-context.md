@@ -1,6 +1,6 @@
 # Product Marketing Context — EasyTripSaaS
 
-*Last updated: 2026-05-09*
+_Last updated: 2026-05-09_
 
 ---
 
@@ -19,6 +19,7 @@ Travel planning SaaS — "generatore di itinerari AI" (come i viaggiatori lo cer
 SaaS web-app (Next.js responsive, no app nativa)
 
 **Business model:**
+
 - Pay-per-trip: €3,99 (solo/coppia) · €6,99 (gruppo 3–5 persone)
 - Abbonamento: €6,99/mese (trip solo/coppia illimitati)
 - Add-on: LocalPass €3,99/città (contenuti insider locali)
@@ -34,6 +35,7 @@ SaaS web-app (Next.js responsive, no app nativa)
 Viaggiatori italiani/europei digitali, 25–45 anni, abituati a fare acquisti online, che pianificano weekend o soggiorni brevi (2–5+ giorni) in Europa.
 
 **Profili principali:**
+
 - Viaggiatore frequente solo o in coppia (piano core €3,99 o abbonamento €6,99/mese)
 - Organizzatore di piccoli gruppi (3–5 amici, piano gruppo €6,99)
 - "Anti-tourista" (cerca esperienze locali autentiche, non trappole per turisti → LocalPass)
@@ -45,11 +47,13 @@ Chi prenota e paga (coincide con l'utente finale); in contesto gruppo, l'organiz
 Pianificare velocemente un weekend o una breve trasferta senza sprecare ore su Google, blog e forum.
 
 **Jobs to be done:**
+
 1. "Dimmi dove andare e cosa fare, giorno per giorno, senza che io ci perda ore."
 2. "Aiutami a organizzare un viaggio con gli amici senza caos su spese e decisioni."
 3. "Portami nei posti dove vanno davvero le persone del posto, non le trappole turistiche."
 
 **Use cases:**
+
 - Weekend a Lisbona da soli / in coppia → piano AI in 30 sec, mappa ottimizzata, sblocco giorno per giorno
 - Gita di gruppo a Barcellona (4 amici) → itinerario condiviso, split spese automatico, ogni membro vede lo stesso sblocco
 - "Insider experience" a Roma → LocalPass add-on per gemme nascoste non presenti sulle guide
@@ -58,12 +62,12 @@ Pianificare velocemente un weekend o una breve trasferta senza sprecare ore su G
 
 ## Personas
 
-| Persona | Cares about | Challenge | Value we promise |
-|---------|-------------|-----------|------------------|
-| Viaggiatore frequente (solo/coppia) | Risparmio di tempo, qualità dell'esperienza | Perde 8 ore a pianificare ogni viaggio | Piano in 30 secondi, ottimizzato e aggiornabile |
-| Organizzatore di gruppo | Coordinamento, equità nelle spese | Decidere con 4+ persone è peggio che lavorare | Itinerario condiviso + split spese automatico |
-| Anti-turista | Autenticità, esperienze locali | Finisce sempre nelle trappole per turisti | LocalPass: insider content, gemme nascoste |
-| Abbonato frequente | Convenienza, viaggi frequenti | Ripianificare ogni volta costo e tempo | €6,99/mese, trip illimitati |
+| Persona                             | Cares about                                 | Challenge                                     | Value we promise                                |
+| ----------------------------------- | ------------------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| Viaggiatore frequente (solo/coppia) | Risparmio di tempo, qualità dell'esperienza | Perde 8 ore a pianificare ogni viaggio        | Piano in 30 secondi, ottimizzato e aggiornabile |
+| Organizzatore di gruppo             | Coordinamento, equità nelle spese           | Decidere con 4+ persone è peggio che lavorare | Itinerario condiviso + split spese automatico   |
+| Anti-turista                        | Autenticità, esperienze locali              | Finisce sempre nelle trappole per turisti     | LocalPass: insider content, gemme nascoste      |
+| Abbonato frequente                  | Convenienza, viaggi frequenti               | Ripianificare ogni volta costo e tempo        | €6,99/mese, trip illimitati                     |
 
 ---
 
@@ -73,6 +77,7 @@ Pianificare velocemente un weekend o una breve trasferta senza sprecare ore su G
 Pianificare un viaggio breve richiede 8+ ore su Google, blog, TripAdvisor e forum, per ottenere un piano che resta comunque statico e non si adatta a cosa succede giorno per giorno.
 
 **Why alternatives fall short:**
+
 - Google Maps/Trip → generico, nessuna personalizzazione, nessuna logica temporale
 - PDF/blog di itinerari → statici, non aggiornabili, non adattativi
 - TripAdvisor → pieni di trappole per turisti, contenuti pagati
@@ -80,6 +85,7 @@ Pianificare un viaggio breve richiede 8+ ore su Google, blog, TripAdvisor e foru
 - ChatGPT gratis → non genera un piano strutturato e progressivo, non ha mappe, non gestisce spese
 
 **What it costs them:**
+
 - Tempo: 4–8 ore di ricerca per ogni viaggio
 - Denaro: booking sbagliati, ristoranti "da turista", esperienze deludenti
 - Stress: coordinamento di gruppo (votazioni, spese, chi organizza cosa)
@@ -92,15 +98,18 @@ Pianificare un viaggio breve richiede 8+ ore su Google, blog, TripAdvisor e foru
 ## Competitive Landscape
 
 **Direct competitors:**
+
 - Wanderlog — pianificatore collaborativo, ma manuale e senza AI generativa
 - TripIt — aggregatore di prenotazioni, non genera piani
 - Roadtrippers — focus road trip US, non itinerari AI europei
 
 **Secondary competitors:**
+
 - ChatGPT / Claude.ai free — genera testo, ma niente mappa, niente sblocco progressivo, niente pagamenti, niente gruppo
 - Google Gemini Travel — integrazione Google Maps, ma niente esperienza temporale progressiva
 
 **Indirect competitors:**
+
 - Blog / influencer di viaggio — contenuti statici, non personalizzati
 - Agenzie di viaggio online (Booking, Airbnb Experiences) — prenotano, non pianificano
 
@@ -112,6 +121,7 @@ Nessuno combina: generazione AI + sblocco progressivo + geo-optimization + group
 ## Differentiation
 
 **Key differentiators:**
+
 1. **Sblocco giornaliero progressivo** — il giorno 2 si sblocca solo il giorno 2. Non è un PDF da leggere tutto subito: è un sistema che vive con il viaggio.
 2. **Generazione in 30 secondi** — non è una lista di link, è un piano strutturato JSON validato, ottimizzato geograficamente.
 3. **Rigenerazione con carosello** — 3 gratis → 7 max → carosello: scegli il migliore senza ansia.
@@ -132,16 +142,17 @@ L'engagement è costruito nel prodotto stesso (sblocco giornaliero → l'utente 
 
 ## Objections
 
-| Objection | Response |
-|-----------|----------|
+| Objection                                         | Response                                                                                                                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | "Non posso vedere tutto l'itinerario in anticipo" | È la feature, non il bug: il giorno 2 si sblocca il giorno 2 perché l'esperienza è pensata per essere vissuta, non collezionata come un PDF. |
-| "E se l'AI sbaglia qualcosa?" | 3 rigenerazioni gratis (poi €1,99 fino a 7 max). Il carosello ti permette di scegliere il migliore senza ansia. |
-| "Non ho connessione sempre" | Il piano sbloccato è consultabile offline. Solo generazione e live suggest richiedono rete. |
-| "È caro per un weekend" | €3,99 = meno di un cappuccino all'aeroporto. Confrontalo con le ore che ci metti a pianificare da solo. |
-| "Cancellazione?" | Credito valido 1 anno. I contenuti sono fatti per essere vissuti, non per essere collezionati. |
-| "Come faccio a fidarmi dei contenuti LocalPass?" | Curati da insider locali, non da algoritmi o advertorial. Gemme nascoste ≠ TripAdvisor top 10. |
+| "E se l'AI sbaglia qualcosa?"                     | 3 rigenerazioni gratis (poi €1,99 fino a 7 max). Il carosello ti permette di scegliere il migliore senza ansia.                              |
+| "Non ho connessione sempre"                       | Il piano sbloccato è consultabile offline. Solo generazione e live suggest richiedono rete.                                                  |
+| "È caro per un weekend"                           | €3,99 = meno di un cappuccino all'aeroporto. Confrontalo con le ore che ci metti a pianificare da solo.                                      |
+| "Cancellazione?"                                  | Credito valido 1 anno. I contenuti sono fatti per essere vissuti, non per essere collezionati.                                               |
+| "Come faccio a fidarmi dei contenuti LocalPass?"  | Curati da insider locali, non da algoritmi o advertorial. Gemme nascoste ≠ TripAdvisor top 10.                                               |
 
 **Anti-persona:**
+
 - Chi pianifica viaggi di 2–3 settimane (l'MVP è ottimizzato per 2–5+ giorni, non per tour lunghi)
 - Chi non vuole pagare nulla e si accontenta di ChatGPT gratis
 - Chi vuole un'app nativa iOS/Android (è web-only per ora)
@@ -151,22 +162,26 @@ L'engagement è costruito nel prodotto stesso (sblocco giornaliero → l'utente 
 ## Switching Dynamics
 
 **Push (cosa li allontana dall'alternativa attuale):**
+
 - "Perdo 8 ore a pianificare ogni viaggio"
 - Blog e guide turistiche portano sempre negli stessi posti da turista
 - Coordinare spese e decisioni in un gruppo è estenuante
 
 **Pull (cosa li attrae verso EasyTripSaaS):**
+
 - Piano in 30 secondi
 - Sblocco progressivo = engagement quotidiano durante il viaggio
 - Split spese automatico = nessuna litigata post-viaggio
 - LocalPass = esperienze autentiche, non tourist trap
 
 **Habit (cosa li tiene fermi con l'alternativa):**
+
 - "Uso Google Maps da sempre"
 - "Ho già i miei blog preferiti di viaggi"
 - Abitudine a pianificare manualmente anche se richiede ore
 
 **Anxiety (cosa li preoccupa nel cambiare):**
+
 - "E se l'itinerario non è buono?" → rigenerazioni
 - "Non vedo tutto il piano subito" → è la feature, spiegata nella FAQ
 - "Devo dare la carta per €3,99?" → Stripe hosted, sicuro e familiare
@@ -176,19 +191,23 @@ L'engagement è costruito nel prodotto stesso (sblocco giornaliero → l'utente 
 ## Customer Language
 
 **How they describe the problem:**
+
 - "Perdo 8 ore a pianificare ogni viaggio. Voglio solo dire dove vado e avere un piano che funziona."
 - "Organizzare un viaggio in cinque è peggio che lavorare: votazioni, spese, chi prenota cosa."
 - "Spesso finisco in trappole per turisti. Voglio sapere dove vanno davvero le persone del posto."
 
 **How they describe the solution:**
+
 - "Hai detto dove vai → hai il piano" (aspirazionale)
 - "Un piano che si sblocca giorno per giorno, non un PDF da leggere tutto in anticipo"
 - "Come avere un amico del posto che ti dice dove andare davvero"
 
 **Words to use:**
+
 - itinerario, piano, sblocco, viaggio breve, weekend, gemme nascoste, insider, ottimizzato, generato in 30 secondi, rigenerazione, carosello, split spese, gruppo
 
 **Words to avoid:**
+
 - "soluzione" (vago), "piattaforma" (freddo), "innovative" (abusato), "streamline", "optimized workflow" (corporate speak)
 - Mai "PDF" in positivo — siamo l'opposto di un PDF
 
@@ -215,6 +234,7 @@ Diretto, concreto, leggermente ironico. Come un amico che viaggia molto e ti dic
 Frasi brevi. Niente perifrasi. Confronti reali ("meno di un cappuccino all'aeroporto"). Umorismo sottile ma non forzato. Titoli provocatori che anticipano l'obiezione ("Risposte rapide, prima che tu ci ripensi", "Le frasi che senti prima di comprare").
 
 **Personality:**
+
 - Pratico
 - Honest (dice anche i limiti: "serve connessione per la generazione")
 - Un po' sfacciato (sa che il prodotto funziona e non si scusa)
@@ -225,6 +245,7 @@ Frasi brevi. Niente perifrasi. Confronti reali ("meno di un cappuccino all'aerop
 ## Proof Points
 
 **Metrics:**
+
 - Generazione itinerario: ~30 secondi
 - Rigenerazioni disponibili: 3 gratis → 7 max (poi carosello)
 - Prezzi: €3,99 solo/coppia · €6,99 gruppo · €6,99/mese abbonamento
@@ -235,6 +256,7 @@ Frasi brevi. Niente perifrasi. Confronti reali ("meno di un cappuccino all'aerop
 MVP — nessun logo pubblico ancora.
 
 **Testimonials (da user research, non verificati pubblicamente):**
+
 > "Perdo 8 ore a pianificare ogni viaggio. Voglio solo dire dove vado e avere un piano che funziona." — Viaggiatore frequente
 
 > "Organizzare un viaggio in cinque è peggio che lavorare: votazioni, spese, chi prenota cosa." — Organizzatore gruppo 3-5 amici
@@ -258,6 +280,7 @@ MVP — nessun logo pubblico ancora.
 Acquisire i primi utenti paganti (Italia/Europa), validare il modello pay-per-trip, e crescere verso l'abbonamento "Viaggiatore Frequente" come MRR stabile.
 
 **Conversion action:**
+
 1. Registrazione (Clerk) → free
 2. Creazione trip → compilazione form
 3. Pagamento (Stripe) → €3,99 o €6,99
