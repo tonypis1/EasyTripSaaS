@@ -26,8 +26,33 @@ function clerkAccountPortalOrigin(): string | null {
   }
 }
 
-function buildContentSecurityPolicy(portalOrigin: string | null): string {
+/**
+ * Origine HTTPS opzionale del Frontend API Clerk in produzione.
+ * In produzione Clerk serve `clerk-js` da un sottodominio dedicato del tuo
+ * sito (CNAME → Clerk), ad es. `https://clerk.easytripsaas.com`. Quel dominio
+ * NON corrisponde a `*.clerk.com`, quindi senza questa env var la CSP blocca
+ * lo script e il client mostra `failed_to_load_clerk_js_timeout`.
+ *
+ * Imposta `NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN` su Vercel (production) col
+ * valore mostrato in Clerk Dashboard → Configure → Domains → Frontend API.
+ */
+function clerkFrontendApiOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN?.trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" ? u.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildContentSecurityPolicy(
+  portalOrigin: string | null,
+  frontendApiOrigin: string | null,
+): string {
   const portal = portalOrigin ? [portalOrigin] : [];
+  const frontendApi = frontendApiOrigin ? [frontendApiOrigin] : [];
 
   return [
     "default-src 'self'",
@@ -47,6 +72,7 @@ function buildContentSecurityPolicy(portalOrigin: string | null): string {
       "https://eu-assets.i.posthog.com",
       "https://us-assets.i.posthog.com",
       ...portal,
+      ...frontendApi,
     ].join(" "),
     [
       "style-src 'self' 'unsafe-inline'",
@@ -74,6 +100,7 @@ function buildContentSecurityPolicy(portalOrigin: string | null): string {
       "wss://*.relay.rescue.crisp.chat",
       "https://*.basemaps.cartocdn.com",
       ...portal,
+      ...frontendApi,
     ].join(" "),
     // Crisp widget: worker da sottodominio crisp poi eseguito in blob:
     "worker-src 'self' blob: https://*.crisp.chat",
@@ -84,16 +111,23 @@ function buildContentSecurityPolicy(portalOrigin: string | null): string {
       "https://challenges.cloudflare.com",
       "https://*.crisp.chat",
       ...portal,
+      ...frontendApi,
     ].join(" "),
   ].join("; ");
 }
 
 /**
  * Header di sicurezza per `next.config.ts` → `headers()`.
- * La CSP include l’origine del portal Clerk se `NEXT_PUBLIC_CLERK_ACCOUNT_PORTAL_ORIGIN` è impostata.
+ * La CSP include:
+ *  - l'origine dell'Account Portal Clerk se `NEXT_PUBLIC_CLERK_ACCOUNT_PORTAL_ORIGIN` è impostata
+ *  - l'origine del Frontend API Clerk se `NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN` è impostata
+ *    (obbligatoria in produzione con dominio personalizzato per `clerk-js`)
  */
 export function getSecurityHeaderList(): { key: string; value: string }[] {
-  const csp = buildContentSecurityPolicy(clerkAccountPortalOrigin());
+  const csp = buildContentSecurityPolicy(
+    clerkAccountPortalOrigin(),
+    clerkFrontendApiOrigin(),
+  );
   return [
     { key: "Content-Security-Policy", value: csp },
     { key: "X-Content-Type-Options", value: "nosniff" },
