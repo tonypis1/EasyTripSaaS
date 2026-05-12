@@ -86,6 +86,18 @@ export class TripRepository {
     });
   }
 
+  /**
+   * Numero di versioni di itinerario esistenti per un viaggio.
+   * Utile come idempotency guard: se `>= 1` significa che la pipeline
+   * di generazione AI è già partita almeno una volta — niente reinvio
+   * di `trip/generate.requested` su webhook duplicati.
+   */
+  async countVersions(tripId: string): Promise<number> {
+    return prisma.tripVersion.count({
+      where: { tripId },
+    });
+  }
+
   async findByIdAndOrganizer(tripId: string, organizerId: string) {
     return prisma.trip.findFirst({
       where: {

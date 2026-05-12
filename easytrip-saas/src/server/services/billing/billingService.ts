@@ -684,7 +684,13 @@ export class BillingService {
        * Se il primo tentativo ha scritto il pagamento ma la risposta HTTP non è
        * arrivata a Stripe (timeout, crash dopo il write), Stripe riconsegna: qui
        * evitiamo doppi insert ma ripetiamo l’evento Inngest se il viaggio è
-       * ancora in attesa di generazione.
+       * ancora in attesa di generazione **e** non esiste ancora alcuna versione.
+       *
+       * Guard extra (anti-duplicate-versions): se almeno una `TripVersion`
+       * esiste già, la pipeline è partita e non va ri-innescata anche se lo
+       * stato è ancora "pending" per qualche motivo. Senza questo controllo,
+       * una riconsegna del webhook (o un page-refresh che richiama il sync)
+       * potrebbe generare nuove versioni AI duplicate.
        */
       if (paymentType === "purchase") {
         const t = await this.tripRepository.findById(tripId);
@@ -694,21 +700,30 @@ export class BillingService {
           t.paymentId != null &&
           t.amountPaid != null
         ) {
-          try {
-            await inngest.send({
-              name: "trip/generate.requested",
-              data: { tripId },
-            });
+          const existingVersions =
+            await this.tripRepository.countVersions(tripId);
+          if (existingVersions > 0) {
             logger.info(
-              "trip/generate.requested reinviato (trip ancora pending dopo webhook duplicato)",
-              { tripId },
+              "trip/generate.requested NON reinviato: esistono già versioni (idempotency guard)",
+              { tripId, existingVersions },
             );
-          } catch (e) {
-            logger.error(
-              "inngest.send fallito nel recovery post-webhook duplicato",
-              e,
-              { tripId },
-            );
+          } else {
+            try {
+              await inngest.send({
+                name: "trip/generate.requested",
+                data: { tripId },
+              });
+              logger.info(
+                "trip/generate.requested reinviato (trip pending senza versioni dopo webhook duplicato)",
+                { tripId },
+              );
+            } catch (e) {
+              logger.error(
+                "inngest.send fallito nel recovery post-webhook duplicato",
+                e,
+                { tripId },
+              );
+            }
           }
         }
       }
