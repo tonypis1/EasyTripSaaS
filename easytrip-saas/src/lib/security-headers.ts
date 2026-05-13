@@ -30,13 +30,24 @@ function clerkAccountPortalOrigin(): string | null {
  * Origine HTTPS opzionale del Frontend API Clerk in produzione.
  * In produzione Clerk serve `clerk-js` da un sottodominio dedicato del tuo
  * sito (CNAME → Clerk), ad es. `https://clerk.easytripsaas.com`. Quel dominio
- * NON corrisponde a `*.clerk.com`, quindi senza questa env var la CSP blocca
- * lo script e il client mostra `failed_to_load_clerk_js_timeout`.
+ * NON corrisponde a `*.clerk.com`, quindi senza autorizzazione esplicita la CSP
+ * blocca lo script e il client mostra `failed_to_load_clerk_js_timeout`.
  *
- * Imposta `NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN` su Vercel (production) col
- * valore mostrato in Clerk Dashboard → Configure → Domains → Frontend API.
+ * Strategia:
+ * 1) Se `NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN` è impostata, usala come override.
+ * 2) Altrimenti deriva l'origine dal `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+ *    (Clerk codifica il dominio Frontend API in base64 dentro il publishable key,
+ *    è ciò che fanno internamente i suoi SDK). Questo evita la dipendenza da
+ *    una env var aggiuntiva che è facile dimenticare di propagare in produzione.
  */
 function clerkFrontendApiOrigin(): string | null {
+  return (
+    clerkFrontendApiOriginFromEnv() ??
+    clerkFrontendApiOriginFromPublishableKey()
+  );
+}
+
+function clerkFrontendApiOriginFromEnv(): string | null {
   const raw = process.env.NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN?.trim();
   if (!raw) return null;
   try {
@@ -45,6 +56,37 @@ function clerkFrontendApiOrigin(): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * I publishable key Clerk hanno il formato `pk_<live|test>_<base64>` dove la
+ * stringa base64 decodifica nel dominio Frontend API seguito da `$`
+ * (es. `pk_live_Y2xlcmsuZWFzeXRyaXBzYWFzLmNvbSQ` → `clerk.easytripsaas.com$`).
+ * Estraiamo quel dominio in modo difensivo e ritorniamo `null` se qualcosa non
+ * combacia (test key locale, pk malformato, ecc.). Nessun throw: la CSP deve
+ * sempre poter essere costruita.
+ */
+function clerkFrontendApiOriginFromPublishableKey(): string | null {
+  const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim();
+  if (!pk) return null;
+
+  const match = pk.match(/^pk_(?:live|test)_(.+)$/);
+  if (!match) return null;
+
+  const encoded = match[1];
+  let decoded: string;
+  try {
+    decoded = Buffer.from(encoded, "base64").toString("utf-8");
+  } catch {
+    return null;
+  }
+
+  const domain = decoded.replace(/\$+$/, "").trim();
+  if (!domain) return null;
+  if (!/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i.test(domain)) return null;
+  if (!domain.includes(".")) return null;
+
+  return `https://${domain}`;
 }
 
 function buildContentSecurityPolicy(
@@ -95,6 +137,8 @@ function buildContentSecurityPolicy(
       "https://eu.i.posthog.com",
       "https://eu.posthog.com",
       "https://us.i.posthog.com",
+      "https://eu-assets.i.posthog.com",
+      "https://us-assets.i.posthog.com",
       "https://*.crisp.chat",
       "wss://*.relay.crisp.chat",
       "wss://*.relay.rescue.crisp.chat",
@@ -120,8 +164,10 @@ function buildContentSecurityPolicy(
  * Header di sicurezza per `next.config.ts` → `headers()`.
  * La CSP include:
  *  - l'origine dell'Account Portal Clerk se `NEXT_PUBLIC_CLERK_ACCOUNT_PORTAL_ORIGIN` è impostata
- *  - l'origine del Frontend API Clerk se `NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN` è impostata
- *    (obbligatoria in produzione con dominio personalizzato per `clerk-js`)
+ *  - l'origine del Frontend API Clerk derivata, in ordine, da:
+ *      1. `NEXT_PUBLIC_CLERK_FRONTEND_API_ORIGIN` (override esplicito)
+ *      2. `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (decodifica del dominio incluso nel pk)
+ *    Così la CSP autorizza `clerk-js` anche senza una env var dedicata.
  */
 export function getSecurityHeaderList(): { key: string; value: string }[] {
   const csp = buildContentSecurityPolicy(
