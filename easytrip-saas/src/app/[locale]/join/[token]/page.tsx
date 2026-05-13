@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
@@ -16,7 +16,45 @@ import {
   Loader2,
   AlertTriangle,
   Plane,
+  RefreshCw,
 } from "lucide-react";
+
+/**
+ * Quanto aspettiamo `clerk-js` prima di mostrare il fallback di emergenza.
+ * Se la CSP blocca lo script o l'estensione dell'utente lo intercetta,
+ * `useAuth().isLoaded` resta `false` per sempre e l'utente vede uno spinner
+ * eterno: con questo timeout dopo 8s mostriamo un'alternativa concreta
+ * (link diretto al portal Clerk se configurato, altrimenti reload + hint).
+ */
+const CLERK_LOAD_TIMEOUT_MS = 8000;
+
+/**
+ * Costruisce un URL diretto all'Account Portal Clerk (`/sign-in`) con
+ * `redirect_url` impostato sull'invito corrente. Usabile come link `<a>`:
+ * non dipende da `clerk-js`, quindi funziona anche se la CSP lo blocca.
+ * Ritorna `null` se il portal non è configurato via env var pubbliche.
+ */
+function buildSignInPortalUrl(returnPath: string): string | null {
+  const fullSignIn = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL?.trim();
+  const portalOrigin =
+    process.env.NEXT_PUBLIC_CLERK_ACCOUNT_PORTAL_ORIGIN?.trim();
+  const baseUrl =
+    fullSignIn ||
+    (portalOrigin ? `${portalOrigin.replace(/\/$/, "")}/sign-in` : null);
+  if (!baseUrl) return null;
+  try {
+    const u = new URL(baseUrl);
+    if (u.protocol !== "https:") return null;
+    const absoluteReturn =
+      typeof window !== "undefined"
+        ? new URL(returnPath, window.location.origin).toString()
+        : returnPath;
+    u.searchParams.set("redirect_url", absoluteReturn);
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
 
 type TripPreview = {
   id: string;
@@ -42,6 +80,10 @@ export default function JoinTripPage() {
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Diventa `true` se `clerk-js` non si è inizializzato entro CLERK_LOAD_TIMEOUT_MS
+  // (es. CSP che blocca lo script, ad-blocker aggressivo). In quel caso al posto
+  // dello spinner eterno mostriamo un fallback navigazionale concreto.
+  const [authTimedOut, setAuthTimedOut] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -57,6 +99,19 @@ export default function JoinTripPage() {
       .catch(() => setError("Errore di rete"))
       .finally(() => setLoading(false));
   }, [token]);
+
+  useEffect(() => {
+    if (authLoaded) return;
+    const id = setTimeout(() => {
+      setAuthTimedOut(true);
+    }, CLERK_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(id);
+  }, [authLoaded]);
+
+  const signInFallbackUrl = useMemo(
+    () => buildSignInPortalUrl(`/${locale}/join/${token}`),
+    [locale, token],
+  );
 
   async function onJoin() {
     if (!token) return;
@@ -219,9 +274,44 @@ export default function JoinTripPage() {
               </p>
             </div>
           ) : !authLoaded ? (
-            <div className="flex justify-center py-3">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-            </div>
+            authTimedOut ? (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-600" />
+                    <p className="text-sm font-semibold text-amber-900">
+                      Servizio di accesso non disponibile
+                    </p>
+                  </div>
+                  <p className="text-xs text-amber-800">
+                    Non siamo riusciti a caricare il sistema di login. Prova a
+                    ricaricare la pagina o disabilita estensioni che bloccano
+                    script (ad-blocker, anti-tracking).
+                  </p>
+                </div>
+                {signInFallbackUrl && (
+                  <a
+                    href={signInFallbackUrl}
+                    className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-lg font-semibold text-white transition-all hover:from-blue-700 hover:to-indigo-700"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    Accedi tramite portale
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Ricarica pagina
+                </button>
+              </div>
+            ) : (
+              <div className="flex justify-center py-3">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+              </div>
+            )
           ) : !isSignedIn ? (
             <div className="space-y-3">
               <button

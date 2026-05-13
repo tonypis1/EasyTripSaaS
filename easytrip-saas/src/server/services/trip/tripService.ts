@@ -15,6 +15,7 @@ import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
 import { inngest } from "@/lib/inngest/client";
 import { logger } from "@/lib/observability";
 import { prisma } from "@/lib/prisma";
+import { routing } from "@/i18n/routing";
 import {
   canCreateNewVersion,
   isPaidRegeneration,
@@ -526,7 +527,14 @@ export class TripService {
       }
     }
 
-    return { inviteUrl: `${config.app.baseUrl}/join/${token}` };
+    // Includiamo il prefisso lingua di default così l'invitato non passa per
+    // un redirect 307 del middleware next-intl (`localePrefix: "always"`).
+    // I link già emessi senza prefisso continuano a funzionare grazie al
+    // middleware, ma per quelli nuovi evitiamo il salto e riduciamo la
+    // superficie di errore (es. ad-blocker che intercettano il 307).
+    return {
+      inviteUrl: `${config.app.baseUrl}/${routing.defaultLocale}/join/${token}`,
+    };
   }
 
   async getTripByToken(token: string) {

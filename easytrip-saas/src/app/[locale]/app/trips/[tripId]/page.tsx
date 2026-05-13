@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { TripDetailClient } from "./trip-detail-client";
 import { fetchTripDetailForDashboard } from "@/lib/trips-data";
 import { container } from "@/server/di/container";
@@ -16,10 +17,10 @@ export default async function TripDetailPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ tripId: string }>;
+  params: Promise<{ tripId: string; locale: string }>;
   searchParams?: Promise<Search>;
 }) {
-  const { tripId } = await params;
+  const { tripId, locale } = await params;
   const sp = (await searchParams) ?? {};
 
   const sid = sp.session_id;
@@ -43,6 +44,19 @@ export default async function TripDetailPage({
         { tripId, sessionId: sid },
       );
     }
+
+    // Strip `session_id` from the URL so that the client-side `router.refresh()`
+    // running every ~5s while the trip is `pending` doesn't keep re-evaluating
+    // `needsSync = true` and re-firing `trip/generate.requested` Inngest events
+    // (root cause of the "multiple itinerary versions auto-generated" bug).
+    // Flash params (`checkout` / `regen` / `reactivate`) are kept so the toast
+    // still shows once on the first render after the redirect.
+    const cleanQuery = new URLSearchParams();
+    if (sp.checkout) cleanQuery.set("checkout", sp.checkout);
+    if (sp.regen) cleanQuery.set("regen", sp.regen);
+    if (sp.reactivate) cleanQuery.set("reactivate", sp.reactivate);
+    const qs = cleanQuery.toString();
+    redirect(`/${locale}/app/trips/${tripId}${qs ? `?${qs}` : ""}`);
   } else if (
     sp.checkout === "success" ||
     sp.regen === "success" ||

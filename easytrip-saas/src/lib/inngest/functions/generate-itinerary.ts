@@ -245,6 +245,16 @@ export const generateItinerary = inngest.createFunction(
     retries: 3,
     triggers: [{ event: "trip/generate.requested" }],
     timeouts: { finish: "15m" },
+    /**
+     * Belt-and-braces guard against duplicate itinerary versions for the same
+     * trip. Even if multiple `trip/generate.requested` events leak through
+     * (e.g. webhook re-delivery, frontend bug, manual replay), Inngest will
+     * execute them serially per `tripId` instead of in parallel. The original
+     * cause is now fixed upstream (URL strip + version guard in billing), so
+     * this is purely a safety net; replays/retries for the same event are
+     * already handled by Inngest's own retry semantics.
+     */
+    concurrency: { key: "event.data.tripId", limit: 1 },
   },
   async ({ event, events, step }) => {
     const { tripId } = resolveTripGeneratePayload(event, events);
