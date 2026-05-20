@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import {
+  expectGuestHomeInLocale,
+  gotoHomePath,
+  localeHomeAssertionTimeout,
+} from "./helpers/locale-home";
 import { localeContextHeaders } from "./helpers/vercel-bypass";
 
 /**
@@ -32,13 +37,12 @@ test.describe("@smoke locale auto-detection", () => {
       extraHTTPHeaders: localeContextHeaders("de-DE,de;q=0.9,en;q=0.5"),
     });
     const page = await context.newPage();
-    await page.goto("/");
+    await gotoHomePath(page);
 
-    await expect(page).toHaveURL(/\/de(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.de, { exact: false }),
-    ).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("lang", "de");
+    await expect(page).toHaveURL(/\/de(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.de, "de");
 
     await context.close();
   });
@@ -51,13 +55,12 @@ test.describe("@smoke locale auto-detection", () => {
       extraHTTPHeaders: localeContextHeaders("en-US,en;q=0.9"),
     });
     const page = await context.newPage();
-    await page.goto("/");
+    await gotoHomePath(page);
 
-    await expect(page).toHaveURL(/\/en(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.en, { exact: false }),
-    ).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page).toHaveURL(/\/en(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.en, "en");
 
     await context.close();
   });
@@ -70,13 +73,12 @@ test.describe("@smoke locale auto-detection", () => {
       extraHTTPHeaders: localeContextHeaders("fr-FR,fr;q=0.9,en;q=0.4"),
     });
     const page = await context.newPage();
-    await page.goto("/");
+    await gotoHomePath(page);
 
-    await expect(page).toHaveURL(/\/fr(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.fr, { exact: false }),
-    ).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+    await expect(page).toHaveURL(/\/fr(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.fr, "fr");
 
     await context.close();
   });
@@ -89,13 +91,12 @@ test.describe("@smoke locale auto-detection", () => {
       extraHTTPHeaders: localeContextHeaders("es-ES,es;q=0.9,en;q=0.4"),
     });
     const page = await context.newPage();
-    await page.goto("/");
+    await gotoHomePath(page);
 
-    await expect(page).toHaveURL(/\/es(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.es, { exact: false }),
-    ).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    await expect(page).toHaveURL(/\/es(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.es, "es");
 
     await context.close();
   });
@@ -108,13 +109,12 @@ test.describe("@smoke locale auto-detection", () => {
       extraHTTPHeaders: localeContextHeaders("ja-JP,ja;q=0.9"),
     });
     const page = await context.newPage();
-    await page.goto("/");
+    await gotoHomePath(page);
 
-    await expect(page).toHaveURL(/\/it(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.it, { exact: false }),
-    ).toBeVisible();
-    await expect(page.locator("html")).toHaveAttribute("lang", "it");
+    await expect(page).toHaveURL(/\/it(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.it, "it");
 
     await context.close();
   });
@@ -143,12 +143,12 @@ test.describe("@smoke locale auto-detection", () => {
     ]);
 
     const page = await context.newPage();
-    await page.goto("/");
+    await gotoHomePath(page);
 
-    await expect(page).toHaveURL(/\/en(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.en, { exact: false }),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/en(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.en, "en");
 
     await context.close();
   });
@@ -165,11 +165,11 @@ test.describe("LocaleSwitcher", () => {
       extraHTTPHeaders: localeContextHeaders("it-IT,it;q=0.9"),
     });
     const page = await context.newPage();
-    await page.goto("/");
-    await expect(page).toHaveURL(/\/it(\/|$)/);
-    await expect(
-      page.getByText(HERO_MARKERS.it, { exact: false }).first(),
-    ).toBeVisible();
+    await gotoHomePath(page);
+    await expect(page).toHaveURL(/\/it(\/|$)/, {
+      timeout: localeHomeAssertionTimeout(),
+    });
+    await expectGuestHomeInLocale(page, HERO_MARKERS.it, "it");
 
     // Il LocaleSwitcher è un menu custom (bottone con aria-label tradotta) +
     // listbox. In italiano l’etichetta è "Lingua".
