@@ -3,9 +3,11 @@ import { isVercelPreviewBaseUrl } from "./vercel-bypass";
 
 export { isVercelPreviewBaseUrl };
 
-/** Timeout più lungo su Preview Vercel (cold start + SSR). */
+/** Timeout asserzioni: Preview lento; in CI anche `npm run dev` sotto carico. */
 export function localeHomeAssertionTimeout(): number {
-  return isVercelPreviewBaseUrl() ? 30_000 : 10_000;
+  if (isVercelPreviewBaseUrl()) return 30_000;
+  if (process.env.CI) return 25_000;
+  return 10_000;
 }
 
 const CHROMIUM_LOAD_ERROR = /couldn.t load/i;
@@ -44,23 +46,18 @@ export async function enterHomeViaLocaleDetection(
   const timeout = localeHomeAssertionTimeout();
   const gotoTimeout = isVercelPreviewBaseUrl() ? 120_000 : 60_000;
 
-  if (isVercelPreviewBaseUrl()) {
-    await page.goto("/", { waitUntil: "commit", timeout: gotoTimeout });
-    await expect(page).toHaveURL(expectedUrl, { timeout });
-    await page.goto(localePath, {
-      waitUntil: "load",
-      timeout: gotoTimeout,
-    });
-    if (await isChromiumLoadErrorPage(page)) {
-      throw new Error(
-        `Preview: ${localePath} did not load after redirect (URL was correct).`,
-      );
-    }
-    return;
-  }
-
-  await gotoHomePath(page);
+  // Verifica redirect su `/` senza attendere `load` sulla catena (fragile su Preview e in CI).
+  await page.goto("/", { waitUntil: "commit", timeout: gotoTimeout });
   await expect(page).toHaveURL(expectedUrl, { timeout });
+  await page.goto(localePath, {
+    waitUntil: isVercelPreviewBaseUrl() ? "load" : "domcontentloaded",
+    timeout: gotoTimeout,
+  });
+  if (await isChromiumLoadErrorPage(page)) {
+    throw new Error(
+      `${localePath} did not load after redirect (URL was ${page.url()}).`,
+    );
+  }
 }
 
 /**

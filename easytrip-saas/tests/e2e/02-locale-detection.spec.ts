@@ -30,7 +30,7 @@ test.describe("@smoke locale auto-detection", () => {
   // Stesso file: in parallelo ogni test apre un browser context e colpisce `npm run dev`
   // in modo pesante. Serial + timeout 60s riduce timeout flakies su newPage/goto sotto carico.
   test.describe.configure({ mode: "serial" });
-  test.setTimeout(60_000);
+  test.setTimeout(process.env.CI ? 90_000 : 60_000);
 
   test("tedesco → redirect a /de e pagina in tedesco", async ({ browser }) => {
     const context = await browser.newContext(
@@ -126,7 +126,7 @@ test.describe("@smoke locale auto-detection", () => {
 });
 
 test.describe("LocaleSwitcher", () => {
-  test.setTimeout(60_000);
+  test.setTimeout(process.env.CI ? 90_000 : 60_000);
 
   test("cambiare lingua aggiorna URL, DOM e scrive cookie NEXT_LOCALE", async ({
     browser,
