@@ -68,6 +68,7 @@ import {
 import { openCrispChat, isCrispEnabled } from "../../crisp-chat";
 import { ExpensePanel } from "./expense-panel";
 import { roundCoordForAi } from "@/lib/geo-privacy";
+import { ItineraryGenerationWaitingScreen } from "@/components/trips/itinerary-generation-waiting-screen";
 
 const GPS_AI_CONSENT_KEY = "easytrip_gps_ai_consent_v1";
 
@@ -305,23 +306,45 @@ export function TripDetailClient({
   const [gpsConsentModal, setGpsConsentModal] = useState<
     null | { kind: "geo" } | { kind: "live"; dayId: string }
   >(null);
+  const [generatingRequested, setGeneratingRequested] = useState(false);
 
   useEffect(() => setTrip(initialTrip), [initialTrip]);
 
-  const generating =
-    trip.isPaid && trip.days.length === 0 && trip.status === "pending";
+  const hasDays = trip.days.length > 0;
+
+  const isServerGenerating =
+    trip.isPaid &&
+    !hasDays &&
+    (trip.status === "pending" || trip.status === "active");
+
+  const isGeneratingItinerary = isServerGenerating || generatingRequested;
 
   useEffect(() => {
-    if (!generating) return;
+    if (hasDays) setGeneratingRequested(false);
+  }, [hasDays]);
+
+  useEffect(() => {
+    if (checkoutFlash === "success" || regenFlash === "success") {
+      setGeneratingRequested(true);
+    }
+  }, [checkoutFlash, regenFlash]);
+
+  useEffect(() => {
+    if (!isGeneratingItinerary) return;
     const t = setInterval(() => router.refresh(), 5000);
     return () => clearInterval(t);
-  }, [generating, router]);
+  }, [isGeneratingItinerary, router]);
 
   const refreshTrip = useCallback(async () => {
     const res = await fetch(`/api/trips/${trip.id}`);
     const json = await res.json();
     if (res.ok && json.ok) setTrip(json.data as TripDetailDto);
   }, [trip.id]);
+
+  const handleGenerationRefresh = useCallback(() => {
+    void refreshTrip();
+    router.refresh();
+  }, [refreshTrip, router]);
 
   function apiMsg(json: { error?: { message?: string } | string }) {
     if (typeof json.error === "string") return json.error;
@@ -377,6 +400,7 @@ export function TripDetailClient({
   async function onGenerate() {
     setBusy("gen");
     setMsg(null);
+    setGeneratingRequested(true);
     try {
       const res = await fetch(`/api/trips/${trip.id}/generate`, {
         method: "POST",
@@ -384,6 +408,7 @@ export function TripDetailClient({
       const json = await res.json();
       if (!res.ok || !json.ok) {
         setMsg(apiMsg(json));
+        setGeneratingRequested(false);
         return;
       }
       posthog.capture("itinerary_generated", {
@@ -396,6 +421,7 @@ export function TripDetailClient({
       router.refresh();
     } catch {
       setMsg(td("errors.network"));
+      setGeneratingRequested(false);
     } finally {
       setBusy(null);
     }
@@ -660,7 +686,6 @@ export function TripDetailClient({
     return <PostTripScreen trip={trip} />;
   }
 
-  const hasDays = trip.days.length > 0;
   const showControls = (trip.isPaid || showDevShortcut) && hasDays;
   const phase = tripPhase(trip.startDate, trip.endDate);
 
@@ -1263,33 +1288,15 @@ export function TripDetailClient({
         : null}
 
       {/* ── Generazione in corso ── */}
-      {trip.isPaid && !hasDays ? (
-        <section className="border-et-accent/35 bg-et-accent/5 rounded-2xl border border-dashed p-8 text-center">
-          <Loader2
-            className="text-et-accent/60 mx-auto h-8 w-8 animate-spin"
-            aria-hidden
-          />
-          <h2 className="font-display text-et-ink mt-4 text-xl">
-            {td("generating.title")}
-          </h2>
-          <p className="text-et-ink/65 mx-auto mt-2 max-w-md text-sm">
-            {td("generating.description")}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              void refreshTrip();
-              router.refresh();
-            }}
-            className="text-et-accent mt-6 cursor-pointer text-sm underline-offset-4 transition-colors duration-200 hover:underline"
-          >
-            {td("generating.refreshNow")}
-          </button>
-        </section>
+      {isGeneratingItinerary ? (
+        <ItineraryGenerationWaitingScreen
+          variant={hasDays ? "regen" : "first"}
+          onRefresh={handleGenerationRefresh}
+        />
       ) : null}
 
       {/* ── Itinerario — Giorni ── */}
-      {hasDays ? (
+      {hasDays && !isGeneratingItinerary ? (
         <section className="space-y-3">
           <h2 className="font-display text-et-ink text-xl">
             {td("itineraryTitle")}

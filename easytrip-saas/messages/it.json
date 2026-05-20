@@ -362,8 +362,19 @@
         "generating": {
           "inline": "Generazione in corso…",
           "title": "Stiamo creando il tuo itinerario",
+          "titleRegen": "Stiamo rigenerando il tuo itinerario",
           "description": "Ci vogliono di solito 1–2 minuti. Puoi attendere su questa pagina o tornare più tardi: aggiorneremo automaticamente quando sarà pronto.",
-          "refreshNow": "Aggiorna ora"
+          "descriptionRegen": "Stiamo preparando una nuova versione del viaggio. Di solito ci vogliono 1–2 minuti: la pagina si aggiornerà da sola.",
+          "progressLabel": "Progresso stimato",
+          "refreshNow": "Aggiorna ora",
+          "steps": {
+            "analyzeDestination": "Analizzo la destinazione…",
+            "optimizeRoutes": "Ottimizzo i percorsi…",
+            "findLocalGems": "Cerco gemme locali…",
+            "pickRestaurants": "Seleziono ristoranti e attività…",
+            "organizeDays": "Organizzo giorno per giorno…",
+            "finalTouches": "Ultimi ritocchi al tuo viaggio…"
+          }
         },
         "redirecting": "Reindirizzamento…",
         "regenerateWithCost": "Rigenera (€1,99)",

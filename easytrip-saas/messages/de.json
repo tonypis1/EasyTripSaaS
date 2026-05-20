@@ -362,8 +362,19 @@
         "generating": {
           "inline": "Wird erstellt…",
           "title": "Wir erstellen deine Reiseroute",
+          "titleRegen": "Wir generieren deine Reiseroute neu",
           "description": "Das dauert in der Regel 1–2 Minuten. Du kannst auf dieser Seite warten oder später zurückkommen: sie wird automatisch aktualisiert, sobald sie fertig ist.",
-          "refreshNow": "Jetzt aktualisieren"
+          "descriptionRegen": "Wir bereiten eine neue Version deiner Reise vor. Das dauert in der Regel 1–2 Minuten und die Seite aktualisiert sich von selbst.",
+          "progressLabel": "Geschätzter Fortschritt",
+          "refreshNow": "Jetzt aktualisieren",
+          "steps": {
+            "analyzeDestination": "Reiseziel wird analysiert…",
+            "optimizeRoutes": "Routen werden optimiert…",
+            "findLocalGems": "Lokale Geheimtipps werden gesucht…",
+            "pickRestaurants": "Restaurants und Aktivitäten werden ausgewählt…",
+            "organizeDays": "Tag für Tag wird geplant…",
+            "finalTouches": "Letzte Feinschliffe für deine Reise…"
+          }
         },
         "redirecting": "Weiterleitung…",
         "regenerateWithCost": "Neu generieren (€1,99)",
