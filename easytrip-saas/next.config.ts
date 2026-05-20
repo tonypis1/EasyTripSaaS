@@ -6,6 +6,11 @@ import { getSecurityHeaderList } from "./src/lib/security-headers";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Vercel serverless: il codice SWC compilato richiede @swc/helpers in node_modules a runtime.
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/@swc/helpers/**/*"],
+  },
+
   // Dev: Playwright/baseURL 127.0.0.1; Next 16+ richiede la lista o hostname (vedi avviso "Blocked cross-origin…").
   allowedDevOrigins: [
     "127.0.0.1",
