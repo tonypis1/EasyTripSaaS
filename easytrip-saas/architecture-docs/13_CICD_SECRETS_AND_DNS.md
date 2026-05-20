@@ -58,6 +58,16 @@ Il workflow [`.github/workflows/main.yml`](../../.github/workflows/main.yml) esp
 
 3. **Actions** → workflow **Main** → **Run workflow**: esegue `node scripts/check-env.mjs --production` senza stampare valori.
 
+### 3.1 E2E su Preview Vercel (`e2e-preview`)
+
+Il job `e2e-preview` in [`main.yml`](../../.github/workflows/main.yml) esegue gli smoke test contro l’URL del deploy Preview (`*.vercel.app`). Se in Vercel è attiva **Deployment Protection** (SSO / password), Playwright viene reindirizzato a `https://vercel.com/login` e i test falliscono (non è un bug dell’app).
+
+1. **Vercel** → progetto → **Settings** → **Deployment Protection** → **Protection Bypass for Automation** → genera il secret.
+2. **GitHub** → **Settings** → **Secrets and variables** → **Actions** → crea **`VERCEL_AUTOMATION_BYPASS_SECRET`** con lo stesso valore.
+3. Playwright invia automaticamente gli header `x-vercel-protection-bypass` e `x-vercel-set-bypass-cookie` quando la variabile è impostata ([`playwright.config.ts`](../playwright.config.ts)).
+
+Il job **`e2e-smoke-local`** (su push/PR) avvia `npm run dev` in CI e **non** usa l’URL Preview: non dipende da questo secret.
+
 Se preferisci non duplicare segreti su GitHub, salta questo job e usa in locale:
 
 ```bash

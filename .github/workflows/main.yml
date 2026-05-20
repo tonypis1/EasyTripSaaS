@@ -187,11 +187,21 @@ jobs:
       - name: Install Playwright (Chromium)
         run: npx playwright install chromium
 
+      - name: Check Vercel bypass secret for Preview E2E
+        run: |
+          if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            echo "::error::Imposta il repository secret VERCEL_AUTOMATION_BYPASS_SECRET (Vercel → Settings → Deployment Protection → Protection Bypass for Automation). Senza, i Preview richiedono login su vercel.com e gli E2E falliscono."
+            exit 1
+          fi
+        env:
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
       - name: Smoke E2E against Preview URL
         run: npm run test:e2e:smoke -- --project chromium
         env:
           E2E_BASE_URL: ${{ github.event.deployment_status.target_url }}
           PLAYWRIGHT_SKIP_WEBSERVER: "true"
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           CI: true
 
       - name: Upload Playwright report (on failure)

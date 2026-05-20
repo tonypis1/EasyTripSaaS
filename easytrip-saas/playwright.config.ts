@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { vercelProtectionBypassHeaders } from "./tests/e2e/helpers/vercel-bypass";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000";
 
@@ -52,6 +53,7 @@ const devServerEnv = {
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup-preview.ts",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -66,6 +68,7 @@ export default defineConfig({
     locale: "it-IT",
     extraHTTPHeaders: {
       "Accept-Language": "it-IT,it;q=0.9",
+      ...vercelProtectionBypassHeaders(),
     },
   },
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER

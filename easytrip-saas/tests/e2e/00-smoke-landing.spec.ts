@@ -18,4 +18,10 @@ test.describe("@smoke", () => {
     await expect(page.locator("body")).toBeVisible();
     await expect(page).toHaveURL(/\/en(\/|$)/);
   });
+
+  test("german home loads @smoke", async ({ page }) => {
+    await page.goto("/de");
+    await expect(page.locator("body")).toBeVisible();
+    await expect(page).toHaveURL(/\/de(\/|$)/);
+  });
 });
