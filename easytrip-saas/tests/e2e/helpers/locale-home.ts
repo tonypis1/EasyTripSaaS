@@ -9,7 +9,6 @@ export function localeHomeAssertionTimeout(): number {
 }
 
 const CHROMIUM_LOAD_ERROR = /couldn.t load/i;
-const LOCALE_PATH = /\/(it|en|es|fr|de)(\/|$)/;
 
 export async function isChromiumLoadErrorPage(page: Page): Promise<boolean> {
   const heading = await page
@@ -33,8 +32,39 @@ async function loadHomeDocument(
 }
 
 /**
- * Ingresso su `/`: su Preview evita `load` sulla catena di redirect middleware
- * (spesso finisce sulla pagina errore Chromium pur con URL `/de` corretto).
+ * Primo ingresso per test di auto-detection lingua.
+ * Su Preview: redirect verificato con `commit`, poi `goto` diretto su /{locale}
+ * (come `00-smoke-landing` — la catena redirect+load su `/` rompe Chromium).
+ */
+export async function enterHomeViaLocaleDetection(
+  page: Page,
+  expectedUrl: RegExp,
+  localePath: string,
+): Promise<void> {
+  const timeout = localeHomeAssertionTimeout();
+  const gotoTimeout = isVercelPreviewBaseUrl() ? 120_000 : 60_000;
+
+  if (isVercelPreviewBaseUrl()) {
+    await page.goto("/", { waitUntil: "commit", timeout: gotoTimeout });
+    await expect(page).toHaveURL(expectedUrl, { timeout });
+    await page.goto(localePath, {
+      waitUntil: "load",
+      timeout: gotoTimeout,
+    });
+    if (await isChromiumLoadErrorPage(page)) {
+      throw new Error(
+        `Preview: ${localePath} did not load after redirect (URL was correct).`,
+      );
+    }
+    return;
+  }
+
+  await gotoHomePath(page);
+  await expect(page).toHaveURL(expectedUrl, { timeout });
+}
+
+/**
+ * Ingresso generico su `/` o path localizzato (LocaleSwitcher, cookie test, ecc.).
  */
 export async function gotoHomePath(page: Page, path = "/"): Promise<void> {
   const preview = isVercelPreviewBaseUrl();
@@ -42,22 +72,9 @@ export async function gotoHomePath(page: Page, path = "/"): Promise<void> {
   const gotoTimeout = preview ? 120_000 : 60_000;
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
-    if (preview && path === "/") {
-      await page.goto(path, { waitUntil: "commit", timeout: gotoTimeout });
-      await page.waitForURL(LOCALE_PATH, { timeout: 30_000 });
-      const localePath = new URL(page.url()).pathname;
-      await loadHomeDocument(page, localePath, gotoTimeout);
-    } else {
-      await loadHomeDocument(page, path, gotoTimeout);
-    }
+    await loadHomeDocument(page, path, gotoTimeout);
 
     if (!(preview && (await isChromiumLoadErrorPage(page)))) return;
-
-    const retryPath = new URL(page.url()).pathname || path;
-    if (retryPath !== path) {
-      await loadHomeDocument(page, retryPath, gotoTimeout);
-      if (!(await isChromiumLoadErrorPage(page))) return;
-    }
 
     if (preview) {
       await page.reload({
@@ -78,7 +95,6 @@ export async function gotoHomePath(page: Page, path = "/"): Promise<void> {
 
 /**
  * Home marketing (guest): verifica titolo hero e `lang` su <html>.
- * Usa `heading` + toContainText perché titleLine1/titleLine2 possono essere su nodi diversi.
  */
 export async function expectGuestHomeInLocale(
   page: Page,

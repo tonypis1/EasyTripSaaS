@@ -1,14 +1,11 @@
 import { expect, test } from "@playwright/test";
 import {
+  enterHomeViaLocaleDetection,
   expectGuestHomeInLocale,
   gotoHomePath,
   localeHomeAssertionTimeout,
 } from "./helpers/locale-home";
-import {
-  localeBrowserContextOptions,
-  vercelPreviewBypassStorageState,
-} from "./helpers/locale-context";
-import type { BrowserContextOptions } from "@playwright/test";
+import { localeBrowserContextOptions } from "./helpers/locale-context";
 
 /**
  * E2E: rilevamento automatico della lingua del browser.
@@ -29,12 +26,6 @@ const HERO_MARKERS: Record<"it" | "en" | "es" | "fr" | "de", string> = {
   de: "KI-Reiserouten für Kurztrips.",
 };
 
-let previewBypassState: BrowserContextOptions["storageState"];
-
-test.beforeAll(async ({ browser }) => {
-  previewBypassState = await vercelPreviewBypassStorageState(browser);
-});
-
 test.describe("@smoke locale auto-detection", () => {
   // Stesso file: in parallelo ogni test apre un browser context e colpisce `npm run dev`
   // in modo pesante. Serial + timeout 60s riduce timeout flakies su newPage/goto sotto carico.
@@ -43,18 +34,10 @@ test.describe("@smoke locale auto-detection", () => {
 
   test("tedesco → redirect a /de e pagina in tedesco", async ({ browser }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "de-DE,de;q=0.9,en;q=0.5",
-        { locale: "de-DE" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("de-DE,de;q=0.9,en;q=0.5"),
     );
     const page = await context.newPage();
-    await gotoHomePath(page);
-
-    await expect(page).toHaveURL(/\/de(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/de(\/|$)/, "/de");
     await expectGuestHomeInLocale(page, HERO_MARKERS.de, "de");
 
     await context.close();
@@ -64,18 +47,10 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "en-US,en;q=0.9",
-        { locale: "en-US" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("en-US,en;q=0.9"),
     );
     const page = await context.newPage();
-    await gotoHomePath(page);
-
-    await expect(page).toHaveURL(/\/en(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/en(\/|$)/, "/en");
     await expectGuestHomeInLocale(page, HERO_MARKERS.en, "en");
 
     await context.close();
@@ -85,18 +60,10 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "fr-FR,fr;q=0.9,en;q=0.4",
-        { locale: "fr-FR" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("fr-FR,fr;q=0.9,en;q=0.4"),
     );
     const page = await context.newPage();
-    await gotoHomePath(page);
-
-    await expect(page).toHaveURL(/\/fr(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/fr(\/|$)/, "/fr");
     await expectGuestHomeInLocale(page, HERO_MARKERS.fr, "fr");
 
     await context.close();
@@ -106,18 +73,10 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "es-ES,es;q=0.9,en;q=0.4",
-        { locale: "es-ES" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("es-ES,es;q=0.9,en;q=0.4"),
     );
     const page = await context.newPage();
-    await gotoHomePath(page);
-
-    await expect(page).toHaveURL(/\/es(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/es(\/|$)/, "/es");
     await expectGuestHomeInLocale(page, HERO_MARKERS.es, "es");
 
     await context.close();
@@ -127,18 +86,10 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "ja-JP,ja;q=0.9",
-        { locale: "ja-JP" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("ja-JP,ja;q=0.9"),
     );
     const page = await context.newPage();
-    await gotoHomePath(page);
-
-    await expect(page).toHaveURL(/\/it(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/it(\/|$)/, "/it");
     await expectGuestHomeInLocale(page, HERO_MARKERS.it, "it");
 
     await context.close();
@@ -151,11 +102,7 @@ test.describe("@smoke locale auto-detection", () => {
     // Il browser dice "de" ma il cookie dice "en": deve vincere il cookie.
     const url = new URL(baseURL ?? "http://127.0.0.1:3000");
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "de-DE,de;q=0.9",
-        { locale: "de-DE" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("de-DE,de;q=0.9"),
     );
 
     await context.addCookies([
@@ -171,11 +118,7 @@ test.describe("@smoke locale auto-detection", () => {
     ]);
 
     const page = await context.newPage();
-    await gotoHomePath(page);
-
-    await expect(page).toHaveURL(/\/en(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/en(\/|$)/, "/en");
     await expectGuestHomeInLocale(page, HERO_MARKERS.en, "en");
 
     await context.close();
@@ -189,17 +132,10 @@ test.describe("LocaleSwitcher", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions(
-        "it-IT,it;q=0.9",
-        { locale: "it-IT" },
-        previewBypassState,
-      ),
+      localeBrowserContextOptions("it-IT,it;q=0.9"),
     );
     const page = await context.newPage();
-    await gotoHomePath(page);
-    await expect(page).toHaveURL(/\/it(\/|$)/, {
-      timeout: localeHomeAssertionTimeout(),
-    });
+    await enterHomeViaLocaleDetection(page, /\/it(\/|$)/, "/it");
     await expectGuestHomeInLocale(page, HERO_MARKERS.it, "it");
 
     // Il LocaleSwitcher è un menu custom (bottone con aria-label tradotta) +
