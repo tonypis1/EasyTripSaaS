@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { localeContextHeaders } from "./helpers/vercel-bypass";
 
 /**
  * E2E: rilevamento automatico della lingua del browser.
@@ -28,9 +29,7 @@ test.describe("@smoke locale auto-detection", () => {
   test("tedesco → redirect a /de e pagina in tedesco", async ({ browser }) => {
     const context = await browser.newContext({
       locale: "de-DE",
-      extraHTTPHeaders: {
-        "Accept-Language": "de-DE,de;q=0.9,en;q=0.5",
-      },
+      extraHTTPHeaders: localeContextHeaders("de-DE,de;q=0.9,en;q=0.5"),
     });
     const page = await context.newPage();
     await page.goto("/");
@@ -49,9 +48,7 @@ test.describe("@smoke locale auto-detection", () => {
   }) => {
     const context = await browser.newContext({
       locale: "en-US",
-      extraHTTPHeaders: {
-        "Accept-Language": "en-US,en;q=0.9",
-      },
+      extraHTTPHeaders: localeContextHeaders("en-US,en;q=0.9"),
     });
     const page = await context.newPage();
     await page.goto("/");
@@ -70,9 +67,7 @@ test.describe("@smoke locale auto-detection", () => {
   }) => {
     const context = await browser.newContext({
       locale: "fr-FR",
-      extraHTTPHeaders: {
-        "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.4",
-      },
+      extraHTTPHeaders: localeContextHeaders("fr-FR,fr;q=0.9,en;q=0.4"),
     });
     const page = await context.newPage();
     await page.goto("/");
@@ -91,9 +86,7 @@ test.describe("@smoke locale auto-detection", () => {
   }) => {
     const context = await browser.newContext({
       locale: "es-ES",
-      extraHTTPHeaders: {
-        "Accept-Language": "es-ES,es;q=0.9,en;q=0.4",
-      },
+      extraHTTPHeaders: localeContextHeaders("es-ES,es;q=0.9,en;q=0.4"),
     });
     const page = await context.newPage();
     await page.goto("/");
@@ -112,9 +105,7 @@ test.describe("@smoke locale auto-detection", () => {
   }) => {
     const context = await browser.newContext({
       locale: "ja-JP",
-      extraHTTPHeaders: {
-        "Accept-Language": "ja-JP,ja;q=0.9",
-      },
+      extraHTTPHeaders: localeContextHeaders("ja-JP,ja;q=0.9"),
     });
     const page = await context.newPage();
     await page.goto("/");
@@ -133,14 +124,12 @@ test.describe("@smoke locale auto-detection", () => {
     baseURL,
   }) => {
     // Il browser dice "de" ma il cookie dice "en": deve vincere il cookie.
+    const url = new URL(baseURL ?? "http://127.0.0.1:3000");
     const context = await browser.newContext({
       locale: "de-DE",
-      extraHTTPHeaders: {
-        "Accept-Language": "de-DE,de;q=0.9",
-      },
+      extraHTTPHeaders: localeContextHeaders("de-DE,de;q=0.9"),
     });
 
-    const url = new URL(baseURL ?? "http://127.0.0.1:3000");
     await context.addCookies([
       {
         name: "NEXT_LOCALE",
@@ -148,7 +137,7 @@ test.describe("@smoke locale auto-detection", () => {
         domain: url.hostname,
         path: "/",
         httpOnly: false,
-        secure: false,
+        secure: url.protocol === "https:",
         sameSite: "Lax",
       },
     ]);
@@ -173,9 +162,7 @@ test.describe("LocaleSwitcher", () => {
   }) => {
     const context = await browser.newContext({
       locale: "it-IT",
-      extraHTTPHeaders: {
-        "Accept-Language": "it-IT,it;q=0.9",
-      },
+      extraHTTPHeaders: localeContextHeaders("it-IT,it;q=0.9"),
     });
     const page = await context.newPage();
     await page.goto("/");

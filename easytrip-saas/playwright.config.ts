@@ -1,16 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { vercelProtectionBypassHeaders } from "./tests/e2e/helpers/vercel-bypass";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000";
-
-/** Header per bypassare Vercel Deployment Protection su Preview (job `e2e-preview`). */
-function vercelProtectionBypassHeaders(): Record<string, string> {
-  const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
-  if (!secret) return {};
-  return {
-    "x-vercel-protection-bypass": secret,
-    "x-vercel-set-bypass-cookie": "true",
-  };
-}
 
 /**
  * In CI (GitHub Actions) non c’è `.env`: `next dev` deve comunque soddisfare
