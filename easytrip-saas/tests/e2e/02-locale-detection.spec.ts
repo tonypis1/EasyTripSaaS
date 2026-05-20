@@ -4,7 +4,11 @@ import {
   gotoHomePath,
   localeHomeAssertionTimeout,
 } from "./helpers/locale-home";
-import { localeBrowserContextOptions } from "./helpers/locale-context";
+import {
+  localeBrowserContextOptions,
+  vercelPreviewBypassStorageState,
+} from "./helpers/locale-context";
+import type { BrowserContextOptions } from "@playwright/test";
 
 /**
  * E2E: rilevamento automatico della lingua del browser.
@@ -25,6 +29,12 @@ const HERO_MARKERS: Record<"it" | "en" | "es" | "fr" | "de", string> = {
   de: "KI-Reiserouten für Kurztrips.",
 };
 
+let previewBypassState: BrowserContextOptions["storageState"];
+
+test.beforeAll(async ({ browser }) => {
+  previewBypassState = await vercelPreviewBypassStorageState(browser);
+});
+
 test.describe("@smoke locale auto-detection", () => {
   // Stesso file: in parallelo ogni test apre un browser context e colpisce `npm run dev`
   // in modo pesante. Serial + timeout 60s riduce timeout flakies su newPage/goto sotto carico.
@@ -33,9 +43,11 @@ test.describe("@smoke locale auto-detection", () => {
 
   test("tedesco → redirect a /de e pagina in tedesco", async ({ browser }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions("de-DE,de;q=0.9,en;q=0.5", {
-        locale: "de-DE",
-      }),
+      localeBrowserContextOptions(
+        "de-DE,de;q=0.9,en;q=0.5",
+        { locale: "de-DE" },
+        previewBypassState,
+      ),
     );
     const page = await context.newPage();
     await gotoHomePath(page);
@@ -52,7 +64,11 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions("en-US,en;q=0.9", { locale: "en-US" }),
+      localeBrowserContextOptions(
+        "en-US,en;q=0.9",
+        { locale: "en-US" },
+        previewBypassState,
+      ),
     );
     const page = await context.newPage();
     await gotoHomePath(page);
@@ -69,9 +85,11 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions("fr-FR,fr;q=0.9,en;q=0.4", {
-        locale: "fr-FR",
-      }),
+      localeBrowserContextOptions(
+        "fr-FR,fr;q=0.9,en;q=0.4",
+        { locale: "fr-FR" },
+        previewBypassState,
+      ),
     );
     const page = await context.newPage();
     await gotoHomePath(page);
@@ -88,9 +106,11 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions("es-ES,es;q=0.9,en;q=0.4", {
-        locale: "es-ES",
-      }),
+      localeBrowserContextOptions(
+        "es-ES,es;q=0.9,en;q=0.4",
+        { locale: "es-ES" },
+        previewBypassState,
+      ),
     );
     const page = await context.newPage();
     await gotoHomePath(page);
@@ -107,7 +127,11 @@ test.describe("@smoke locale auto-detection", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions("ja-JP,ja;q=0.9", { locale: "ja-JP" }),
+      localeBrowserContextOptions(
+        "ja-JP,ja;q=0.9",
+        { locale: "ja-JP" },
+        previewBypassState,
+      ),
     );
     const page = await context.newPage();
     await gotoHomePath(page);
@@ -127,7 +151,11 @@ test.describe("@smoke locale auto-detection", () => {
     // Il browser dice "de" ma il cookie dice "en": deve vincere il cookie.
     const url = new URL(baseURL ?? "http://127.0.0.1:3000");
     const context = await browser.newContext(
-      localeBrowserContextOptions("de-DE,de;q=0.9", { locale: "de-DE" }),
+      localeBrowserContextOptions(
+        "de-DE,de;q=0.9",
+        { locale: "de-DE" },
+        previewBypassState,
+      ),
     );
 
     await context.addCookies([
@@ -161,7 +189,11 @@ test.describe("LocaleSwitcher", () => {
     browser,
   }) => {
     const context = await browser.newContext(
-      localeBrowserContextOptions("it-IT,it;q=0.9", { locale: "it-IT" }),
+      localeBrowserContextOptions(
+        "it-IT,it;q=0.9",
+        { locale: "it-IT" },
+        previewBypassState,
+      ),
     );
     const page = await context.newPage();
     await gotoHomePath(page);

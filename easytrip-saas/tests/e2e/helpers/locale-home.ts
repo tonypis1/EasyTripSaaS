@@ -1,8 +1,7 @@
 import { expect, type Page } from "@playwright/test";
+import { isVercelPreviewBaseUrl } from "./vercel-bypass";
 
-export function isVercelPreviewBaseUrl(): boolean {
-  return /vercel\.app/i.test(process.env.E2E_BASE_URL ?? "");
-}
+export { isVercelPreviewBaseUrl };
 
 /** Timeout più lungo su Preview Vercel (cold start + SSR). */
 export function localeHomeAssertionTimeout(): number {

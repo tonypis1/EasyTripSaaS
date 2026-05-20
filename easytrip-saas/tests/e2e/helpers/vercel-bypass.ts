@@ -1,3 +1,7 @@
+export function isVercelPreviewBaseUrl(): boolean {
+  return /vercel\.app/i.test(process.env.E2E_BASE_URL ?? "");
+}
+
 /** Header per bypassare Vercel Deployment Protection (job CI `e2e-preview`). */
 export function vercelProtectionBypassHeaders(): Record<string, string> {
   const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim();
