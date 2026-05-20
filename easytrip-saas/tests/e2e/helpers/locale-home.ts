@@ -54,7 +54,7 @@ export async function enterHomeViaLocaleDetection(
 
   // Verifica redirect su `/` senza attendere `load` sulla catena (fragile su Preview e in CI).
   await page.goto("/", { waitUntil: "commit", timeout: gotoTimeout });
-  await page.waitForURL(expectedUrl, { timeout });
+  await page.waitForURL(expectedUrl, { timeout, waitUntil: "commit" });
   await page.goto(localePath, {
     waitUntil: localePathWaitUntil(),
     timeout: gotoTimeout,
