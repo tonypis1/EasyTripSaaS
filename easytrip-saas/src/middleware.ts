@@ -70,7 +70,8 @@ export default clerkMiddleware(async (auth, req) => {
 export const config = {
   matcher: [
     // Escludi /api/webhooks/* (Stripe/Clerk): il body deve restare raw per la firma.
-    "/((?!_next|api/webhooks|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api(?!/webhooks)|trpc)(.*)",
+    // Escludi /api/health: monitoring senza Clerk/intl (utile se il middleware fallisce in prod).
+    "/((?!_next|api/webhooks|api/health|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api(?!/webhooks|/health)|trpc)(.*)",
   ],
 };

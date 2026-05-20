@@ -17,6 +17,7 @@ import {
 } from "next-intl/server";
 import PostHogProvider from "../posthog-provider";
 import { SetDocumentLang } from "@/components/i18n/set-document-lang";
+import { getMetadataBaseUrl } from "@/lib/app-base-url";
 import { routing, type AppLocale } from "@/i18n/routing";
 
 /**
@@ -62,9 +63,7 @@ export async function generateMetadata({
   // restituiamo un fallback neutro per non crashare durante la fase metadata.
   if (!hasLocale(routing.locales, locale)) {
     return {
-      metadataBase: new URL(
-        process.env.APP_BASE_URL ?? "http://localhost:3000",
-      ),
+      metadataBase: getMetadataBaseUrl(),
       title: "EasyTripSaaS",
       description: "AI travel itineraries",
     };
@@ -72,7 +71,7 @@ export async function generateMetadata({
 
   const t = await getTranslations({ locale, namespace: "meta.root" });
   return {
-    metadataBase: new URL(process.env.APP_BASE_URL ?? "http://localhost:3000"),
+    metadataBase: getMetadataBaseUrl(),
     title: t("title"),
     description: t("description"),
   };
