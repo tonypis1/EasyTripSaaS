@@ -12,6 +12,12 @@ export function localeHomeAssertionTimeout(): number {
 
 const CHROMIUM_LOAD_ERROR = /couldn.t load/i;
 
+/** `npm run dev` in CI e Preview: attendere `load` così l'hero client è idratato. */
+function localePathWaitUntil(): "load" | "domcontentloaded" {
+  if (isVercelPreviewBaseUrl() || process.env.CI) return "load";
+  return "domcontentloaded";
+}
+
 export async function isChromiumLoadErrorPage(page: Page): Promise<boolean> {
   const heading = await page
     .getByRole("heading", { level: 1 })
@@ -48,9 +54,9 @@ export async function enterHomeViaLocaleDetection(
 
   // Verifica redirect su `/` senza attendere `load` sulla catena (fragile su Preview e in CI).
   await page.goto("/", { waitUntil: "commit", timeout: gotoTimeout });
-  await expect(page).toHaveURL(expectedUrl, { timeout });
+  await page.waitForURL(expectedUrl, { timeout });
   await page.goto(localePath, {
-    waitUntil: isVercelPreviewBaseUrl() ? "load" : "domcontentloaded",
+    waitUntil: localePathWaitUntil(),
     timeout: gotoTimeout,
   });
   if (await isChromiumLoadErrorPage(page)) {
@@ -107,9 +113,8 @@ export async function expectGuestHomeInLocale(
     );
   }
 
-  await expect(page.getByRole("heading", { level: 1 }).first()).toContainText(
-    titleNeedle,
-    { timeout },
-  );
+  const hero = page.getByRole("heading", { level: 1 }).first();
+  await expect(hero).toBeVisible({ timeout });
+  await expect(hero).toContainText(titleNeedle, { timeout });
   await expect(page.locator("html")).toHaveAttribute("lang", lang, { timeout });
 }
