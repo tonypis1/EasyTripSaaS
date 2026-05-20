@@ -4,7 +4,7 @@ import {
   gotoHomePath,
   localeHomeAssertionTimeout,
 } from "./helpers/locale-home";
-import { localeContextHeaders } from "./helpers/vercel-bypass";
+import { localeBrowserContextOptions } from "./helpers/locale-context";
 
 /**
  * E2E: rilevamento automatico della lingua del browser.
@@ -32,10 +32,11 @@ test.describe("@smoke locale auto-detection", () => {
   test.setTimeout(60_000);
 
   test("tedesco → redirect a /de e pagina in tedesco", async ({ browser }) => {
-    const context = await browser.newContext({
-      locale: "de-DE",
-      extraHTTPHeaders: localeContextHeaders("de-DE,de;q=0.9,en;q=0.5"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("de-DE,de;q=0.9,en;q=0.5", {
+        locale: "de-DE",
+      }),
+    );
     const page = await context.newPage();
     await gotoHomePath(page);
 
@@ -50,10 +51,9 @@ test.describe("@smoke locale auto-detection", () => {
   test("inglese (en-US) → redirect a /en e pagina in inglese", async ({
     browser,
   }) => {
-    const context = await browser.newContext({
-      locale: "en-US",
-      extraHTTPHeaders: localeContextHeaders("en-US,en;q=0.9"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("en-US,en;q=0.9", { locale: "en-US" }),
+    );
     const page = await context.newPage();
     await gotoHomePath(page);
 
@@ -68,10 +68,11 @@ test.describe("@smoke locale auto-detection", () => {
   test("francese → redirect a /fr e pagina in francese", async ({
     browser,
   }) => {
-    const context = await browser.newContext({
-      locale: "fr-FR",
-      extraHTTPHeaders: localeContextHeaders("fr-FR,fr;q=0.9,en;q=0.4"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("fr-FR,fr;q=0.9,en;q=0.4", {
+        locale: "fr-FR",
+      }),
+    );
     const page = await context.newPage();
     await gotoHomePath(page);
 
@@ -86,10 +87,11 @@ test.describe("@smoke locale auto-detection", () => {
   test("spagnolo → redirect a /es e pagina in spagnolo", async ({
     browser,
   }) => {
-    const context = await browser.newContext({
-      locale: "es-ES",
-      extraHTTPHeaders: localeContextHeaders("es-ES,es;q=0.9,en;q=0.4"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("es-ES,es;q=0.9,en;q=0.4", {
+        locale: "es-ES",
+      }),
+    );
     const page = await context.newPage();
     await gotoHomePath(page);
 
@@ -104,10 +106,9 @@ test.describe("@smoke locale auto-detection", () => {
   test("lingua non supportata (ja) → fallback al defaultLocale (it)", async ({
     browser,
   }) => {
-    const context = await browser.newContext({
-      locale: "ja-JP",
-      extraHTTPHeaders: localeContextHeaders("ja-JP,ja;q=0.9"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("ja-JP,ja;q=0.9", { locale: "ja-JP" }),
+    );
     const page = await context.newPage();
     await gotoHomePath(page);
 
@@ -125,10 +126,9 @@ test.describe("@smoke locale auto-detection", () => {
   }) => {
     // Il browser dice "de" ma il cookie dice "en": deve vincere il cookie.
     const url = new URL(baseURL ?? "http://127.0.0.1:3000");
-    const context = await browser.newContext({
-      locale: "de-DE",
-      extraHTTPHeaders: localeContextHeaders("de-DE,de;q=0.9"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("de-DE,de;q=0.9", { locale: "de-DE" }),
+    );
 
     await context.addCookies([
       {
@@ -160,10 +160,9 @@ test.describe("LocaleSwitcher", () => {
   test("cambiare lingua aggiorna URL, DOM e scrive cookie NEXT_LOCALE", async ({
     browser,
   }) => {
-    const context = await browser.newContext({
-      locale: "it-IT",
-      extraHTTPHeaders: localeContextHeaders("it-IT,it;q=0.9"),
-    });
+    const context = await browser.newContext(
+      localeBrowserContextOptions("it-IT,it;q=0.9", { locale: "it-IT" }),
+    );
     const page = await context.newPage();
     await gotoHomePath(page);
     await expect(page).toHaveURL(/\/it(\/|$)/, {
