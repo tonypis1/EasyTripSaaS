@@ -362,8 +362,19 @@
         "generating": {
           "inline": "Generating…",
           "title": "We're crafting your itinerary",
+          "titleRegen": "We're regenerating your itinerary",
           "description": "It usually takes 1–2 minutes. You can wait on this page or come back later: it will refresh automatically when it's ready.",
-          "refreshNow": "Refresh now"
+          "descriptionRegen": "We're preparing a new version of your trip. It usually takes 1–2 minutes and this page will update on its own.",
+          "progressLabel": "Estimated progress",
+          "refreshNow": "Refresh now",
+          "steps": {
+            "analyzeDestination": "Analyzing your destination…",
+            "optimizeRoutes": "Optimizing routes…",
+            "findLocalGems": "Finding local gems…",
+            "pickRestaurants": "Picking restaurants and activities…",
+            "organizeDays": "Organizing day by day…",
+            "finalTouches": "Final touches on your trip…"
+          }
         },
         "redirecting": "Redirecting…",
         "regenerateWithCost": "Regenerate (€1.99)",
