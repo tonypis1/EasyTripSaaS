@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { useAuth, useClerk } from "@clerk/nextjs";
@@ -18,22 +18,10 @@ import {
   Plane,
   RefreshCw,
 } from "lucide-react";
+import { localeToBcp47 } from "@/lib/trip-display-labels";
 
-/**
- * Quanto aspettiamo `clerk-js` prima di mostrare il fallback di emergenza.
- * Se la CSP blocca lo script o l'estensione dell'utente lo intercetta,
- * `useAuth().isLoaded` resta `false` per sempre e l'utente vede uno spinner
- * eterno: con questo timeout dopo 8s mostriamo un'alternativa concreta
- * (link diretto al portal Clerk se configurato, altrimenti reload + hint).
- */
 const CLERK_LOAD_TIMEOUT_MS = 8000;
 
-/**
- * Costruisce un URL diretto all'Account Portal Clerk (`/sign-in`) con
- * `redirect_url` impostato sull'invito corrente. Usabile come link `<a>`:
- * non dipende da `clerk-js`, quindi funziona anche se la CSP lo blocca.
- * Ritorna `null` se il portal non è configurato via env var pubbliche.
- */
 function buildSignInPortalUrl(returnPath: string): string | null {
   const fullSignIn = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL?.trim();
   const portalOrigin =
@@ -68,10 +56,20 @@ type TripPreview = {
   maxMembers: number;
 };
 
+function formatTripDate(iso: string, dateLocale: string) {
+  return new Date(iso).toLocaleDateString(dateLocale, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function JoinTripPage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
   const locale = useLocale() as AppLocale;
+  const t = useTranslations("join");
+  const dateLocale = localeToBcp47(locale);
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const clerk = useClerk();
 
@@ -80,9 +78,6 @@ export default function JoinTripPage() {
   const [joining, setJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Diventa `true` se `clerk-js` non si è inizializzato entro CLERK_LOAD_TIMEOUT_MS
-  // (es. CSP che blocca lo script, ad-blocker aggressivo). In quel caso al posto
-  // dello spinner eterno mostriamo un fallback navigazionale concreto.
   const [authTimedOut, setAuthTimedOut] = useState(false);
 
   useEffect(() => {
@@ -91,12 +86,12 @@ export default function JoinTripPage() {
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) {
-          setError(json.error?.message ?? "Link non valido");
+          setError(json.error?.message ?? t("invalidLink"));
           return;
         }
         setTrip(json.data);
       })
-      .catch(() => setError("Errore di rete"))
+      .catch(() => setError(t("networkError")))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -122,7 +117,7 @@ export default function JoinTripPage() {
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json.error?.message ?? "Impossibile unirsi");
+        setError(json.error?.message ?? t("joinFailed"));
         return;
       }
 
@@ -132,7 +127,7 @@ export default function JoinTripPage() {
         router.push(tripId ? `/app/trips/${tripId}` : "/app/trips");
       }, 2000);
     } catch {
-      setError("Errore di rete. Riprova.");
+      setError(t("networkErrorRetry"));
     } finally {
       setJoining(false);
     }
@@ -143,7 +138,7 @@ export default function JoinTripPage() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <Loader2 className="mx-auto mb-4 h-10 w-10 animate-spin text-blue-600" />
-          <p className="text-gray-600">Caricamento invito...</p>
+          <p className="text-gray-600">{t("loading")}</p>
         </div>
       </div>
     );
@@ -155,14 +150,14 @@ export default function JoinTripPage() {
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
           <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
           <h1 className="mb-2 text-xl font-bold text-gray-900">
-            Link non valido
+            {t("invalidTitle")}
           </h1>
           <p className="mb-6 text-gray-600">{error}</p>
           <button
             onClick={() => router.push("/")}
             className="min-h-[44px] min-w-[44px] cursor-pointer rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
           >
-            Torna alla home
+            {t("backHome")}
           </button>
         </div>
       </div>
@@ -174,10 +169,14 @@ export default function JoinTripPage() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
           <CheckCircle2 className="mx-auto mb-4 h-16 w-16 text-green-500" />
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">Sei dentro!</h1>
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">
+            {t("joinedTitle")}
+          </h1>
           <p className="text-gray-600">
-            Ti sei unito al viaggio a <strong>{trip?.destination}</strong>.
-            Redirect in corso...
+            {t.rich("joinedBody", {
+              destination: trip?.destination ?? "",
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </div>
       </div>
@@ -192,21 +191,19 @@ export default function JoinTripPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center text-white">
           <Plane className="mx-auto mb-3 h-10 w-10 opacity-90" />
-          <h1 className="mb-1 text-2xl font-bold">Sei stato invitato!</h1>
+          <h1 className="mb-1 text-2xl font-bold">{t("invitedTitle")}</h1>
           <p className="text-blue-100">
-            {trip.organizerName} ti ha invitato a partecipare
+            {t("invitedSubtitle", { organizerName: trip.organizerName })}
           </p>
         </div>
 
-        {/* Trip Info */}
         <div className="space-y-4 p-6">
           <div className="flex items-center gap-3">
             <MapPin className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-500">Destinazione</p>
+              <p className="text-sm text-gray-500">{t("destinationLabel")}</p>
               <p className="text-lg font-semibold text-gray-900">
                 {trip.destination}
               </p>
@@ -216,19 +213,10 @@ export default function JoinTripPage() {
           <div className="flex items-center gap-3">
             <Calendar className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-500">Date</p>
+              <p className="text-sm text-gray-500">{t("datesLabel")}</p>
               <p className="font-medium text-gray-900">
-                {new Date(trip.startDate).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}{" "}
-                →{" "}
-                {new Date(trip.endDate).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
+                {formatTripDate(trip.startDate, dateLocale)} →{" "}
+                {formatTripDate(trip.endDate, dateLocale)}
               </p>
             </div>
           </div>
@@ -236,16 +224,17 @@ export default function JoinTripPage() {
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 flex-shrink-0 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-500">Partecipanti</p>
+              <p className="text-sm text-gray-500">{t("participantsLabel")}</p>
               <p className="font-medium text-gray-900">
                 {trip.memberCount} / {trip.maxMembers}{" "}
                 {spotsLeft > 0 ? (
                   <span className="text-sm text-green-600">
-                    ({spotsLeft} {spotsLeft === 1 ? "posto" : "posti"}{" "}
-                    disponibil{spotsLeft === 1 ? "e" : "i"})
+                    {spotsLeft === 1
+                      ? t("spotsOne", { count: spotsLeft })
+                      : t("spotsMany", { count: spotsLeft })}
                   </span>
                 ) : (
-                  <span className="text-sm text-red-500">(completo)</span>
+                  <span className="text-sm text-red-500">{t("groupFull")}</span>
                 )}
               </p>
             </div>
@@ -254,24 +243,20 @@ export default function JoinTripPage() {
           {trip.style && (
             <div className="rounded-lg bg-blue-50 p-3 text-center">
               <span className="text-sm font-medium text-blue-700">
-                Stile: {trip.style}
+                {t("styleLabel", { style: trip.style })}
               </span>
             </div>
           )}
 
-          {/* Error inline */}
           {error && (
             <div className="rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
               {error}
             </div>
           )}
 
-          {/* CTA */}
           {isFull ? (
             <div className="rounded-xl bg-gray-100 p-4 text-center">
-              <p className="font-medium text-gray-600">
-                Il gruppo è al completo
-              </p>
+              <p className="font-medium text-gray-600">{t("groupFullMessage")}</p>
             </div>
           ) : !authLoaded ? (
             authTimedOut ? (
@@ -280,14 +265,10 @@ export default function JoinTripPage() {
                   <div className="mb-2 flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-600" />
                     <p className="text-sm font-semibold text-amber-900">
-                      Servizio di accesso non disponibile
+                      {t("authTimeoutTitle")}
                     </p>
                   </div>
-                  <p className="text-xs text-amber-800">
-                    Non siamo riusciti a caricare il sistema di login. Prova a
-                    ricaricare la pagina o disabilita estensioni che bloccano
-                    script (ad-blocker, anti-tracking).
-                  </p>
+                  <p className="text-xs text-amber-800">{t("authTimeoutBody")}</p>
                 </div>
                 {signInFallbackUrl && (
                   <a
@@ -295,7 +276,7 @@ export default function JoinTripPage() {
                     className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-lg font-semibold text-white transition-all hover:from-blue-700 hover:to-indigo-700"
                   >
                     <LogIn className="h-5 w-5" />
-                    Accedi tramite portale
+                    {t("signInPortal")}
                   </a>
                 )}
                 <button
@@ -304,7 +285,7 @@ export default function JoinTripPage() {
                   className="flex min-h-[44px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-50"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Ricarica pagina
+                  {t("reloadPage")}
                 </button>
               </div>
             ) : (
@@ -324,10 +305,10 @@ export default function JoinTripPage() {
                 className="flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-lg font-semibold text-white transition-all hover:from-blue-700 hover:to-indigo-700"
               >
                 <LogIn className="h-5 w-5" />
-                Accedi per unirti
+                {t("signInCta")}
               </button>
               <p className="text-center text-xs text-gray-500">
-                Devi accedere o creare un account per unirti al viaggio.
+                {t("signInHint")}
               </p>
             </div>
           ) : (
@@ -339,21 +320,18 @@ export default function JoinTripPage() {
               {joining ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Accesso in corso...
+                  {t("joining")}
                 </>
               ) : (
                 <>
                   <UserPlus className="h-5 w-5" />
-                  Unisciti al viaggio
+                  {t("joinCta")}
                 </>
               )}
             </button>
           )}
 
-          <p className="text-center text-xs text-gray-400">
-            Avrai accesso in sola lettura all&apos;itinerario e potrai
-            partecipare allo split delle spese.
-          </p>
+          <p className="text-center text-xs text-gray-400">{t("footerNote")}</p>
         </div>
       </div>
     </div>

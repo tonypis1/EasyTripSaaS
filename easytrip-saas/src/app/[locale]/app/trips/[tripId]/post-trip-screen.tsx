@@ -1,7 +1,7 @@
 "use client";
 
 import type { TripDetailDto } from "@/server/services/trip/tripService";
-import { formatTripType } from "@/lib/day-unlock";
+import { tripTypeDisplayLabel } from "@/lib/trip-display-labels";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
@@ -24,6 +24,7 @@ type Props = {
 
 export function PostTripScreen({ trip }: Props) {
   const t = useTranslations("app.trips.postTrip");
+  const tShared = useTranslations("app.trips.shared");
   const [loading, setLoading] = useState(false);
 
   const totalDays = trip.days.length || 1;
@@ -104,7 +105,7 @@ export function PostTripScreen({ trip }: Props) {
         <div className="border-et-border bg-et-card flex items-center gap-2 rounded-xl border px-4 py-2.5">
           <Heart className="text-et-ink/40 h-4 w-4" />
           <span className="text-et-ink/70 text-sm">
-            {formatTripType(trip.tripType)}
+            {tripTypeDisplayLabel(trip.tripType, tShared)}
           </span>
         </div>
       </div>
