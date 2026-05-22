@@ -27,11 +27,23 @@ export class AuthService {
     const localeCookie = cookieStore.get("NEXT_LOCALE")?.value;
     const language = normalizeLanguage(localeCookie);
 
-    return this.userRepository.upsertByClerkId({
+    const user = await this.userRepository.upsertByClerkId({
       clerkUserId: clerkUser.id,
       email: primaryEmail,
       name: `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim(),
       language,
     });
+
+    // Allinea il profilo al cookie NEXT_LOCALE se l'utente ha cambiato lingua
+    // nello switcher ma il salvataggio PATCH non è arrivato (navigazione interrotta, ecc.).
+    const cookieLang = normalizeLanguage(localeCookie);
+    if (cookieLang && cookieLang !== user.language) {
+      return this.userRepository.updateLanguageByClerkId(
+        clerkUser.id,
+        cookieLang,
+      );
+    }
+
+    return user;
   }
 }
