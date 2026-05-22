@@ -5,12 +5,7 @@ const TRIP_TYPE_DB_TO_KEY: Record<string, "solo" | "couple" | "group"> = {
   gruppo: "group",
 };
 
-const TRIP_STATUS_KEYS = [
-  "pending",
-  "active",
-  "expired",
-  "cancelled",
-] as const;
+const TRIP_STATUS_KEYS = ["pending", "active", "expired", "cancelled"] as const;
 
 type TripTypeKey = "solo" | "couple" | "group";
 type TripStatusKey = (typeof TRIP_STATUS_KEYS)[number];

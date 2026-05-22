@@ -1,11 +1,7 @@
 "use client";
 
 import type { TripDetailDto } from "@/server/services/trip/tripService";
-import {
-  isDayUnlocked,
-  daysUntilUnlock,
-  tripPhase,
-} from "@/lib/day-unlock";
+import { isDayUnlocked, daysUntilUnlock, tripPhase } from "@/lib/day-unlock";
 import {
   tripStatusDisplayLabel,
   tripTypeDisplayLabel,

@@ -54,9 +54,7 @@ export function SubscribeCtaButton({ className, children, errorLabel }: Props) {
         window.location.href = url;
         return;
       }
-      window.alert(
-        json.error?.message ?? errorLabel ?? t("checkoutFailed"),
-      );
+      window.alert(json.error?.message ?? errorLabel ?? t("checkoutFailed"));
     } catch {
       window.alert(errorLabel ?? t("networkError"));
     } finally {

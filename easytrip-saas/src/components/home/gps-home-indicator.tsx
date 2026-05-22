@@ -43,7 +43,9 @@ export function GpsHomeIndicator(props: Props) {
     return (
       <div className="border-et-accent/35 bg-et-accent/10 flex flex-col gap-2 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm">
-          <span className="text-et-accent font-semibold">{t("activeLabel")}</span>
+          <span className="text-et-accent font-semibold">
+            {t("activeLabel")}
+          </span>
           <span className="text-et-ink/70"> {t("activeHint")}</span>
         </div>
         <Link

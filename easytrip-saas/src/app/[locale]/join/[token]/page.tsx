@@ -256,7 +256,9 @@ export default function JoinTripPage() {
 
           {isFull ? (
             <div className="rounded-xl bg-gray-100 p-4 text-center">
-              <p className="font-medium text-gray-600">{t("groupFullMessage")}</p>
+              <p className="font-medium text-gray-600">
+                {t("groupFullMessage")}
+              </p>
             </div>
           ) : !authLoaded ? (
             authTimedOut ? (
@@ -268,7 +270,9 @@ export default function JoinTripPage() {
                       {t("authTimeoutTitle")}
                     </p>
                   </div>
-                  <p className="text-xs text-amber-800">{t("authTimeoutBody")}</p>
+                  <p className="text-xs text-amber-800">
+                    {t("authTimeoutBody")}
+                  </p>
                 </div>
                 {signInFallbackUrl && (
                   <a

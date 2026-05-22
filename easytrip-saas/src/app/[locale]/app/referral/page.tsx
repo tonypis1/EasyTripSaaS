@@ -40,7 +40,11 @@ type ReferralData = {
 
 const STATUS_STYLE: Record<
   string,
-  { color: string; icon: typeof Clock; labelKey: "pending" | "signed_up" | "converted" }
+  {
+    color: string;
+    icon: typeof Clock;
+    labelKey: "pending" | "signed_up" | "converted";
+  }
 > = {
   pending: {
     labelKey: "pending",
@@ -179,7 +183,9 @@ export default function ReferralPage() {
         </div>
 
         {copied && (
-          <p className="text-sm font-medium text-green-400">{t("linkCopied")}</p>
+          <p className="text-sm font-medium text-green-400">
+            {t("linkCopied")}
+          </p>
         )}
 
         <div className="bg-et-card/50 border-et-border/50 mt-4 rounded-xl border p-4">
