@@ -1,13 +1,11 @@
 "use client";
 
 import type { TripDetailDto } from "@/server/services/trip/tripService";
+import { isDayUnlocked, daysUntilUnlock, tripPhase } from "@/lib/day-unlock";
 import {
-  formatStatus,
-  formatTripType,
-  isDayUnlocked,
-  daysUntilUnlock,
-  tripPhase,
-} from "@/lib/day-unlock";
+  tripStatusDisplayLabel,
+  tripTypeDisplayLabel,
+} from "@/lib/trip-display-labels";
 import { DEV_PREVIEW_UNLOCK_CONTENT } from "@/lib/dev-flags";
 import { PostTripScreen } from "./post-trip-screen";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
@@ -284,6 +282,7 @@ export function TripDetailClient({
 }: Props) {
   const router = useRouter();
   const td = useTranslations("app.trips.detail");
+  const tShared = useTranslations("app.trips.shared");
   const [trip, setTrip] = useState(initialTrip);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -728,7 +727,7 @@ export function TripDetailClient({
             {trip.startDate} → {trip.endDate}
           </span>
           <span className="text-et-ink/30">|</span>
-          <span>{formatTripType(trip.tripType)}</span>
+          <span>{tripTypeDisplayLabel(trip.tripType, tShared)}</span>
           {trip.style ? (
             <>
               <span className="text-et-ink/30">|</span>
@@ -761,7 +760,7 @@ export function TripDetailClient({
           <span>
             {td("statusLabel")}{" "}
             <span className="text-et-accent/90">
-              {formatStatus(trip.status)}
+              {tripStatusDisplayLabel(trip.status, tShared)}
             </span>
           </span>
           <span>{trip.isPaid ? td("paid") : td("unpaid")}</span>

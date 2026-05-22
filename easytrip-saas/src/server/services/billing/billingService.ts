@@ -14,9 +14,14 @@ import {
   purchaseConfirmedHtml,
   sendTransactionalEmail,
 } from "@/lib/email/transactional";
-import { normalizeEmailLocale, t as trEmail } from "@/lib/email/email-i18n";
+import {
+  normalizeEmailLocale,
+  t as trEmail,
+  type EmailLocale,
+} from "@/lib/email/email-i18n";
 import { tryClaimWebhookDelivery } from "@/lib/email/webhookDelivery";
 import { isPaidRegeneration } from "@/lib/trip-regen-rules";
+import type { CreateCheckoutInput } from "@/server/validators/billing.schema";
 function purchaseAmountCentsForTrip(trip: {
   tripType: string;
   localPassCityCount?: number | null;
@@ -52,11 +57,12 @@ function purchaseProductCopy(trip: {
   return { productName, description };
 }
 
-type CheckoutInput = {
-  tripId: string;
-  successUrl?: string;
-  cancelUrl?: string;
-};
+function resolveCheckoutLocale(
+  inputLocale: string | undefined,
+  userLanguage: string | null | undefined,
+): EmailLocale {
+  return normalizeEmailLocale(inputLocale ?? userLanguage);
+}
 
 type RegenCheckoutInput = {
   tripId: string;
@@ -169,8 +175,17 @@ export class BillingService {
     return totalApplied;
   }
 
-  async createCheckoutSession(input: CheckoutInput) {
-    const user = await this.authService.getOrCreateCurrentUser();
+  async createCheckoutSession(input: CreateCheckoutInput) {
+    let user = await this.authService.getOrCreateCurrentUser();
+    const checkoutLocale = resolveCheckoutLocale(input.locale, user.language);
+
+    if (checkoutLocale !== user.language) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { language: checkoutLocale },
+      });
+    }
+
     const trip = await this.tripRepository.findByIdAndOrganizer(
       input.tripId,
       user.id,
@@ -216,16 +231,15 @@ export class BillingService {
 
       try {
         const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
-        const userLocale = normalizeEmailLocale(user.language);
         await sendTransactionalEmail({
           to: user.email,
-          subject: trEmail("subject.purchaseConfirmed", userLocale, {
+          subject: trEmail("subject.purchaseConfirmed", checkoutLocale, {
             destination: trip.destination,
           }),
           html: purchaseConfirmedHtml({
             destination: trip.destination,
             tripUrl,
-            locale: userLocale,
+            locale: checkoutLocale,
           }),
         });
       } catch {
@@ -283,6 +297,7 @@ export class BillingService {
         tripId: trip.id,
         appUserId: user.id,
         paymentType: "purchase",
+        locale: checkoutLocale,
         ...(creditToApplyCents > 0
           ? { creditApplyCents: String(creditToApplyCents) }
           : {}),
@@ -818,9 +833,22 @@ export class BillingService {
       where: { id: appUserId },
       select: { email: true, language: true },
     });
+
+    const metadataLocale = session.metadata?.locale
+      ? normalizeEmailLocale(session.metadata.locale)
+      : null;
+    const organizerLocale =
+      metadataLocale ?? normalizeEmailLocale(organizer?.language);
+
+    if (metadataLocale && organizer && metadataLocale !== organizer.language) {
+      await prisma.user.update({
+        where: { id: appUserId },
+        data: { language: metadataLocale },
+      });
+    }
+
     if (organizer?.email) {
       const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
-      const organizerLocale = normalizeEmailLocale(organizer.language);
       await sendTransactionalEmail({
         to: organizer.email,
         subject: trEmail("subject.purchaseConfirmed", organizerLocale, {

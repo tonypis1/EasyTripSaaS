@@ -90,6 +90,14 @@
       "createNewCta": "Crea nuovo itinerario",
       "viewAllCta": "Tutti i viaggi →"
     },
+    "gpsIndicator": {
+      "noTrip": "Crea un itinerario per usare il GPS e la sostituzione slot sul percorso.",
+      "activeLabel": "GPS attivo",
+      "activeHint": "— suggerimenti e sostituzione slot basati sulla posizione.",
+      "openLastTrip": "Apri ultimo viaggio →",
+      "inactiveHint": "GPS non attivato: nella pagina viaggio puoi abilitare la posizione per suggerimenti live e sostituire uno slot.",
+      "activateFromTrip": "Attiva dal viaggio"
+    },
     "dashboard": {
       "emptyTitle": "I tuoi itinerari",
       "emptyBody": "Non hai ancora itinerari. Usa il form qui sotto per crearne uno.",
@@ -177,6 +185,10 @@
       "addon": {
         "title": "In più (Premium)",
         "body": "Qualsiasi piano + <accent>€3,99 add-on per città</accent> con LocalPass: luoghi curati da insider locali, gemme nascoste e consigli non turistici."
+      },
+      "subscribeCta": {
+        "checkoutFailed": "Errore. Riprova più tardi.",
+        "networkError": "Errore di rete. Riprova più tardi."
       }
     },
     "faq": {
@@ -250,7 +262,49 @@
       "reservedArea": "Area riservata"
     },
     "privacyPage": {
-      "marketingOptIn": "Accetto email di marketing e onboarding da {appName}"
+      "eyebrow": "Account",
+      "title": "Privacy e dati personali",
+      "description": "Esporta una copia dei tuoi dati (diritto alla portabilità) o richiedi la cancellazione coordinata del tuo account (diritto all'oblio).",
+      "marketingTitle": "Comunicazioni email",
+      "marketingBody": "Le email su pagamenti e viaggi restano sempre attive. Puoi scegliere se ricevere anche suggerimenti e promemoria promozionali (es. se non hai ancora creato un viaggio).",
+      "marketingOptIn": "Accetto email di marketing e onboarding da {appName}",
+      "exportTitle": "Esporta i tuoi dati",
+      "exportBody": "Ricevi un file JSON con le informazioni associate al tuo account (viaggi, versioni itinerario, referenze collegate), come previsto dal GDPR art. 20.",
+      "exportCta": "Scarica export JSON",
+      "saveFailed": "Salvataggio non riuscito.",
+      "networkError": "Errore di rete. Riprova.",
+      "operationFailed": "Operazione non riuscita.",
+      "backToDashboard": "Torna alla dashboard"
+    },
+    "referral": {
+      "eyebrow": "Programma Referral",
+      "title": "Invita un amico, viaggia gratis",
+      "subtitle": "Per ogni amico che si registra e acquista il primo viaggio, ricevi <strong>€3,99 di credito</strong> = 1 trip Solo/Coppia gratis.",
+      "loadError": "Impossibile caricare i dati referral.",
+      "inviteLinkTitle": "Il tuo link di invito",
+      "inviteLinkHint": "Condividilo con amici, social, ovunque!",
+      "copyLinkTitle": "Copia link",
+      "shareLinkTitle": "Condividi",
+      "linkCopied": "Link copiato negli appunti!",
+      "howItWorks": "<strong>Come funziona:</strong> Il tuo amico clicca il link → si registra → acquista un viaggio → tu ricevi automaticamente €3,99 di credito. Nessun limite di inviti!",
+      "stats": {
+        "invited": "Invitati",
+        "signedUp": "Registrati",
+        "converted": "Convertiti",
+        "earned": "Guadagnato"
+      },
+      "yourInvites": "I tuoi inviti",
+      "emptyInvites": "Nessun invito ancora. Condividi il tuo link per iniziare!",
+      "status": {
+        "pending": "In attesa",
+        "signed_up": "Registrato",
+        "converted": "Convertito"
+      },
+      "rewardBadge": "+€3,99",
+      "share": {
+        "title": "EasyTrip — Viaggia gratis!",
+        "text": "Registrati su EasyTrip con il mio link e ricevi un itinerario AI personalizzato!"
+      }
     },
     "subscribeBridge": {
       "loadingTitle": "Stiamo aprendo il pagamento sicuro…",
@@ -330,6 +384,20 @@
         "submitting": "Creazione…",
         "errorGeneric": "Impossibile creare il viaggio",
         "errorNetwork": "Errore di rete. Riprova."
+      },
+      "shared": {
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Coppia",
+          "group": "Gruppo (3–5)"
+        },
+        "tripStatus": {
+          "pending": "In preparazione",
+          "active": "Attivo",
+          "expired": "Scaduto",
+          "cancelled": "Annullato"
+        },
+        "localPassBadge": "LocalPass · {count}"
       },
       "detail": {
         "back": "Torna ai viaggi",
@@ -628,18 +696,46 @@
     "notFound": {
       "title": "Pagina non trovata (404)",
       "body": "L'indirizzo non corrisponde a nessuna pagina dell'app.",
-      "back": "Torna alla home"
+      "bodyDetail": "L'indirizzo non corrisponde a nessuna route dell'app. Controlla l'URL nella barra del browser: l'elenco viaggi è sotto <mono>/app/trips</mono>, non <mono>/trips</mono> (quest'ultimo ora reindirizza automaticamente).",
+      "back": "Torna alla home",
+      "linkHome": "Home",
+      "linkDashboard": "Dashboard app",
+      "linkTrips": "I miei viaggi (URL corretto)",
+      "devHint": "Se usi <mono>npm run dev</mono>, avvialo dalla cartella <mono>easytrip-saas</mono> e usa la porta indicata nel terminale (3000, 3001, …)."
     }
   },
   "join": {
     "loading": "Caricamento invito...",
-    "invalidTitle": "Invito non valido",
+    "invalidLink": "Link non valido",
+    "invalidTitle": "Link non valido",
     "invalidBody": "Il link di invito non è più valido o è scaduto.",
+    "networkError": "Errore di rete",
+    "networkErrorRetry": "Errore di rete. Riprova.",
+    "joinFailed": "Impossibile unirsi",
+    "backHome": "Torna alla home",
+    "joinedTitle": "Sei dentro!",
+    "joinedBody": "Ti sei unito al viaggio a <strong>{destination}</strong>. Redirect in corso...",
+    "invitedTitle": "Sei stato invitato!",
+    "invitedSubtitle": "{organizerName} ti ha invitato a partecipare",
+    "destinationLabel": "Destinazione",
+    "datesLabel": "Date",
+    "participantsLabel": "Partecipanti",
+    "spotsOne": "({count} posto disponibile)",
+    "spotsMany": "({count} posti disponibili)",
+    "groupFull": "(completo)",
+    "styleLabel": "Stile: {style}",
+    "groupFullMessage": "Il gruppo è al completo",
+    "authTimeoutTitle": "Servizio di accesso non disponibile",
+    "authTimeoutBody": "Non siamo riusciti a caricare il sistema di login. Prova a ricaricare la pagina o disabilita estensioni che bloccano script (ad-blocker, anti-tracking).",
+    "signInPortal": "Accedi tramite portale",
+    "reloadPage": "Ricarica pagina",
     "needAccountTitle": "Accedi per unirti al viaggio",
     "needAccountBody": "Per accettare l'invito devi accedere o registrarti.",
-    "signInCta": "Accedi",
+    "signInCta": "Accedi per unirti",
+    "signInHint": "Devi accedere o creare un account per unirti al viaggio.",
     "signUpCta": "Registrati",
     "joinCta": "Unisciti al viaggio",
-    "joining": "Entrando nel viaggio..."
+    "joining": "Accesso in corso...",
+    "footerNote": "Avrai accesso in sola lettura all'itinerario e potrai partecipare allo split delle spese."
   }
 }

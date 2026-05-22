@@ -75,22 +75,3 @@ export function daysUntilUnlock(
   const diff = diffCalendarDays(today, unlock);
   return diff > 0 ? diff : 0;
 }
-
-export function formatTripType(t: string) {
-  const map: Record<string, string> = {
-    solo: "Solo",
-    coppia: "Coppia",
-    gruppo: "Gruppo",
-  };
-  return map[t] ?? t;
-}
-
-export function formatStatus(s: string) {
-  const map: Record<string, string> = {
-    pending: "In preparazione",
-    active: "Attivo",
-    expired: "Scaduto",
-    cancelled: "Annullato",
-  };
-  return map[s] ?? s;
-}

@@ -1,7 +1,11 @@
 import { z } from "zod";
 
+const appLocaleSchema = z.enum(["it", "en", "es", "fr", "de"]);
+
 export const createCheckoutSchema = z.object({
   tripId: z.string().min(1),
+  /** Lingua UI al momento dell'acquisto (email + generazione itinerario). */
+  locale: appLocaleSchema.optional(),
   successUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
 });

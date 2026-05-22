@@ -5,16 +5,20 @@ import { fetchTripsForDashboard } from "@/lib/trips-data";
 import { CreateTripForm } from "./create-trip-form";
 import { DeleteTripButton } from "./delete-trip-button";
 import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
-import { formatStatus, formatTripType } from "@/lib/day-unlock";
+import {
+  tripStatusDisplayLabel,
+  tripTypeDisplayLabel,
+} from "@/lib/trip-display-labels";
 
 function toDateLabel(d: Date) {
   return toDateOnlyIsoUtc(d);
 }
 
 export default async function TripsPage() {
-  const [trips, t] = await Promise.all([
+  const [trips, t, tShared] = await Promise.all([
     fetchTripsForDashboard(),
     getTranslations("app.trips.list"),
+    getTranslations("app.trips.shared"),
   ]);
 
   return (
@@ -56,10 +60,10 @@ export default async function TripsPage() {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2 text-xs">
                     <span className="border-et-border text-et-ink/65 rounded-full border px-2 py-0.5">
-                      {formatTripType(tr.tripType)}
+                      {tripTypeDisplayLabel(tr.tripType, tShared)}
                     </span>
                     <span className="border-et-border text-et-ink/65 rounded-full border px-2 py-0.5">
-                      {formatStatus(tr.status)}
+                      {tripStatusDisplayLabel(tr.status, tShared)}
                     </span>
                     {tr.isPaid ? (
                       <span className="border-et-accent/30 bg-et-accent/10 text-et-accent rounded-full border px-2 py-0.5">
@@ -79,7 +83,9 @@ export default async function TripsPage() {
                           className="h-3 w-3 shrink-0 opacity-90"
                           aria-hidden
                         />
-                        LocalPass · {tr.localPassCityCount}
+                        {tShared("localPassBadge", {
+                          count: tr.localPassCityCount,
+                        })}
                       </span>
                     ) : null}
                     {tr.activeDays > 0 ? (

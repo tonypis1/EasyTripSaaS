@@ -2,6 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { SignUpLocaleButton } from "@/components/i18n/clerk-locale-buttons";
 
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
 export function SubscribeCtaButton({ className, children, errorLabel }: Props) {
   const { isSignedIn, isLoaded } = useAuth();
   const [loading, setLoading] = useState(false);
+  const t = useTranslations("home.pricing.subscribeCta");
 
   if (!isLoaded || !isSignedIn) {
     return (
@@ -52,11 +54,9 @@ export function SubscribeCtaButton({ className, children, errorLabel }: Props) {
         window.location.href = url;
         return;
       }
-      window.alert(
-        json.error?.message ?? errorLabel ?? "Errore. Riprova più tardi.",
-      );
+      window.alert(json.error?.message ?? errorLabel ?? t("checkoutFailed"));
     } catch {
-      window.alert(errorLabel ?? "Errore di rete. Riprova più tardi.");
+      window.alert(errorLabel ?? t("networkError"));
     } finally {
       setLoading(false);
     }
