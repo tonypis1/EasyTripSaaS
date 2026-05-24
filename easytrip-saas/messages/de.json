@@ -405,6 +405,15 @@
           "inviteLinkHint": "Teile den Link mit der Person, die du einladen möchtest. Das Mitglied hat Lesezugriff auf die Reiseroute und kann an der Kostenaufteilung teilnehmen.",
           "readOnlyNotice": "Nur-Lese-Zugriff. Nur der Organisator kann die Reiseroute bearbeiten."
         },
+        "shareCard": {
+          "buttonLabel": "Card teilen",
+          "shareTitle": "EasyTrip — {destination}",
+          "shareText": "Ich habe {destination} mit EasyTrip geplant. GeoScore {score}/10!",
+          "linkCopied": "Homepage-Link kopiert!",
+          "downloadDone": "Card heruntergeladen!",
+          "preparing": "Card wird vorbereitet…",
+          "errorGeneric": "Die Card konnte nicht geteilt werden. Bitte erneut versuchen."
+        },
         "expenses": {
           "title": "Kostenaufteilung",
           "subtitle": "Erfasse Ausgaben und sieh, wer wem was schuldet"

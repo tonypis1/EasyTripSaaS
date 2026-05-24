@@ -405,6 +405,15 @@
           "inviteLinkHint": "Share the link with whoever you want to invite. The member will have read-only access to the itinerary and can join the expense split.",
           "readOnlyNotice": "Read-only access. Only the organizer can edit the itinerary."
         },
+        "shareCard": {
+          "buttonLabel": "Share card",
+          "shareTitle": "EasyTrip — {destination}",
+          "shareText": "I planned {destination} with EasyTrip. GeoScore {score}/10!",
+          "linkCopied": "Homepage link copied!",
+          "downloadDone": "Card downloaded!",
+          "preparing": "Preparing your card…",
+          "errorGeneric": "Unable to share the card. Please try again."
+        },
         "expenses": {
           "title": "Expense split",
           "subtitle": "Log expenses and see who owes what to whom"

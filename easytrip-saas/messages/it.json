@@ -405,6 +405,15 @@
           "inviteLinkHint": "Condividi il link con chi vuoi invitare. Il membro avrà accesso in sola lettura all'itinerario e potrà partecipare allo split spese.",
           "readOnlyNotice": "Accesso in sola lettura. Solo l'organizzatore può modificare l'itinerario."
         },
+        "shareCard": {
+          "buttonLabel": "Condividi card",
+          "shareTitle": "EasyTrip — {destination}",
+          "shareText": "Ho pianificato {destination} con EasyTrip. GeoScore {score}/10!",
+          "linkCopied": "Link homepage copiato!",
+          "downloadDone": "Card scaricata!",
+          "preparing": "Preparazione card in corso…",
+          "errorGeneric": "Impossibile condividere la card. Riprova."
+        },
         "expenses": {
           "title": "Split spese",
           "subtitle": "Registra le spese e scopri chi deve cosa a chi"
