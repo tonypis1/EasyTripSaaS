@@ -9,11 +9,13 @@ import {
 import { DEV_PREVIEW_UNLOCK_CONTENT } from "@/lib/dev-flags";
 import { PostTripScreen } from "./post-trip-screen";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
+import { ShareButton } from "@/components/trips/ShareButton";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { useTranslations } from "next-intl";
+import type { AppLocale } from "@/i18n/routing";
+import { useTranslations, useLocale } from "next-intl";
 
 const DayRouteMap = dynamic(() => import("./day-route-map"), { ssr: false });
 import {
@@ -282,6 +284,7 @@ export function TripDetailClient({
 }: Props) {
   const router = useRouter();
   const td = useTranslations("app.trips.detail");
+  const locale = useLocale() as AppLocale;
   const tShared = useTranslations("app.trips.shared");
   const [trip, setTrip] = useState(initialTrip);
   const [busy, setBusy] = useState<string | null>(null);
@@ -768,11 +771,19 @@ export function TripDetailClient({
 
         {/* Geo-score nell'header quando disponibile */}
         {trip.activeGeoScore != null ? (
-          <div className="border-et-accent/25 bg-et-accent/8 mt-3 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
-            <Star className="text-et-accent h-4 w-4" />
-            <span className="text-et-accent text-sm font-medium">
-              {formatGeoScoreLabel(trip.activeGeoScore)}
-            </span>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="border-et-accent/25 bg-et-accent/8 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
+              <Star className="text-et-accent h-4 w-4" />
+              <span className="text-et-accent text-sm font-medium">
+                {formatGeoScoreLabel(trip.activeGeoScore)}
+              </span>
+            </div>
+            <ShareButton
+              tripId={trip.id}
+              destination={trip.destination}
+              geoScore={trip.activeGeoScore}
+              locale={locale}
+            />
           </div>
         ) : null}
       </header>

@@ -100,6 +100,11 @@ export type TripDetailDto = {
   };
 };
 
+export type ShareCardDataDto = {
+  destination: string;
+  geoScore: number;
+};
+
 export type TripListItemDto = {
   id: string;
   destination: string;
@@ -404,6 +409,36 @@ export class TripService {
         needsPaidCheckout,
         freeRegenFromPrefChange,
       },
+    };
+  }
+
+  async getShareCardData(tripId: string): Promise<ShareCardDataDto> {
+    const user = await this.authService.getOrCreateCurrentUser();
+
+    let trip = await this.tripRepository.findDetailForOrganizer(
+      tripId,
+      user.id,
+    );
+    if (!trip) {
+      trip = await this.tripRepository.findDetailForMember(tripId, user.id);
+    }
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    const active = trip.versions.find((v) => v.isActive);
+    const geoScore = active ? decToNumber(active.geoScore) : null;
+    if (geoScore == null) {
+      throw new AppError(
+        "GeoScore non disponibile per questo viaggio",
+        422,
+        "GEOSCORE_NOT_READY",
+      );
+    }
+
+    return {
+      destination: trip.destination,
+      geoScore,
     };
   }
 

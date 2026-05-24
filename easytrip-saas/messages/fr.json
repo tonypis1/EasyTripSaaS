@@ -473,6 +473,15 @@
           "inviteLinkHint": "Partage le lien avec la personne que tu veux inviter. Le membre aura un accès en lecture seule à l'itinéraire et pourra participer au partage des dépenses.",
           "readOnlyNotice": "Accès en lecture seule. Seul l'organisateur peut modifier l'itinéraire."
         },
+        "shareCard": {
+          "buttonLabel": "Partager la card",
+          "shareTitle": "EasyTrip — {destination}",
+          "shareText": "J'ai planifié {destination} avec EasyTrip. GeoScore {score}/10 !",
+          "linkCopied": "Lien homepage copié !",
+          "downloadDone": "Card téléchargée !",
+          "preparing": "Préparation de la card…",
+          "errorGeneric": "Impossible de partager la card. Réessayez."
+        },
         "expenses": {
           "title": "Partage des dépenses",
           "subtitle": "Enregistre les dépenses et découvre qui doit quoi à qui"
