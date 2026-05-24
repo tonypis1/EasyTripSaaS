@@ -90,6 +90,14 @@
       "createNewCta": "Create new itinerary",
       "viewAllCta": "All trips →"
     },
+    "gpsIndicator": {
+      "noTrip": "Create an itinerary to use GPS and on-route slot replacement.",
+      "activeLabel": "GPS active",
+      "activeHint": "— suggestions and slot replacement based on your location.",
+      "openLastTrip": "Open latest trip →",
+      "inactiveHint": "GPS not enabled: on the trip page you can allow location for live suggestions and swap a slot.",
+      "activateFromTrip": "Enable from trip"
+    },
     "dashboard": {
       "emptyTitle": "Your itineraries",
       "emptyBody": "You don't have any itineraries yet. Use the form below to create one.",
@@ -177,6 +185,10 @@
       "addon": {
         "title": "Extra (Premium)",
         "body": "Any plan + <accent>€3.99 add-on per city</accent> with LocalPass: places curated by local insiders, hidden gems and non-tourist tips."
+      },
+      "subscribeCta": {
+        "checkoutFailed": "Something went wrong. Please try again later.",
+        "networkError": "Network error. Please try again later."
       }
     },
     "faq": {
@@ -250,7 +262,49 @@
       "reservedArea": "Member area"
     },
     "privacyPage": {
-      "marketingOptIn": "I agree to receive marketing and onboarding emails from {appName}"
+      "eyebrow": "Account",
+      "title": "Privacy and personal data",
+      "description": "Export a copy of your data (right to portability) or request coordinated deletion of your account (right to erasure).",
+      "marketingTitle": "Email communications",
+      "marketingBody": "Payment and trip emails always stay on. You can choose whether to also receive tips and promotional reminders (e.g. if you have not created a trip yet).",
+      "marketingOptIn": "I agree to receive marketing and onboarding emails from {appName}",
+      "exportTitle": "Export your data",
+      "exportBody": "Download a JSON file with information linked to your account (trips, itinerary versions, related references), as required by GDPR art. 20.",
+      "exportCta": "Download JSON export",
+      "saveFailed": "Could not save.",
+      "networkError": "Network error. Please try again.",
+      "operationFailed": "Operation failed.",
+      "backToDashboard": "Back to dashboard"
+    },
+    "referral": {
+      "eyebrow": "Referral program",
+      "title": "Invite a friend, travel free",
+      "subtitle": "For every friend who signs up and buys their first trip, you get <strong>€3.99 credit</strong> = 1 free Solo/Couple trip.",
+      "loadError": "Could not load referral data.",
+      "inviteLinkTitle": "Your invite link",
+      "inviteLinkHint": "Share it with friends, social, anywhere!",
+      "copyLinkTitle": "Copy link",
+      "shareLinkTitle": "Share",
+      "linkCopied": "Link copied to clipboard!",
+      "howItWorks": "<strong>How it works:</strong> Your friend clicks the link → signs up → buys a trip → you automatically receive €3.99 credit. No invite limit!",
+      "stats": {
+        "invited": "Invited",
+        "signedUp": "Signed up",
+        "converted": "Converted",
+        "earned": "Earned"
+      },
+      "yourInvites": "Your invites",
+      "emptyInvites": "No invites yet. Share your link to get started!",
+      "status": {
+        "pending": "Pending",
+        "signed_up": "Signed up",
+        "converted": "Converted"
+      },
+      "rewardBadge": "+€3.99",
+      "share": {
+        "title": "EasyTrip — Travel free!",
+        "text": "Sign up on EasyTrip with my link and get a personalized AI itinerary!"
+      }
     },
     "subscribeBridge": {
       "loadingTitle": "Opening secure payment…",
@@ -330,6 +384,20 @@
         "submitting": "Creating…",
         "errorGeneric": "Unable to create the trip",
         "errorNetwork": "Network error. Please try again."
+      },
+      "shared": {
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Couple",
+          "group": "Group (3–5)"
+        },
+        "tripStatus": {
+          "pending": "In preparation",
+          "active": "Active",
+          "expired": "Expired",
+          "cancelled": "Cancelled"
+        },
+        "localPassBadge": "LocalPass · {count}"
       },
       "detail": {
         "back": "Back to trips",
@@ -637,18 +705,46 @@
     "notFound": {
       "title": "Page not found (404)",
       "body": "This URL does not match any page in the app.",
-      "back": "Back to home"
+      "bodyDetail": "This URL does not match any app route. Check the address bar: your trips list is at <mono>/app/trips</mono>, not <mono>/trips</mono> (the latter now redirects automatically).",
+      "back": "Back to home",
+      "linkHome": "Home",
+      "linkDashboard": "App dashboard",
+      "linkTrips": "My trips (correct URL)",
+      "devHint": "If you use <mono>npm run dev</mono>, run it from the <mono>easytrip-saas</mono> folder and use the port shown in the terminal (3000, 3001, …)."
     }
   },
   "join": {
     "loading": "Loading invitation...",
-    "invalidTitle": "Invalid invitation",
+    "invalidLink": "Invalid link",
+    "invalidTitle": "Invalid link",
     "invalidBody": "This invitation link is no longer valid or has expired.",
+    "networkError": "Network error",
+    "networkErrorRetry": "Network error. Please try again.",
+    "joinFailed": "Could not join",
+    "backHome": "Back to home",
+    "joinedTitle": "You're in!",
+    "joinedBody": "You joined the trip to <strong>{destination}</strong>. Redirecting...",
+    "invitedTitle": "You've been invited!",
+    "invitedSubtitle": "{organizerName} invited you to join",
+    "destinationLabel": "Destination",
+    "datesLabel": "Dates",
+    "participantsLabel": "Participants",
+    "spotsOne": "({count} spot available)",
+    "spotsMany": "({count} spots available)",
+    "groupFull": "(full)",
+    "styleLabel": "Style: {style}",
+    "groupFullMessage": "The group is full",
+    "authTimeoutTitle": "Sign-in service unavailable",
+    "authTimeoutBody": "We could not load the login system. Try reloading the page or disable extensions that block scripts (ad blockers, anti-tracking).",
+    "signInPortal": "Sign in via portal",
+    "reloadPage": "Reload page",
     "needAccountTitle": "Sign in to join the trip",
     "needAccountBody": "To accept the invitation you need to sign in or sign up.",
-    "signInCta": "Sign in",
+    "signInCta": "Sign in to join",
+    "signInHint": "You need to sign in or create an account to join the trip.",
     "signUpCta": "Sign up",
     "joinCta": "Join the trip",
-    "joining": "Joining the trip..."
+    "joining": "Joining...",
+    "footerNote": "You'll have read-only access to the itinerary and can take part in expense splitting."
   }
 }

@@ -90,6 +90,14 @@
       "createNewCta": "Créer un nouvel itinéraire",
       "viewAllCta": "Tous les voyages →"
     },
+    "gpsIndicator": {
+      "noTrip": "Créez un itinéraire pour utiliser le GPS et le remplacement de créneaux sur le parcours.",
+      "activeLabel": "GPS actif",
+      "activeHint": "— suggestions et remplacement de créneaux selon votre position.",
+      "openLastTrip": "Ouvrir le dernier voyage →",
+      "inactiveHint": "GPS non activé : sur la page du voyage vous pouvez autoriser la position pour des suggestions en direct et remplacer un créneau.",
+      "activateFromTrip": "Activer depuis le voyage"
+    },
     "dashboard": {
       "emptyTitle": "Vos itinéraires",
       "emptyBody": "Vous n'avez pas encore d'itinéraires. Utilisez le formulaire ci-dessous pour en créer un.",
@@ -177,6 +185,10 @@
       "addon": {
         "title": "En plus (Premium)",
         "body": "N'importe quel plan + <accent>3,99 € add-on par ville</accent> avec LocalPass : lieux sélectionnés par des insiders locaux, trésors cachés et conseils non touristiques."
+      },
+      "subscribeCta": {
+        "checkoutFailed": "Erreur. Réessayez plus tard.",
+        "networkError": "Erreur réseau. Réessayez plus tard."
       }
     },
     "faq": {
@@ -250,7 +262,49 @@
       "reservedArea": "Espace membre"
     },
     "privacyPage": {
-      "marketingOptIn": "J'accepte de recevoir des e-mails marketing et d'onboarding de {appName}"
+      "eyebrow": "Compte",
+      "title": "Confidentialité et données personnelles",
+      "description": "Exportez une copie de vos données (droit à la portabilité) ou demandez la suppression coordonnée de votre compte (droit à l'effacement).",
+      "marketingTitle": "Communications par e-mail",
+      "marketingBody": "Les e-mails sur les paiements et les voyages restent toujours actifs. Vous pouvez choisir de recevoir aussi des conseils et rappels promotionnels (ex. si vous n'avez pas encore créé de voyage).",
+      "marketingOptIn": "J'accepte de recevoir des e-mails marketing et d'onboarding de {appName}",
+      "exportTitle": "Exporter vos données",
+      "exportBody": "Recevez un fichier JSON avec les informations liées à votre compte (voyages, versions d'itinéraire, références associées), conformément au RGPD art. 20.",
+      "exportCta": "Télécharger l'export JSON",
+      "saveFailed": "Enregistrement impossible.",
+      "networkError": "Erreur réseau. Réessayez.",
+      "operationFailed": "Opération impossible.",
+      "backToDashboard": "Retour au tableau de bord"
+    },
+    "referral": {
+      "eyebrow": "Programme de parrainage",
+      "title": "Invitez un ami, voyagez gratuitement",
+      "subtitle": "Pour chaque ami qui s'inscrit et achète son premier voyage, vous recevez <strong>3,99 € de crédit</strong> = 1 voyage Solo/Couple gratuit.",
+      "loadError": "Impossible de charger les données de parrainage.",
+      "inviteLinkTitle": "Votre lien d'invitation",
+      "inviteLinkHint": "Partagez-le avec des amis, sur les réseaux, partout !",
+      "copyLinkTitle": "Copier le lien",
+      "shareLinkTitle": "Partager",
+      "linkCopied": "Lien copié dans le presse-papiers !",
+      "howItWorks": "<strong>Comment ça marche :</strong> Votre ami clique sur le lien → s'inscrit → achète un voyage → vous recevez automatiquement 3,99 € de crédit. Aucune limite d'invitations !",
+      "stats": {
+        "invited": "Invités",
+        "signedUp": "Inscrits",
+        "converted": "Convertis",
+        "earned": "Gagné"
+      },
+      "yourInvites": "Vos invitations",
+      "emptyInvites": "Pas encore d'invitations. Partagez votre lien pour commencer !",
+      "status": {
+        "pending": "En attente",
+        "signed_up": "Inscrit",
+        "converted": "Converti"
+      },
+      "rewardBadge": "+3,99 €",
+      "share": {
+        "title": "EasyTrip — Voyagez gratuitement !",
+        "text": "Inscrivez-vous sur EasyTrip avec mon lien et recevez un itinéraire IA personnalisé !"
+      }
     },
     "subscribeBridge": {
       "loadingTitle": "Ouverture du paiement sécurisé…",
@@ -330,6 +384,20 @@
         "submitting": "Création…",
         "errorGeneric": "Impossible de créer le voyage",
         "errorNetwork": "Erreur réseau. Réessayez."
+      },
+      "shared": {
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Couple",
+          "group": "Groupe (3–5)"
+        },
+        "tripStatus": {
+          "pending": "En préparation",
+          "active": "Actif",
+          "expired": "Expiré",
+          "cancelled": "Annulé"
+        },
+        "localPassBadge": "LocalPass · {count}"
       },
       "detail": {
         "back": "Retour aux voyages",
@@ -637,18 +705,46 @@
     "notFound": {
       "title": "Page non trouvée (404)",
       "body": "Cette URL ne correspond à aucune page de l'application.",
-      "back": "Retour à l'accueil"
+      "bodyDetail": "Cette URL ne correspond à aucune route de l'app. Vérifiez la barre d'adresse : la liste des voyages est sous <mono>/app/trips</mono>, pas <mono>/trips</mono> (ce dernier redirige maintenant automatiquement).",
+      "back": "Retour à l'accueil",
+      "linkHome": "Accueil",
+      "linkDashboard": "Tableau de bord app",
+      "linkTrips": "Mes voyages (URL correcte)",
+      "devHint": "Si vous utilisez <mono>npm run dev</mono>, lancez-le depuis le dossier <mono>easytrip-saas</mono> et utilisez le port indiqué dans le terminal (3000, 3001, …)."
     }
   },
   "join": {
     "loading": "Chargement de l'invitation...",
-    "invalidTitle": "Invitation non valide",
+    "invalidLink": "Lien non valide",
+    "invalidTitle": "Lien non valide",
     "invalidBody": "Ce lien d'invitation n'est plus valide ou a expiré.",
+    "networkError": "Erreur réseau",
+    "networkErrorRetry": "Erreur réseau. Réessayez.",
+    "joinFailed": "Impossible de rejoindre",
+    "backHome": "Retour à l'accueil",
+    "joinedTitle": "Vous y êtes !",
+    "joinedBody": "Vous avez rejoint le voyage vers <strong>{destination}</strong>. Redirection...",
+    "invitedTitle": "Vous êtes invité !",
+    "invitedSubtitle": "{organizerName} vous a invité à participer",
+    "destinationLabel": "Destination",
+    "datesLabel": "Dates",
+    "participantsLabel": "Participants",
+    "spotsOne": "({count} place disponible)",
+    "spotsMany": "({count} places disponibles)",
+    "groupFull": "(complet)",
+    "styleLabel": "Style : {style}",
+    "groupFullMessage": "Le groupe est complet",
+    "authTimeoutTitle": "Service de connexion indisponible",
+    "authTimeoutBody": "Nous n'avons pas pu charger le système de connexion. Essayez de recharger la page ou désactivez les extensions qui bloquent les scripts (bloqueurs de pub, anti-pistage).",
+    "signInPortal": "Se connecter via le portail",
+    "reloadPage": "Recharger la page",
     "needAccountTitle": "Connectez-vous pour rejoindre le voyage",
     "needAccountBody": "Pour accepter l'invitation, vous devez vous connecter ou vous inscrire.",
-    "signInCta": "Se connecter",
+    "signInCta": "Se connecter pour rejoindre",
+    "signInHint": "Vous devez vous connecter ou créer un compte pour rejoindre le voyage.",
     "signUpCta": "S'inscrire",
     "joinCta": "Rejoindre le voyage",
-    "joining": "Adhésion au voyage..."
+    "joining": "Connexion en cours...",
+    "footerNote": "Vous aurez un accès en lecture seule à l'itinéraire et pourrez participer au partage des dépenses."
   }
 }

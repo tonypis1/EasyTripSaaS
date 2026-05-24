@@ -90,6 +90,14 @@
       "createNewCta": "Neue Reise erstellen",
       "viewAllCta": "Alle Reisen →"
     },
+    "gpsIndicator": {
+      "noTrip": "Erstelle eine Reiseroute, um GPS und Slot-Ersetzung unterwegs zu nutzen.",
+      "activeLabel": "GPS aktiv",
+      "activeHint": "— Vorschläge und Slot-Ersetzung basierend auf deinem Standort.",
+      "openLastTrip": "Letzte Reise öffnen →",
+      "inactiveHint": "GPS nicht aktiviert: Auf der Reiseseite kannst du den Standort für Live-Vorschläge freigeben und einen Slot ersetzen.",
+      "activateFromTrip": "Von der Reise aus aktivieren"
+    },
     "dashboard": {
       "emptyTitle": "Deine Reisen",
       "emptyBody": "Du hast noch keine Reisen. Verwende das Formular unten, um eine zu erstellen.",
@@ -177,6 +185,10 @@
       "addon": {
         "title": "Zusätzlich (Premium)",
         "body": "Jeder Plan + <accent>3,99 € Add-on pro Stadt</accent> mit LocalPass: von lokalen Insidern kuratierte Orte, versteckte Perlen und nicht-touristische Tipps."
+      },
+      "subscribeCta": {
+        "checkoutFailed": "Fehler. Bitte später erneut versuchen.",
+        "networkError": "Netzwerkfehler. Bitte später erneut versuchen."
       }
     },
     "faq": {
@@ -250,7 +262,49 @@
       "reservedArea": "Mitgliederbereich"
     },
     "privacyPage": {
-      "marketingOptIn": "Ich möchte Marketing- und Onboarding-E-Mails von {appName} erhalten"
+      "eyebrow": "Konto",
+      "title": "Datenschutz und personenbezogene Daten",
+      "description": "Exportiere eine Kopie deiner Daten (Recht auf Datenübertragbarkeit) oder fordere die koordinierte Löschung deines Kontos an (Recht auf Vergessenwerden).",
+      "marketingTitle": "E-Mail-Kommunikation",
+      "marketingBody": "E-Mails zu Zahlungen und Reisen bleiben immer aktiv. Du kannst wählen, ob du auch Tipps und Werbe-Erinnerungen erhalten möchtest (z. B. wenn du noch keine Reise erstellt hast).",
+      "marketingOptIn": "Ich möchte Marketing- und Onboarding-E-Mails von {appName} erhalten",
+      "exportTitle": "Deine Daten exportieren",
+      "exportBody": "Erhalte eine JSON-Datei mit den Informationen zu deinem Konto (Reisen, Itinerar-Versionen, verknüpfte Referenzen), gemäß DSGVO Art. 20.",
+      "exportCta": "JSON-Export herunterladen",
+      "saveFailed": "Speichern fehlgeschlagen.",
+      "networkError": "Netzwerkfehler. Bitte erneut versuchen.",
+      "operationFailed": "Vorgang fehlgeschlagen.",
+      "backToDashboard": "Zurück zum Dashboard"
+    },
+    "referral": {
+      "eyebrow": "Empfehlungsprogramm",
+      "title": "Freund einladen, gratis reisen",
+      "subtitle": "Für jeden Freund, der sich registriert und seine erste Reise kauft, erhältst du <strong>3,99 € Guthaben</strong> = 1 gratis Solo/Paar-Reise.",
+      "loadError": "Empfehlungsdaten konnten nicht geladen werden.",
+      "inviteLinkTitle": "Dein Einladungslink",
+      "inviteLinkHint": "Teile ihn mit Freunden, in Social Media, überall!",
+      "copyLinkTitle": "Link kopieren",
+      "shareLinkTitle": "Teilen",
+      "linkCopied": "Link in die Zwischenablage kopiert!",
+      "howItWorks": "<strong>So funktioniert's:</strong> Dein Freund klickt auf den Link → registriert sich → kauft eine Reise → du erhältst automatisch 3,99 € Guthaben. Kein Einladungslimit!",
+      "stats": {
+        "invited": "Eingeladen",
+        "signedUp": "Registriert",
+        "converted": "Konvertiert",
+        "earned": "Verdient"
+      },
+      "yourInvites": "Deine Einladungen",
+      "emptyInvites": "Noch keine Einladungen. Teile deinen Link, um zu starten!",
+      "status": {
+        "pending": "Ausstehend",
+        "signed_up": "Registriert",
+        "converted": "Konvertiert"
+      },
+      "rewardBadge": "+3,99 €",
+      "share": {
+        "title": "EasyTrip — Gratis reisen!",
+        "text": "Registriere dich bei EasyTrip mit meinem Link und erhalte eine personalisierte KI-Reiseroute!"
+      }
     },
     "subscribeBridge": {
       "loadingTitle": "Sichere Zahlung wird geöffnet…",
@@ -330,6 +384,20 @@
         "submitting": "Wird erstellt…",
         "errorGeneric": "Reise konnte nicht erstellt werden",
         "errorNetwork": "Netzwerkfehler. Bitte erneut versuchen."
+      },
+      "shared": {
+        "tripType": {
+          "solo": "Solo",
+          "couple": "Paar",
+          "group": "Gruppe (3–5)"
+        },
+        "tripStatus": {
+          "pending": "In Vorbereitung",
+          "active": "Aktiv",
+          "expired": "Abgelaufen",
+          "cancelled": "Storniert"
+        },
+        "localPassBadge": "LocalPass · {count}"
       },
       "detail": {
         "back": "Zurück zu den Reisen",
@@ -637,18 +705,46 @@
     "notFound": {
       "title": "Seite nicht gefunden (404)",
       "body": "Diese Adresse entspricht keiner Seite der App.",
-      "back": "Zurück zur Startseite"
+      "bodyDetail": "Diese Adresse entspricht keiner App-Route. Prüfe die Adresszeile: Die Reiseliste liegt unter <mono>/app/trips</mono>, nicht <mono>/trips</mono> (letzteres leitet jetzt automatisch weiter).",
+      "back": "Zurück zur Startseite",
+      "linkHome": "Startseite",
+      "linkDashboard": "App-Dashboard",
+      "linkTrips": "Meine Reisen (korrekte URL)",
+      "devHint": "Wenn du <mono>npm run dev</mono> nutzt, starte es aus dem Ordner <mono>easytrip-saas</mono> und verwende den im Terminal angezeigten Port (3000, 3001, …)."
     }
   },
   "join": {
     "loading": "Einladung wird geladen...",
-    "invalidTitle": "Ungültige Einladung",
+    "invalidLink": "Ungültiger Link",
+    "invalidTitle": "Ungültiger Link",
     "invalidBody": "Der Einladungslink ist nicht mehr gültig oder abgelaufen.",
+    "networkError": "Netzwerkfehler",
+    "networkErrorRetry": "Netzwerkfehler. Bitte erneut versuchen.",
+    "joinFailed": "Beitritt nicht möglich",
+    "backHome": "Zurück zur Startseite",
+    "joinedTitle": "Du bist dabei!",
+    "joinedBody": "Du bist der Reise nach <strong>{destination}</strong> beigetreten. Weiterleitung...",
+    "invitedTitle": "Du wurdest eingeladen!",
+    "invitedSubtitle": "{organizerName} hat dich eingeladen",
+    "destinationLabel": "Ziel",
+    "datesLabel": "Daten",
+    "participantsLabel": "Teilnehmer",
+    "spotsOne": "({count} Platz verfügbar)",
+    "spotsMany": "({count} Plätze verfügbar)",
+    "groupFull": "(voll)",
+    "styleLabel": "Stil: {style}",
+    "groupFullMessage": "Die Gruppe ist voll",
+    "authTimeoutTitle": "Anmeldedienst nicht verfügbar",
+    "authTimeoutBody": "Wir konnten das Login-System nicht laden. Lade die Seite neu oder deaktiviere Erweiterungen, die Skripte blockieren (Werbeblocker, Anti-Tracking).",
+    "signInPortal": "Über Portal anmelden",
+    "reloadPage": "Seite neu laden",
     "needAccountTitle": "Melde dich an, um der Reise beizutreten",
     "needAccountBody": "Um die Einladung anzunehmen, musst du dich anmelden oder registrieren.",
-    "signInCta": "Anmelden",
+    "signInCta": "Anmelden zum Beitreten",
+    "signInHint": "Du musst dich anmelden oder ein Konto erstellen, um der Reise beizutreten.",
     "signUpCta": "Registrieren",
     "joinCta": "Der Reise beitreten",
-    "joining": "Du trittst der Reise bei..."
+    "joining": "Beitritt läuft...",
+    "footerNote": "Du erhältst Lesezugriff auf die Route und kannst an der Ausgabenteilung teilnehmen."
   }
 }

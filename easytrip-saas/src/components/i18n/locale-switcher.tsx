@@ -31,7 +31,36 @@ type Props = {
   className?: string;
 };
 
-function navigateToLocale(next: AppLocale, pathname: string) {
+const SAVE_FAILED: Record<AppLocale, string> = {
+  it: "Impossibile salvare la lingua. Riprova.",
+  en: "Could not save language preference. Please try again.",
+  es: "No se pudo guardar el idioma. Inténtalo de nuevo.",
+  fr: "Impossible d'enregistrer la langue. Réessayez.",
+  de: "Sprache konnte nicht gespeichert werden. Bitte erneut versuchen.",
+};
+
+async function persistUserLanguage(next: AppLocale): Promise<boolean> {
+  try {
+    const res = await fetch("/api/user/language", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: next }),
+      credentials: "same-origin",
+    });
+    // Ospite non autenticato: nessun profilo DB da aggiornare; procedi con la navigazione.
+    if (res.status === 401) return true;
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function navigateToLocale(
+  next: AppLocale,
+  pathname: string,
+  currentLocale: AppLocale,
+  onSaveFailed: (message: string) => void,
+) {
   const href = getPathname({
     href: pathname,
     locale: next,
@@ -44,13 +73,11 @@ function navigateToLocale(next: AppLocale, pathname: string) {
     }
   }
 
-  void fetch("/api/user/language", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language: next }),
-    credentials: "same-origin",
-    keepalive: true,
-  }).catch(() => {});
+  const saved = await persistUserLanguage(next);
+  if (!saved) {
+    onSaveFailed(SAVE_FAILED[currentLocale]);
+    return;
+  }
 
   window.location.assign(href);
 }
@@ -60,6 +87,8 @@ export function LocaleSwitcher({ variant = "header", className }: Props) {
   const pathname = usePathname();
   const t = useTranslations("locale.switcher");
   const [open, setOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
 
@@ -83,10 +112,20 @@ export function LocaleSwitcher({ variant = "header", className }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
-  function onPick(next: AppLocale) {
+  async function onPick(next: AppLocale) {
+    if (switching || next === locale) return;
+    setSaveError(null);
     setOpen(false);
-    if (next === locale) return;
-    navigateToLocale(next, pathname);
+    setSwitching(true);
+    try {
+      await navigateToLocale(next, pathname, locale, (message) => {
+        setSaveError(message);
+        setSwitching(false);
+      });
+    } catch {
+      setSaveError(SAVE_FAILED[locale]);
+      setSwitching(false);
+    }
   }
 
   const baseClasses =
@@ -108,6 +147,8 @@ export function LocaleSwitcher({ variant = "header", className }: Props) {
           aria-expanded={open ? "true" : "false"}
           aria-haspopup="listbox"
           aria-controls={open ? listId : undefined}
+          aria-busy={switching ? "true" : undefined}
+          disabled={switching}
           onClick={() => setOpen((o) => !o)}
         >
           <span aria-hidden className="text-base leading-none">
@@ -147,6 +188,15 @@ export function LocaleSwitcher({ variant = "header", className }: Props) {
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {saveError ? (
+        <p
+          role="alert"
+          className="border-et-border bg-et-card text-et-ink absolute right-0 z-[60] mt-1.5 max-w-[14rem] rounded-lg border px-2.5 py-2 text-xs shadow-lg"
+        >
+          {saveError}
+        </p>
       ) : null}
     </div>
   );

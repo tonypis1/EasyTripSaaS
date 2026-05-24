@@ -63,14 +63,14 @@ export default function AccountPrivacyPage() {
         error?: { message?: string };
       };
       if (!res.ok || !json.ok) {
-        setMarketingError(json.error?.message ?? "Salvataggio non riuscito.");
+        setMarketingError(json.error?.message ?? tPrivacy("saveFailed"));
         return;
       }
       if (typeof json.marketingOptIn === "boolean") {
         setMarketingOptIn(json.marketingOptIn);
       }
     } catch {
-      setMarketingError("Errore di rete. Riprova.");
+      setMarketingError(tPrivacy("networkError"));
     } finally {
       setMarketingSaving(false);
     }
@@ -96,7 +96,7 @@ export default function AccountPrivacyPage() {
         error?: { message?: string };
       };
       if (!res.ok || !json.ok) {
-        setError(json.error?.message ?? "Operazione non riuscita.");
+        setError(json.error?.message ?? tPrivacy("operationFailed"));
         return;
       }
       setDeleteSuccess(true);
@@ -109,7 +109,7 @@ export default function AccountPrivacyPage() {
       }
       window.location.replace(`${window.location.origin}/${locale}`);
     } catch {
-      setError("Errore di rete. Riprova.");
+      setError(tPrivacy("networkError"));
     } finally {
       setBusy(false);
     }
@@ -119,14 +119,13 @@ export default function AccountPrivacyPage() {
     <div className="space-y-12">
       <div className="border-et-accent/40 border-l-2 pl-6">
         <p className="text-et-accent/88 text-xs font-semibold tracking-[0.16em] uppercase">
-          Account
+          {tPrivacy("eyebrow")}
         </p>
         <h1 className="font-display text-et-ink mt-2 text-3xl font-normal tracking-tight sm:text-4xl">
-          Privacy e dati personali
+          {tPrivacy("title")}
         </h1>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Esporta una copia dei tuoi dati (diritto alla portabilità) o richiedi
-          la cancellazione coordinata del tuo account (diritto all&apos;oblio).
+          {tPrivacy("description")}
         </p>
       </div>
 
@@ -138,12 +137,10 @@ export default function AccountPrivacyPage() {
           id="marketing-heading"
           className="font-display text-et-ink text-lg font-normal"
         >
-          Comunicazioni email
+          {tPrivacy("marketingTitle")}
         </h2>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Le email su pagamenti e viaggi restano sempre attive. Puoi scegliere
-          se ricevere anche suggerimenti e promemoria promozionali (es. se non
-          hai ancora creato un viaggio).
+          {tPrivacy("marketingBody")}
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <label className="text-et-ink/88 flex cursor-pointer items-center gap-2 text-sm">
@@ -165,7 +162,7 @@ export default function AccountPrivacyPage() {
             {tPrivacy("marketingOptIn", { appName: tCommon("appName") })}
           </label>
           {!marketingLoaded ? (
-            <span className="text-et-ink/45 text-xs">Caricamento…</span>
+            <span className="text-et-ink/45 text-xs">{tCommon("loading")}</span>
           ) : null}
         </div>
         {marketingError ? (
@@ -183,19 +180,17 @@ export default function AccountPrivacyPage() {
           id="export-heading"
           className="font-display text-et-ink text-lg font-normal"
         >
-          Esporta i tuoi dati
+          {tPrivacy("exportTitle")}
         </h2>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
-          Ricevi un file JSON con le informazioni associate al tuo account
-          (viaggi, versioni itinerario, referenze collegate), come previsto dal
-          GDPR art. 20.
+          {tPrivacy("exportBody")}
         </p>
         <a
           href="/api/user/data-export"
           download
           className="bg-et-accent text-et-accent-ink hover:bg-et-accent/90 mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-colors"
         >
-          Scarica export JSON
+          {tPrivacy("exportCta")}
         </a>
       </section>
 
@@ -270,7 +265,7 @@ export default function AccountPrivacyPage() {
 
       <p className="text-et-ink/45 text-sm">
         <Link href="/app" className="text-et-accent hover:underline">
-          Torna alla dashboard
+          {tPrivacy("backToDashboard")}
         </Link>
       </p>
     </div>

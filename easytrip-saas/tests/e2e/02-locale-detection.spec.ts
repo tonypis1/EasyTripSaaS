@@ -144,8 +144,7 @@ test.describe("LocaleSwitcher", () => {
     await expect(trigger).toBeVisible();
     await trigger.click();
     await expect(page.getByRole("listbox")).toBeVisible();
-    // `window.location.assign` = navigazione piena: await insieme a waitForURL evita
-    // asserzioni sul documento vecchio o su uno stato intermedio sotto carico in dev.
+    // Dopo il salvataggio PATCH la navigazione usa `window.location.assign`.
     const navTimeout = 30_000;
     await Promise.all([
       page.waitForURL(/\/en(\/|$)/, { timeout: navTimeout }),
@@ -164,6 +163,48 @@ test.describe("LocaleSwitcher", () => {
     const cookies = await context.cookies();
     const localeCookie = cookies.find((c) => c.name === "NEXT_LOCALE");
     expect(localeCookie?.value).toBe("en");
+
+    await context.close();
+  });
+
+  test("cambia lingua: attende PATCH /api/user/language prima di navigare", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext(
+      localeBrowserContextOptions("it-IT,it;q=0.9"),
+    );
+    const page = await context.newPage();
+
+    let patchStarted = false;
+    await page.route("**/api/user/language", async (route) => {
+      if (route.request().method() !== "PATCH") {
+        await route.continue();
+        return;
+      }
+      patchStarted = true;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: false,
+          error: { message: "Non autenticato", code: "UNAUTHORIZED" },
+        }),
+      });
+    });
+
+    await enterHomeViaLocaleDetection(page, /\/it(\/|$)/, "/it");
+
+    const trigger = page.getByLabel("Lingua").first();
+    await trigger.click();
+    await page.getByRole("option", { name: /Tedesco/i }).click();
+
+    // Prima del fix la pagina cambiava subito; ora aspetta la risposta PATCH (~400ms).
+    await expect(page).toHaveURL(/\/it(\/|$)/, { timeout: 200 });
+    expect(patchStarted).toBe(true);
+
+    await page.waitForURL(/\/de(\/|$)/, { timeout: 15_000 });
+    await expect(page.locator("html")).toHaveAttribute("lang", "de");
 
     await context.close();
   });
