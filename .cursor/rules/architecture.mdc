@@ -1,0 +1,51 @@
+---
+description: Architecture and folder layout for easytrip-saas (Next.js + Prisma + server layer)
+globs:
+alwaysApply: false
+---
+
+# Architecture — EasyTrip (`easytrip-saas`)
+
+## Root del codice
+
+Tutto il codice dell’app è sotto **`easytrip-saas/`** (non nella root del workspace).
+
+## Struttura principale
+
+| Area | Percorso | Scopo |
+|------|----------|--------|
+| App Router (pagine, layout, UI) | `src/app/` | Route Next.js, componenti client/server, marketing e area `app/` autenticata |
+| API HTTP | `src/app/api/**/route.ts` | Route Handlers REST (trip, billing, webhooks, Inngest, ecc.) |
+| Server domain | `src/server/` | Controllers, services, repositories, validators |
+| DI | `src/server/di/container.ts` | Composizione dipendenze server |
+| Librerie condivise | `src/lib/` | Prisma client, Inngest, Stripe, AI, email, config |
+| Schema DB | `prisma/schema.prisma` | Modelli e migrazioni Prisma |
+| Test E2E | `tests/e2e/` | Playwright |
+| Documentazione | `docs/` | Guide (es. Stripe webhook) |
+| Script | `scripts/` | Utility (es. export PDF presentazione) |
+| Static | `public/` | Asset pubblici |
+
+## Pattern server consigliato (allineato al repo)
+
+1. **API route** (`route.ts`): parsing request, auth/middleware lato app, delega al **controller**.
+2. **Controller:** orchestrazione HTTP, status code, mapping errori.
+3. **Service:** logica di dominio e use case.
+4. **Repository:** accesso dati (Prisma).
+5. **Validators / schema Zod:** `src/server/validators/*.schema.ts` per input API.
+
+Mantieni **un flusso chiaro** verso il basso (route → controller → service → repository); evita che le route importino Prisma direttamente salvo casi triviali già presenti.
+
+## Integrazioni esterne (da rispettare nei cambi)
+
+- **Clerk:** sessione e protezione route; usare pattern già presenti in `middleware.ts` e layout.
+- **Stripe:** checkout, webhook in `api/webhooks/stripe` — idempotenza e verifica firma.
+- **Inngest:** funzioni in `src/lib/inngest/functions/`; payload tipizzati dove esiste già (es. trip generate).
+- **Anthropic:** chiavi solo server-side; niente esposizione al client.
+
+## Config
+
+- Config unificata / feature flag: `src/config/unifiedConfig.ts`, `src/lib/dev-flags.ts` dove applicabile.
+
+---
+
+**Generated based on:** Scan MCP su `easytrip-saas` + adeguamento manuale alla struttura reale

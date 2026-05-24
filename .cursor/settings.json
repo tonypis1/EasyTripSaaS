@@ -1,0 +1,19 @@
+{
+  "plugins": {
+    "vercel": {
+      "enabled": true
+    },
+    "context7-plugin": {
+      "enabled": true
+    },
+    "prisma": {
+      "enabled": true
+    },
+    "stripe": {
+      "enabled": true
+    },
+    "clerk": {
+      "enabled": true
+    }
+  }
+}

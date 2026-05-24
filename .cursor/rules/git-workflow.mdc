@@ -1,0 +1,50 @@
+---
+description: Git workflow guidelines including branch strategy, commit message format, and pull request process
+globs:
+alwaysApply: false
+---
+
+# Git Workflow
+
+## Branch Strategy
+
+**Recommended: Feature Branch Workflow**
+```
+main    # Production-ready code
+  ↑
+feature/* # Feature development
+bugfix/*  # Bug fixes
+hotfix/*  # Emergency fixes
+```
+
+## Commit Message Format
+
+**Recommended: Conventional Commits**
+
+```
+feat:     # New feature
+fix:      # Bug fix
+docs:     # Documentation
+style:    # Code style
+refactor: # Code refactoring
+test:     # Tests
+chore:    # Maintenance
+```
+
+**Examples:**
+```
+feat(auth): add JWT token validation
+fix(api): resolve null pointer in user endpoint
+docs: update API documentation
+```
+
+## Versioning
+
+**No version tags detected**
+
+**Recommendation:** Use Semantic Versioning (SemVer)
+- Format: `v{MAJOR}.{MINOR}.{PATCH}`
+- Example: `v1.2.3`
+
+---
+**Generated based on:** Industry best practices

@@ -1,0 +1,10 @@
+# Aggiornamenti automatici delle dipendenze npm (supply chain).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /easytrip-saas
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies

@@ -1,0 +1,56 @@
+---
+description: Quick reference for common commands, file locations, and key patterns in this project
+globs:
+alwaysApply: false
+---
+
+# Quick Reference
+
+**App root:** tutti i percorsi sotto sono relativi a `easytrip-saas/` (esegui i comandi npm da quella cartella).
+
+## Common Commands
+
+```bash
+cd easytrip-saas
+
+npm run dev          # Next.js dev (--webpack)
+npm run build        # Production build
+npm start            # Production server
+npm run lint         # ESLint
+npm run format:check # Prettier (stesso check della CI)
+npm run typecheck    # tsc --noEmit (stesso check della CI)
+npm run test:unit    # Vitest unit
+npm run test:e2e     # Playwright E2E
+npm run inngest:dev  # Inngest dev server (vedi package.json)
+```
+
+**CI su GitHub:** vedi [`docs/DEPLOYMENT.md`](../easytrip-saas/docs/DEPLOYMENT.md) (sezione CI) — workflow `.github/workflows/main.yml`.
+
+## File Locations (in `easytrip-saas/`)
+
+- **Documentation:** `docs/`
+- **Static assets:** `public/`
+- **Utility scripts:** `scripts/`
+- **Source code:** `src/`
+- **Test files:** `tests/`
+- **Prisma:** `prisma/`
+
+## Key Patterns
+
+1. **Naming:** Functions use mixed
+5. **Testing:** Using Playwright framework
+
+## Environment Variables
+
+**Riferimento:** `src/config/unifiedConfig.ts` e [`docs/DEPLOYMENT.md`](../easytrip-saas/docs/DEPLOYMENT.md). File locali tipici: `.env` / `.env.local` (mai in git).
+
+⚠️ Non committare valori reali di secret.
+
+## Tech Stack Summary
+
+**Languages:** TypeScript, React
+**Frameworks:** react, next
+**Database:** Prisma
+
+---
+**Generated:** 08/04/2026

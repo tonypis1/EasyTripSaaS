@@ -1,0 +1,37 @@
+---
+description: Testing guidelines and patterns for Playwright including test organization and coverage requirements
+globs:
+alwaysApply: false
+---
+
+# Testing Guidelines
+
+## Test Framework
+
+**Framework:** Playwright
+**Test Files:** 3 detected
+**Coverage:** unknown
+
+## Test Organization
+
+**Location:** separate
+- ✅ E2E tests detected
+
+## Test Patterns
+
+**Detected Patterns:**
+- BDD-style (describe/it)
+- test() blocks
+
+## Requirements
+
+**Best Practices:**
+- Maintain minimum 80% code coverage for critical paths
+- Write tests for all new features
+- Test edge cases and error conditions
+- Use descriptive test names
+- Keep tests independent and isolated
+- Mock external dependencies
+
+---
+**Generated based on:** Industry best practices
