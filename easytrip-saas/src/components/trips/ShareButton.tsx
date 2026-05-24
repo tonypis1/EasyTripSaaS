@@ -53,7 +53,8 @@ function prefersNativeFileShare(): boolean {
   const ua = navigator.userAgent;
   const mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
   const touchNarrow =
-    navigator.maxTouchPoints > 0 && window.matchMedia("(max-width: 900px)").matches;
+    navigator.maxTouchPoints > 0 &&
+    window.matchMedia("(max-width: 900px)").matches;
 
   return mobileUa || touchNarrow;
 }
@@ -248,14 +249,7 @@ export function ShareButton({
     } finally {
       setBusy(false);
     }
-  }, [
-    busy,
-    downloadImage,
-    fetchShareImageBlob,
-    shareNative,
-    showFeedback,
-    t,
-  ]);
+  }, [busy, downloadImage, fetchShareImageBlob, shareNative, showFeedback, t]);
 
   const statusMessage = busy ? t("preparing") : feedback;
 
@@ -277,7 +271,9 @@ export function ShareButton({
         <span>{t("buttonLabel")}</span>
       </button>
       {statusMessage ? (
-        <span className="text-et-accent text-xs font-medium">{statusMessage}</span>
+        <span className="text-et-accent text-xs font-medium">
+          {statusMessage}
+        </span>
       ) : null}
     </div>
   );

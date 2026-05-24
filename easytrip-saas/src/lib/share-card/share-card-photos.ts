@@ -66,7 +66,10 @@ function isUsablePhoto(title: string, info: WikimediaImageInfo): boolean {
   return width >= MIN_WIDTH && height >= MIN_HEIGHT;
 }
 
-async function searchWikimediaUrls(query: string, limit: number): Promise<string[]> {
+async function searchWikimediaUrls(
+  query: string,
+  limit: number,
+): Promise<string[]> {
   const params = new URLSearchParams({
     action: "query",
     generator: "search",
@@ -142,7 +145,9 @@ async function resolvePhotoDataUrls(destination: string): Promise<string[]> {
     candidateUrls.slice(0, PHOTO_COUNT + 2).map((url) => urlToDataUrl(url)),
   );
 
-  return dataUrls.filter((url): url is string => url !== null).slice(0, PHOTO_COUNT);
+  return dataUrls
+    .filter((url): url is string => url !== null)
+    .slice(0, PHOTO_COUNT);
 }
 
 export async function getShareCardBackgroundPhotos(
@@ -162,7 +167,11 @@ export async function getShareCardBackgroundPhotos(
     });
     return photos;
   } catch (error) {
-    console.warn("[share-card-photos] failed for destination", destination, error);
+    console.warn(
+      "[share-card-photos] failed for destination",
+      destination,
+      error,
+    );
     return [];
   }
 }

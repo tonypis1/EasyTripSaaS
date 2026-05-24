@@ -55,7 +55,9 @@ export function resolveShareCardLocale(
   return routing.defaultLocale;
 }
 
-export function getShareCardLabels(locale: string | null | undefined): ShareCardLabels {
+export function getShareCardLabels(
+  locale: string | null | undefined,
+): ShareCardLabels {
   return LABELS[resolveShareCardLocale(locale)];
 }
 

@@ -189,7 +189,13 @@ export function ShareCardView({
           justifyContent: "space-between",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: isStory ? 20 : 12 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isStory ? 20 : 12,
+          }}
+        >
           <div
             style={{
               color: COLORS.cyan,
@@ -289,7 +295,13 @@ export function ShareCardView({
             justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: isStory ? 20 : 14 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: isStory ? 20 : 14,
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- Satori OG renderer requires native img */}
             <img
               src={logoUrl}
