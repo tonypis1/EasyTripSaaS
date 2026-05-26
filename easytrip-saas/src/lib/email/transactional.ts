@@ -6,6 +6,35 @@ import { daysLabel, normalizeEmailLocale, t as tr } from "./email-i18n";
 export type { EmailLocale } from "./email-i18n";
 export { normalizeEmailLocale } from "./email-i18n";
 
+/** Allineato a `REWARD_EUROS` in referralService (€3,99). */
+const POST_TRIP_REFERRAL_REWARD_AMOUNT = "3.99";
+
+function postTripReferralEmailBlock(
+  locale: ReturnType<typeof normalizeEmailLocale>,
+  referralUrl: string,
+): string {
+  const amount = POST_TRIP_REFERRAL_REWARD_AMOUNT;
+  return `
+    <div style="margin:20px 0;padding:16px 20px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
+      <p style="margin:0 0 8px;font-size:14px;font-weight:600;color:#15803d">
+        ${tr("postTripReferral.title", locale)}
+      </p>
+      <p style="margin:0;font-size:13px;color:#555;line-height:1.6">
+        ${tr("postTripReferral.body", locale, { amount })}
+      </p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0 0">
+        <tr><td>
+          <a href="${escapeHtml(referralUrl)}"
+             style="display:inline-block;padding:10px 22px;background:#16a34a;color:#fff;
+                    font-size:13px;font-weight:600;text-decoration:none;border-radius:8px">
+            ${tr("postTripReferral.cta", locale)}
+          </a>
+        </td></tr>
+      </table>
+    </div>
+  `.trim();
+}
+
 type SendArgs = {
   to: string;
   subject: string;
@@ -390,9 +419,13 @@ export function postTripFeedbackHtml(params: {
   destination: string;
   newTripUrl: string;
   locale?: string | null;
+  referralUrl?: string | null;
 }): string {
   const locale = normalizeEmailLocale(params.locale);
   const dest = escapeHtml(params.destination);
+  const referralBlock = params.referralUrl?.trim()
+    ? postTripReferralEmailBlock(locale, params.referralUrl.trim())
+    : "";
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">💭</p>
@@ -422,6 +455,7 @@ export function postTripFeedbackHtml(params: {
         </a>
       </td></tr>
     </table>
+    ${referralBlock}
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
       ${tr("postTripFeedback.footer", locale)}
     </p>
@@ -432,8 +466,12 @@ export function postTripFeedbackHtml(params: {
 export function postTripReengageHtml(params: {
   newTripUrl: string;
   locale?: string | null;
+  referralUrl?: string | null;
 }): string {
   const locale = normalizeEmailLocale(params.locale);
+  const referralBlock = params.referralUrl?.trim()
+    ? postTripReferralEmailBlock(locale, params.referralUrl.trim())
+    : "";
   return `
   <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#333">
     <p style="font-size:24px;margin-bottom:4px">🌤️</p>
@@ -465,6 +503,7 @@ export function postTripReengageHtml(params: {
     <p style="font-size:13px;color:#777">
       ${tr("postTripReengage.closing", locale)}
     </p>
+    ${referralBlock}
     <p style="font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:16px">
       ${tr("postTripReengage.footer", locale)}
     </p>

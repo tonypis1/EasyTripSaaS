@@ -659,6 +659,18 @@
         "newTripCta": "Neue Reise — 20 % Rabatt",
         "footerNote": "Deine Route ist sicher. Du kannst den Zugriff jederzeit reaktivieren."
       },
+      "postTripReferral": {
+        "bannerTitle": "Freund einladen → 1 gratis Reise (€{amount} Guthaben)",
+        "bannerSubtitle": "Teile deinen Link: Bei der Anmeldung erhält dein Freund eine KI-Route und du bekommst Guthaben für die nächste Reise.",
+        "heroEyebrow": "Empfehlungsprogramm",
+        "heroTitle": "Freund einladen, günstiger reisen",
+        "heroSubtitle": "Jeder Freund, der sich über deinen Link registriert, erhält eine personalisierte Route. Du erhältst €{amount} Guthaben, wenn er seine erste Reise abschließt.",
+        "windowHint": "Sichtbar für 72 Stunden nach Reiseende.",
+        "cta": "Freunde einladen",
+        "ctaDetails": "Details",
+        "ctaDashboard": "Zum Empfehlungsprogramm",
+        "copyLink": "Link kopieren"
+      },
       "expenses": {
         "totalLabel": "Gesamtausgaben",
         "addButton": "Ausgabe hinzufügen",

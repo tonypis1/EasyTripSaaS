@@ -659,6 +659,18 @@
         "newTripCta": "Nuevo viaje — 20% de descuento",
         "footerNote": "Tu itinerario está seguro. Puedes reactivar el acceso en cualquier momento."
       },
+      "postTripReferral": {
+        "bannerTitle": "Invita a un amigo → 1 viaje gratis (€{amount} de crédito)",
+        "bannerSubtitle": "Comparte tu enlace: al registrarse recibe un itinerario con IA y tú ganas crédito para tu próximo viaje.",
+        "heroEyebrow": "Programa de invitaciones",
+        "heroTitle": "Invita a un amigo, viaja gratis",
+        "heroSubtitle": "Cada amigo que se registre con tu enlace recibe un itinerario personalizado. Tú obtienes €{amount} de crédito cuando complete su primer viaje.",
+        "windowHint": "Visible durante 72 horas después de que termina el viaje.",
+        "cta": "Invitar amigos",
+        "ctaDetails": "Detalles",
+        "ctaDashboard": "Ir al programa de invitaciones",
+        "copyLink": "Copiar enlace"
+      },
       "expenses": {
         "totalLabel": "Total gastos",
         "addButton": "Añadir gasto",

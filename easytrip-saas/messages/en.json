@@ -659,6 +659,18 @@
         "newTripCta": "New trip — 20% off",
         "footerNote": "Your itinerary is safe. You can reactivate access at any time."
       },
+      "postTripReferral": {
+        "bannerTitle": "Invite a friend → 1 free trip (€{amount} credit)",
+        "bannerSubtitle": "Share your link: when they sign up, they get an AI itinerary and you earn credit for your next trip.",
+        "heroEyebrow": "Referral program",
+        "heroTitle": "Invite a friend, travel for less",
+        "heroSubtitle": "Each friend who signs up with your link gets a personalized itinerary. You earn €{amount} credit when they complete their first trip.",
+        "windowHint": "Shown for 72 hours after your trip ends.",
+        "cta": "Invite friends",
+        "ctaDetails": "Details",
+        "ctaDashboard": "Open referral program",
+        "copyLink": "Copy link"
+      },
       "expenses": {
         "totalLabel": "Total expenses",
         "addButton": "Add expense",
