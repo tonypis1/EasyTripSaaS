@@ -5,6 +5,7 @@ import { TripRepository } from "@/server/repositories/TripRepository";
 import { CreateTripInput } from "@/server/validators/trip.schema";
 import { AppError } from "@/server/errors/AppError";
 import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
+import { getPostTripReferralWindow } from "@/lib/trip/post-trip-referral-window";
 import {
   cancelConfirmedHtml,
   sendTransactionalEmail,
@@ -91,6 +92,8 @@ export type TripDetailDto = {
   activeGeoScore: number | null;
   prefChangedAfterGen: boolean;
   isAccessExpired: boolean;
+  postTripReferralWindowActive: boolean;
+  postTripReferralExpiresAt: string | null;
   regen: {
     nextVersion: number;
     atMax: boolean;
@@ -316,6 +319,7 @@ export class TripService {
     const userCreditBalanceCents = Math.round(creditBalanceEuros * 100);
 
     const isOrganizer = trip.organizerId === user.id;
+    const referralWindow = getPostTripReferralWindow(trip.endDate);
 
     const membersRaw =
       "members" in trip && Array.isArray(trip.members)
@@ -367,6 +371,10 @@ export class TripService {
       members: membersDto,
       prefChangedAfterGen: prefChanged,
       isAccessExpired: trip.accessExpiresAt < new Date(),
+      postTripReferralWindowActive: referralWindow.active,
+      postTripReferralExpiresAt: referralWindow.expiresAt
+        ? referralWindow.expiresAt.toISOString()
+        : null,
       days: days.map(
         (d: {
           id: string;

@@ -8,6 +8,7 @@ import {
 } from "@/lib/trip-display-labels";
 import { DEV_PREVIEW_UNLOCK_CONTENT } from "@/lib/dev-flags";
 import { PostTripScreen } from "./post-trip-screen";
+import { PostTripReferralPromo } from "@/components/referral/post-trip-referral-promo";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
 import { ShareButton } from "@/components/trips/ShareButton";
 import dynamic from "next/dynamic";
@@ -693,6 +694,10 @@ export function TripDetailClient({
 
   return (
     <div className="et-protected mx-auto max-w-3xl space-y-8 pb-16">
+      {trip.postTripReferralWindowActive ? (
+        <PostTripReferralPromo variant="banner" />
+      ) : null}
+
       {/* ── Header ── */}
       <header className="border-et-accent/40 border-l-2 pl-6">
         <Link

@@ -749,6 +749,28 @@ const DICT: EmailDict = {
     de: "EasyTrip — Mehr reisen, weniger planen.",
   },
 
+  "postTripReferral.title": {
+    it: "Invita un amico, guadagna un trip gratis",
+    en: "Invite a friend, earn a free trip",
+    es: "Invita a un amigo y gana un viaje gratis",
+    fr: "Invitez un ami, gagnez un voyage gratuit",
+    de: "Freund einladen, Gratisreise verdienen",
+  },
+  "postTripReferral.body": {
+    it: "Condividi il tuo link: quando un amico si registra e acquista il primo viaggio, ricevi €{amount} di credito (1 trip gratis).",
+    en: "Share your link: when a friend signs up and buys their first trip, you get €{amount} in credit (1 free trip).",
+    es: "Comparte tu enlace: cuando un amigo se registre y compre su primer viaje, recibirás €{amount} de crédito (1 viaje gratis).",
+    fr: "Partagez votre lien : quand un ami s'inscrit et achète son premier voyage, vous recevez €{amount} de crédit (1 voyage gratuit).",
+    de: "Teile deinen Link: Wenn sich ein Freund registriert und seine erste Reise kauft, erhältst du €{amount} Guthaben (1 Gratisreise).",
+  },
+  "postTripReferral.cta": {
+    it: "Invita un amico",
+    en: "Invite a friend",
+    es: "Invitar a un amigo",
+    fr: "Inviter un ami",
+    de: "Freund einladen",
+  },
+
   // Referral: friend signed up
   "referralSignup.title": {
     it: "🎉 Il tuo amico si è registrato!",

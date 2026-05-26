@@ -49,7 +49,9 @@ export const postTripFollowup = inngest.createFunction(
         select: {
           id: true,
           destination: true,
-          organizer: { select: { email: true, language: true } },
+          organizer: {
+            select: { email: true, language: true, referralCode: true },
+          },
         },
       });
 
@@ -57,6 +59,9 @@ export const postTripFollowup = inngest.createFunction(
       for (const t of trips) {
         try {
           const locale = normalizeEmailLocale(t.organizer.language);
+          const referralUrl = t.organizer.referralCode
+            ? `${baseUrl}/?ref=${encodeURIComponent(t.organizer.referralCode)}`
+            : null;
           await sendTransactionalEmail({
             to: t.organizer.email,
             subject: tr("subject.postTripFeedback", locale, {
@@ -66,6 +71,7 @@ export const postTripFollowup = inngest.createFunction(
               destination: t.destination,
               newTripUrl,
               locale,
+              referralUrl,
             }),
           });
           count++;
@@ -91,7 +97,9 @@ export const postTripFollowup = inngest.createFunction(
         },
         select: {
           id: true,
-          organizer: { select: { email: true, language: true } },
+          organizer: {
+            select: { email: true, language: true, referralCode: true },
+          },
         },
       });
 
@@ -102,10 +110,17 @@ export const postTripFollowup = inngest.createFunction(
         emailsSent.add(t.organizer.email);
         try {
           const locale = normalizeEmailLocale(t.organizer.language);
+          const referralUrl = t.organizer.referralCode
+            ? `${baseUrl}/?ref=${encodeURIComponent(t.organizer.referralCode)}`
+            : null;
           await sendTransactionalEmail({
             to: t.organizer.email,
             subject: tr("subject.postTripReengage", locale),
-            html: postTripReengageHtml({ newTripUrl, locale }),
+            html: postTripReengageHtml({
+              newTripUrl,
+              locale,
+              referralUrl,
+            }),
           });
           count++;
         } catch (err) {
