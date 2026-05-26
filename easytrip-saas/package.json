@@ -48,7 +48,7 @@
     ]
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.91.0",
+    "@anthropic-ai/sdk": "^0.98.0",
     "@clerk/localizations": "^4.5.3",
     "@clerk/nextjs": "^6.39.3",
     "@prisma/client": "6.19.3",
