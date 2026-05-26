@@ -4,6 +4,7 @@ import type { TripDetailDto } from "@/server/services/trip/tripService";
 import { tripTypeDisplayLabel } from "@/lib/trip-display-labels";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { PostTripReferralPromo } from "@/components/referral/post-trip-referral-promo";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
@@ -120,6 +121,8 @@ export function PostTripScreen({ trip }: Props) {
         </p>
         <p className="text-et-ink/30 mt-1 text-xs">{t("expirySuffix")}</p>
       </div>
+
+      <PostTripReferralPromo variant="hero" />
 
       {/* CTA Cards */}
       <div className="space-y-4">
