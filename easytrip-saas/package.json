@@ -65,7 +65,7 @@
     "next-intl": "^4.9.1",
     "posthog-js": "^1.364.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react-dom": "19.2.7",
     "react-leaflet": "^5.0.0",
     "stripe": "^17",
     "zod": "^3"
