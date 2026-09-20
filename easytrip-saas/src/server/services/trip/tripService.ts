@@ -23,6 +23,9 @@ import {
   nextVersionNum,
 } from "@/lib/trip-regen-rules";
 
+/** Throttle sync nomi membri da Clerk (vedi syncMemberNamesFromClerkForTrip). */
+const CLERK_NAME_SYNC_TTL_MS = 15 * 60 * 1000;
+
 export type RestaurantSuggestDto = {
   meal: "pranzo" | "cena";
   name: string;
@@ -261,35 +264,22 @@ export class TripService {
   async getTripDetail(tripId: string): Promise<TripDetailDto> {
     const user = await this.authService.getOrCreateCurrentUser();
 
-    let trip = await this.tripRepository.findDetailForOrganizer(
-      tripId,
-      user.id,
-    );
-
-    if (!trip) {
-      trip = await this.tripRepository.findDetailForMember(tripId, user.id);
-    }
+    const trip =
+      (await this.tripRepository.findDetailForOrganizer(tripId, user.id)) ??
+      (await this.tripRepository.findDetailForMember(tripId, user.id));
 
     if (!trip) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
     }
 
-    await this.syncMemberNamesFromClerkForTrip(tripId);
-
-    let tripAfterSync = await this.tripRepository.findDetailForOrganizer(
-      tripId,
-      user.id,
+    /**
+     * Nomi membri aggiornati (Clerk) senza un secondo giro sul DB: la sync
+     * ritorna solo i nomi realmente cambiati, applicati in memoria sotto
+     * quando costruiamo `membersDto`.
+     */
+    const freshMemberNames = await this.syncMemberNamesFromClerkForTrip(
+      trip.members,
     );
-    if (!tripAfterSync) {
-      tripAfterSync = await this.tripRepository.findDetailForMember(
-        tripId,
-        user.id,
-      );
-    }
-    if (!tripAfterSync) {
-      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
-    }
-    trip = tripAfterSync;
 
     const versions = trip.versions.map((v) => ({
       versionNum: v.versionNum,
@@ -335,7 +325,9 @@ export class TripService {
     const membersDto: TripMemberDto[] = membersRaw.map((m) => ({
       id: m.id,
       userId: m.user.id,
-      name: m.user.name,
+      name: freshMemberNames.has(m.user.id)
+        ? (freshMemberNames.get(m.user.id) ?? null)
+        : m.user.name,
       email: m.user.email,
       role: m.role,
       balance: decToNumber(m.balance) ?? 0,
@@ -771,37 +763,67 @@ export class TripService {
   }
 
   /**
-   * Allinea `User.name` ai profili Clerk per tutti i membri del trip.
-   * Senza questo, il nome resta quello salvato al primo login finché l’utente
-   * non apre di nuovo l’app (getOrCreateCurrentUser).
+   * Allinea `User.name` ai profili Clerk per i membri del trip il cui nome
+   * non è stato verificato negli ultimi CLERK_NAME_SYNC_TTL_MS (throttle via
+   * `User.clerkNameSyncedAt`): senza questo, il nome resta quello salvato al
+   * primo login finché l'utente non apre di nuovo l'app
+   * (getOrCreateCurrentUser) — e senza throttle, ogni caricamento della
+   * pagina trip richiamava Clerk una volta per membro, in sequenza.
+   *
+   * Prende i membri già caricati dalla query di dettaglio (nessuna query
+   * separata) e interroga Clerk in parallelo solo per quelli scaduti.
+   * Ritorna una mappa userId → nome aggiornato, solo per i nomi realmente
+   * cambiati: il chiamante la usa per correggere in memoria i dati già letti,
+   * senza un secondo giro sul DB.
    */
-  private async syncMemberNamesFromClerkForTrip(tripId: string): Promise<void> {
-    const rows = await prisma.tripMember.findMany({
-      where: { tripId },
-      include: {
-        user: { select: { id: true, clerkUserId: true, name: true } },
-      },
-    });
-    if (rows.length === 0) return;
+  private async syncMemberNamesFromClerkForTrip(
+    members: {
+      user: {
+        id: string;
+        clerkUserId: string;
+        name: string | null;
+        clerkNameSyncedAt: Date | null;
+      };
+    }[],
+  ): Promise<Map<string, string | null>> {
+    const now = Date.now();
+    const stale = members.filter(
+      (m) =>
+        !m.user.clerkNameSyncedAt ||
+        now - m.user.clerkNameSyncedAt.getTime() > CLERK_NAME_SYNC_TTL_MS,
+    );
+
+    const updatedNames = new Map<string, string | null>();
+    if (stale.length === 0) return updatedNames;
 
     const clerk = await clerkClient();
-    for (const row of rows) {
-      try {
-        const cu = await clerk.users.getUser(row.user.clerkUserId);
-        const name = `${cu.firstName ?? ""} ${cu.lastName ?? ""}`.trim();
-        const prev = row.user.name?.trim() ?? "";
-        if (name === prev) continue;
-        await prisma.user.update({
-          where: { id: row.user.id },
-          data: { name: name.length > 0 ? name : null },
-        });
-      } catch (e) {
-        logger.warn("syncMemberNamesFromClerkForTrip: skip user", {
-          tripId,
-          userId: row.user.id,
-          error: e,
-        });
-      }
-    }
+
+    await Promise.all(
+      stale.map(async (row) => {
+        try {
+          const cu = await clerk.users.getUser(row.user.clerkUserId);
+          const name = `${cu.firstName ?? ""} ${cu.lastName ?? ""}`.trim();
+          const nextName = name.length > 0 ? name : null;
+
+          await prisma.user.update({
+            where: { id: row.user.id },
+            data: { name: nextName, clerkNameSyncedAt: new Date() },
+          });
+
+          const prev = row.user.name?.trim() ?? "";
+          if (name !== prev) {
+            updatedNames.set(row.user.id, nextName);
+          }
+        } catch (e) {
+          // Non aggiorniamo clerkNameSyncedAt: il prossimo giro riprova.
+          logger.warn("syncMemberNamesFromClerkForTrip: skip user", {
+            userId: row.user.id,
+            error: e,
+          });
+        }
+      }),
+    );
+
+    return updatedNames;
   }
 }

@@ -120,7 +120,17 @@ export class TripRepository {
           },
         },
         members: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                clerkUserId: true,
+                clerkNameSyncedAt: true,
+              },
+            },
+          },
           orderBy: { joinedAt: "asc" },
         },
       },
@@ -385,7 +395,17 @@ export class TripRepository {
           },
         },
         members: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                clerkUserId: true,
+                clerkNameSyncedAt: true,
+              },
+            },
+          },
           orderBy: { joinedAt: "asc" },
         },
       },
