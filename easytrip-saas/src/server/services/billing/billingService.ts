@@ -756,13 +756,21 @@ export class BillingService {
       }
 
       const amount = (session.amount_total ?? 0) / 100;
-      await this.paymentRepository.create({
+      const payment = await this.paymentRepository.createIfNotDuplicate({
         userId: appUserId,
         tripId,
         type: "regen",
         stripePaymentId,
         amount,
       });
+
+      if (!payment) {
+        logger.info(
+          "Regen già elaborata (idempotente - vincolo DB su stripePaymentId)",
+          { tripId, stripeEventId: context.stripeEventId, source: context.source },
+        );
+        return { received: true, skipped: "duplicate_payment" };
+      }
 
       await inngest.send({
         name: "trip/generate.requested",
@@ -774,13 +782,21 @@ export class BillingService {
 
     if (paymentType === "reactivate") {
       const amount = (session.amount_total ?? 0) / 100;
-      await this.paymentRepository.create({
+      const payment = await this.paymentRepository.createIfNotDuplicate({
         userId: appUserId,
         tripId,
         type: "reactivate",
         stripePaymentId,
         amount,
       });
+
+      if (!payment) {
+        logger.info(
+          "Reactivate già elaborato (idempotente - vincolo DB su stripePaymentId)",
+          { tripId, stripeEventId: context.stripeEventId, source: context.source },
+        );
+        return { received: true, skipped: "duplicate_payment" };
+      }
 
       await this.tripRepository.extendAccess(tripId, 30);
 
@@ -795,6 +811,32 @@ export class BillingService {
         source: context.source,
       });
       return { received: true, skipped: "already_paid" };
+    }
+
+    /**
+     * Il Payment viene creato PRIMA di consumare i crediti: è la nostra
+     * chiave di idempotenza (vincolo UNIQUE su stripePaymentId). Se due
+     * chiamate concorrenti (webhook + fallback post-redirect, o due
+     * redelivery) arrivano fin qui, solo una riesce a inserire la riga;
+     * l'altra riceve `null` e si ferma qui, PRIMA di toccare i crediti —
+     * altrimenti `applyCredits` scalerebbe il credito dell'utente due volte
+     * per lo stesso acquisto.
+     */
+    const stripeAmount = (session.amount_total ?? 0) / 100;
+    const payment = await this.paymentRepository.createIfNotDuplicate({
+      userId: appUserId,
+      tripId,
+      type: "purchase",
+      stripePaymentId,
+      amount: stripeAmount,
+    });
+
+    if (!payment) {
+      logger.info(
+        "Acquisto già elaborato (idempotente - vincolo DB su stripePaymentId)",
+        { tripId, stripeEventId: context.stripeEventId, source: context.source },
+      );
+      return { received: true, skipped: "duplicate_payment" };
     }
 
     const creditApplyCents = parseInt(
@@ -814,15 +856,6 @@ export class BillingService {
         source: context.source,
       });
     }
-
-    const stripeAmount = (session.amount_total ?? 0) / 100;
-    await this.paymentRepository.create({
-      userId: appUserId,
-      tripId,
-      type: "purchase",
-      stripePaymentId,
-      amount: stripeAmount,
-    });
 
     await this.tripRepository.markAsPaid(tripId, {
       paymentId: stripePaymentId,

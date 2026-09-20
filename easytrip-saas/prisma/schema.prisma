@@ -191,7 +191,7 @@ model Payment {
   userId          String      @map("user_id")
   tripId          String?     @map("trip_id")
   type            PaymentType
-  stripePaymentId String?     @map("stripe_payment_id")
+  stripePaymentId String?     @unique @map("stripe_payment_id")
   amount          Decimal     @db.Decimal(10, 2)
   createdAt       DateTime    @default(now()) @map("created_at")
 
