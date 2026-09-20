@@ -2,9 +2,12 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 /**
- * Rate limiting opzionale via Upstash Redis.
- * Senza `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` le funzioni `enforce*` non applicano limiti
- * (utile in sviluppo locale senza Redis).
+ * Rate limiting via Upstash Redis. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+ * sono opzionali solo in sviluppo/test (utile senza Redis in locale): `unifiedConfig`
+ * le rende obbligatorie in produzione (fail-fast all'avvio), quindi qui `redis` è
+ * `null` solo fuori produzione. Lette direttamente da `process.env` (non da
+ * `unifiedConfig`) per non accoppiare questo modulo, usato anche nei test unit
+ * di `getClientIp`, alla validazione delle env "core" (DB/Clerk/Stripe/Anthropic).
  *
  * @see architecture-docs/12_DEPLOYMENT.md
  */
