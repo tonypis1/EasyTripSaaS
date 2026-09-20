@@ -4,8 +4,8 @@ import { AppError } from "@/server/errors/AppError";
 import { logger } from "@/lib/observability";
 
 export abstract class BaseController {
-  protected ok<T>(data: T, status = 200) {
-    return NextResponse.json({ ok: true, data }, { status });
+  protected ok<T>(data: T, status = 200, headers?: HeadersInit) {
+    return NextResponse.json({ ok: true, data }, { status, headers });
   }
 
   protected fail(error: unknown, operation: string) {

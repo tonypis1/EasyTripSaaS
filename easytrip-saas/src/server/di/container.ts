@@ -18,6 +18,7 @@ import { BillingController } from "@/server/controllers/BillingController";
 import { SupportController } from "@/server/controllers/SupportController";
 import { ExpenseController } from "@/server/controllers/ExpenseController";
 import { ReferralController } from "@/server/controllers/ReferralController";
+import { UserController } from "@/server/controllers/UserController";
 
 const userRepository = new UserRepository();
 const tripRepository = new TripRepository();
@@ -54,6 +55,7 @@ const billingController = new BillingController(billingService);
 const supportController = new SupportController(supportService);
 const expenseController = new ExpenseController(expenseService);
 const referralController = new ReferralController(referralService);
+const userController = new UserController(authService, userDataService);
 
 export const container = {
   repositories: {
@@ -81,5 +83,6 @@ export const container = {
     supportController,
     expenseController,
     referralController,
+    userController,
   },
 } as const;
