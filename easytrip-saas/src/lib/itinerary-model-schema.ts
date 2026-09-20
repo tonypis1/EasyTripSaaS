@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { httpUrlSchema } from "@/lib/safe-url";
 
 /** Claude a volte avvolge il JSON in ```json ... ``` */
 export function extractJsonText(raw: string): string {
@@ -40,7 +41,7 @@ export const DaySlotSchema = z.object({
     }),
   durationMin: z.coerce.number().int().min(10).max(600),
   googleMapsQuery: z.string().min(3),
-  bookingLink: z.union([z.string().url(), z.null()]).default(null),
+  bookingLink: z.union([httpUrlSchema, z.null()]).default(null),
   tips: z.array(z.string().min(1)).min(1).max(6),
   lat: z.union([z.number(), z.null()]).default(null),
   lng: z.union([z.number(), z.null()]).default(null),

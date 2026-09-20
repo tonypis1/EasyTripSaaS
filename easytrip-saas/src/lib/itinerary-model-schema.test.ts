@@ -137,4 +137,27 @@ describe("parseAndValidateModelJson", () => {
       /Schema non valido/,
     );
   });
+
+  it("rejette un bookingLink con schema javascript: (XSS via <a href>)", () => {
+    const bad = JSON.stringify({
+      optimizationScore: 8,
+      days: [day(1, { morning: slot({ bookingLink: "javascript:alert(1)" }) })],
+    });
+    expect(() => parseAndValidateModelJson(bad, 1)).toThrow(
+      /Schema non valido/,
+    );
+  });
+
+  it("accetta un bookingLink https valido", () => {
+    const ok = JSON.stringify({
+      optimizationScore: 8,
+      days: [
+        day(1, {
+          morning: slot({ bookingLink: "https://example.com/booking" }),
+        }),
+      ],
+    });
+    const r = parseAndValidateModelJson(ok, 1);
+    expect(r.days[0].morning.bookingLink).toBe("https://example.com/booking");
+  });
 });
