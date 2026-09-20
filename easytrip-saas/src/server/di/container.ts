@@ -36,7 +36,11 @@ const billingService = new BillingService(
   tripRepository,
   paymentRepository,
 );
-const supportService = new SupportService(authService, supportRepository);
+const supportService = new SupportService(
+  authService,
+  supportRepository,
+  tripRepository,
+);
 const expenseService = new ExpenseService(
   authService,
   expenseRepository,
