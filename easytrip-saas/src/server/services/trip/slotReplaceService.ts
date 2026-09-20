@@ -1,6 +1,11 @@
 import { roundCoordForAi } from "@/lib/geo-privacy";
 import { prisma } from "@/lib/prisma";
-import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
+import {
+  ANTHROPIC_MODEL,
+  SYNC_REQUEST_OPTIONS,
+  anthropic,
+  toAiUnavailableError,
+} from "@/lib/ai/anthropic";
 import {
   normalizeAiLocale,
   systemLanguageDirective,
@@ -273,13 +278,21 @@ export class SlotReplaceService {
       locale,
     });
 
-    const response = await anthropic.messages.create({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 3000,
-      temperature: 0.35,
-      system: buildSystemPrompt(locale),
-      messages: [{ role: "user", content: prompt }],
-    });
+    let response;
+    try {
+      response = await anthropic.messages.create(
+        {
+          model: ANTHROPIC_MODEL,
+          max_tokens: 3000,
+          temperature: 0.35,
+          system: buildSystemPrompt(locale),
+          messages: [{ role: "user", content: prompt }],
+        },
+        SYNC_REQUEST_OPTIONS,
+      );
+    } catch (error) {
+      throw toAiUnavailableError(error);
+    }
 
     const textBlock = response.content.find((c) => c.type === "text");
     if (!textBlock || textBlock.type !== "text") {

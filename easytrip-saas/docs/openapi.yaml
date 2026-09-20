@@ -214,6 +214,11 @@ paths:
     post:
       tags: [trips]
       summary: Sostituisce uno slot giornaliero
+      description: |
+        Chiamata sincrona a Claude (timeout 20s, 1 retry — vedi
+        SYNC_REQUEST_OPTIONS in `src/lib/ai/anthropic.ts`; `maxDuration=45`
+        sulla route). Un timeout/overload del provider risponde 503/502
+        invece di lasciare la richiesta bloccata.
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -226,6 +231,12 @@ paths:
           description: Slot aggiornato
         "400":
           description: Validazione fallita
+        "429":
+          description: Troppe richieste (rate limit)
+        "502":
+          description: Risposta AI non valida o provider temporaneamente non disponibile
+        "503":
+          description: Il servizio AI non risponde (timeout)
 
   /api/trips/{tripId}/live-suggest:
     parameters:
@@ -233,6 +244,11 @@ paths:
     post:
       tags: [trips]
       summary: Suggerimenti contestuali (posizione / motivo)
+      description: |
+        Chiamata sincrona a Claude (timeout 20s, 1 retry — vedi
+        SYNC_REQUEST_OPTIONS in `src/lib/ai/anthropic.ts`; `maxDuration=45`
+        sulla route). Un timeout/overload del provider risponde 503/502
+        invece di lasciare la richiesta bloccata.
       security: [{ clerkSession: [] }]
       requestBody:
         required: true
@@ -245,6 +261,12 @@ paths:
           description: Suggerimenti
         "400":
           description: Validazione fallita
+        "429":
+          description: Troppe richieste (rate limit)
+        "502":
+          description: Risposta AI non valida o provider temporaneamente non disponibile
+        "503":
+          description: Il servizio AI non risponde (timeout)
 
   /api/trips/{tripId}/expenses:
     parameters:
