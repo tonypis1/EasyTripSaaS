@@ -47,6 +47,21 @@ export const tripGenerateLimiter = createLimiter("trip_generate", 15, "1 m");
 export const liveSuggestLimiter = createLimiter("live_suggest", 30, "1 m");
 export const replaceSlotLimiter = createLimiter("replace_slot", 40, "1 m");
 
+/**
+ * Creazione Stripe Checkout Session (per utente autenticato). Ogni chiamata
+ * è una richiesta reale all'API Stripe: senza limite, un utente autenticato
+ * potrebbe crearne in loop illimitato (costo/quota Stripe), a differenza
+ * degli altri endpoint sopra che avevano già un limite.
+ */
+export const checkoutLimiter = createLimiter("checkout", 10, "1 m");
+export const regenCheckoutLimiter = createLimiter("regen_checkout", 10, "1 m");
+export const reactivateCheckoutLimiter = createLimiter(
+  "reactivate_checkout",
+  10,
+  "1 m",
+);
+export const subscribeCheckoutLimiter = createLimiter("subscribe", 10, "1 m");
+
 export function getClientIp(req: Request): string {
   const xf = req.headers.get("x-forwarded-for");
   if (xf) {

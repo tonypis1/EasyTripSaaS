@@ -328,30 +328,51 @@ paths:
     post:
       tags: [billing]
       summary: Crea sessione Stripe Checkout (acquisto trip)
+      description: Rate limit applicato se configurato Upstash Redis (10/min per utente).
       security: [{ clerkSession: [] }]
       responses:
         "200":
           description: URL sessione o dati checkout
         "400":
           description: Errore business / validazione
+        "429":
+          description: Troppe richieste (rate limit)
 
   /api/billing/regen-checkout:
     post:
       tags: [billing]
       summary: Checkout per rigenerazione a pagamento
+      description: Rate limit applicato se configurato Upstash Redis (10/min per utente).
       security: [{ clerkSession: [] }]
       responses:
         "200":
           description: Sessione creata
+        "429":
+          description: Troppe richieste (rate limit)
 
   /api/billing/reactivate-checkout:
     post:
       tags: [billing]
       summary: Checkout per riattivazione accesso post-trip
+      description: Rate limit applicato se configurato Upstash Redis (10/min per utente).
       security: [{ clerkSession: [] }]
       responses:
         "200":
           description: Sessione creata
+        "429":
+          description: Troppe richieste (rate limit)
+
+  /api/billing/subscribe:
+    post:
+      tags: [billing]
+      summary: Checkout abbonamento mensile "Viaggiatore Frequente"
+      description: Rate limit applicato se configurato Upstash Redis (10/min per utente).
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Sessione creata
+        "429":
+          description: Troppe richieste (rate limit)
 
   /api/webhooks/stripe:
     post:
