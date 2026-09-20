@@ -9,14 +9,17 @@ import { z } from "zod";
  * finito nel prompt riuscisse a indurre il modello a produrre un simile
  * schema, questo validator lo scarta prima che raggiunga il DB o la UI.
  */
-export const httpUrlSchema = z.string().url().refine(
-  (value) => {
-    try {
-      const protocol = new URL(value).protocol;
-      return protocol === "http:" || protocol === "https:";
-    } catch {
-      return false;
-    }
-  },
-  { message: "L'URL deve usare il protocollo http o https" },
-);
+export const httpUrlSchema = z
+  .string()
+  .url()
+  .refine(
+    (value) => {
+      try {
+        const protocol = new URL(value).protocol;
+        return protocol === "http:" || protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "L'URL deve usare il protocollo http o https" },
+  );

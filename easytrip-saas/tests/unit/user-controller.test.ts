@@ -18,12 +18,18 @@ function makeController(
   } as unknown as AuthService;
 
   const userDataService = {
-    exportAllDataForUserId: vi.fn().mockResolvedValue({ user: { id: "user1" } }),
+    exportAllDataForUserId: vi
+      .fn()
+      .mockResolvedValue({ user: { id: "user1" } }),
     deleteAccountForUser: vi.fn().mockResolvedValue(undefined),
     ...dataOverrides,
   } as unknown as UserDataService;
 
-  return { controller: new UserController(authService, userDataService), authService, userDataService };
+  return {
+    controller: new UserController(authService, userDataService),
+    authService,
+    userDataService,
+  };
 }
 
 describe("UserController.exportData", () => {
@@ -44,7 +50,9 @@ describe("UserController.exportData", () => {
     const { controller } = makeController({
       getOrCreateCurrentUser: vi
         .fn()
-        .mockRejectedValue(new AppError("Non autenticato", 401, "UNAUTHORIZED")),
+        .mockRejectedValue(
+          new AppError("Non autenticato", 401, "UNAUTHORIZED"),
+        ),
     });
 
     const res = await controller.exportData();
@@ -69,7 +77,9 @@ describe("UserController.deleteAccount", () => {
   it("cancella l'account con la frase di conferma corretta", async () => {
     const { controller, userDataService } = makeController();
 
-    const res = await controller.deleteAccount(req({ confirm: "Cancella account" }));
+    const res = await controller.deleteAccount(
+      req({ confirm: "Cancella account" }),
+    );
 
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -83,14 +93,18 @@ describe("UserController.deleteAccount", () => {
 
   it("accetta le frasi di conferma nelle altre lingue supportate", async () => {
     const { controller } = makeController();
-    const res = await controller.deleteAccount(req({ confirm: "Delete account" }));
+    const res = await controller.deleteAccount(
+      req({ confirm: "Delete account" }),
+    );
     expect(res.status).toBe(200);
   });
 
   it("risponde 400 CONFIRMATION_REQUIRED con una frase di conferma errata", async () => {
     const { controller, userDataService } = makeController();
 
-    const res = await controller.deleteAccount(req({ confirm: "non è la frase giusta" }));
+    const res = await controller.deleteAccount(
+      req({ confirm: "non è la frase giusta" }),
+    );
 
     expect(res.status).toBe(400);
     const json = await res.json();

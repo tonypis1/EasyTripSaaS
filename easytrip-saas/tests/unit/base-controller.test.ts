@@ -60,7 +60,10 @@ describe("BaseController.fail", () => {
 
     expect(res.status).toBe(404);
     const json = await res.json();
-    expect(json.error).toEqual({ code: "TRIP_NOT_FOUND", message: "Trip non trovato" });
+    expect(json.error).toEqual({
+      code: "TRIP_NOT_FOUND",
+      message: "Trip non trovato",
+    });
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(errorSpy).not.toHaveBeenCalled();

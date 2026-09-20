@@ -48,19 +48,21 @@ import { TripService } from "@/server/services/trip/tripService";
 import type { AuthService } from "@/server/services/auth/authService";
 import type { TripRepository } from "@/server/repositories/TripRepository";
 
-function member(overrides: {
-  id?: string;
-  role?: string;
-  balance?: number;
-  totalPaid?: number;
-  user?: Partial<{
-    id: string;
-    name: string | null;
-    email: string;
-    clerkUserId: string;
-    clerkNameSyncedAt: Date | null;
-  }>;
-} = {}) {
+function member(
+  overrides: {
+    id?: string;
+    role?: string;
+    balance?: number;
+    totalPaid?: number;
+    user?: Partial<{
+      id: string;
+      name: string | null;
+      email: string;
+      clerkUserId: string;
+      clerkNameSyncedAt: Date | null;
+    }>;
+  } = {},
+) {
   const { user: userOverrides, ...rest } = overrides;
   return {
     id: "member1",
@@ -117,7 +119,9 @@ function makeService(findDetailForOrganizer: ReturnType<typeof vi.fn>) {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.clerkClient.mockResolvedValue({ users: { getUser: mocks.clerkGetUser } });
+  mocks.clerkClient.mockResolvedValue({
+    users: { getUser: mocks.clerkGetUser },
+  });
   mocks.creditAggregate.mockResolvedValue({ _sum: { amount: 0 } });
   mocks.userUpdate.mockResolvedValue({});
 });
@@ -202,13 +206,18 @@ describe("TripService.getTripDetail — niente doppio fetch", () => {
       service.getTripDetail("trip1"),
       new Promise((_, reject) =>
         setTimeout(
-          () => reject(new Error("timeout: le chiamate Clerk sembrano sequenziali")),
+          () =>
+            reject(
+              new Error("timeout: le chiamate Clerk sembrano sequenziali"),
+            ),
           500,
         ),
       ),
     ]);
 
     expect(mocks.clerkGetUser).toHaveBeenCalledTimes(2);
-    expect((result as { members: { name: string | null }[] }).members).toHaveLength(2);
+    expect(
+      (result as { members: { name: string | null }[] }).members,
+    ).toHaveLength(2);
   });
 });

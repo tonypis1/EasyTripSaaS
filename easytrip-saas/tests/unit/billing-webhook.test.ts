@@ -336,9 +336,9 @@ describe("BillingService — checkout.session.completed (purchase)", () => {
     mocks.paymentFindFirst.mockResolvedValue(null);
 
     const { service, fakeTripRepository } = makeService({
-      findById: vi.fn().mockResolvedValue(
-        baseTrip({ paymentId: "pi_old", amountPaid: 3.99 }),
-      ),
+      findById: vi
+        .fn()
+        .mockResolvedValue(baseTrip({ paymentId: "pi_old", amountPaid: 3.99 })),
     });
 
     await service.handleStripeWebhook("{}", "sig_ok");
@@ -501,9 +501,9 @@ describe("BillingService — checkout.session.expired", () => {
     mocks.webhookDeliveryCreate.mockResolvedValue({ id: "wd1" });
 
     const { service } = makeService({
-      findById: vi.fn().mockResolvedValue(
-        baseTrip({ amountPaid: 3.99, paymentId: "pi_x" }),
-      ),
+      findById: vi
+        .fn()
+        .mockResolvedValue(baseTrip({ amountPaid: 3.99, paymentId: "pi_x" })),
     });
 
     await service.handleStripeWebhook("{}", "sig_ok");

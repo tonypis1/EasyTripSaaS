@@ -244,9 +244,9 @@ describe("BillingService.createCheckoutSession", () => {
 describe("BillingService.createRegenCheckoutSession", () => {
   it("lancia 400 TRIP_NOT_PAID se il viaggio principale non è mai stato acquistato", async () => {
     const { service } = makeService(undefined, {
-      findByIdAndOrganizer: vi.fn().mockResolvedValue(
-        baseTrip({ amountPaid: null }),
-      ),
+      findByIdAndOrganizer: vi
+        .fn()
+        .mockResolvedValue(baseTrip({ amountPaid: null })),
     });
 
     await expect(
@@ -295,9 +295,11 @@ describe("BillingService.createRegenCheckoutSession", () => {
 describe("BillingService.createReactivateCheckoutSession", () => {
   it("lancia 400 ACCESS_STILL_ACTIVE se l'accesso non è ancora scaduto", async () => {
     const { service } = makeService(undefined, {
-      findByIdAndOrganizer: vi.fn().mockResolvedValue(
-        baseTrip({ accessExpiresAt: new Date(Date.now() + 86_400_000) }),
-      ),
+      findByIdAndOrganizer: vi
+        .fn()
+        .mockResolvedValue(
+          baseTrip({ accessExpiresAt: new Date(Date.now() + 86_400_000) }),
+        ),
     });
 
     await expect(
@@ -312,9 +314,11 @@ describe("BillingService.createReactivateCheckoutSession", () => {
     });
 
     const { service } = makeService(undefined, {
-      findByIdAndOrganizer: vi.fn().mockResolvedValue(
-        baseTrip({ accessExpiresAt: new Date(Date.now() - 86_400_000) }),
-      ),
+      findByIdAndOrganizer: vi
+        .fn()
+        .mockResolvedValue(
+          baseTrip({ accessExpiresAt: new Date(Date.now() - 86_400_000) }),
+        ),
     });
 
     const result = await service.createReactivateCheckoutSession({

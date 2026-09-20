@@ -767,7 +767,11 @@ export class BillingService {
       if (!payment) {
         logger.info(
           "Regen già elaborata (idempotente - vincolo DB su stripePaymentId)",
-          { tripId, stripeEventId: context.stripeEventId, source: context.source },
+          {
+            tripId,
+            stripeEventId: context.stripeEventId,
+            source: context.source,
+          },
         );
         return { received: true, skipped: "duplicate_payment" };
       }
@@ -793,7 +797,11 @@ export class BillingService {
       if (!payment) {
         logger.info(
           "Reactivate già elaborato (idempotente - vincolo DB su stripePaymentId)",
-          { tripId, stripeEventId: context.stripeEventId, source: context.source },
+          {
+            tripId,
+            stripeEventId: context.stripeEventId,
+            source: context.source,
+          },
         );
         return { received: true, skipped: "duplicate_payment" };
       }
@@ -834,7 +842,11 @@ export class BillingService {
     if (!payment) {
       logger.info(
         "Acquisto già elaborato (idempotente - vincolo DB su stripePaymentId)",
-        { tripId, stripeEventId: context.stripeEventId, source: context.source },
+        {
+          tripId,
+          stripeEventId: context.stripeEventId,
+          source: context.source,
+        },
       );
       return { received: true, skipped: "duplicate_payment" };
     }
