@@ -97,11 +97,16 @@ paths:
           description: Non trovato
     delete:
       tags: [trips]
-      summary: Elimina (soft-delete) viaggio
+      summary: Elimina (soft-delete/archivia) viaggio
+      description: |
+        Nasconde il viaggio dalle liste dell'organizzatore; il record resta in DB
+        (pagamenti/versioni per audit). Nessun rimborso: per cancellare un viaggio
+        non ancora iniziato con credito di rimborso, vedi
+        `POST /api/trips/{tripId}/cancel`.
       security: [{ clerkSession: [] }]
       responses:
         "200":
-          description: Eliminato
+          description: Eliminato (archiviato)
         "403":
           description: Non autorizzato
         "404":
@@ -172,16 +177,25 @@ paths:
         "200":
           description: Versione attiva aggiornata
 
-  /api/trips/{tripId}/archive:
+  /api/trips/{tripId}/cancel:
     parameters:
       - $ref: "#/components/parameters/tripId"
     post:
       tags: [trips]
-      summary: Archivia viaggio
+      summary: Cancella viaggio non ancora iniziato (rimborso a credito)
+      description: |
+        Consentito solo prima della data di partenza. Emette un credito
+        spendibile su un altro viaggio ed invia l'email di conferma
+        cancellazione. Per il soft-delete senza rimborso, vedi
+        `DELETE /api/trips/{tripId}`.
       security: [{ clerkSession: [] }]
       responses:
         "200":
-          description: Archiviato
+          description: Cancellato, credito emesso
+        "400":
+          description: Viaggio già iniziato o già cancellato
+        "404":
+          description: Non trovato
 
   /api/trips/{tripId}/invite:
     parameters:

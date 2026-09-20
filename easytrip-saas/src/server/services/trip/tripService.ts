@@ -533,7 +533,8 @@ export class TripService {
     return { ok: true };
   }
 
-  async deleteMyTrip(tripId: string): Promise<{ deleted: boolean }> {
+  /** Soft-delete del trip (lo nasconde dalle liste; il record resta in DB). */
+  async archiveTrip(tripId: string): Promise<{ deleted: boolean }> {
     const user = await this.authService.getOrCreateCurrentUser();
     const result = await this.tripRepository.softDeleteByIdForOrganizer(
       tripId,

@@ -57,7 +57,18 @@ export class TripController extends BaseController {
     }
   }
 
+  /** DELETE /api/trips/[tripId] — soft-delete (archivia): nessun rimborso. */
   async deleteById(tripId: string) {
+    try {
+      await this.tripService.archiveTrip(tripId);
+      return this.ok({ archived: true });
+    } catch (error) {
+      return this.fail(error, "TripController.deleteById");
+    }
+  }
+
+  /** POST /api/trips/[tripId]/cancel — cancella il viaggio non ancora iniziato con rimborso a credito. */
+  async cancelById(tripId: string) {
     try {
       const result = await this.tripService.cancelTripWithCredit(tripId);
       return this.ok({
@@ -67,16 +78,7 @@ export class TripController extends BaseController {
         creditExpiresAt: result.creditExpiresAt,
       });
     } catch (error) {
-      return this.fail(error, "TripController.deleteById");
-    }
-  }
-
-  async archiveById(tripId: string) {
-    try {
-      await this.tripService.deleteMyTrip(tripId);
-      return this.ok({ archived: true });
-    } catch (error) {
-      return this.fail(error, "TripController.archiveById");
+      return this.fail(error, "TripController.cancelById");
     }
   }
 
