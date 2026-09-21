@@ -6,7 +6,10 @@ import {
   createReactivateCheckoutSchema,
   createSubscriptionCheckoutSchema,
 } from "@/server/validators/billing.schema";
-import { AppError } from "@/server/errors/AppError";
+import {
+  parseJsonBody,
+  parseOptionalJsonBody,
+} from "@/server/controllers/parseJsonBody";
 
 export class BillingController extends BaseController {
   constructor(private readonly billingService: BillingService) {
@@ -15,53 +18,35 @@ export class BillingController extends BaseController {
 
   async createCheckout(req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = createCheckoutSchema.parse(body);
       const session = await this.billingService.createCheckoutSession(input);
       return this.ok(session, 201);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "BillingController.createCheckout",
-        );
-      }
       return this.fail(error, "BillingController.createCheckout");
     }
   }
 
   async createRegenCheckout(req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = createRegenCheckoutSchema.parse(body);
       const session =
         await this.billingService.createRegenCheckoutSession(input);
       return this.ok(session, 201);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "BillingController.createRegenCheckout",
-        );
-      }
       return this.fail(error, "BillingController.createRegenCheckout");
     }
   }
 
   async createReactivateCheckout(req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = createReactivateCheckoutSchema.parse(body);
       const session =
         await this.billingService.createReactivateCheckoutSession(input);
       return this.ok(session, 201);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "BillingController.createReactivateCheckout",
-        );
-      }
       return this.fail(error, "BillingController.createReactivateCheckout");
     }
   }
@@ -74,19 +59,12 @@ export class BillingController extends BaseController {
    */
   async createSubscriptionCheckout(req: Request) {
     try {
-      const text = await req.text();
-      const parsedBody = text.trim().length > 0 ? JSON.parse(text) : {};
-      const input = createSubscriptionCheckoutSchema.parse(parsedBody);
+      const body = await parseOptionalJsonBody(req);
+      const input = createSubscriptionCheckoutSchema.parse(body);
       const session =
         await this.billingService.createSubscriptionCheckoutSession(input);
       return this.ok(session, 201);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "BillingController.createSubscriptionCheckout",
-        );
-      }
       return this.fail(error, "BillingController.createSubscriptionCheckout");
     }
   }

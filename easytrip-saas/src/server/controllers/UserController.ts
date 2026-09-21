@@ -3,6 +3,7 @@ import { AuthService } from "@/server/services/auth/authService";
 import { UserDataService } from "@/server/services/privacy/userDataService";
 import { AppError } from "@/server/errors/AppError";
 import { deleteAccountSchema } from "@/server/validators/user.schema";
+import { parseJsonBody } from "@/server/controllers/parseJsonBody";
 import { DELETE_ACCOUNT_CONFIRM_PHRASES } from "@/lib/user/delete-account-confirm-phrases";
 
 export class UserController extends BaseController {
@@ -30,7 +31,7 @@ export class UserController extends BaseController {
   /** Cancellazione account coordinata: Stripe → database → Clerk (diritto all'oblio). */
   async deleteAccount(req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = deleteAccountSchema.parse(body);
 
       const trimmed = input.confirm.trim();
@@ -51,12 +52,6 @@ export class UserController extends BaseController {
 
       return this.ok({ deleted: true });
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "UserController.deleteAccount",
-        );
-      }
       return this.fail(error, "UserController.deleteAccount");
     }
   }
