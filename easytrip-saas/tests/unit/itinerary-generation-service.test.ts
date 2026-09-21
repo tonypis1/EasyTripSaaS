@@ -119,9 +119,11 @@ describe("ItineraryGenerationService.generate", () => {
 
     expect(result.days).toHaveLength(2);
     expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
-    // Il prompt di riparazione deve contenere il motivo dell'errore e il frammento precedente.
+    // Il prompt di riparazione deve contenere il motivo dell'errore e il frammento precedente,
+    // appesi come blocco finale dopo quello stabile (mai anteposti).
     const repairCallArgs = mocks.messagesCreate.mock.calls[1][0];
-    expect(repairCallArgs.messages[0].content).toContain(
+    const repairBlocks = repairCallArgs.messages[0].content;
+    expect(repairBlocks.at(-1).text).toContain(
       "non ha superato la validazione",
     );
   });
@@ -160,5 +162,72 @@ describe("ItineraryGenerationService.generate", () => {
     expect(mocks.messagesCreate).toHaveBeenCalledWith(
       expect.objectContaining({ model: "claude-test", max_tokens: 12000 }),
     );
+  });
+});
+
+describe("ItineraryGenerationService.generate — prompt caching", () => {
+  it("marca con cache_control il blocco stabile del prompt (non le zone già usate)", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput({ usedZones: "Centro, Trastevere" }));
+
+    const content = mocks.messagesCreate.mock.calls[0][0].messages[0].content;
+    expect(content).toHaveLength(2);
+    expect(content[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(content[0].text).toContain("SEZIONE — OUTPUT ATTESO");
+    expect(content[0].text).not.toContain("ZONE GIÀ USATE");
+    expect(content[1].cache_control).toBeUndefined();
+    expect(content[1].text).toContain("Centro, Trastevere");
+  });
+
+  it("senza zone già usate manda un solo blocco (comunque cacheable)", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput({ usedZones: null }));
+
+    const content = mocks.messagesCreate.mock.calls[0][0].messages[0].content;
+    expect(content).toHaveLength(1);
+    expect(content[0].cache_control).toEqual({ type: "ephemeral" });
+  });
+
+  it("il tentativo di riparazione riusa byte-per-byte il blocco stabile del tentativo originale (cache hit) e appende in coda", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // invalido: 1 giorno invece di 2
+      .mockResolvedValueOnce(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput({ usedZones: "Centro" }));
+
+    const firstCallContent =
+      mocks.messagesCreate.mock.calls[0][0].messages[0].content;
+    const repairCallContent =
+      mocks.messagesCreate.mock.calls[1][0].messages[0].content;
+
+    // Stesso blocco stabile (indice 0) e stesso blocco zone (indice 1), byte-per-byte.
+    expect(repairCallContent[0]).toEqual(firstCallContent[0]);
+    expect(repairCallContent[1]).toEqual(firstCallContent[1]);
+    // Il blocco di riparazione è appeso in coda, senza cache_control.
+    expect(repairCallContent).toHaveLength(firstCallContent.length + 1);
+    expect(repairCallContent.at(-1).cache_control).toBeUndefined();
+  });
+
+  it("due rigenerazioni dello stesso trip con zone diverse condividono lo stesso blocco stabile cacheable", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput({ usedZones: null }));
+    const firstGenContent =
+      mocks.messagesCreate.mock.calls[0][0].messages[0].content;
+
+    await service.generate(baseInput({ usedZones: "Centro" }));
+    const secondGenContent =
+      mocks.messagesCreate.mock.calls[1][0].messages[0].content;
+
+    // Stessa destinazione/date/budget/stile/numDays/locale → blocco stabile
+    // identico tra la generazione iniziale e la rigenerazione successiva,
+    // anche se le zone già usate cambiano.
+    expect(secondGenContent[0]).toEqual(firstGenContent[0]);
   });
 });
