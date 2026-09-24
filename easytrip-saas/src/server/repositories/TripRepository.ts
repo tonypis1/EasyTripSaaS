@@ -10,6 +10,46 @@ function generateToken(): string {
   return randomBytes(16).toString("hex");
 }
 
+/** Metadati versione per il carosello: mai i `days` (pesanti, servono solo per quella attiva). */
+const TRIP_VERSION_SUMMARY_SELECT = {
+  id: true,
+  versionNum: true,
+  geoScore: true,
+  generatedAt: true,
+  isActive: true,
+} as const;
+
+const TRIP_MEMBERS_INCLUDE = {
+  include: {
+    user: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        clerkUserId: true,
+        clerkNameSyncedAt: true,
+      },
+    },
+  },
+  orderBy: { joinedAt: "asc" as const },
+};
+
+/**
+ * Il dettaglio trip serve tutte le versioni per il carosello (versionNum,
+ * geoScore, generatedAt, isActive) ma solo la versione attiva mostra i
+ * giorni: prima li univa in un solo `include` annidato e scaricava i `days`
+ * (blob JSON morning/afternoon/evening) per OGNI versione, incluse quelle
+ * rigenerate e mai più visualizzate. Qui i giorni si caricano con una
+ * seconda query mirata solo sulla versione attiva.
+ */
+async function findActiveVersionDays(activeVersionId: string | undefined) {
+  if (!activeVersionId) return [];
+  return prisma.day.findMany({
+    where: { tripVersionId: activeVersionId },
+    orderBy: { dayNumber: "asc" },
+  });
+}
+
 export class TripRepository {
   async create(input: CreateTripDbInput) {
     const accessExpiresAt = new Date(input.endDate);
@@ -110,35 +150,27 @@ export class TripRepository {
 
   /** Dettaglio per UI: tutte le versioni (carosello) + giorni della versione attiva */
   async findDetailForOrganizer(tripId: string, organizerId: string) {
-    return prisma.trip.findFirst({
+    const trip = await prisma.trip.findFirst({
       where: { id: tripId, organizerId, deletedAt: null },
       include: {
         versions: {
           orderBy: { versionNum: "asc" },
-          include: {
-            days: { orderBy: { dayNumber: "asc" } },
-          },
+          select: TRIP_VERSION_SUMMARY_SELECT,
         },
-        members: {
-          include: { user: { select: { id: true, name: true, email: true } } },
-          orderBy: { joinedAt: "asc" },
-        },
+        members: TRIP_MEMBERS_INCLUDE,
       },
     });
-  }
+    if (!trip) return null;
 
-  /** Solo giorni della versione attiva (per replace-slot e query mirate). */
-  async findActiveVersionWithDays(tripId: string, organizerId: string) {
-    return prisma.trip.findFirst({
-      where: { id: tripId, organizerId, deletedAt: null },
-      include: {
-        versions: {
-          where: { isActive: true },
-          take: 1,
-          include: { days: { orderBy: { dayNumber: "asc" } } },
-        },
-      },
-    });
+    const activeVersion = trip.versions.find((v) => v.isActive);
+    const days = await findActiveVersionDays(activeVersion?.id);
+    return {
+      ...trip,
+      versions: trip.versions.map((v) => ({
+        ...v,
+        days: v.isActive ? days : [],
+      })),
+    };
   }
 
   /**
@@ -375,21 +407,27 @@ export class TripRepository {
     });
     if (!membership) return null;
 
-    return prisma.trip.findFirst({
+    const trip = await prisma.trip.findFirst({
       where: { id: tripId, deletedAt: null },
       include: {
         versions: {
           orderBy: { versionNum: "asc" },
-          include: {
-            days: { orderBy: { dayNumber: "asc" } },
-          },
+          select: TRIP_VERSION_SUMMARY_SELECT,
         },
-        members: {
-          include: { user: { select: { id: true, name: true, email: true } } },
-          orderBy: { joinedAt: "asc" },
-        },
+        members: TRIP_MEMBERS_INCLUDE,
       },
     });
+    if (!trip) return null;
+
+    const activeVersion = trip.versions.find((v) => v.isActive);
+    const days = await findActiveVersionDays(activeVersion?.id);
+    return {
+      ...trip,
+      versions: trip.versions.map((v) => ({
+        ...v,
+        days: v.isActive ? days : [],
+      })),
+    };
   }
 
   async generateInviteToken(tripId: string, organizerId: string) {

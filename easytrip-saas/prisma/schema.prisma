@@ -60,6 +60,9 @@ model User {
   welcomeEmailSentAt   DateTime? @map("welcome_email_sent_at")
   nurtureNoTrip3SentAt DateTime? @map("nurture_no_trip_3_sent_at")
   nurtureNoTrip7SentAt DateTime? @map("nurture_no_trip_7_sent_at")
+  /// Ultimo controllo del nome contro il profilo Clerk (throttle: evita di richiamare
+  /// Clerk per lo stesso membro ad ogni caricamento della pagina trip).
+  clerkNameSyncedAt    DateTime? @map("clerk_name_synced_at")
   createdAt            DateTime  @default(now()) @map("created_at")
   updatedAt            DateTime  @updatedAt @map("updated_at")
 
@@ -107,6 +110,8 @@ model Trip {
   creditsUsed    Credit[]        @relation("CreditUsed")
   payments       Payment[]
   supportTickets SupportTicket[]
+
+  @@index([organizerId])
 }
 
 model TripVersion {
@@ -145,6 +150,8 @@ model Day {
   tips          String?
 
   tripVersion TripVersion @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+
+  @@index([tripVersionId])
 }
 
 model TripMember {
@@ -160,7 +167,9 @@ model TripMember {
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expenses Expense[] @relation("ExpensePaidBy")
 
+  // tripId è già coperto (come colonna sinistra) da questo vincolo; userId no.
   @@unique([tripId, userId])
+  @@index([userId])
 }
 
 enum ExpenseCategory {
@@ -184,6 +193,9 @@ model Expense {
 
   trip   Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
   paidBy TripMember @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([paidById])
 }
 
 model Payment {
@@ -191,12 +203,15 @@ model Payment {
   userId          String      @map("user_id")
   tripId          String?     @map("trip_id")
   type            PaymentType
-  stripePaymentId String?     @map("stripe_payment_id")
+  stripePaymentId String?     @unique @map("stripe_payment_id")
   amount          Decimal     @db.Decimal(10, 2)
   createdAt       DateTime    @default(now()) @map("created_at")
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   trip Trip? @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([tripId])
 }
 
 model Credit {
@@ -213,6 +228,10 @@ model Credit {
   originTrip Trip?      @relation("CreditOrigin", fields: [originTripId], references: [id], onDelete: SetNull)
   usedOnTrip Trip?      @relation("CreditUsed", fields: [usedOnTripId], references: [id], onDelete: SetNull)
   referrals  Referral[]
+
+  @@index([userId])
+  @@index([originTripId])
+  @@index([usedOnTripId])
 }
 
 // ========== SUPPORTO ==========
@@ -246,6 +265,8 @@ model SupportTicket {
   trip     Trip?            @relation(fields: [tripId], references: [id], onDelete: SetNull)
   messages SupportMessage[]
 
+  @@index([userId])
+  @@index([tripId])
   @@map("support_ticket")
 }
 
@@ -258,6 +279,7 @@ model SupportMessage {
 
   ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
+  @@index([ticketId])
   @@map("support_message")
 }
 
@@ -284,7 +306,10 @@ model Referral {
   referredUser User?   @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: SetNull)
   rewardCredit Credit? @relation(fields: [rewardCreditId], references: [id], onDelete: SetNull)
 
+  // referrerId è già coperto (come colonna sinistra) da questo vincolo.
   @@unique([referrerId, referredEmail])
+  @@index([referredUserId])
+  @@index([rewardCreditId])
   @@map("referral")
 }
 

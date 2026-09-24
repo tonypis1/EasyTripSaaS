@@ -21,8 +21,9 @@
 ## 3. Rate limiting
 
 - File: `src/lib/rate-limit.ts`
-- Backend **Upstash** (sliding window). Se mancano `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`, i limiti sono disattivati (sviluppo locale).
+- Backend **Upstash** (sliding window). `unifiedConfig` rende `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` obbligatorie in produzione (fail-fast all'avvio); restano opzionali solo in sviluppo/test, dove i limiti sono disattivati.
 - Esempi: `tripGenerateLimiter` su `POST /api/trips/[tripId]/generate`, limiter per join e referral track.
+- Checkout Stripe (`checkoutLimiter`, `regenCheckoutLimiter`, `reactivateCheckoutLimiter`, `subscribeCheckoutLimiter`, 10/min per utente): ogni chiamata crea una vera Checkout Session su Stripe, quindi senza limite un utente autenticato potrebbe generarne in loop illimitato.
 
 ## 4. Webhook Stripe
 

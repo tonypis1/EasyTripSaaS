@@ -34,14 +34,19 @@ export const postTripFollowup = inngest.createFunction(
   async ({ step }) => {
     const baseUrl = config.app.baseUrl;
     const newTripUrl = `${baseUrl}/app/trips?new=1`;
-    let totalSent = 0;
 
-    const feedbackSent = await step.run("feedback-1d", async () => {
+    /**
+     * Un email per step (non un loop dentro un unico step.run): se il job
+     * crasha a metà elenco, Inngest ripete solo gli step non ancora
+     * completati con successo — quelli già inviati restano memoizzati e non
+     * vengono rimandati al retry.
+     */
+    const feedbackTrips = await step.run("load-feedback-trips", async () => {
       const today = startOfDay(new Date());
       const yesterday = addDays(today, -1);
       const yesterdayEnd = today;
 
-      const trips = await prisma.trip.findMany({
+      return prisma.trip.findMany({
         where: {
           paymentId: { not: null },
           endDate: { gte: yesterday, lt: yesterdayEnd },
@@ -54,9 +59,11 @@ export const postTripFollowup = inngest.createFunction(
           },
         },
       });
+    });
 
-      let count = 0;
-      for (const t of trips) {
+    let feedbackSent = 0;
+    for (const t of feedbackTrips) {
+      const sent = await step.run(`feedback-1d:${t.id}`, async () => {
         try {
           const locale = normalizeEmailLocale(t.organizer.language);
           const referralUrl = t.organizer.referralCode
@@ -74,18 +81,18 @@ export const postTripFollowup = inngest.createFunction(
               referralUrl,
             }),
           });
-          count++;
+          return true;
         } catch (err) {
           logger.error("Post-trip feedback email failed", err as Error, {
             tripId: t.id,
           });
+          return false;
         }
-      }
-      return count;
-    });
-    totalSent += feedbackSent;
+      });
+      if (sent) feedbackSent++;
+    }
 
-    const reengageSent = await step.run("reengage-14d", async () => {
+    const reengageTrips = await step.run("load-reengage-trips", async () => {
       const today = startOfDay(new Date());
       const target = addDays(today, -14);
       const targetNext = addDays(target, 1);
@@ -103,11 +110,20 @@ export const postTripFollowup = inngest.createFunction(
         },
       });
 
+      // Dedup per email PRIMA di generare gli step: un organizzatore con più
+      // trip finiti lo stesso giorno deve ricevere una sola email, e le
+      // chiavi degli step devono restare stabili tra i retry.
       const emailsSent = new Set<string>();
-      let count = 0;
-      for (const t of trips) {
-        if (emailsSent.has(t.organizer.email)) continue;
+      return trips.filter((t) => {
+        if (emailsSent.has(t.organizer.email)) return false;
         emailsSent.add(t.organizer.email);
+        return true;
+      });
+    });
+
+    let reengageSent = 0;
+    for (const t of reengageTrips) {
+      const sent = await step.run(`reengage-14d:${t.id}`, async () => {
         try {
           const locale = normalizeEmailLocale(t.organizer.language);
           const referralUrl = t.organizer.referralCode
@@ -122,17 +138,21 @@ export const postTripFollowup = inngest.createFunction(
               referralUrl,
             }),
           });
-          count++;
+          return true;
         } catch (err) {
           logger.error("Post-trip reengage email failed", err as Error, {
             tripId: t.id,
           });
+          return false;
         }
-      }
-      return count;
-    });
-    totalSent += reengageSent;
+      });
+      if (sent) reengageSent++;
+    }
 
-    return { feedbackSent, reengageSent, totalSent };
+    return {
+      feedbackSent,
+      reengageSent,
+      totalSent: feedbackSent + reengageSent,
+    };
   },
 );

@@ -44,7 +44,9 @@ export function DeleteTripButton({
 
     setBusyCancel(true);
     try {
-      const res = await fetch(`/api/trips/${tripId}`, { method: "DELETE" });
+      const res = await fetch(`/api/trips/${tripId}/cancel`, {
+        method: "POST",
+      });
       const json = (await res.json()) as {
         ok?: boolean;
         data?: { creditAmount?: number; creditExpiresAt?: string };
@@ -80,9 +82,7 @@ export function DeleteTripButton({
 
     setBusyArchive(true);
     try {
-      const res = await fetch(`/api/trips/${tripId}/archive`, {
-        method: "POST",
-      });
+      const res = await fetch(`/api/trips/${tripId}`, { method: "DELETE" });
       const json = (await res.json()) as {
         ok?: boolean;
         data?: { archived?: boolean };

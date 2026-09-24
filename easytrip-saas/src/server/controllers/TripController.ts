@@ -10,7 +10,7 @@ import {
   updatePreferencesSchema,
   liveSuggestSchema,
 } from "@/server/validators/trip.schema";
-import { AppError } from "@/server/errors/AppError";
+import { parseJsonBody } from "@/server/controllers/parseJsonBody";
 
 export class TripController extends BaseController {
   constructor(
@@ -24,17 +24,11 @@ export class TripController extends BaseController {
 
   async create(req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = createTripSchema.parse(body);
       const trip = await this.tripService.createTrip(input);
       return this.ok(trip, 201);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.create",
-        );
-      }
       return this.fail(error, "TripController.create");
     }
   }
@@ -57,7 +51,18 @@ export class TripController extends BaseController {
     }
   }
 
+  /** DELETE /api/trips/[tripId] — soft-delete (archivia): nessun rimborso. */
   async deleteById(tripId: string) {
+    try {
+      await this.tripService.archiveTrip(tripId);
+      return this.ok({ archived: true });
+    } catch (error) {
+      return this.fail(error, "TripController.deleteById");
+    }
+  }
+
+  /** POST /api/trips/[tripId]/cancel — cancella il viaggio non ancora iniziato con rimborso a credito. */
+  async cancelById(tripId: string) {
     try {
       const result = await this.tripService.cancelTripWithCredit(tripId);
       return this.ok({
@@ -67,16 +72,7 @@ export class TripController extends BaseController {
         creditExpiresAt: result.creditExpiresAt,
       });
     } catch (error) {
-      return this.fail(error, "TripController.deleteById");
-    }
-  }
-
-  async archiveById(tripId: string) {
-    try {
-      await this.tripService.deleteMyTrip(tripId);
-      return this.ok({ archived: true });
-    } catch (error) {
-      return this.fail(error, "TripController.archiveById");
+      return this.fail(error, "TripController.cancelById");
     }
   }
 
@@ -91,7 +87,7 @@ export class TripController extends BaseController {
 
   async setActiveVersion(tripId: string, req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const { versionNum } = setActiveVersionSchema.parse(body);
       const result = await this.tripService.setActiveTripVersion(
         tripId,
@@ -99,19 +95,13 @@ export class TripController extends BaseController {
       );
       return this.ok(result);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.setActiveVersion",
-        );
-      }
       return this.fail(error, "TripController.setActiveVersion");
     }
   }
 
   async replaceSlot(tripId: string, req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const parsed = replaceSlotSchema.parse(body);
       const user = await this.authService.getOrCreateCurrentUser();
       const result = await this.slotReplaceService.replaceSlot({
@@ -124,19 +114,13 @@ export class TripController extends BaseController {
       });
       return this.ok(result);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.replaceSlot",
-        );
-      }
       return this.fail(error, "TripController.replaceSlot");
     }
   }
 
   async liveSuggest(tripId: string, req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const parsed = liveSuggestSchema.parse(body);
       const user = await this.authService.getOrCreateCurrentUser();
       const result = await this.liveSuggestService.suggest({
@@ -150,29 +134,17 @@ export class TripController extends BaseController {
       });
       return this.ok(result);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.liveSuggest",
-        );
-      }
       return this.fail(error, "TripController.liveSuggest");
     }
   }
 
   async updatePreferences(tripId: string, req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const parsed = updatePreferencesSchema.parse(body);
       const result = await this.tripService.updatePreferences(tripId, parsed);
       return this.ok(result);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "TripController.updatePreferences",
-        );
-      }
       return this.fail(error, "TripController.updatePreferences");
     }
   }

@@ -1,7 +1,7 @@
 import { BaseController } from "@/server/controllers/BaseController";
 import { ExpenseService } from "@/server/services/expense/expenseService";
 import { createExpenseSchema } from "@/server/validators/expense.schema";
-import { AppError } from "@/server/errors/AppError";
+import { parseJsonBody } from "@/server/controllers/parseJsonBody";
 
 export class ExpenseController extends BaseController {
   constructor(private readonly expenseService: ExpenseService) {
@@ -10,17 +10,11 @@ export class ExpenseController extends BaseController {
 
   async create(tripId: string, req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = createExpenseSchema.parse(body);
       const expense = await this.expenseService.addExpense(tripId, input);
       return this.ok(expense, 201);
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return this.fail(
-          new AppError("Body JSON non valido", 400, "INVALID_JSON"),
-          "ExpenseController.create",
-        );
-      }
       return this.fail(error, "ExpenseController.create");
     }
   }

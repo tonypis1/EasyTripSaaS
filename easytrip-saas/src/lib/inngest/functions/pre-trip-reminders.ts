@@ -33,14 +33,19 @@ export const preTripReminders = inngest.createFunction(
   },
   async ({ step }) => {
     const baseUrl = config.app.baseUrl;
-    let totalSent = 0;
 
-    const countdownSent = await step.run("countdown-3d", async () => {
+    /**
+     * Un email per step (non un loop dentro un unico step.run): se il job
+     * crasha a metà elenco, Inngest ripete solo gli step non ancora
+     * completati con successo — quelli già inviati restano memoizzati e non
+     * vengono rimandati al retry.
+     */
+    const countdownTrips = await step.run("load-countdown-trips", async () => {
       const today = startOfDay(new Date());
       const target = addDays(today, 3);
       const targetNext = addDays(target, 1);
 
-      const trips = await prisma.trip.findMany({
+      return prisma.trip.findMany({
         where: {
           status: "active",
           deletedAt: null,
@@ -53,9 +58,11 @@ export const preTripReminders = inngest.createFunction(
           organizer: { select: { email: true, language: true } },
         },
       });
+    });
 
-      let count = 0;
-      for (const t of trips) {
+    let countdownSent = 0;
+    for (const t of countdownTrips) {
+      const sent = await step.run(`countdown-3d:${t.id}`, async () => {
         try {
           const locale = normalizeEmailLocale(t.organizer.language);
           await sendTransactionalEmail({
@@ -68,37 +75,42 @@ export const preTripReminders = inngest.createFunction(
               locale,
             }),
           });
-          count++;
+          return true;
         } catch (err) {
           logger.error("Pre-trip countdown email failed", err as Error, {
             tripId: t.id,
           });
+          return false;
         }
-      }
-      return count;
-    });
-    totalSent += countdownSent;
-
-    const todaySent = await step.run("start-today", async () => {
-      const today = startOfDay(new Date());
-      const tomorrow = addDays(today, 1);
-
-      const trips = await prisma.trip.findMany({
-        where: {
-          status: "active",
-          deletedAt: null,
-          paymentId: { not: null },
-          startDate: { gte: today, lt: tomorrow },
-        },
-        select: {
-          id: true,
-          destination: true,
-          organizer: { select: { email: true, language: true } },
-        },
       });
+      if (sent) countdownSent++;
+    }
 
-      let count = 0;
-      for (const t of trips) {
+    const startTodayTrips = await step.run(
+      "load-start-today-trips",
+      async () => {
+        const today = startOfDay(new Date());
+        const tomorrow = addDays(today, 1);
+
+        return prisma.trip.findMany({
+          where: {
+            status: "active",
+            deletedAt: null,
+            paymentId: { not: null },
+            startDate: { gte: today, lt: tomorrow },
+          },
+          select: {
+            id: true,
+            destination: true,
+            organizer: { select: { email: true, language: true } },
+          },
+        });
+      },
+    );
+
+    let todaySent = 0;
+    for (const t of startTodayTrips) {
+      const sent = await step.run(`start-today:${t.id}`, async () => {
         try {
           const locale = normalizeEmailLocale(t.organizer.language);
           await sendTransactionalEmail({
@@ -110,17 +122,17 @@ export const preTripReminders = inngest.createFunction(
               locale,
             }),
           });
-          count++;
+          return true;
         } catch (err) {
           logger.error("Trip-start-today email failed", err as Error, {
             tripId: t.id,
           });
+          return false;
         }
-      }
-      return count;
-    });
-    totalSent += todaySent;
+      });
+      if (sent) todaySent++;
+    }
 
-    return { countdownSent, todaySent, totalSent };
+    return { countdownSent, todaySent, totalSent: countdownSent + todaySent };
   },
 );
