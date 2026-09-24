@@ -38,28 +38,36 @@ export const creditExpiryReminders = inngest.createFunction(
   async ({ step }) => {
     let totalSent = 0;
 
+    /**
+     * Un email per step (non un loop dentro un unico step.run): se il job
+     * crasha a metà elenco, Inngest ripete solo gli step non ancora
+     * completati con successo — quelli già inviati restano memoizzati e non
+     * vengono rimandati al retry.
+     */
     for (const daysLeft of REMINDER_DAYS) {
-      const sent = await step.run(`remind-${daysLeft}d`, async () => {
+      const credits = await step.run(`load-credits-${daysLeft}d`, async () => {
         const today = startOfDay(new Date());
         const targetDate = addDays(today, daysLeft);
         const targetNext = addDays(targetDate, 1);
 
-        const credits = await prisma.credit.findMany({
+        return prisma.credit.findMany({
           where: {
             used: false,
             expiresAt: { gte: targetDate, lt: targetNext },
           },
           select: {
+            id: true,
             amount: true,
             expiresAt: true,
             user: { select: { email: true, language: true } },
           },
         });
+      });
 
-        let count = 0;
-        const tripsUrl = `${config.app.baseUrl}/app/trips?new=1`;
+      const tripsUrl = `${config.app.baseUrl}/app/trips?new=1`;
 
-        for (const c of credits) {
+      for (const c of credits) {
+        const sent = await step.run(`remind-${daysLeft}d:${c.id}`, async () => {
           try {
             const locale = normalizeEmailLocale(c.user.language);
             const subject =
@@ -74,24 +82,22 @@ export const creditExpiryReminders = inngest.createFunction(
               html: creditExpiryReminderHtml({
                 creditAmount: `€${Number(c.amount).toFixed(2)}`,
                 daysLeft,
-                expiresAt: toDateOnlyIsoUtc(c.expiresAt),
+                expiresAt: toDateOnlyIsoUtc(new Date(c.expiresAt)),
                 tripsUrl,
                 locale,
               }),
             });
-            count++;
+            return true;
           } catch (err) {
             logger.error("Errore invio promemoria credito", err as Error, {
               email: redactEmail(c.user.email),
               daysLeft,
             });
+            return false;
           }
-        }
-
-        return count;
-      });
-
-      totalSent += sent;
+        });
+        if (sent) totalSent++;
+      }
     }
 
     return { sent: totalSent };

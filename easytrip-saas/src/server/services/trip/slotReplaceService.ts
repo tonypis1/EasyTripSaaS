@@ -1,6 +1,11 @@
 import { roundCoordForAi } from "@/lib/geo-privacy";
 import { prisma } from "@/lib/prisma";
-import { ANTHROPIC_MODEL, anthropic } from "@/lib/ai/anthropic";
+import {
+  ANTHROPIC_MODEL,
+  SYNC_REQUEST_OPTIONS,
+  anthropic,
+  toAiUnavailableError,
+} from "@/lib/ai/anthropic";
 import {
   normalizeAiLocale,
   systemLanguageDirective,
@@ -8,6 +13,7 @@ import {
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
 import { AppError } from "@/server/errors/AppError";
+import { httpUrlSchema } from "@/lib/safe-url";
 import { z } from "zod";
 
 const SlotKeySchema = z.enum(["morning", "afternoon", "evening"]);
@@ -39,7 +45,7 @@ const DaySlotSchema = z.object({
     .transform(normalizeTime),
   durationMin: z.coerce.number().int().min(10).max(600),
   googleMapsQuery: z.string().min(3),
-  bookingLink: z.union([z.string().url(), z.null()]).default(null),
+  bookingLink: z.union([httpUrlSchema, z.null()]).default(null),
   tips: z.array(z.string().min(1)).min(1).max(6),
   lat: z.union([z.number(), z.null()]).default(null),
   lng: z.union([z.number(), z.null()]).default(null),
@@ -272,13 +278,21 @@ export class SlotReplaceService {
       locale,
     });
 
-    const response = await anthropic.messages.create({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 3000,
-      temperature: 0.35,
-      system: buildSystemPrompt(locale),
-      messages: [{ role: "user", content: prompt }],
-    });
+    let response;
+    try {
+      response = await anthropic.messages.create(
+        {
+          model: ANTHROPIC_MODEL,
+          max_tokens: 3000,
+          temperature: 0.35,
+          system: buildSystemPrompt(locale),
+          messages: [{ role: "user", content: prompt }],
+        },
+        SYNC_REQUEST_OPTIONS,
+      );
+    } catch (error) {
+      throw toAiUnavailableError(error);
+    }
 
     const textBlock = response.content.find((c) => c.type === "text");
     if (!textBlock || textBlock.type !== "text") {

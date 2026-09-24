@@ -1,0 +1,27 @@
+-- Aggiunge un vincolo UNIQUE su "Payment"."stripe_payment_id".
+--
+-- Motivazione: `stripePaymentId` è l'unica chiave di idempotenza usata da
+-- `BillingService.fulfillCheckoutSessionCompleted` per evitare doppie
+-- fulfillment dello stesso pagamento (doppia entry in Payment + doppio invio
+-- di `trip/generate.requested`, quindi doppio costo AI). Il check applicativo
+-- era un `findFirst` seguito da un `create`: due delivery concorrenti dello
+-- stesso webhook Stripe (o un webhook + il fallback `syncCheckoutSessionAfterRedirect`
+-- in corsa) potevano superare entrambe il check prima che una delle due
+-- scrivesse la riga, producendo un pagamento duplicato. Il vincolo DB chiude
+-- la race a livello di storage; il codice applicativo ora intercetta la
+-- violazione (P2002) e la tratta come "già elaborato" invece di fallire.
+--
+-- NULL multipli restano ammessi (Postgres non li considera duplicati), quindi
+-- il vincolo non impatta eventuali righe storiche con stripe_payment_id nullo.
+--
+-- Prerequisito: nessun duplicato storico di stripe_payment_id non-null deve
+-- esistere. Verificare prima del deploy con:
+--   SELECT stripe_payment_id, COUNT(*) FROM "Payment"
+--   WHERE stripe_payment_id IS NOT NULL
+--   GROUP BY stripe_payment_id HAVING COUNT(*) > 1;
+-- Se emergono duplicati, vanno bonificati manualmente (caso per caso, sono
+-- righe finanziarie: non cancellare automaticamente) prima di applicare
+-- questa migration.
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_stripe_payment_id_key" ON "Payment"("stripe_payment_id");

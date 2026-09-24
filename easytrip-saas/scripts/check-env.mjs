@@ -5,7 +5,7 @@
  * Uso:
  *   node scripts/check-env.mjs              # elenco + exit 0
  *   node scripts/check-env.mjs --strict    # solo core Zod; exit 1 se manca qualcosa
- *   node scripts/check-env.mjs --production # core + Inngest + Clerk webhook + email transazionale
+ *   node scripts/check-env.mjs --production # core + Upstash + Inngest + Clerk webhook + email transazionale
  */
 
 const args = process.argv.slice(2);
@@ -22,11 +22,20 @@ const requiredCore = [
   "ANTHROPIC_API_KEY",
 ];
 
-/** Consigliate per go-live produzione (oltre unifiedConfig). */
+/**
+ * Obbligatorie in produzione via `unifiedConfig.ts` (superRefine su NODE_ENV
+ * === "production"): senza queste, l'app non fa boot in prod.
+ */
+const requiredProduction = [
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "INNGEST_EVENT_KEY",
+  "INNGEST_SIGNING_KEY",
+];
+
+/** Consigliate per go-live produzione (non enforced da unifiedConfig). */
 const recommendedProduction = [
   "APP_BASE_URL",
-  "INNGEST_SIGNING_KEY",
-  "INNGEST_EVENT_KEY",
   "CLERK_WEBHOOK_SIGNING_SECRET",
   "RESEND_API_KEY",
   "EMAIL_FROM",
@@ -52,11 +61,10 @@ function section(title, keys) {
 console.log("EasyTrip — controllo variabili d'ambiente\n");
 
 section("Core (schema app)", requiredCore);
+section("Obbligatorie in produzione (unifiedConfig)", requiredProduction);
 section("Consigliate produzione", recommendedProduction);
 
 section("Opzionali (servizi)", [
-  "UPSTASH_REDIS_REST_URL",
-  "UPSTASH_REDIS_REST_TOKEN",
   "NEXT_PUBLIC_POSTHOG_KEY",
   "NEXT_PUBLIC_POSTHOG_HOST",
   "NEXT_PUBLIC_CRISP_WEBSITE_ID",
@@ -77,7 +85,7 @@ if (!strict && !production) {
 }
 
 const toCheck = production
-  ? [...requiredCore, ...recommendedProduction]
+  ? [...requiredCore, ...requiredProduction, ...recommendedProduction]
   : requiredCore;
 const fail = missing(toCheck);
 

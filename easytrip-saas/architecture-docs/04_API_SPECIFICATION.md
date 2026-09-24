@@ -52,7 +52,7 @@ docs/openapi.yaml  ←──externalDocs──→  architecture-docs/04_API_SPEC
 | GET, POST      | `/api/trips/[tripId]/expenses`             | Spese                                                                                                          |
 | DELETE         | `/api/trips/[tripId]/expenses/[expenseId]` | Rimozione spesa                                                                                                |
 | GET            | `/api/trips/[tripId]/balances`             | Bilanci                                                                                                        |
-| POST           | `/api/trips/[tripId]/archive`              | Archiviazione                                                                                                  |
+| POST           | `/api/trips/[tripId]/cancel`               | Cancellazione pre-partenza con rimborso a credito                                                              |
 | POST           | `/api/billing/checkout`                    | Sessione Stripe acquisto                                                                                       |
 | POST           | `/api/billing/regen-checkout`              | Checkout rigenerazione                                                                                         |
 | POST           | `/api/billing/reactivate-checkout`         | Riattivazione accesso                                                                                          |

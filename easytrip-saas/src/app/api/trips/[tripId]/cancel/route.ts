@@ -7,5 +7,5 @@ export async function POST(
   { params }: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await params;
-  return tripController.archiveById(tripId);
+  return tripController.cancelById(tripId);
 }

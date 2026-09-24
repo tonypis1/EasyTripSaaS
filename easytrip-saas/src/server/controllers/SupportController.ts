@@ -4,6 +4,7 @@ import {
   createTicketSchema,
   addMessageSchema,
 } from "@/server/validators/support.schema";
+import { parseJsonBody } from "@/server/controllers/parseJsonBody";
 
 export class SupportController extends BaseController {
   constructor(private readonly supportService: SupportService) {
@@ -12,7 +13,7 @@ export class SupportController extends BaseController {
 
   async create(req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = createTicketSchema.parse(body);
       const ticket = await this.supportService.createTicket(input);
       return this.ok(ticket, 201);
@@ -41,7 +42,7 @@ export class SupportController extends BaseController {
 
   async addMessage(ticketId: string, req: Request) {
     try {
-      const body = await req.json();
+      const body = await parseJsonBody(req);
       const input = addMessageSchema.parse(body);
       const ticket = await this.supportService.addMessage(ticketId, input);
       return this.ok(ticket);

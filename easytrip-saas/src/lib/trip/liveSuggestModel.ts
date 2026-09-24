@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { httpUrlSchema } from "@/lib/safe-url";
 
 const SuggestionSchema = z.object({
   name: z.string().min(1),
@@ -8,7 +9,7 @@ const SuggestionSchema = z.object({
   why: z.string().min(10),
   durationMin: z.coerce.number().int().min(10).max(480),
   googleMapsQuery: z.string().min(3),
-  bookingLink: z.union([z.string().url(), z.null()]).default(null),
+  bookingLink: z.union([httpUrlSchema, z.null()]).default(null),
   indoor: z.boolean(),
   budgetHint: z.string().min(1),
   tips: z.array(z.string().min(1)).min(1).max(3),

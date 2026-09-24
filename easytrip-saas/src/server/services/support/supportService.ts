@@ -1,5 +1,6 @@
 import { AuthService } from "@/server/services/auth/authService";
 import { SupportRepository } from "@/server/repositories/SupportRepository";
+import { TripRepository } from "@/server/repositories/TripRepository";
 import { AppError } from "@/server/errors/AppError";
 import type {
   CreateTicketInput,
@@ -27,10 +28,32 @@ export class SupportService {
   constructor(
     private readonly authService: AuthService,
     private readonly supportRepository: SupportRepository,
+    private readonly tripRepository: TripRepository,
   ) {}
 
   async createTicket(input: CreateTicketInput): Promise<TicketDto> {
     const user = await this.authService.getOrCreateCurrentUser();
+
+    /**
+     * tripId arriva dal client: senza questo controllo, chiunque potrebbe
+     * aprire un ticket agganciato al tripId di un altro utente (indovinato o
+     * intercettato) e vederne la destinazione esposta in toDto() quando
+     * riapre il proprio ticket — non è membro/organizzatore, ma il ticket è
+     * comunque suo, quindi getTicket/listMyTickets lo mostrerebbero.
+     */
+    if (input.tripId) {
+      const isMember = await this.tripRepository.isMember(
+        input.tripId,
+        user.id,
+      );
+      if (!isMember) {
+        throw new AppError(
+          "Non sei membro di questo viaggio",
+          403,
+          "NOT_MEMBER",
+        );
+      }
+    }
 
     const ticket = await this.supportRepository.createWithMessage({
       userId: user.id,
