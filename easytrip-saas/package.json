@@ -23,6 +23,7 @@
     "test:e2e:smoke": "playwright test --grep \"@smoke\"",
     "test:e2e:preview": "playwright test -c playwright.preview.config.ts",
     "test:e2e:headed": "playwright test --headed",
+    "test:e2e:purchase-flow": "playwright test -c playwright.purchase-flow.config.ts",
     "playwright:install": "playwright install",
     "screenshots:presentation": "node --max-old-space-size=8192 ./node_modules/@playwright/test/cli.js test -c playwright.presentation.config.ts",
     "screenshots:clerk-session": "node --max-old-space-size=8192 ./node_modules/@playwright/test/cli.js test -c playwright.clerk-session.config.ts",
