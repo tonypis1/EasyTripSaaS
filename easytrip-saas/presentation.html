@@ -1,1011 +1,1488 @@
 <!doctype html>
-<html lang="it">
+<html lang="it" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EasyTrip — Presentazione prodotto &amp; architettura</title>
-    <meta
-      name="description"
-      content="Pitch e specifiche tecniche della piattaforma SaaS EasyTrip: itinerari AI, gruppi, billing e stack."
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
+    <title>EasyTripSaaS — Technical &amp; Product Overview</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              surface: "#0c1222",
-              "surface-elevated": "#111827",
-              muted: "#94a3b8",
-              primary: "#38bdf8",
-              "primary-dim": "#0ea5e9",
-              accent: "#a78bfa",
-              border: "#1e293b",
-            },
-            fontFamily: {
-              sans: ["Inter", "system-ui", "sans-serif"],
-              mono: ["JetBrains Mono", "ui-monospace", "monospace"],
-            },
-          },
-        },
-      };
-    </script>
     <style>
-      html {
+      :root {
+        --bg: #05070a;
+        --bg-elevated: #0c1017;
+        --bg-card: #10151d;
+        --bg-card-hover: #151b25;
+        --border: #1f2733;
+        --border-soft: #171d27;
+        --text: #eef1f5;
+        --text-muted: #93a1b3;
+        --text-faint: #5c6b80;
+        --accent: #7ee08a;
+        --accent-strong: #4fd166;
+        --accent-soft: rgba(126, 224, 138, 0.12);
+        --accent-2: #8ab4f8;
+        --accent-2-soft: rgba(138, 180, 248, 0.12);
+        --danger: #f18b8b;
+        --shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.6);
+      }
+      :root[data-theme="light"] {
+        --bg: #f4f6f9;
+        --bg-elevated: #ffffff;
+        --bg-card: #ffffff;
+        --bg-card-hover: #f0f3f7;
+        --border: #e2e7ee;
+        --border-soft: #eaeef3;
+        --text: #131a24;
+        --text-muted: #56637a;
+        --text-faint: #8b96a8;
+        --accent: #1f9d4b;
+        --accent-strong: #16803c;
+        --accent-soft: rgba(31, 157, 75, 0.1);
+        --accent-2: #2563eb;
+        --accent-2-soft: rgba(37, 99, 235, 0.08);
+        --danger: #d1453b;
+        --shadow: 0 20px 45px -25px rgba(20, 30, 50, 0.25);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
         scroll-behavior: smooth;
       }
-      a:focus-visible {
-        outline: 2px solid #38bdf8;
-        outline-offset: 2px;
-        border-radius: 0.25rem;
+      ::selection {
+        background: var(--accent-soft);
+        color: var(--text);
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 8px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-faint);
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+      }
+      .subtle-border {
+        border: 1px solid var(--border-soft);
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 10px;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+        border: 1px solid transparent;
+      }
+      .nav-item:hover {
+        background: var(--bg-card-hover);
+        color: var(--text);
+      }
+      .nav-item.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: rgba(126, 224, 138, 0.25);
+      }
+      :root[data-theme="light"] .nav-item.active {
+        border-color: rgba(31, 157, 75, 0.25);
+      }
+
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+        animation: fadeUp 0.45s ease;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .slide {
+        display: none;
+      }
+      .slide.active {
+        display: grid;
+        animation: fadeIn 0.35s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateX(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .screenshot-frame {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #000;
+        box-shadow: var(--shadow);
+      }
+      .screenshot-frame img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--border);
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      .dot.active {
+        background: var(--accent);
+        width: 22px;
+        border-radius: 999px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+      .pill-get {
+        background: var(--accent-2-soft);
+        color: var(--accent-2);
+      }
+      .pill-post {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+      .pill-patch {
+        background: rgba(240, 190, 100, 0.12);
+        color: #f0be64;
+      }
+      .pill-delete {
+        background: rgba(241, 139, 139, 0.12);
+        color: var(--danger);
+      }
+      .pill-page {
+        background: rgba(160, 130, 240, 0.12);
+        color: #b79bf0;
+      }
+
+      .table-row:hover {
+        background: var(--bg-card-hover);
+      }
+
+      .flow-node {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.4rem 1rem 1.1rem;
+      }
+      .flow-step {
+        position: absolute;
+        top: -9px;
+        left: -9px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: #06210c;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--bg);
+      }
+
+      .icon {
+        width: 1.1rem;
+        height: 1.1rem;
+        flex-shrink: 0;
+      }
+      .icon-lg {
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+
+      #sidebar {
+        transition: transform 0.25s ease;
+      }
+
+      @media (max-width: 900px) {
+        #sidebar {
+          position: fixed;
+          inset: 0 20% 0 0;
+          z-index: 40;
+          transform: translateX(-100%);
+        }
+        #sidebar.open {
+          transform: translateX(0);
+        }
+        #sidebar-backdrop {
+          display: none;
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 30;
+        }
+        #sidebar-backdrop.open {
+          display: block;
+        }
+        #main-content {
+          margin-left: 0 !important;
+        }
       }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   </head>
-  <body class="bg-surface min-h-screen font-sans text-slate-100 antialiased">
-    <!-- Sticky nav -->
-    <header
-      class="border-border bg-surface/95 sticky top-0 z-50 border-b backdrop-blur-md"
+  <body>
+    <div id="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+
+    <!-- SIDEBAR -->
+    <aside
+      id="sidebar"
+      class="fixed top-0 left-0 flex h-screen w-[280px] flex-col border-r"
+      style="border-color: var(--border); background: var(--bg-elevated)"
     >
       <div
-        class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6"
+        class="border-b px-5 pt-6 pb-5"
+        style="border-color: var(--border-soft)"
       >
-        <a
-          href="#panoramica"
-          class="text-lg font-semibold tracking-tight text-white"
-          >EasyTrip</a
-        >
-        <nav
-          class="flex flex-wrap items-center gap-1 text-sm md:gap-2"
-          aria-label="Sezioni"
-        >
-          <a
-            href="#panoramica"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
-            >Panoramica</a
+        <div class="flex items-center gap-2.5">
+          <div
+            class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl"
+            style="background: var(--accent-soft)"
           >
-          <a
-            href="#percorsoutente"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
-            >Percorso utente</a
-          >
-          <a
-            href="#strategia"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
-            >Strategia</a
-          >
-          <a
-            href="#operativi"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
-            >Operativi</a
-          >
-          <a
-            href="#mercato"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
-            >Mercato</a
-          >
-          <a
-            href="#tecnico"
-            class="text-muted hover:bg-surface-elevated hover:text-primary rounded-md px-2 py-1.5 transition md:px-3"
-            >Tecnico</a
-          >
-        </nav>
-      </div>
-    </header>
-
-    <main class="mx-auto max-w-6xl px-4 py-12 md:px-6 md:py-16">
-      <!-- Hero -->
-      <div
-        class="border-border from-surface-elevated to-surface mb-16 rounded-2xl border bg-gradient-to-br p-8 md:p-12"
-      >
-        <p
-          class="text-primary mb-2 font-mono text-xs tracking-widest uppercase"
-        >
-          SaaS · Travel planning
-        </p>
-        <h1
-          class="mb-4 text-3xl font-bold tracking-tight text-white md:text-4xl"
-        >
-          EasyTrip
-        </h1>
-        <p class="max-w-3xl text-lg leading-relaxed text-slate-300">
-          Applicazione web per organizzare viaggi con
-          <strong class="font-medium text-white"
-            >itinerari generati da IA</strong
-          >
-          (Anthropic Claude), collaborazione di gruppo, spese condivise e
-          monetizzazione tramite Stripe — con job asincroni Inngest e dati su
-          PostgreSQL.
-        </p>
+            <svg
+              class="icon-lg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--accent)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path
+                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+              />
+            </svg>
+          </div>
+          <div>
+            <div class="text-[15px] font-semibold" style="color: var(--text)">
+              EasyTripSaaS
+            </div>
+            <div class="text-[11px]" style="color: var(--text-faint)">
+              Technical &amp; Product Overview
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Percorso utente: screenshot PNG (README_00 · npm run screenshots:presentation) -->
-      <section id="percorsoutente" class="mb-20 scroll-mt-24">
-        <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
-        >
-          00 · Percorso utente
-        </h2>
-        <h3 class="mb-3 text-2xl font-semibold text-white">
-          Schermate reali dall’app
-        </h3>
-        <p class="text-muted mb-8 max-w-3xl text-sm leading-relaxed">
-          Le immagini sotto sono prodotte da Playwright in
-          <code class="font-mono text-xs text-slate-400"
-            >docs/presentation-screenshots/</code
-          >
-          (vedi
-          <code class="font-mono text-xs text-slate-400">README_00.md</code>).
-          Apri questo file HTML dalla cartella
-          <code class="font-mono text-xs text-slate-400">easytrip-saas/</code>
-          così i percorsi relativi alle PNG funzionano. Alcune schermate sono
-          condizionali (es. split spese su trip coppia/gruppo, checkout Stripe,
-          invito join).
-        </p>
+      <nav class="flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
         <div
-          class="border-border bg-surface-elevated/40 grid gap-8 rounded-2xl border p-6 md:grid-cols-2 md:p-8"
+          class="px-2 pb-1 text-[10px] font-semibold tracking-wider uppercase"
+          style="color: var(--text-faint)"
         >
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/01-landing.png"
-              alt="Landing marketing"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              01 · Landing pubblica
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/02-auth-clerk.png"
-              alt="Accesso Clerk"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              02 · Accesso tramite Clerk (finestra pubblica / trip)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/02b-auth-clerk-signup.png"
-              alt="Registrazione Clerk"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              02b · Registrazione (hosted Clerk, best effort)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/03-app-dashboard.png"
-              alt="Dashboard app"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              03 · Dashboard dopo login
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/04-app-trips-list.png"
-              alt="Elenco viaggi"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              04 · I miei viaggi
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/06-trips-create-form.png"
-              alt="Form creazione viaggio"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              06 · Creazione viaggio (form)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/05-trip-detail.png"
-              alt="Dettaglio viaggio"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              05 · Dettaglio trip (richiede
-              <code class="font-mono">E2E_TRIP_ID</code>)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/05b-trip-detail-checkout-cta.png"
-              alt="Checkout trip"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              05b · CTA pagamento (se trip non pagato)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/05c-trip-expenses.png"
-              alt="Split spese"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              05c · Split spese (coppia/gruppo pagati, membri ≥2)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/10-checkout-stripe.png"
-              alt="Stripe checkout"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              10 · Stripe hosted (
-              <code class="font-mono">E2E_SCREENSHOT_STRIPE</code>)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/07-referral.png"
-              alt="Referral"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              07 · Invita un amico
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/08-join-trip.png"
-              alt="Join invito viaggio"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              08 · Join con token (
-              <code class="font-mono">E2E_JOIN_TOKEN</code>)
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/09-account-privacy.png"
-              alt="Privacy e export dati"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              09 · Privacy, export GDPR, comunicazioni email
-            </figcaption>
-          </figure>
-          <figure
-            class="border-border flex flex-col overflow-hidden rounded-xl border"
-          >
-            <img
-              src="docs/presentation-screenshots/09b-account-delete-form.png"
-              alt="Modulo cancellazione account"
-              class="bg-surface w-full object-cover object-top"
-              loading="lazy"
-              width="1440"
-              height="900"
-            />
-            <figcaption class="text-muted border-border border-t p-3 text-xs">
-              09b · Diritto all’oblio: modulo di conferma (nessun invio nello
-              script)
-            </figcaption>
-          </figure>
+          Documentazione
         </div>
-      </section>
 
-      <!-- 1. Panoramica -->
-      <section id="panoramica" class="mb-20 scroll-mt-24">
-        <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
+        <div
+          class="nav-item active"
+          data-view="overview"
+          onclick="showView('overview', this)"
         >
-          01 · Panoramica
-        </h2>
-        <h3 class="mb-6 text-2xl font-semibold text-white">
-          Cos’è, quale problema risolve, per chi
-        </h3>
-        <div class="grid gap-6 md:grid-cols-2">
-          <div
-            class="border-border bg-surface-elevated rounded-xl border p-6 shadow-lg shadow-black/20"
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <h4 class="text-primary mb-3 font-semibold">Descrizione</h4>
-            <p class="text-sm leading-relaxed text-slate-300">
-              EasyTrip è un prodotto
-              <strong class="text-white">full-stack</strong>
-              (Next.js App Router) che permette di creare
-              <strong class="text-white">trip</strong> con destinazione, date,
-              tipologia (solo / coppia / gruppo), stile e livello di budget.
-              Dopo il pagamento, un workflow Inngest invoca il modello AI per
-              produrre versioni di itinerario strutturate (giorni, slot
-              mattina/pomeriggio/sera, suggerimenti ristoranti, coordinate
-              mappa), con
-              <strong class="text-white">sblocco progressivo</strong> dei giorni
-              e fino a
-              <strong class="text-white">sette rigenerazioni</strong> con regole
-              dedicate (<code class="rounded bg-black/40 px-1 font-mono text-xs"
-                >trip-regen-rules</code
-              >).
+            <rect x="3" y="3" width="7" height="9" rx="1" />
+            <rect x="14" y="3" width="7" height="5" rx="1" />
+            <rect x="14" y="12" width="7" height="9" rx="1" />
+            <rect x="3" y="16" width="7" height="5" rx="1" />
+          </svg>
+          Panoramica &amp; Stack
+        </div>
+
+        <div
+          class="nav-item"
+          data-view="sitemap"
+          onclick="showView('sitemap', this)"
+        >
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="5" cy="19" r="2" />
+            <circle cx="19" cy="19" r="2" />
+            <path d="M12 7v6M12 13l-6 4M12 13l6 4" />
+          </svg>
+          Architettura delle Rotte
+        </div>
+
+        <div
+          class="nav-item"
+          data-view="journey"
+          onclick="showView('journey', this)"
+        >
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+          User Journey — Checkout
+        </div>
+
+        <div
+          class="px-2 pt-4 pb-1 text-[10px] font-semibold tracking-wider uppercase"
+          style="color: var(--text-faint)"
+        >
+          User Journey
+        </div>
+        <div id="journey-mini-nav" class="space-y-0.5"></div>
+      </nav>
+
+      <div class="border-t px-3 py-4" style="border-color: var(--border-soft)">
+        <button
+          onclick="toggleTheme()"
+          class="nav-item w-full justify-center"
+          style="border: 1px solid var(--border)"
+        >
+          <svg
+            id="theme-icon"
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <span id="theme-label">Tema chiaro</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MOBILE TOPBAR -->
+    <div
+      class="fixed top-0 right-0 left-0 z-20 flex h-14 items-center justify-between border-b px-4 md:hidden"
+      style="background: var(--bg-elevated); border-color: var(--border)"
+    >
+      <span class="text-sm font-semibold">EasyTripSaaS Overview</span>
+      <button onclick="toggleSidebar(true)" class="p-2">
+        <svg
+          class="icon-lg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main id="main-content" class="min-h-screen pt-16 md:ml-[280px] md:pt-0">
+      <div class="mx-auto max-w-5xl px-6 py-10 md:px-12 md:py-14">
+        <!-- ============ VIEW 1: OVERVIEW & STACK ============ -->
+        <section id="view-overview" class="view active">
+          <div class="mb-10">
+            <div class="pill pill-post mb-3">Sezione 1</div>
+            <h1
+              class="text-3xl font-bold tracking-tight md:text-4xl"
+              style="color: var(--text)"
+            >
+              Panoramica &amp; Stack Tecnologico
+            </h1>
+            <p
+              class="mt-3 max-w-2xl text-[15px] leading-relaxed"
+              style="color: var(--text-muted)"
+            >
+              EasyTripSaaS genera itinerari di viaggio personalizzati con
+              l'intelligenza artificiale, gestisce pagamenti reali via Stripe e
+              coordina l'intero flusso — dalla registrazione alla generazione
+              dell'itinerario — su un'architettura serverless moderna basata su
+              Next.js.
             </p>
           </div>
-          <div
-            class="border-border bg-surface-elevated rounded-xl border p-6 shadow-lg shadow-black/20"
-          >
-            <h4 class="text-primary mb-3 font-semibold">Problema risolto</h4>
-            <ul class="list-inside list-disc space-y-2 text-sm text-slate-300">
-              <li>
-                Riduce il tempo per passare da “idea di viaggio” a
-                <strong class="text-white">piano giornaliero coerente</strong>
-                con budget e stile.
-              </li>
-              <li>
-                Supporta <strong class="text-white">gruppi</strong>: inviti,
-                membri, bilanci e spese (modelli Prisma
-                <code class="font-mono text-xs">TripMember</code>,
-                <code class="font-mono text-xs">Expense</code>).
-              </li>
-              <li>
-                Offre percorsi di monetizzazione chiari (checkout Stripe, add-on
-                rigenerazione, riattivazione, LocalPass multi-città) nel codice
-                di configurazione.
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div
-          class="border-border bg-surface-elevated/50 mt-6 rounded-xl border border-dashed p-6"
-        >
-          <h4 class="mb-2 font-semibold text-white">Target utenti</h4>
-          <p class="text-sm text-slate-300">
-            <strong class="text-primary">Organizzatori</strong> di viaggi brevi
-            o medi (coppie, famiglie, piccoli gruppi) che vogliono un piano
-            dettagliato senza ore di ricerca manuale;
-            <strong class="text-primary">partecipanti</strong> invitati via
-            token (<code class="font-mono text-xs">/join/[token]</code>) che
-            consultano l’itinerario e contribuiscono alle spese.
-          </p>
-        </div>
-      </section>
 
-      <!-- 2. Strategia -->
-      <section id="strategia" class="mb-20 scroll-mt-24">
-        <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
-        >
-          02 · Strategia di prodotto
-        </h2>
-        <h3 class="mb-6 text-2xl font-semibold text-white">
-          Personas, value proposition, modello di business
-        </h3>
-
-        <div class="border-border mb-8 overflow-x-auto rounded-xl border">
-          <table class="w-full min-w-[640px] text-left text-sm">
-            <thead class="bg-surface-elevated font-medium text-slate-200">
-              <tr>
-                <th class="px-4 py-3">Persona</th>
-                <th class="px-4 py-3">Obiettivo</th>
-                <th class="px-4 py-3">Feature chiave nel codice</th>
-              </tr>
-            </thead>
-            <tbody class="divide-border divide-y text-slate-300">
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Sofia — viaggiatrice solo
-                </td>
-                <td class="px-4 py-3">
-                  Itinerario focalizzato, budget controllato
-                </td>
-                <td class="px-4 py-3 font-mono text-xs">
-                  TripType.solo, budgetLevel, generate-itinerary prompt
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Marco &amp; Elena — coppia
-                </td>
-                <td class="px-4 py-3">Condividere un piano senza stress</td>
-                <td class="px-4 py-3 font-mono text-xs">
-                  TripType.coppia, TripDetailDto, versioni attive
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Luca — organizzatore gruppo
-                </td>
-                <td class="px-4 py-3">Invitare amici e gestire spese</td>
-                <td class="px-4 py-3 font-mono text-xs">
-                  invite, join, ExpenseService, balances API
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mb-8 grid gap-6 md:grid-cols-2">
-          <div class="border-border bg-surface-elevated rounded-xl border p-6">
-            <h4 class="text-primary mb-3 font-semibold">Value proposition</h4>
-            <ul class="space-y-2 text-sm text-slate-300">
-              <li class="flex gap-2">
-                <span class="text-primary">→</span>
-                <span
-                  ><strong class="text-white">Piano AI personalizzato</strong>
-                  per destinazione, calendario reale, budget (economy / moderate
-                  / premium) e stile.</span
+          <!-- Flow diagram -->
+          <div class="card mb-10 p-6 md:p-8">
+            <h3
+              class="mb-5 flex items-center gap-2 text-sm font-semibold"
+              style="color: var(--text-muted)"
+            >
+              <svg
+                class="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+              COME COLLABORANO I COMPONENTI
+            </h3>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              <div class="flow-node relative text-center">
+                <div class="flow-step">1</div>
+                <div
+                  class="text-xs font-semibold"
+                  style="color: var(--accent-2)"
                 >
-              </li>
-              <li class="flex gap-2">
-                <span class="text-primary">→</span>
-                <span
-                  ><strong class="text-white">Iterazione controllata</strong>:
-                  carosello versioni, geo score, zone già usate in
-                  rigenerazione.</span
+                  CLIENT
+                </div>
+                <div class="mt-1 text-sm font-semibold">
+                  Next.js 16 + React 19
+                </div>
+                <div class="mt-1 text-[11px]" style="color: var(--text-faint)">
+                  App Router, RSC, multi-locale
+                </div>
+              </div>
+              <div class="flow-node relative text-center">
+                <div class="flow-step">2</div>
+                <div
+                  class="text-xs font-semibold"
+                  style="color: var(--accent-2)"
                 >
-              </li>
-              <li class="flex gap-2">
-                <span class="text-primary">→</span>
-                <span
-                  ><strong class="text-white">Gruppo &amp; trust</strong>:
-                  crediti, referral, export dati e cancellazione account (API
-                  privacy).</span
+                  AUTH
+                </div>
+                <div class="mt-1 text-sm font-semibold">Clerk</div>
+                <div class="mt-1 text-[11px]" style="color: var(--text-faint)">
+                  Sessioni + webhook sync
+                </div>
+              </div>
+              <div class="flow-node relative text-center">
+                <div class="flow-step">3</div>
+                <div class="text-xs font-semibold" style="color: var(--accent)">
+                  DATA
+                </div>
+                <div class="mt-1 text-sm font-semibold">
+                  Prisma + PostgreSQL
+                </div>
+                <div class="mt-1 text-[11px]" style="color: var(--text-faint)">
+                  Utenti, viaggi, pagamenti
+                </div>
+              </div>
+              <div class="flow-node relative text-center">
+                <div class="flow-step">4</div>
+                <div class="text-xs font-semibold" style="color: #f0be64">
+                  JOBS
+                </div>
+                <div class="mt-1 text-sm font-semibold">Inngest</div>
+                <div class="mt-1 text-[11px]" style="color: var(--text-faint)">
+                  Coda asincrona + retry
+                </div>
+              </div>
+              <div class="flow-node relative text-center">
+                <div class="flow-step">5</div>
+                <div class="text-xs font-semibold" style="color: var(--accent)">
+                  AI
+                </div>
+                <div class="mt-1 text-sm font-semibold">Anthropic Claude</div>
+                <div class="mt-1 text-[11px]" style="color: var(--text-faint)">
+                  Generazione itinerari
+                </div>
+              </div>
+              <div class="flow-node relative text-center">
+                <div class="flow-step">6</div>
+                <div class="text-xs font-semibold" style="color: #b79bf0">
+                  PAY
+                </div>
+                <div class="mt-1 text-sm font-semibold">Stripe</div>
+                <div class="mt-1 text-[11px]" style="color: var(--text-faint)">
+                  Checkout + webhook
+                </div>
+              </div>
+            </div>
+            <p
+              class="mt-5 text-[13px] leading-relaxed"
+              style="color: var(--text-faint)"
+            >
+              Il webhook di Stripe (6) è il punto di innesco: dopo la conferma
+              del pagamento, scrive l'esito nel database (3) e invia l'evento a
+              Inngest (4), che a sua volta chiama Claude (5) per generare
+              l'itinerario e ne salva il risultato di nuovo in Postgres.
+            </p>
+          </div>
+
+          <!-- Stack cards -->
+          <div class="grid gap-5 md:grid-cols-2">
+            <div class="card p-6">
+              <div class="mb-3 flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style="background: var(--accent-2-soft)"
                 >
-              </li>
-            </ul>
-          </div>
-          <div class="border-border bg-surface-elevated rounded-xl border p-6">
-            <h4 class="text-primary mb-3 font-semibold">
-              Modello di business (dal codice)
-            </h4>
-            <p class="mb-3 text-sm text-slate-300">
-              Prezzi in centesimi configurabili via env in
-              <code class="rounded bg-black/40 px-1 font-mono text-xs"
-                >unifiedConfig.ts</code
-              >:
-            </p>
-            <ul class="space-y-1 font-mono text-xs text-slate-400">
-              <li>STRIPE_PRICE_SOLO_COUPLE_CENTS (default 399)</li>
-              <li>STRIPE_PRICE_GROUP_CENTS (default 699)</li>
-              <li>STRIPE_PRICE_REGEN_CENTS — rigenerazione (default 199)</li>
-              <li>
-                STRIPE_PRICE_REACTIVATE_CENTS — post-viaggio (default 290)
-              </li>
-              <li>
-                STRIPE_PRICE_LOCALPASS_CENTS — add-on per città (default 399)
-              </li>
-              <li>STRIPE_SUBSCRIPTION_PRICE_ID — abbonamento opzionale</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. Operativi -->
-      <section id="operativi" class="mb-20 scroll-mt-24">
-        <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
-        >
-          03 · Dettagli operativi
-        </h2>
-        <h3 class="mb-6 text-2xl font-semibold text-white">
-          Workflow tecnico, funzionalità, metriche
-        </h3>
-
-        <div
-          class="border-border bg-surface-elevated mb-8 rounded-xl border p-6 md:p-8"
-        >
-          <h4 class="mb-4 font-semibold text-white">
-            Flusso end-to-end (autenticazione → itinerario)
-          </h4>
-          <ol class="list-inside list-decimal space-y-3 text-sm text-slate-300">
-            <li>
-              <strong class="text-primary">Clerk</strong> autentica l’utente
-              (<code class="font-mono text-xs">@clerk/nextjs</code> nelle route
-              protette).
-            </li>
-            <li>
-              <strong class="text-primary">Creazione trip</strong> via
-              <code class="font-mono text-xs">POST /api/trips</code> →
-              <code class="font-mono text-xs">TripController.create</code> →
-              <code class="font-mono text-xs">TripService</code>.
-            </li>
-            <li>
-              <strong class="text-primary">Checkout Stripe</strong>
-              <code class="font-mono text-xs">POST /api/billing/checkout</code>
-              (e varianti regen/reactivate); webhook
-              <code class="font-mono text-xs">POST /api/webhooks/stripe</code>
-              allinea pagamenti e stato trip.
-            </li>
-            <li>
-              <strong class="text-primary">Generazione</strong>:
-              <code class="font-mono text-xs"
-                >POST /api/trips/[tripId]/generate</code
+                  <svg
+                    class="icon-lg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--accent-2)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                    <polyline points="2 17 12 22 22 17" />
+                    <polyline points="2 12 12 17 22 12" />
+                  </svg>
+                </div>
+                <h3 class="text-[15px] font-semibold">
+                  Next.js 16 (App Router) + React 19
+                </h3>
+              </div>
+              <p
+                class="text-[13.5px] leading-relaxed"
+                style="color: var(--text-muted)"
               >
-              (rate limit Upstash) → evento Inngest →
-              <code class="font-mono text-xs">generateItinerary</code> che
-              chiama Anthropic, valida JSON con schema itinerario, persiste
-              <code class="font-mono text-xs">TripVersion</code> e
-              <code class="font-mono text-xs">Day</code>; email transazionale
-              opzionale (Resend).
-            </li>
-            <li>
-              <strong class="text-primary">Post-vendita</strong>: job
-              <code class="font-mono text-xs">expireTrips</code>,
-              <code class="font-mono text-xs">preTripReminders</code>,
-              <code class="font-mono text-xs">postTripFollowup</code>,
-              <code class="font-mono text-xs">creditExpiryReminders</code>,
-              <code class="font-mono text-xs">dataRetentionPurge</code>.
-            </li>
-          </ol>
-        </div>
+                Framework full-stack: Server Components per il rendering
+                iniziale e il fetch dati lato server, Route Handlers (<code
+                  class="text-[12px]"
+                  >/api/**/route.ts</code
+                >) come backend REST, e routing multi-lingua (<code
+                  class="text-[12px]"
+                  >it · en · es · fr · de</code
+                >) gestito da un middleware
+                <code class="text-[12px]">next-intl</code> che precede ogni
+                richiesta.
+              </p>
+            </div>
 
-        <div class="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">
-              Trip &amp; AI
-            </h5>
-            <p class="text-xs text-slate-400">
-              Lista/dettaglio, preferenze PATCH, versione attiva, replace-slot,
-              live-suggest, archiviazione.
-            </p>
-          </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">
-              Gruppo &amp; spese
-            </h5>
-            <p class="text-xs text-slate-400">
-              Inviti, join token, spese CRUD, bilanci, saldi membri.
-            </p>
-          </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">
-              Growth &amp; supporto
-            </h5>
-            <p class="text-xs text-slate-400">
-              Referral GET/track, ticket support API, referral nel modello User.
-            </p>
-          </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">Privacy</h5>
-            <p class="text-xs text-slate-400">
-              data-export, delete-account, retention Inngest su versioni e soft
-              delete.
-            </p>
-          </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">UI mappa</h5>
-            <p class="text-xs text-slate-400">
-              Leaflet / react-leaflet per centri mappa sui giorni (dipendenze
-              package.json).
-            </p>
-          </div>
-          <div class="border-border rounded-lg border p-4">
-            <h5 class="text-primary mb-2 text-sm font-semibold">Analytics</h5>
-            <p class="text-xs text-slate-400">
-              posthog-js lato client per eventi prodotto (dipendenza
-              dichiarata).
-            </p>
-          </div>
-        </div>
-
-        <div
-          class="border-primary/30 bg-primary/5 rounded-xl border border-dashed p-6"
-        >
-          <h4 class="mb-3 font-semibold text-white">
-            Metriche di successo (da misurare)
-          </h4>
-          <p class="mb-4 text-sm text-slate-400">
-            North Star suggerita:
-            <strong class="text-primary"
-              >trip pagati con itinerario generato con successo</strong
-            >
-            (evento completamento Inngest + stato trip). KPI SaaS complementari:
-          </p>
-          <ul class="grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-            <li>
-              <span class="text-primary font-mono text-xs">Attivazione</span> —
-              % utenti che completano checkout dopo creazione trip.
-            </li>
-            <li>
-              <span class="text-primary font-mono text-xs">Generazione</span> —
-              tasso successo job generate-itinerary vs errori / retry.
-            </li>
-            <li>
-              <span class="text-primary font-mono text-xs">Expansion</span> —
-              ricavi add-on (regen, reactivate, LocalPass) per trip.
-            </li>
-            <li>
-              <span class="text-primary font-mono text-xs">Retention</span> —
-              riattivazioni e secondi viaggi (referralCode, totalTrips).
-            </li>
-            <li>
-              <span class="text-primary font-mono text-xs">Advocacy</span> —
-              referral tracciati e conversioni da codice invito.
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- 4. Mercato -->
-      <section id="mercato" class="mb-20 scroll-mt-24">
-        <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
-        >
-          04 · Mercato
-        </h2>
-        <h3 class="mb-2 text-2xl font-semibold text-white">
-          Differenziazione e monetizzazione
-        </h3>
-        <p class="mb-6 text-sm text-slate-500">
-          Posizionamento basato sulle capacità implementate nel repository — non
-          su ricerche di mercato esterne.
-        </p>
-
-        <div class="border-border mb-8 overflow-x-auto rounded-xl border">
-          <table class="w-full min-w-[600px] text-left text-sm">
-            <thead class="bg-surface-elevated font-medium text-slate-200">
-              <tr>
-                <th class="px-4 py-3">Area</th>
-                <th class="px-4 py-3">Aggregatori / guide generiche</th>
-                <th class="px-4 py-3">EasyTrip (nel codice)</th>
-              </tr>
-            </thead>
-            <tbody class="divide-border divide-y text-slate-300">
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">Output</td>
-                <td class="px-4 py-3">Liste statiche, articoli generici</td>
-                <td class="px-4 py-3">
-                  JSON strutturato + validazione schema, versioni numerate, geo
-                  score
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">
-                  Personalizzazione
-                </td>
-                <td class="px-4 py-3">Poca o manuale</td>
-                <td class="px-4 py-3">
-                  Prompt con calendario, budget, stile, LocalPass, zone usate
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">Gruppo</td>
-                <td class="px-4 py-3">Spesso assente</td>
-                <td class="px-4 py-3">
-                  Membri, inviti, spese, bilanci — modelli Prisma dedicati
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">Monetizzazione</td>
-                <td class="px-4 py-3">Ads / affiliations</td>
-                <td class="px-4 py-3">
-                  Stripe per trip, add-on, subscription opzionale, crediti
-                  utente
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 font-medium text-white">Compliance</td>
-                <td class="px-4 py-3">Variabile</td>
-                <td class="px-4 py-3">
-                  Export GDPR-style, delete account, job data retention
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="border-border bg-surface-elevated rounded-xl border p-6">
-          <h4 class="text-primary mb-2 font-semibold">
-            Strategia di monetizzazione
-          </h4>
-          <p class="text-sm leading-relaxed text-slate-300">
-            Il codice implementa un modello
-            <strong class="text-white">pay-per-trip</strong>
-            differenziato per tipologia (solo/coppia vs gruppo), più
-            <strong class="text-white">micro-transazioni</strong> per
-            rigenerazioni oltre soglia gratuita, riattivazione dell’accesso dopo
-            scadenza e <strong class="text-white">LocalPass</strong> come
-            moltiplicatore di valore per chi visita più contesti urbani.
-            L’abbonamento Stripe è previsto come percorso opzionale se è
-            configurato il price ID. I crediti utente e i referral rafforzano
-            LTV e acquisizione organica.
-          </p>
-        </div>
-      </section>
-
-      <!-- 5. Tecnico -->
-      <section id="tecnico" class="mb-20 scroll-mt-24">
-        <h2
-          class="text-accent mb-2 font-mono text-sm font-medium tracking-wider uppercase"
-        >
-          05 · Specifiche tecniche
-        </h2>
-        <h3 class="mb-6 text-2xl font-semibold text-white">
-          Stack, user stories, MVP, architettura
-        </h3>
-
-        <div class="border-border mb-8 overflow-x-auto rounded-xl border">
-          <table class="w-full min-w-[560px] text-left text-sm">
-            <thead class="bg-surface-elevated font-medium text-slate-200">
-              <tr>
-                <th class="px-4 py-3">Layer</th>
-                <th class="px-4 py-3">Tecnologia (package.json / codice)</th>
-              </tr>
-            </thead>
-            <tbody
-              class="divide-border divide-y font-mono text-xs text-slate-400"
-            >
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Framework UI</td>
-                <td class="px-4 py-3">
-                  next@16.2.4, react@19.2.3, next-intl@^4.9.1,
-                  lucide-react@^0.475
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Stile</td>
-                <td class="px-4 py-3">
-                  tailwindcss@^4, @tailwindcss/postcss@^4
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Auth</td>
-                <td class="px-4 py-3">
-                  @clerk/nextjs@^6.39.3, @clerk/localizations@^4.5.3
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Database</td>
-                <td class="px-4 py-3">
-                  @prisma/client@6.19.3, prisma@6.19.3, PostgreSQL
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Pagamenti</td>
-                <td class="px-4 py-3">stripe@^17</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Workflow async</td>
-                <td class="px-4 py-3">inngest@^4</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">LLM</td>
-                <td class="px-4 py-3">@anthropic-ai/sdk@^0.91.0</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Validazione</td>
-                <td class="px-4 py-3">zod@^3</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Rate limit</td>
-                <td class="px-4 py-3">@upstash/ratelimit, @upstash/redis</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Mappe</td>
-                <td class="px-4 py-3">leaflet, react-leaflet@^5</td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Analytics</td>
-                <td class="px-4 py-3">
-                  posthog-js@^1.364.1, @vercel/analytics, @vercel/speed-insights
-                </td>
-              </tr>
-              <tr>
-                <td class="px-4 py-3 text-slate-300">Test</td>
-                <td class="px-4 py-3">
-                  vitest@^4.1.3, @playwright/test@^1.58.2,
-                  @clerk/testing@^2.0.11
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mb-8">
-          <h4 class="mb-3 font-semibold text-white">
-            User stories (derivate da route e pagine)
-          </h4>
-          <ul class="space-y-3 text-sm text-slate-300">
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-01</span>
-              <span
-                >Come
-                <strong class="text-white">utente autenticato</strong> voglio
-                <strong class="text-primary">creare un viaggio</strong> e
-                vederlo in elenco così posso procedere al pagamento (<code
-                  class="font-mono text-xs"
-                  >POST /api/trips</code
-                >, <code class="font-mono text-xs">/app/trips</code>).</span
-              >
-            </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-02</span>
-              <span
-                >Come <strong class="text-white">organizzatore</strong> voglio
-                <strong class="text-primary">avviare la generazione IA</strong>
-                dopo il pagamento così ricevo l’itinerario strutturato (<code
-                  class="font-mono text-xs"
-                  >POST .../generate</code
-                >, Inngest
-                <code class="font-mono text-xs">generateItinerary</code>).</span
-              >
-            </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-03</span>
-              <span
-                >Come
-                <strong class="text-white">membro del gruppo</strong> voglio
-                <strong class="text-primary">unirmi con un link</strong> così
-                vedo il trip condiviso (<code class="font-mono text-xs"
-                  >/join/[token]</code
-                >,
-                <code class="font-mono text-xs">/api/join/[token]</code>).</span
-              >
-            </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-04</span>
-              <span
-                >Come <strong class="text-white">partecipante</strong> voglio
-                <strong class="text-primary"
-                  >registrare spese e vedere i bilanci</strong
+            <div class="card p-6">
+              <div class="mb-3 flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style="background: var(--accent-2-soft)"
                 >
-                (<code class="font-mono text-xs">.../expenses</code>,
-                <code class="font-mono text-xs">.../balances</code>).</span
+                  <svg
+                    class="icon-lg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--accent-2)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <h3 class="text-[15px] font-semibold">
+                  Clerk — Autenticazione
+                </h3>
+              </div>
+              <p
+                class="text-[13.5px] leading-relaxed"
+                style="color: var(--text-muted)"
               >
-            </li>
-            <li
-              class="border-border bg-surface-elevated/80 flex gap-3 rounded-lg border p-4"
-            >
-              <span class="text-accent font-mono text-xs">US-05</span>
-              <span
-                >Come
-                <strong class="text-white">utente privacy-conscious</strong>
-                voglio
-                <strong class="text-primary">esportare o cancellare</strong> i
-                miei dati (<code class="font-mono text-xs"
-                  >/api/user/data-export</code
-                >,
-                <code class="font-mono text-xs">/api/user/delete-account</code
-                >).</span
+                Gestisce signup, login e sessioni. Un
+                <code class="text-[12px]">clerkMiddleware</code> protegge ogni
+                rotta sotto <code class="text-[12px]">/[locale]/app/*</code>; il
+                webhook
+                <code class="text-[12px]">/api/webhooks/clerk</code> sincronizza
+                in tempo reale gli utenti Clerk nel database applicativo via
+                Prisma.
+              </p>
+            </div>
+
+            <div class="card p-6">
+              <div class="mb-3 flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style="background: var(--accent-soft)"
+                >
+                  <svg
+                    class="icon-lg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--accent)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                  </svg>
+                </div>
+                <h3 class="text-[15px] font-semibold">Prisma + PostgreSQL</h3>
+              </div>
+              <p
+                class="text-[13.5px] leading-relaxed"
+                style="color: var(--text-muted)"
               >
-            </li>
-          </ul>
-        </div>
+                Il livello dati: schema tipizzato Prisma su PostgreSQL. Modella
+                utenti, viaggi, versioni dell'itinerario generate dall'AI,
+                pagamenti, spese di gruppo, referral e ticket di supporto, con
+                vincoli di unicità che garantiscono l'idempotenza dei pagamenti
+                Stripe.
+              </p>
+            </div>
 
-        <div
-          class="border-border bg-surface-elevated mb-10 rounded-xl border p-6"
-        >
-          <h4 class="text-primary mb-2 font-semibold">
-            Ambito MVP (implementato nel repo)
-          </h4>
-          <p class="mb-3 text-sm text-slate-400">
-            Funzionalità effettivamente presenti: autenticazione Clerk; CRUD
-            trip e versioni; generazione/rigenerazione con regole e checkout;
-            billing Stripe; spese e bilanci; support ticket; referral; retention
-            e reminder Inngest; export/cancellazione utente; rate limiting; test
-            unit ed E2E configurati negli script npm.
-          </p>
-        </div>
+            <div class="card p-6">
+              <div class="mb-3 flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style="background: rgba(240, 190, 100, 0.12)"
+                >
+                  <svg
+                    class="icon-lg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#f0be64"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                  </svg>
+                </div>
+                <h3 class="text-[15px] font-semibold">
+                  Inngest — Background Jobs
+                </h3>
+              </div>
+              <p
+                class="text-[13.5px] leading-relaxed"
+                style="color: var(--text-muted)"
+              >
+                Disaccoppia la generazione AI (che richiede 1-2 minuti) dal
+                ciclo richiesta/risposta HTTP. Il webhook Stripe invia l'evento
+                <code class="text-[12px]">trip/generate.requested</code>; una
+                funzione Inngest lo raccoglie, chiama Claude e gestisce
+                automaticamente i retry in caso di errore transitorio.
+              </p>
+            </div>
 
-        <h4 class="mb-4 font-semibold text-white">Diagramma architettura</h4>
-        <div
-          class="border-border overflow-x-auto rounded-xl border bg-[#0d1117] p-4 md:p-8"
-        >
-          <div class="mermaid text-sm">
-            flowchart TB subgraph clientLayer ["Client"] Browser["Browser
-            React"] PostHog["posthog-js"] end subgraph nextLayer ["Next.js App
-            Router"] Pages["pagine app e join"] API["API Routes"] end subgraph
-            serverLayer ["Server layer"] C["Controllers"] S["Services"]
-            R["Repositories"] end subgraph dataLayer ["Data"] Prisma["Prisma
-            ORM"] PG[(PostgreSQL)] end subgraph asyncLayer ["Async Inngest"]
-            InngestAPI["/api/inngest"] Jobs["generateItinerary e altri job"] end
-            subgraph extLayer ["Integrazioni"] Clerk["Clerk"] Stripe["Stripe"]
-            Anthropic["Anthropic API"] Upstash["Upstash Redis"] Resend["Resend
-            opzionale"] end Browser --> Pages Browser --> PostHog Pages -->
-            Clerk API --> C C --> S S --> R R --> Prisma Prisma --> PG API -->
-            InngestAPI InngestAPI --> Jobs Jobs --> Anthropic Jobs --> Prisma
-            API --> Stripe S --> Stripe API --> Upstash Jobs --> Resend
+            <div class="card p-6">
+              <div class="mb-3 flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style="background: var(--accent-soft)"
+                >
+                  <svg
+                    class="icon-lg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--accent)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 2a10 10 0 1 0 10 10" />
+                    <path d="M12 2v10l7 4" />
+                    <circle cx="12" cy="12" r="1.5" />
+                  </svg>
+                </div>
+                <h3 class="text-[15px] font-semibold">Anthropic Claude API</h3>
+              </div>
+              <p
+                class="text-[13.5px] leading-relaxed"
+                style="color: var(--text-muted)"
+              >
+                Il motore di generazione: riceve un prompt strutturato
+                (destinazione, date, preferenze) e restituisce l'itinerario in
+                JSON. Un ciclo di validazione/"repair" automatico corregge
+                eventuali risposte non conformi allo schema prima di salvarle.
+              </p>
+            </div>
+
+            <div class="card p-6">
+              <div class="mb-3 flex items-center gap-3">
+                <div
+                  class="flex h-10 w-10 items-center justify-center rounded-lg"
+                  style="background: rgba(160, 130, 240, 0.12)"
+                >
+                  <svg
+                    class="icon-lg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#b79bf0"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="1" y="4" width="22" height="16" rx="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
+                </div>
+                <h3 class="text-[15px] font-semibold">Stripe — Pagamenti</h3>
+              </div>
+              <p
+                class="text-[13.5px] leading-relaxed"
+                style="color: var(--text-muted)"
+              >
+                Gestisce acquisto viaggio, rigenerazioni a pagamento,
+                riattivazione accesso e l'abbonamento "Viaggiatore frequente"
+                tramite Checkout Session ospitate. Il webhook
+                <code class="text-[12px]">/api/webhooks/stripe</code> è la fonte
+                di verità che sblocca ogni funzionalità a pagamento in modo
+                idempotente.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer
-        class="border-border border-t pt-8 text-center text-xs text-slate-500"
-      >
-        <p>
-          Documento generato per descrivere l’implementazione nel repository
-          <span class="font-mono text-slate-400">easytrip-saas</span>. Stack e
-          rotte verificati da package.json e
-          <code class="font-mono">src/app/api/**/route.ts</code>.
-        </p>
-      </footer>
+        <!-- ============ VIEW 2: SITE MAP ============ -->
+        <section id="view-sitemap" class="view">
+          <div class="mb-8">
+            <div class="pill pill-post mb-3">Sezione 2</div>
+            <h1 class="text-3xl font-bold tracking-tight md:text-4xl">
+              Architettura delle Rotte
+            </h1>
+            <p
+              class="mt-3 max-w-2xl text-[15px] leading-relaxed"
+              style="color: var(--text-muted)"
+            >
+              Mappa reale delle rotte del repository — pagine servite lato
+              client/server e Route Handler API, estratte direttamente dalla
+              struttura <code class="text-[13px]">src/app/</code>.
+            </p>
+          </div>
+
+          <h3
+            class="mb-3 text-xs font-semibold tracking-wider uppercase"
+            style="color: var(--text-faint)"
+          >
+            Pagine (Next.js App Router)
+          </h3>
+          <div class="card mb-10 overflow-hidden">
+            <table class="w-full text-[13.5px]">
+              <thead>
+                <tr
+                  class="border-b text-left"
+                  style="border-color: var(--border)"
+                >
+                  <th
+                    class="px-5 py-3 font-medium"
+                    style="color: var(--text-faint)"
+                  >
+                    Rotta
+                  </th>
+                  <th
+                    class="px-5 py-3 font-medium"
+                    style="color: var(--text-faint)"
+                  >
+                    Accesso
+                  </th>
+                  <th
+                    class="px-5 py-3 font-medium"
+                    style="color: var(--text-faint)"
+                  >
+                    Descrizione
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="pages-table"></tbody>
+            </table>
+          </div>
+
+          <h3
+            class="mb-3 text-xs font-semibold tracking-wider uppercase"
+            style="color: var(--text-faint)"
+          >
+            API — Route Handler
+          </h3>
+          <div class="card overflow-hidden">
+            <table class="w-full text-[13.5px]">
+              <thead>
+                <tr
+                  class="border-b text-left"
+                  style="border-color: var(--border)"
+                >
+                  <th
+                    class="px-5 py-3 font-medium"
+                    style="color: var(--text-faint)"
+                  >
+                    Endpoint
+                  </th>
+                  <th
+                    class="px-5 py-3 font-medium"
+                    style="color: var(--text-faint)"
+                  >
+                    Metodo
+                  </th>
+                  <th
+                    class="px-5 py-3 font-medium"
+                    style="color: var(--text-faint)"
+                  >
+                    Descrizione
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="api-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============ VIEW 3: USER JOURNEY ============ -->
+        <section id="view-journey" class="view">
+          <div class="mb-6">
+            <div class="pill pill-post mb-3">Sezione 3</div>
+            <h1 class="text-3xl font-bold tracking-tight md:text-4xl">
+              L'Esperienza Utente — User Journey
+            </h1>
+            <p
+              class="mt-3 max-w-2xl text-[15px] leading-relaxed"
+              style="color: var(--text-muted)"
+            >
+              Percorso reale registrato durante l'esecuzione end-to-end della
+              suite Playwright, dalla homepage fino all'abbonamento — con il
+              dettaglio tecnico di cosa avviene "sotto il cofano" ad ogni
+              passaggio.
+            </p>
+          </div>
+
+          <!-- Progress -->
+          <div class="mb-6 flex items-center justify-between">
+            <div class="flex flex-wrap items-center gap-1.5" id="dots"></div>
+            <div
+              class="ml-4 flex-shrink-0 text-[13px] font-medium"
+              style="color: var(--text-faint)"
+            >
+              Step <span id="step-current" style="color: var(--text)">1</span> /
+              <span id="step-total">14</span>
+            </div>
+          </div>
+
+          <div id="slides"></div>
+
+          <div class="mt-8 flex items-center justify-between">
+            <button
+              onclick="prevSlide()"
+              class="subtle-border flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium"
+              style="background: var(--bg-card); color: var(--text)"
+            >
+              <svg
+                class="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Precedente
+            </button>
+            <button
+              onclick="nextSlide()"
+              class="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold"
+              style="background: var(--accent); color: #06210c"
+            >
+              Successivo
+              <svg
+                class="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </section>
+      </div>
     </main>
 
     <script>
-      mermaid.initialize({
-        startOnLoad: true,
-        theme: "dark",
-        securityLevel: "loose",
-        flowchart: { useMaxWidth: true, htmlLabels: true, curve: "basis" },
+      /* ============================================================
+   DATA — estratto dal repository reale (src/app, package.json)
+   ============================================================ */
+
+      const PAGES = [
+        {
+          route: "/[locale]",
+          access: "Pubblico",
+          desc: "Homepage marketing multilingua con proposta di valore e CTA di registrazione.",
+        },
+        {
+          route: "/[locale]/trips",
+          access: "Redirect",
+          desc: "Rotta legacy: reindirizza automaticamente a /[locale]/app/trips.",
+        },
+        {
+          route: "/[locale]/join/[token]",
+          access: "Pubblico",
+          desc: "Landing page per accettare un invito a un viaggio di Gruppo tramite token.",
+        },
+        {
+          route: "/[locale]/app",
+          access: "Autenticato (Clerk)",
+          desc: "Dashboard personale dell'utente, punto di ingresso dell'area riservata.",
+        },
+        {
+          route: "/[locale]/app/trips",
+          access: "Autenticato",
+          desc: "Elenco dei viaggi dell'utente e form di creazione di un nuovo viaggio.",
+        },
+        {
+          route: "/[locale]/app/trips/[tripId]",
+          access: "Autenticato",
+          desc: "Dettaglio viaggio: itinerario generato, mappa Leaflet, rigenerazioni, GPS, preferenze, supporto, split spese.",
+        },
+        {
+          route: "/[locale]/app/account/privacy",
+          access: "Autenticato",
+          desc: "Centro privacy: esportazione dati personali e cancellazione account (GDPR).",
+        },
+        {
+          route: "/[locale]/app/account/upgrade",
+          access: "Autenticato",
+          desc: "Pagina ponte: reindirizza server-side a Stripe Checkout in modalità abbonamento.",
+        },
+        {
+          route: "/[locale]/app/referral",
+          access: "Autenticato",
+          desc: "Widget referral: 'Invita un amico, viaggia gratis'.",
+        },
+      ];
+
+      const APIS = [
+        {
+          route: "/api/trips",
+          methods: ["GET", "POST"],
+          desc: "Elenco viaggi dell'utente autenticato / creazione di un nuovo viaggio.",
+        },
+        {
+          route: "/api/trips/[tripId]",
+          methods: ["GET", "DELETE"],
+          desc: "Dettaglio di un viaggio / cancellazione.",
+        },
+        {
+          route: "/api/trips/[tripId]/generate",
+          methods: ["POST"],
+          desc: "Avvia la generazione AI dell'itinerario inviando l'evento a Inngest.",
+        },
+        {
+          route: "/api/trips/[tripId]/active-version",
+          methods: ["POST"],
+          desc: "Imposta quale versione generata dell'itinerario è quella attiva.",
+        },
+        {
+          route: "/api/trips/[tripId]/replace-slot",
+          methods: ["POST"],
+          desc: "Sostituisce una singola tappa dell'itinerario tramite l'AI.",
+        },
+        {
+          route: "/api/trips/[tripId]/live-suggest",
+          methods: ["POST"],
+          desc: "Suggerimento AI in tempo reale basato sulla posizione GPS corrente.",
+        },
+        {
+          route: "/api/trips/[tripId]/preferences",
+          methods: ["PATCH"],
+          desc: "Aggiorna le preferenze di viaggio e sblocca una rigenerazione gratuita.",
+        },
+        {
+          route: "/api/trips/[tripId]/invite",
+          methods: ["GET"],
+          desc: "Genera/recupera il link di invito al viaggio di Gruppo.",
+        },
+        {
+          route: "/api/trips/[tripId]/expenses",
+          methods: ["GET", "POST"],
+          desc: "Elenco e aggiunta di spese condivise tra i membri del gruppo.",
+        },
+        {
+          route: "/api/trips/[tripId]/expenses/[expenseId]",
+          methods: ["DELETE"],
+          desc: "Rimuove una spesa condivisa.",
+        },
+        {
+          route: "/api/trips/[tripId]/balances",
+          methods: ["GET"],
+          desc: "Calcola i saldi (chi deve cosa a chi) tra i membri del gruppo.",
+        },
+        {
+          route: "/api/trips/[tripId]/cancel",
+          methods: ["POST"],
+          desc: "Annulla un viaggio.",
+        },
+        {
+          route: "/api/trips/[tripId]/share-image",
+          methods: ["GET"],
+          desc: "Genera l'immagine 'share card' virale del viaggio.",
+        },
+        {
+          route: "/api/billing/checkout",
+          methods: ["POST"],
+          desc: "Crea la Stripe Checkout Session per l'acquisto di un viaggio Solo/Coppia o Gruppo.",
+        },
+        {
+          route: "/api/billing/regen-checkout",
+          methods: ["POST"],
+          desc: "Checkout Stripe per le rigenerazioni oltre la soglia gratuita.",
+        },
+        {
+          route: "/api/billing/reactivate-checkout",
+          methods: ["POST"],
+          desc: "Checkout Stripe per riattivare l'accesso a un viaggio scaduto.",
+        },
+        {
+          route: "/api/billing/subscribe",
+          methods: ["POST"],
+          desc: "Checkout Stripe in modalità subscription per 'Viaggiatore frequente'.",
+        },
+        {
+          route: "/api/webhooks/stripe",
+          methods: ["POST"],
+          desc: "Webhook Stripe: conferma pagamenti, innesca la generazione AI, sincronizza gli abbonamenti.",
+        },
+        {
+          route: "/api/webhooks/clerk",
+          methods: ["POST"],
+          desc: "Webhook Clerk: sincronizza gli utenti nel database applicativo.",
+        },
+        {
+          route: "/api/inngest",
+          methods: ["GET", "POST", "PUT"],
+          desc: "Espone le funzioni Inngest (generazione AI, email, retry) al Dev Server / a Inngest Cloud.",
+        },
+        {
+          route: "/api/join/[token]",
+          methods: ["GET", "POST"],
+          desc: "Verifica e accetta un invito a un viaggio di Gruppo.",
+        },
+        {
+          route: "/api/referral",
+          methods: ["GET"],
+          desc: "Recupera codice e stato del programma referral dell'utente.",
+        },
+        {
+          route: "/api/referral/track",
+          methods: ["POST"],
+          desc: "Traccia la conversione quando un nuovo utente si registra tramite un link referral.",
+        },
+        {
+          route: "/api/support",
+          methods: ["GET", "POST"],
+          desc: "Elenco ticket di supporto dell'utente / apertura di un nuovo ticket.",
+        },
+        {
+          route: "/api/support/[ticketId]",
+          methods: ["GET", "POST"],
+          desc: "Dettaglio di un ticket / invio di una risposta.",
+        },
+        {
+          route: "/api/support/[ticketId]/resolve",
+          methods: ["POST"],
+          desc: "Segna un ticket di supporto come risolto.",
+        },
+        {
+          route: "/api/user/data-export",
+          methods: ["GET"],
+          desc: "Esporta i dati personali dell'utente (conformità GDPR).",
+        },
+        {
+          route: "/api/user/delete-account",
+          methods: ["POST"],
+          desc: "Cancella l'account e i dati associati.",
+        },
+        {
+          route: "/api/user/language",
+          methods: ["GET", "PATCH"],
+          desc: "Legge/aggiorna la lingua preferita dell'utente.",
+        },
+        {
+          route: "/api/user/marketing-preferences",
+          methods: ["GET", "PATCH"],
+          desc: "Legge/aggiorna le preferenze di marketing via email.",
+        },
+        {
+          route: "/api/health",
+          methods: ["GET"],
+          desc: "Health check applicativo per il monitoraggio dell'uptime.",
+        },
+      ];
+
+      const JOURNEY = [
+        {
+          title: "Homepage Iniziale",
+          img: "screenshots/01-homepage.png",
+          user: "L'utente arriva sulla homepage pubblica e vede la proposta di valore di EasyTripSaaS, disponibile in 5 lingue.",
+          tech: 'Server Component Next.js renderizzato per la locale rilevata dal middleware next-intl (cookie NEXT_LOCALE → header Accept-Language del browser → default "it"). Nessuna sessione Clerk è ancora richiesta a questo stadio.',
+        },
+        {
+          title: "Dashboard dopo il Login",
+          img: "screenshots/02-login-effettuato-dashboard.png",
+          user: "Dopo la registrazione (o l'accesso), l'utente atterra sulla propria dashboard personale.",
+          tech: "clerkMiddleware intercetta la rotta protetta /[locale]/app (matcher /(it|en|es|fr|de)/app(.*)). Il webhook /api/webhooks/clerk ha già sincronizzato l'account nel database Postgres via Prisma nel momento stesso della creazione su Clerk.",
+        },
+        {
+          title: "Creazione Nuovo Viaggio (Solo/Coppia)",
+          img: "screenshots/03-trips-page-solo.png",
+          user: 'L\'utente apre "I miei viaggi" e compila destinazione, date e tipologia per creare un nuovo viaggio.',
+          tech: 'La creazione invoca POST /api/trips, che scrive un record Trip in stato "pending" tramite Prisma. Nessun addebito avviene ancora: il pagamento è richiesto solo per sbloccare la generazione dell\'itinerario.',
+        },
+        {
+          title: "Sblocco della Generazione e Pagamento",
+          img: "screenshots/05-viaggio-creato-solo.png",
+          user: "Il viaggio è stato creato; l'utente clicca su \"Vai al pagamento\" per sbloccare la generazione AI dell'itinerario.",
+          tech: "POST /api/billing/checkout crea una Stripe Checkout Session con tripId e appUserId nei metadata (applicando eventuali crediti/sconti attivi) e reindirizza il browser a checkout.stripe.com.",
+        },
+        {
+          title: "Stripe Checkout — Pagamento con Carta",
+          img: "screenshots/08-stripe-checkout-compilato.png",
+          user: "L'utente inserisce i dati della carta (in ambiente di test: 4242 4242 4242 4242) e conferma il pagamento sulla pagina ospitata direttamente da Stripe.",
+          tech: 'Il form dei dati carta è servito interamente da Stripe.js sul dominio checkout.stripe.com: l\'applicazione non entra mai in contatto con i dati della carta (perimetro PCI-DSS "SAQ A").',
+        },
+        {
+          title: "Generazione dell'Itinerario in Corso",
+          img: "screenshots/10-generazione-in-corso.png",
+          user: "Dopo il pagamento, l'utente torna sull'app e segue in tempo reale l'avanzamento della generazione dell'itinerario.",
+          tech: "Il webhook /api/webhooks/stripe (evento checkout.session.completed) registra il pagamento e invia l'evento trip/generate.requested a Inngest. La pagina aggiorna lo stato finché la nuova TripVersion non è pronta in database.",
+        },
+        {
+          title: "Itinerario Generato",
+          img: "screenshots/12-generazione-completata.png",
+          user: "L'itinerario è pronto: tappe giorno per giorno, orari indicativi e mappa interattiva.",
+          tech: 'La funzione Inngest chiama l\'API Messages di Anthropic Claude con un prompt strutturato. La risposta JSON passa da un validatore con ciclo di "repair" automatico prima di essere salvata come TripVersion.',
+        },
+        {
+          title: "Rigenerazione dell'Itinerario",
+          img: "screenshots/14-rigenerazione-in-corso.png",
+          user: "Non pienamente soddisfatto, l'utente richiede una nuova versione dell'itinerario (le prime rigenerazioni sono gratuite, le successive a pagamento).",
+          tech: "Viene reinviato l'evento trip/generate.requested. Il contatore regenCount sul Trip determina se il flusso richiede prima un passaggio da POST /api/billing/regen-checkout.",
+        },
+        {
+          title: "Suggerimenti Live via GPS",
+          img: "screenshots/16-gps-attivo.png",
+          user: "Durante il viaggio, l'utente attiva la geolocalizzazione per ricevere suggerimenti contestuali basati sulla posizione reale.",
+          tech: "POST /api/trips/[tripId]/live-suggest invia coordinate e contesto del giorno ad Anthropic Claude per un suggerimento mirato, senza rigenerare l'intero itinerario.",
+        },
+        {
+          title: "Modifica delle Preferenze",
+          img: "screenshots/17-modifica-preferenze-aperto.png",
+          user: "L'utente affina ritmo, interessi e budget del viaggio per orientare la generazione successiva.",
+          tech: "PATCH /api/trips/[tripId]/preferences aggiorna il record del viaggio in Postgres e sblocca una rigenerazione gratuita aggiuntiva come incentivo a personalizzare il risultato.",
+        },
+        {
+          title: "Supporto — Ticket Inviato",
+          img: "screenshots/20-supporto-ticket-inviato.png",
+          user: "In caso di dubbi, l'utente può aprire una chat live o inviare un ticket di supporto direttamente dall'app.",
+          tech: "Il ticket viene creato tramite POST /api/support e persistito in Postgres. La chat live è invece un widget di terze parti (Crisp) caricato in modo asincrono via script, indipendente dal backend applicativo.",
+        },
+        {
+          title: "Viaggio di Gruppo — Itinerario Generato",
+          img: "screenshots/30-generazione-completata.png",
+          user: "Ripetendo il flusso per un viaggio di Gruppo, l'itinerario viene generato con la stessa pipeline, pronto per essere condiviso con gli altri partecipanti.",
+          tech: 'Stessa pipeline Stripe → Inngest → Claude dello step precedente. Il tipo "gruppo" sblocca in aggiunta le funzionalità di invito membri e split spese condivise.',
+        },
+        {
+          title: "Programma Referral",
+          img: "screenshots/34-referral-widget.png",
+          user: "L'utente condivide il proprio link personale per invitare amici e ottenere sconti sui prossimi viaggi.",
+          tech: "GET /api/referral restituisce codice e link personale dell'utente; POST /api/referral/track registra la conversione quando un nuovo utente si registra passando da quel link.",
+        },
+        {
+          title: 'Abbonamento "Viaggiatore Frequente"',
+          img: "screenshots/36-pricing-viaggiatore-frequente.png",
+          user: "Per chi viaggia spesso, l'app propone un abbonamento mensile con vantaggi ricorrenti su generazioni e sconti.",
+          tech: "POST /api/billing/subscribe crea una Stripe Checkout Session in modalità subscription. Gli eventi customer.subscription.updated/deleted, ricevuti dal webhook Stripe, sincronizzano lo stato del piano sull'utente.",
+        },
+      ];
+
+      /* ============================================================
+   RENDER — tabelle statiche
+   ============================================================ */
+
+      function methodPillClass(m) {
+        if (m === "GET") return "pill-get";
+        if (m === "POST") return "pill-post";
+        if (m === "PATCH") return "pill-patch";
+        if (m === "DELETE") return "pill-delete";
+        return "pill-get";
+      }
+
+      function renderTables() {
+        const pagesBody = document.getElementById("pages-table");
+        pagesBody.innerHTML = PAGES.map(
+          (p, i) => `
+    <tr class="table-row border-b" style="border-color: var(--border-soft); ${i === PAGES.length - 1 ? "border-bottom:none;" : ""}">
+      <td class="px-5 py-3.5 font-mono text-[12.5px]" style="color: var(--text);">${p.route}</td>
+      <td class="px-5 py-3.5"><span class="pill pill-page">${p.access}</span></td>
+      <td class="px-5 py-3.5" style="color: var(--text-muted);">${p.desc}</td>
+    </tr>
+  `,
+        ).join("");
+
+        const apiBody = document.getElementById("api-table");
+        apiBody.innerHTML = APIS.map(
+          (a, i) => `
+    <tr class="table-row border-b" style="border-color: var(--border-soft); ${i === APIS.length - 1 ? "border-bottom:none;" : ""}">
+      <td class="px-5 py-3.5 font-mono text-[12.5px]" style="color: var(--text);">${a.route}</td>
+      <td class="px-5 py-3.5">
+        <div class="flex gap-1 flex-wrap">
+          ${a.methods.map((m) => `<span class="pill ${methodPillClass(m)}">${m}</span>`).join("")}
+        </div>
+      </td>
+      <td class="px-5 py-3.5" style="color: var(--text-muted);">${a.desc}</td>
+    </tr>
+  `,
+        ).join("");
+      }
+
+      /* ============================================================
+   RENDER — user journey slides
+   ============================================================ */
+
+      let currentSlide = 0;
+
+      function renderJourney() {
+        const slidesEl = document.getElementById("slides");
+        slidesEl.innerHTML = JOURNEY.map(
+          (s, i) => `
+    <div class="slide grid md:grid-cols-2 gap-6 ${i === 0 ? "active" : ""}" data-slide="${i}">
+      <div class="screenshot-frame">
+        <img src="${s.img}" alt="${s.title}" loading="lazy" />
+      </div>
+      <div class="flex flex-col justify-center">
+        <div class="text-[11px] font-semibold uppercase tracking-wider mb-2" style="color: var(--accent);">
+          Step ${i + 1} di ${JOURNEY.length}
+        </div>
+        <h2 class="text-2xl font-bold mb-4" style="color: var(--text);">${s.title}</h2>
+
+        <div class="mb-4">
+          <div class="flex items-center gap-2 mb-1.5">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+            <span class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--text-faint);">Azione utente</span>
+          </div>
+          <p class="text-[14.5px] leading-relaxed" style="color: var(--text);">${s.user}</p>
+        </div>
+
+        <div class="card p-4" style="background: var(--bg-elevated);">
+          <div class="flex items-center gap-2 mb-1.5">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span class="text-[11px] font-semibold uppercase tracking-wider" style="color: var(--text-faint);">Sotto il cofano</span>
+          </div>
+          <p class="text-[13.5px] leading-relaxed" style="color: var(--text-muted);">${s.tech}</p>
+        </div>
+      </div>
+    </div>
+  `,
+        ).join("");
+
+        document.getElementById("dots").innerHTML = JOURNEY.map(
+          (_, i) =>
+            `<div class="dot ${i === 0 ? "active" : ""}" data-dot="${i}" onclick="goToSlide(${i})"></div>`,
+        ).join("");
+
+        document.getElementById("journey-mini-nav").innerHTML = JOURNEY.map(
+          (s, i) => `
+    <div class="nav-item text-[12.5px] py-1.5" data-mini="${i}" onclick="goToJourneyStep(${i})" style="padding-left: 1.6rem;">
+      ${i + 1}. ${s.title}
+    </div>
+  `,
+        ).join("");
+
+        document.getElementById("step-total").textContent = JOURNEY.length;
+      }
+
+      function goToSlide(index) {
+        currentSlide = Math.max(0, Math.min(index, JOURNEY.length - 1));
+        document.querySelectorAll(".slide").forEach((el) => {
+          el.classList.toggle(
+            "active",
+            Number(el.dataset.slide) === currentSlide,
+          );
+        });
+        document.querySelectorAll(".dot").forEach((el) => {
+          el.classList.toggle(
+            "active",
+            Number(el.dataset.dot) === currentSlide,
+          );
+        });
+        document.querySelectorAll("[data-mini]").forEach((el) => {
+          el.classList.toggle(
+            "active",
+            Number(el.dataset.mini) === currentSlide,
+          );
+        });
+        document.getElementById("step-current").textContent = currentSlide + 1;
+      }
+
+      function nextSlide() {
+        goToSlide(currentSlide + 1 >= JOURNEY.length ? 0 : currentSlide + 1);
+      }
+      function prevSlide() {
+        goToSlide(currentSlide - 1 < 0 ? JOURNEY.length - 1 : currentSlide - 1);
+      }
+
+      /** Click da un item della mini-nav: apre la sezione Journey solo se non è
+       *  già quella attiva, per evitare uno scroll-to-top superfluo quando si sta
+       *  solo saltando da uno step all'altro. */
+      function goToJourneyStep(i) {
+        if (
+          !document.getElementById("view-journey").classList.contains("active")
+        ) {
+          showView("journey");
+        }
+        goToSlide(i);
+      }
+
+      /* ============================================================
+   NAVIGATION — cambio vista principale
+   ============================================================ */
+
+      function showView(name, navEl) {
+        document
+          .querySelectorAll(".view")
+          .forEach((el) => el.classList.remove("active"));
+        document.getElementById("view-" + name).classList.add("active");
+
+        document
+          .querySelectorAll(".nav-item[data-view]")
+          .forEach((el) => el.classList.remove("active"));
+        const target =
+          navEl || document.querySelector(`.nav-item[data-view="${name}"]`);
+        if (target) target.classList.add("active");
+
+        document
+          .querySelectorAll("[data-mini]")
+          .forEach((el) =>
+            el.classList.toggle(
+              "active",
+              name === "journey" && Number(el.dataset.mini) === currentSlide,
+            ),
+          );
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        toggleSidebar(false);
+      }
+
+      function toggleSidebar(open) {
+        const sidebar = document.getElementById("sidebar");
+        const backdrop = document.getElementById("sidebar-backdrop");
+        sidebar.classList.toggle("open", open);
+        backdrop.classList.toggle("open", open);
+      }
+
+      /* ============================================================
+   THEME
+   ============================================================ */
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        const label = document.getElementById("theme-label");
+        if (label)
+          label.textContent = theme === "dark" ? "Tema chiaro" : "Tema scuro";
+        try {
+          localStorage.setItem("ets-theme", theme);
+        } catch (e) {}
+      }
+
+      function toggleTheme() {
+        const current = document.documentElement.getAttribute("data-theme");
+        applyTheme(current === "dark" ? "light" : "dark");
+      }
+
+      (function initTheme() {
+        let saved = null;
+        try {
+          saved = localStorage.getItem("ets-theme");
+        } catch (e) {}
+        applyTheme(saved === "light" ? "light" : "dark");
+      })();
+
+      /* ============================================================
+   KEYBOARD SHORTCUTS (frecce per navigare la User Journey)
+   ============================================================ */
+
+      document.addEventListener("keydown", (e) => {
+        if (
+          !document.getElementById("view-journey").classList.contains("active")
+        )
+          return;
+        if (e.key === "ArrowRight") nextSlide();
+        if (e.key === "ArrowLeft") prevSlide();
       });
+
+      /* ============================================================
+   INIT
+   ============================================================ */
+
+      renderTables();
+      renderJourney();
     </script>
   </body>
 </html>
