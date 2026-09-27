@@ -643,15 +643,13 @@ test.describe("Acquisto piano Pro — flusso utente completo", () => {
 
     // 2. Creare un account di test locale
     await test.step("2. Creare un account di test locale per registrarsi", async () => {
-      // Mostriamo la sezione di signup della home (contesto visivo per lo screenshot),
-      // poi creiamo l'utente via Clerk Backend API — vedi commento in testa al file
-      // sul perché non compiliamo l'Account Portal ospitato di Clerk via UI.
+      // Verifichiamo che l'ingresso al signup sia presente in home, poi
+      // creiamo l'utente via Clerk Backend API — vedi commento in testa al
+      // file sul perché non compiliamo l'Account Portal ospitato di Clerk via UI.
       const signUpCta = page
         .getByRole("button", { name: /inizia ora|registrati/i })
         .first();
-      if (await isVisibleSoon(signUpCta)) {
-        await shot(page, "homepage-cta-signup");
-      }
+      await expect(signUpCta).toBeVisible();
 
       mainUser = await createClerkTestUser("main");
       createdUsers.push(mainUser);
@@ -673,21 +671,17 @@ test.describe("Acquisto piano Pro — flusso utente completo", () => {
       await shot(page, "login-effettuato-dashboard");
     });
 
-    // 4. Generare un itinerario Solo/Coppia (verifica end-to-end che l'AI risponda):
-    //    l'itinerario vero e proprio viene creato/pagato/generato nei punti 5-13.
-    await test.step("4. Generare un itinerario di viaggio Solo/Coppia (verifica AI end-to-end)", async () => {
-      await shot(page, "dashboard-pronta-per-generazione-ai");
-    });
-
-    // 5. Area riservata "La tua dashboard"
-    await test.step('5. Entrare nell\'area riservata "La tua dashboard"', async () => {
+    // 4-5. L'itinerario vero e proprio viene creato/pagato/generato nei punti
+    // 6-13; qui verifichiamo solo che l'area riservata resti raggiungibile
+    // dopo un reload (stessa dashboard già vista al login, niente di nuovo
+    // da fotografare).
+    await test.step('4-5. Ricaricare l\'area riservata "La tua dashboard"', async () => {
       await page.goto("/it/app");
       await expect(
         page
           .getByRole("heading", { level: 1 })
           .filter({ hasText: /la tua dashboard/i }),
       ).toBeVisible({ timeout: 30_000 });
-      await shot(page, "area-riservata-dashboard");
     });
 
     // 6. "I miei viaggi"
@@ -698,7 +692,8 @@ test.describe("Acquisto piano Pro — flusso utente completo", () => {
       ).toBeVisible({
         timeout: 15_000,
       });
-      await shot(page, "pagina-i-miei-viaggi");
+      // Screenshot omesso: createTrip() ricarica la stessa pagina un
+      // istante dopo e la fotografa già come "trips-page-solo".
     });
 
     // 7. "Nuovo viaggio" (Solo/Coppia)
@@ -714,7 +709,8 @@ test.describe("Acquisto piano Pro — flusso utente completo", () => {
     await test.step('8-9. Sbloccare la generazione, "Vai al pagamento" e redirect a Stripe Checkout', async () => {
       const payButton = page.getByRole("button", { name: /vai al pagamento/i });
       await expect(payButton).toBeVisible({ timeout: 15_000 });
-      await shot(page, "piano-selezionato-pre-pagamento");
+      // Screenshot omesso: identico a "viaggio-creato-solo" appena scattato,
+      // nessuna azione è ancora avvenuta tra i due punti.
 
       await Promise.all([
         page.waitForURL(/checkout\.stripe\.com/, { timeout: 45_000 }),
@@ -731,7 +727,8 @@ test.describe("Acquisto piano Pro — flusso utente completo", () => {
       await expect(page.getByText(/pagamento ricevuto/i)).toBeVisible({
         timeout: 30_000,
       });
-      await shot(page, "pagina-successo-post-pagamento");
+      // Screenshot omesso: identico a "post-pagamento-redirect" già scattato
+      // dentro payWithStripeTestCard (stessa schermata di conferma pagamento).
     });
 
     // 12. Generazione in corso
