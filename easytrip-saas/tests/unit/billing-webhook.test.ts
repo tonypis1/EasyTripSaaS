@@ -228,6 +228,38 @@ describe("BillingService — checkout.session.completed (purchase)", () => {
     });
   });
 
+  it("innesca comunque la generazione AI se l'invio dell'email di conferma fallisce", async () => {
+    // Regressione: il pagamento è già stato marcato come pagato (idempotency
+    // key) prima dell'email — un errore Resend/SMTP non deve impedire
+    // `trip/generate.requested` per un viaggio già pagato dall'utente.
+    mocks.stripeConstructEvent.mockReturnValue(checkoutCompletedEvent());
+    mocks.paymentFindFirst.mockResolvedValue(null);
+    mocks.paymentCreate.mockResolvedValue({ id: "pay1" });
+    mocks.userFindUnique.mockResolvedValue({
+      email: "org@example.com",
+      language: "it",
+    });
+    mocks.sendTransactionalEmail.mockRejectedValue(
+      new Error("Invalid `to` field"),
+    );
+
+    const { service, fakeTripRepository } = makeService({
+      findById: vi.fn().mockResolvedValue(baseTrip()),
+    });
+
+    const result = await service.handleStripeWebhook("{}", "sig_ok");
+
+    expect(result).toEqual({ received: true });
+    expect(fakeTripRepository.markAsPaid).toHaveBeenCalledWith("trip1", {
+      paymentId: "pi_123",
+      amountPaid: 3.99,
+    });
+    expect(mocks.inngestSend).toHaveBeenCalledWith({
+      name: "trip/generate.requested",
+      data: { tripId: "trip1" },
+    });
+  });
+
   it("non elabora due volte lo stesso pagamento quando una race condition supera il pre-check applicativo (vincolo DB)", async () => {
     // Simula: due delivery concorrenti passano entrambe il `findFirst` (nessuna vede
     // ancora la riga dell'altra) ma solo il primo `create` riesce; il secondo

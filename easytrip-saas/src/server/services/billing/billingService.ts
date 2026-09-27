@@ -894,17 +894,36 @@ export class BillingService {
 
     if (organizer?.email) {
       const tripUrl = `${config.app.baseUrl}/app/trips/${tripId}`;
-      await sendTransactionalEmail({
-        to: organizer.email,
-        subject: trEmail("subject.purchaseConfirmed", organizerLocale, {
-          destination: trip.destination,
-        }),
-        html: purchaseConfirmedHtml({
-          destination: trip.destination,
-          tripUrl,
-          locale: organizerLocale,
-        }),
-      });
+      try {
+        await sendTransactionalEmail({
+          to: organizer.email,
+          subject: trEmail("subject.purchaseConfirmed", organizerLocale, {
+            destination: trip.destination,
+          }),
+          html: purchaseConfirmedHtml({
+            destination: trip.destination,
+            tripUrl,
+            locale: organizerLocale,
+          }),
+        });
+      } catch (e) {
+        /**
+         * Il pagamento è già stato marcato come completato (`markAsPaid` sopra)
+         * ed è la nostra chiave di idempotenza: un secondo tentativo (webhook
+         * redelivery) salterebbe qui come "already_paid" senza mai reinviare
+         * `trip/generate.requested`. Un errore nell'invio email (Resend down,
+         * indirizzo rifiutato, ecc.) non deve quindi bloccare la generazione
+         * AI che l'utente ha già pagato.
+         */
+        logger.error(
+          "Invio email di conferma acquisto fallito (non-blocking)",
+          e,
+          {
+            tripId,
+            appUserId,
+          },
+        );
+      }
     }
 
     await inngest.send({
