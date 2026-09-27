@@ -280,7 +280,6 @@ export class ItineraryGenerationService {
       const response = await anthropic.messages.create({
         model: ANTHROPIC_MODEL,
         max_tokens: 12000,
-        temperature: attempt === 1 ? 0.35 : 0.2,
         system: buildSystemPrompt(locale),
         messages: [{ role: "user", content: baseContent }],
       });
@@ -307,7 +306,6 @@ export class ItineraryGenerationService {
         const repairResponse = await anthropic.messages.create({
           model: ANTHROPIC_MODEL,
           max_tokens: 12000,
-          temperature: 0.2,
           system: buildSystemPrompt(locale),
           messages: [{ role: "user", content: repairContent }],
         });

@@ -284,7 +284,6 @@ export class SlotReplaceService {
         {
           model: ANTHROPIC_MODEL,
           max_tokens: 3000,
-          temperature: 0.35,
           system: buildSystemPrompt(locale),
           messages: [{ role: "user", content: prompt }],
         },
