@@ -57,6 +57,11 @@ async function shot(page: Page, name: string) {
   shotSeq += 1;
   const file = `${String(shotSeq).padStart(2, "0")}-${name}.png`;
   try {
+    // Subito dopo un `waitForURL` l'URL è già cambiato ma il nuovo documento
+    // può non aver ancora dipinto nulla (specie su redirect cross-origin,
+    // es. verso/da checkout.stripe.com): senza questa attesa lo screenshot
+    // rischia di catturare un frame nero/bianco di transizione.
+    await page.waitForLoadState("load").catch(() => {});
     await page.screenshot({
       path: path.join(SCREENSHOTS_DIR, file),
       fullPage: true,
@@ -161,7 +166,6 @@ async function payWithStripeTestCard(
 ) {
   await page.waitForURL(/checkout\.stripe\.com/, { timeout: 60_000 });
   await page.waitForLoadState("domcontentloaded");
-  await shot(page, "stripe-checkout-loaded");
 
   const emailField = page.locator("input#email").first();
   if (await isVisibleSoon(emailField, 8000)) {
@@ -193,7 +197,12 @@ async function payWithStripeTestCard(
   const cardNumberField = cardFrame
     .locator('input[name="cardnumber"], input[placeholder*="1234"]')
     .first();
+  // Scattiamo "loaded" solo ora che il campo carta è davvero visibile:
+  // Stripe Checkout è una SPA e "domcontentloaded" arriva ben prima che
+  // Stripe.js abbia renderizzato il form, producendo altrimenti uno
+  // screenshot bianco/vuoto.
   await cardNumberField.waitFor({ state: "visible", timeout: 30_000 });
+  await shot(page, "stripe-checkout-loaded");
   await cardNumberField.fill("4242424242424242");
 
   await cardFrame
@@ -237,6 +246,16 @@ async function payWithStripeTestCard(
   await page.waitForURL((url) => !/checkout\.stripe\.com/.test(url.href), {
     timeout: 90_000,
   });
+  // Il redirect ci riporta su una pagina server-rendered (sync del pagamento
+  // prima dell'HTML) con sfondo quasi nero di default (--et-bg-deep): un
+  // "load" del documento non basta a garantire che il contenuto reale sia
+  // già dipinto, e senza attesa lo screenshot rischia di catturare solo lo
+  // sfondo, senza alcun testo/heading visibile. Aspettiamo un heading reale.
+  await page
+    .locator("h1, h2")
+    .first()
+    .waitFor({ state: "visible", timeout: 20_000 })
+    .catch(() => undefined);
   await shot(page, "post-pagamento-redirect");
 }
 
@@ -484,6 +503,17 @@ async function verifySupportWidgets(page: Page) {
   const liveChatBtn = page.getByRole("button", { name: /apri chat live/i });
   if (await isVisibleSoon(liveChatBtn)) {
     await liveChatBtn.click();
+    // Crisp è un widget di terze parti caricato in modo asincrono
+    // (client.crisp.chat/l.js): il click mette in coda l'apertura, ma il
+    // widget può metterci un momento a caricarsi/animarsi. Aspettiamo che
+    // il suo iframe compaia, con un fallback a tempo per non bloccare la
+    // suite se il caricamento è più lento del previsto.
+    await page
+      .frameLocator('iframe[title="chat"], iframe[src*="crisp.chat" i]')
+      .first()
+      .locator("body")
+      .waitFor({ state: "visible", timeout: 8_000 })
+      .catch(() => undefined);
     await shot(page, "supporto-chat-live-aperta");
   } else {
     console.warn(
