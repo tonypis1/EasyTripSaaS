@@ -13,9 +13,12 @@
 # testing
 /coverage
 /playwright-report
+/playwright-report-purchase-flow
 /test-results
 /.auth
 e2e/.auth/
+playwright/.auth/
+/screenshots
 
 # next.js
 /.next/
