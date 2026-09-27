@@ -211,7 +211,6 @@ export class LiveSuggestService {
         {
           model: ANTHROPIC_MODEL,
           max_tokens: 3000,
-          temperature: 0.4,
           system: buildSystemPrompt(locale),
           messages: [{ role: "user", content: prompt }],
         },

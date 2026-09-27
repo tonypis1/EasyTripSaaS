@@ -222,8 +222,8 @@ export const config = {
   },
   ai: {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
-    /** Default: Sonnet 4 (sostituisce snapshot 3.5 spesso deprecati / non trovati). */
-    anthropicModel: env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514",
+    /** Default: Sonnet 5 (gli snapshot datati vengono ritirati periodicamente da Anthropic). */
+    anthropicModel: env.ANTHROPIC_MODEL ?? "claude-sonnet-5",
   },
   retention: {
     inactiveTripVersionDays: env.RETENTION_INACTIVE_TRIP_VERSION_DAYS,
