@@ -246,6 +246,16 @@ async function payWithStripeTestCard(
   await page.waitForURL((url) => !/checkout\.stripe\.com/.test(url.href), {
     timeout: 90_000,
   });
+  // Il redirect ci riporta su una pagina server-rendered (sync del pagamento
+  // prima dell'HTML) con sfondo quasi nero di default (--et-bg-deep): un
+  // "load" del documento non basta a garantire che il contenuto reale sia
+  // già dipinto, e senza attesa lo screenshot rischia di catturare solo lo
+  // sfondo, senza alcun testo/heading visibile. Aspettiamo un heading reale.
+  await page
+    .locator("h1, h2")
+    .first()
+    .waitFor({ state: "visible", timeout: 20_000 })
+    .catch(() => undefined);
   await shot(page, "post-pagamento-redirect");
 }
 
