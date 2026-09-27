@@ -69,7 +69,10 @@ export default defineConfig({
     {
       name: "setup",
       testMatch: /auth\.setup\.ts/,
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH },
+      },
     },
     {
       name: "purchase-flow",
@@ -78,6 +81,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         headless: false,
+        launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH },
       },
     },
   ],

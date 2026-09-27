@@ -76,12 +76,10 @@ async function softStep(title: string, fn: () => Promise<void>) {
       console.warn(
         `⚠️  "${title}" non verificato in questo ambiente: ${message}`,
       );
-      test
-        .info()
-        .annotations.push({
-          type: "soft-fail",
-          description: `${title}: ${message}`,
-        });
+      test.info().annotations.push({
+        type: "soft-fail",
+        description: `${title}: ${message}`,
+      });
     }
   });
 }
@@ -175,13 +173,22 @@ async function payWithStripeTestCard(
     }
   }
 
-  // I campi carta di Stripe Checkout sono in un iframe Stripe.js (PCI compliance),
-  // anche quando la pagina è ospitata su checkout.stripe.com.
-  const cardFrame = page
+  // I campi carta di Stripe Checkout sono a volte in un iframe Stripe.js
+  // (PCI compliance, tipico quando Elements è incorporato su un sito terzo);
+  // sulla pagina ospitata checkout.stripe.com, invece, Stripe li renderizza
+  // spesso direttamente nel documento principale. Proviamo prima l'iframe
+  // (con timeout breve) e, se non appare, usiamo la pagina stessa.
+  const stripeIframeLocator = page
     .frameLocator(
       'iframe[title="Secure payment input frame"], iframe[name^="__privateStripeFrame"]',
     )
     .first();
+  const usesIframe = await stripeIframeLocator
+    .locator('input[name="cardnumber"], input[placeholder*="1234"]')
+    .first()
+    .isVisible({ timeout: 8_000 })
+    .catch(() => false);
+  const cardFrame = usesIframe ? stripeIframeLocator : page;
 
   const cardNumberField = cardFrame
     .locator('input[name="cardnumber"], input[placeholder*="1234"]')
@@ -203,6 +210,21 @@ async function payWithStripeTestCard(
     .first();
   if (await isVisibleSoon(nameField, 3000)) {
     await nameField.fill("Mario Rossi E2E");
+  }
+
+  // Il paese di fatturazione rilevato da Stripe (in base all'IP) può richiedere
+  // un CAP/ZIP obbligatorio: senza compilarlo il click su "Paga" viene bloccato
+  // dalla validazione client-side e non naviga mai via da checkout.stripe.com.
+  const postalCodeField = page
+    .locator(
+      'input#billingPostalCode, input[name="billingPostalCode"], input[autocomplete="postal-code"]',
+    )
+    .first();
+  if (await isVisibleSoon(postalCodeField, 3000)) {
+    const currentPostal = await postalCodeField.inputValue().catch(() => "");
+    if (!currentPostal) {
+      await postalCodeField.fill("00100");
+    }
   }
 
   await shot(page, "stripe-checkout-compilato");
@@ -405,12 +427,10 @@ async function verifyInngestEndpoint(page: Page) {
     res.status(),
     "L'endpoint /api/inngest deve rispondere (handler Inngest montato)",
   ).toBeLessThan(500);
-  test
-    .info()
-    .annotations.push({
-      type: "inngest-endpoint-status",
-      description: String(res.status()),
-    });
+  test.info().annotations.push({
+    type: "inngest-endpoint-status",
+    description: String(res.status()),
+  });
 }
 
 async function verifyGps(context: BrowserContext, page: Page) {
@@ -491,12 +511,10 @@ async function verifyShareCard(page: Page) {
   ]);
   await shot(page, "share-card-viral");
   if (download) {
-    test
-      .info()
-      .annotations.push({
-        type: "share-card-download",
-        description: download.suggestedFilename(),
-      });
+    test.info().annotations.push({
+      type: "share-card-download",
+      description: download.suggestedFilename(),
+    });
   }
 }
 
