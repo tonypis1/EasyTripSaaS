@@ -5,12 +5,15 @@ import { enforceRateLimit, liveSuggestLimiter } from "@/lib/rate-limit";
 const tripController = container.controllers.tripController;
 
 /**
- * Margine sopra il timeout/retry Anthropic per-richiesta (SYNC_REQUEST_OPTIONS
- * in @/lib/ai/anthropic: 20s di timeout, 1 retry => ~40s nel caso peggiore).
+ * Margine sopra il caso peggiore di LiveSuggestService: fino a 2 chiamate
+ * Anthropic sequenziali (tentativo + un'eventuale riparazione, v.
+ * generateWithRepair in @/lib/ai/repairLoop), ciascuna con
+ * SYNC_REQUEST_OPTIONS (20s di timeout, 1 retry => ~40s nel caso peggiore
+ * per singola chiamata) => ~80s nel caso peggiore assoluto.
  * Senza questo la route usava il maxDuration di default della piattaforma,
- * che poteva essere inferiore e uccidere la funzione a metà di un retry.
+ * che poteva essere inferiore e uccidere la funzione a metà di un tentativo.
  */
-export const maxDuration = 45;
+export const maxDuration = 85;
 
 export async function POST(
   req: Request,

@@ -102,9 +102,9 @@ function baseInput(overrides: Record<string, unknown> = {}) {
   };
 }
 
-/** Estrae il testo del prompt utente inviato ad Anthropic dall'ultima chiamata mockata. */
-function lastPromptText(): string {
-  const call = mocks.messagesCreate.mock.calls[0];
+/** Estrae il testo del prompt utente inviato ad Anthropic nella chiamata mockata all'indice dato (default: la prima). */
+function lastPromptTextForCall(callIndex = 0): string {
+  const call = mocks.messagesCreate.mock.calls[callIndex];
   const args = call[0] as { messages: { content: string }[] };
   return args.messages[0].content;
 }
@@ -169,11 +169,11 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
     // 21:00 locali a destinazione: senza il fix sarebbe sempre "mattina/pomeriggio"
     // se il server gira in UTC e il vecchio calcolo era UTC+1 fisso.
     await service.suggest(baseInput({ localHour: 21 }));
-    expect(lastPromptText()).toContain("Momento della giornata: sera");
+    expect(lastPromptTextForCall()).toContain("Momento della giornata: sera");
 
     mocks.messagesCreate.mockClear();
     await service.suggest(baseInput({ localHour: 8 }));
-    expect(lastPromptText()).toContain("Momento della giornata: mattina");
+    expect(lastPromptTextForCall()).toContain("Momento della giornata: mattina");
   });
 
   it("mappa un errore Anthropic generico (es. overload/rate limit) su AppError 502 AI_UNAVAILABLE", async () => {
@@ -191,5 +191,34 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
       code: "AI_UNAVAILABLE",
       statusCode: 502,
     });
+  });
+
+  it("ripara un primo JSON schema-non-conforme e ritorna il risultato del secondo tentativo invece di fallire con 502", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(
+        textResponse(JSON.stringify({ suggestions: [] })), // schema non conforme: servono 3 suggestions
+      )
+      .mockResolvedValueOnce(textResponse(validPayload()));
+
+    const service = new LiveSuggestService();
+    const result = await service.suggest(baseInput());
+
+    expect(result.suggestions).toHaveLength(3);
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    const repairContent = lastPromptTextForCall(1);
+    expect(repairContent).toContain("non ha superato la validazione");
+  });
+
+  it("lancia AppError 502 AI_SCHEMA se anche il tentativo di riparazione resta non conforme", async () => {
+    mocks.messagesCreate.mockResolvedValue(
+      textResponse(JSON.stringify({ suggestions: [] })),
+    );
+
+    const service = new LiveSuggestService();
+    await expect(service.suggest(baseInput())).rejects.toMatchObject({
+      code: "AI_SCHEMA",
+      statusCode: 502,
+    });
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
   });
 });

@@ -224,4 +224,41 @@ describe("SlotReplaceService + mock Anthropic", () => {
       statusCode: 502,
     });
   });
+
+  it("ripara un primo JSON schema-non-conforme e persiste il risultato del secondo tentativo invece di fallire con 502", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: JSON.stringify({ replacement: {} }) }], // schema non conforme
+      })
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+      });
+    mocks.updateDay.mockResolvedValue({});
+
+    const svc = new SlotReplaceService();
+    const result = await svc.replaceSlot(callArgs());
+
+    expect(result.replacement.title).toBe("Museo X");
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    // Il tentativo di riparazione appende il suffisso al prompt originale (stringa unica).
+    const repairContent = mocks.messagesCreate.mock.calls[1][0].messages[0]
+      .content as string;
+    expect(repairContent).toContain("non ha superato la validazione");
+  });
+
+  it("lancia AppError 502 AI_SCHEMA se anche il tentativo di riparazione resta non conforme", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ replacement: {} }) }],
+    });
+
+    const svc = new SlotReplaceService();
+    await expect(svc.replaceSlot(callArgs())).rejects.toMatchObject({
+      code: "AI_SCHEMA",
+      statusCode: 502,
+    });
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    expect(mocks.updateDay).not.toHaveBeenCalled();
+  });
 });

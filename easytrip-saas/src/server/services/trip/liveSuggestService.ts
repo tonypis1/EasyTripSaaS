@@ -18,6 +18,7 @@ import {
   type LiveSuggestResult,
 } from "@/lib/trip/liveSuggestModel";
 import { AppError } from "@/server/errors/AppError";
+import { generateWithRepair } from "@/lib/ai/repairLoop";
 
 const REASONS: Record<string, string> = {
   closed: "il posto previsto è chiuso o inaccessibile",
@@ -34,6 +35,31 @@ export {
   type LiveSuggestion,
   type LiveSuggestResult,
 } from "@/lib/trip/liveSuggestModel";
+
+/** Traduce gli errori di `parseLiveSuggestModelJson` in AppError con lo status/code corretti per la risposta HTTP. */
+function parseAndMapLiveSuggest(raw: string): LiveSuggestResult {
+  const rawText = extractJsonText(raw);
+  try {
+    return parseLiveSuggestModelJson(rawText);
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e.message === "LIVE_SUGGEST_JSON_PARSE") {
+        throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
+      }
+      if (e.message.startsWith("Schema live suggest:")) {
+        throw new AppError(
+          `Schema non conforme: ${e.message.replace(/^Schema live suggest:\s*/, "")}`,
+          502,
+          "AI_SCHEMA",
+        );
+      }
+    }
+    throw e;
+  }
+}
+
+/** Un solo tentativo di riparazione: sufficiente per gli errori di schema più comuni, e resta sotto il maxDuration della route (v. live-suggest/route.ts). */
+const MAX_ATTEMPTS = 2;
 
 function slotSummary(raw: string | null, label: string): string {
   if (!raw || raw === "{}" || raw === "null") return `${label}: vuoto`;
@@ -210,43 +236,33 @@ export class LiveSuggestService {
       locale,
     });
 
-    let response;
-    try {
-      response = await anthropic.messages.create(
-        {
-          model: ANTHROPIC_MODEL,
-          max_tokens: 3000,
-          system: buildSystemPrompt(locale),
-          messages: [{ role: "user", content: prompt }],
-        },
-        SYNC_REQUEST_OPTIONS,
-      );
-    } catch (error) {
-      throw toAiUnavailableError(error);
-    }
+    return generateWithRepair({
+      maxAttempts: MAX_ATTEMPTS,
+      parse: parseAndMapLiveSuggest,
+      callModel: async (repairSuffix) => {
+        const content = repairSuffix ? `${prompt}\n\n${repairSuffix}` : prompt;
 
-    const textBlock = response.content.find((c) => c.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
-    }
-
-    const rawText = extractJsonText(textBlock.text);
-    try {
-      return parseLiveSuggestModelJson(rawText);
-    } catch (e) {
-      if (e instanceof Error) {
-        if (e.message === "LIVE_SUGGEST_JSON_PARSE") {
-          throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
-        }
-        if (e.message.startsWith("Schema live suggest:")) {
-          throw new AppError(
-            `Schema non conforme: ${e.message.replace(/^Schema live suggest:\s*/, "")}`,
-            502,
-            "AI_SCHEMA",
+        let response;
+        try {
+          response = await anthropic.messages.create(
+            {
+              model: ANTHROPIC_MODEL,
+              max_tokens: 3000,
+              system: buildSystemPrompt(locale),
+              messages: [{ role: "user", content }],
+            },
+            SYNC_REQUEST_OPTIONS,
           );
+        } catch (error) {
+          throw toAiUnavailableError(error);
         }
-      }
-      throw e;
-    }
+
+        const textBlock = response.content.find((c) => c.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
+        }
+        return textBlock.text;
+      },
+    });
   }
 }

@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai/prompt-locale";
 import { AppError } from "@/server/errors/AppError";
 import { httpUrlSchema } from "@/lib/safe-url";
+import { generateWithRepair } from "@/lib/ai/repairLoop";
 import { z } from "zod";
 
 const SlotKeySchema = z.enum(["morning", "afternoon", "evening"]);
@@ -82,6 +83,33 @@ function extractJsonText(raw: string): string {
   if (m) return m[1].trim();
   return trimmed;
 }
+
+function parseSlotReplaceModelJson(raw: string): EnrichedSlotResult {
+  const text = extractJsonText(raw);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
+  }
+
+  const check = EnrichedResponseSchema.safeParse(parsed);
+  if (!check.success) {
+    throw new AppError(
+      `Schema non conforme: ${check.error.issues
+        .map((i) => i.message)
+        .slice(0, 3)
+        .join("; ")}`,
+      502,
+      "AI_SCHEMA",
+    );
+  }
+
+  return check.data;
+}
+
+/** Un solo tentativo di riparazione: sufficiente per gli errori di schema più comuni, e resta sotto il maxDuration della route (v. replace-slot/route.ts). */
+const MAX_ATTEMPTS = 2;
 
 function slotSummary(raw: string | null, label: string): string {
   if (!raw || raw === "{}" || raw === "null") return `${label}: vuoto`;
@@ -278,47 +306,34 @@ export class SlotReplaceService {
       locale,
     });
 
-    let response;
-    try {
-      response = await anthropic.messages.create(
-        {
-          model: ANTHROPIC_MODEL,
-          max_tokens: 3000,
-          system: buildSystemPrompt(locale),
-          messages: [{ role: "user", content: prompt }],
-        },
-        SYNC_REQUEST_OPTIONS,
-      );
-    } catch (error) {
-      throw toAiUnavailableError(error);
-    }
+    const result = await generateWithRepair({
+      maxAttempts: MAX_ATTEMPTS,
+      parse: parseSlotReplaceModelJson,
+      callModel: async (repairSuffix) => {
+        const content = repairSuffix ? `${prompt}\n\n${repairSuffix}` : prompt;
 
-    const textBlock = response.content.find((c) => c.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
-    }
+        let response;
+        try {
+          response = await anthropic.messages.create(
+            {
+              model: ANTHROPIC_MODEL,
+              max_tokens: 3000,
+              system: buildSystemPrompt(locale),
+              messages: [{ role: "user", content }],
+            },
+            SYNC_REQUEST_OPTIONS,
+          );
+        } catch (error) {
+          throw toAiUnavailableError(error);
+        }
 
-    const text = extractJsonText(textBlock.text);
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text) as unknown;
-    } catch {
-      throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
-    }
-
-    const check = EnrichedResponseSchema.safeParse(parsed);
-    if (!check.success) {
-      throw new AppError(
-        `Schema non conforme: ${check.error.issues
-          .map((i) => i.message)
-          .slice(0, 3)
-          .join("; ")}`,
-        502,
-        "AI_SCHEMA",
-      );
-    }
-
-    const result = check.data;
+        const textBlock = response.content.find((c) => c.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
+        }
+        return textBlock.text;
+      },
+    });
 
     const field =
       input.slot === "morning"
