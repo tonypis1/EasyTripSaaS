@@ -21,7 +21,7 @@
 
 - File: `src/lib/inngest/functions/generate-itinerary.ts`
 - Passi tipici: carica snapshot trip → Anthropic (`anthropic.messages.create`) → validazione JSON → upsert `TripVersion` / `Day` → email “itinerary ready” se configurato.
-- Modello default: da `config.ai.anthropicModel` (`claude-sonnet-4-20250514` se env assente).
+- Modello default: da `config.ai.anthropicModel` (`claude-sonnet-5` se env assente).
 
 ## 4. Altre funzioni registrate
 

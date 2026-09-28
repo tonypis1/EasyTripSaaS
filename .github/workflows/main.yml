@@ -54,6 +54,9 @@ jobs:
       - name: i18n keys consistency
         run: npm run i18n:check
 
+      - name: Docs/code drift (modello Anthropic di default)
+        run: npm run check:docs-drift
+
       - name: Unit tests
         run: npm run test:unit
 
