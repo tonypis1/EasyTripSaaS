@@ -11,8 +11,12 @@ import {
   userLanguageReminder,
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
-import { parseAndValidateModelJson } from "@/lib/itinerary-model-schema";
+import {
+  ModelResponseSchema,
+  parseAndValidateModelJson,
+} from "@/lib/itinerary-model-schema";
 import { buildRepairSuffix } from "@/lib/ai/repairLoop";
+import { jsonSchemaOutputFormat } from "@/lib/ai/structured-output";
 
 export type ItineraryGenerationInput = {
   destination: string;
@@ -198,6 +202,16 @@ ${usedZones}
 
 const MAX_ATTEMPTS = 3;
 
+/**
+ * Structured Outputs: la risposta è vincolata server-side allo schema, quindi
+ * gli errori strutturali/di parsing non consumano più un tentativo. Restano
+ * possibili (e gestiti dal loop di riparazione) i soli errori di business
+ * logic e di valore: numero di giorni, limiti min/max che l'API non supporta.
+ * Costruito una volta sola: lo schema è costante e la sua compilazione lato
+ * API viene messa in cache.
+ */
+const ITINERARY_OUTPUT_FORMAT = jsonSchemaOutputFormat(ModelResponseSchema);
+
 export class ItineraryGenerationService {
   /**
    * Genera e valida l'itinerario via Claude, con fino a `MAX_ATTEMPTS`
@@ -252,6 +266,7 @@ export class ItineraryGenerationService {
         model: ANTHROPIC_MODEL,
         max_tokens: 12000,
         system: buildSystemPrompt(locale),
+        output_config: { format: ITINERARY_OUTPUT_FORMAT },
         messages: [{ role: "user", content: baseContent }],
       });
 
@@ -278,6 +293,7 @@ export class ItineraryGenerationService {
           model: ANTHROPIC_MODEL,
           max_tokens: 12000,
           system: buildSystemPrompt(locale),
+          output_config: { format: ITINERARY_OUTPUT_FORMAT },
           messages: [{ role: "user", content: repairContent }],
         });
 

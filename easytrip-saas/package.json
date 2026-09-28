@@ -70,7 +70,8 @@
     "react-dom": "19.2.3",
     "react-leaflet": "^5.0.0",
     "stripe": "^17",
-    "zod": "^3"
+    "zod": "^3",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@clerk/testing": "^2.0.11",

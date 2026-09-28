@@ -165,6 +165,46 @@ describe("ItineraryGenerationService.generate", () => {
   });
 });
 
+describe("ItineraryGenerationService.generate — Structured Outputs", () => {
+  it("vincola la risposta allo schema dell'itinerario via output_config.format (json_schema)", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput());
+
+    const params = mocks.messagesCreate.mock.calls[0][0];
+    expect(params.output_config.format.type).toBe("json_schema");
+    const schema = params.output_config.format.schema;
+    expect(schema.type).toBe("object");
+    expect(schema.additionalProperties).toBe(false);
+    expect(Object.keys(schema.properties).sort()).toEqual([
+      "days",
+      "optimizationScore",
+    ]);
+  });
+
+  it("passa lo stesso schema anche nel tentativo di riparazione", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // numDays sbagliato: errore di business logic
+      .mockResolvedValueOnce(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput());
+
+    const [first, repair] = mocks.messagesCreate.mock.calls.map((c) => c[0]);
+    expect(repair.output_config).toEqual(first.output_config);
+  });
+
+  it("il numero di giorni resta validato lato server (lo schema non può esprimere minItems/maxItems > 1)", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(1)));
+
+    const service = new ItineraryGenerationService();
+    await expect(service.generate(baseInput())).rejects.toThrow(
+      /Numero giorni non valido/,
+    );
+  });
+});
+
 describe("ItineraryGenerationService.generate — prompt caching", () => {
   it("marca con cache_control il blocco stabile del prompt (non le zone già usate)", async () => {
     mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));

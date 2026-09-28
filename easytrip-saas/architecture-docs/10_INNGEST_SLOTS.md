@@ -22,6 +22,7 @@
 - File: `src/lib/inngest/functions/generate-itinerary.ts`
 - Passi tipici: carica snapshot trip → Anthropic (`anthropic.messages.create`) → validazione JSON → upsert `TripVersion` / `Day` → email “itinerary ready” se configurato.
 - Modello default: da `config.ai.anthropicModel` (`claude-sonnet-5` se env assente).
+- Output vincolato con Structured Outputs (`output_config.format`, schema derivato da `ModelResponseSchema` in `src/lib/ai/structured-output.ts`): la struttura JSON è garantita dall'API; il loop di riparazione resta per gli errori di business logic (es. numero di giorni) e i limiti di valore che lo schema non può esprimere. Il modello configurato deve supportare gli Structured Outputs.
 
 ## 4. Altre funzioni registrate
 
