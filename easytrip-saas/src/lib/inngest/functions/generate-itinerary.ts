@@ -11,6 +11,10 @@ import {
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
 import { type DaySlot } from "@/lib/itinerary-model-schema";
 import { ItineraryGenerationService } from "@/server/services/trip/itineraryGenerationService";
+import { GroundingService } from "@/server/services/trip/groundingService";
+import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
+import { computeGroundingCoverage } from "@/lib/grounding/coverage";
+import { logger } from "@/lib/observability";
 import {
   itineraryReadyHtml,
   itineraryReadyMemberHtml,
@@ -107,6 +111,30 @@ export const generateItinerary = inngest.createFunction(
     const numDays = inclusiveCalendarDaysBetweenUtc(startDate, endDate);
 
     const itineraryGenerationService = new ItineraryGenerationService();
+    const groundingService = new GroundingService(
+      new VerifiedPoiCacheRepository(),
+      {
+        enabled: config.ai.groundingEnabled,
+        ttlDays: config.ai.groundingTtlDays,
+      },
+    );
+
+    /**
+     * "EasyTrip Verified": POI/ristoranti verificati via ricerca web, dalla
+     * cache condivisa per destinazione o da una nuova ricerca. Non fatale:
+     * `getGrounding` non lancia mai, e null = si genera come prima, dalla sola
+     * conoscenza del modello.
+     */
+    const grounding = await step.run("ground-destination", async () => {
+      const result = await groundingService.getGrounding(trip.destination);
+      logger.info("Grounding destinazione", {
+        tripId: trip.id,
+        grounded: result !== null,
+        source: result?.source ?? null,
+        areas: result?.grounding.areas.length ?? 0,
+      });
+      return result;
+    });
 
     const gen = await step.run("genera-con-claude", () =>
       itineraryGenerationService.generate({
@@ -120,8 +148,26 @@ export const generateItinerary = inngest.createFunction(
         usedZones: trip.usedZones,
         localPassCityCount: trip.localPassCityCount,
         locale: trip.organizerLanguage,
+        grounding,
       }),
     );
+
+    // Telemetria: quanti POI/ristoranti generati compaiono tra quelli verificati
+    // (copertura bassa sui ristoranti = probabile invenzione di nomi).
+    if (grounding) {
+      await step.run("log-grounding-coverage", () => {
+        const coverage = computeGroundingCoverage(
+          gen.days,
+          grounding.grounding,
+        );
+        logger.info("Copertura grounding itinerario", {
+          tripId: trip.id,
+          source: grounding.source,
+          ...coverage,
+        });
+        return coverage;
+      });
+    }
 
     // -------------------------------------------------------------------
     // Persistenza versione + giorni — split in 4 step Inngest idempotenti.

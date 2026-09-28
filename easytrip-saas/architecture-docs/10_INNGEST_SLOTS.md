@@ -20,7 +20,8 @@
 ## 3. Funzione `generateItinerary`
 
 - File: `src/lib/inngest/functions/generate-itinerary.ts`
-- Passi tipici: carica snapshot trip → Anthropic (`anthropic.messages.create`) → validazione JSON → upsert `TripVersion` / `Day` → email “itinerary ready” se configurato.
+- Passi tipici: carica snapshot trip → **grounding** (`ground-destination`) → Anthropic (`anthropic.messages.create`) → validazione JSON → upsert `TripVersion` / `Day` → email “itinerary ready” se configurato.
+- **Grounding “EasyTrip Verified”** (`GroundingService`, `src/server/services/trip/groundingService.ts`): prima di generare, aree/attrazioni/ristoranti della destinazione vengono verificati via tool `web_search` e messi in `VerifiedPoiCache` (condivisa tra utenti, TTL `VERIFIED_POI_TTL_DAYS`); i luoghi entrano nella parte stabile (cacheable) del prompt come blocco “FONTI VERIFICATE”. Non fatale: qualunque errore → si genera come prima, senza fonti. Kill switch: `VERIFIED_GROUNDING_ENABLED=false`. Lo step `log-grounding-coverage` registra quanti POI/ristoranti generati compaiono tra quelli verificati (copertura bassa sui ristoranti = probabile invenzione di nomi).
 - Modello default: da `config.ai.anthropicModel` (`claude-sonnet-5` se env assente).
 - Output vincolato con Structured Outputs (`output_config.format`, schema derivato da `ModelResponseSchema` in `src/lib/ai/structured-output.ts`): la struttura JSON è garantita dall'API; il loop di riparazione resta per gli errori di business logic (es. numero di giorni) e i limiti di valore che lo schema non può esprimere. Il modello configurato deve supportare gli Structured Outputs.
 

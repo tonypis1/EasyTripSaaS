@@ -17,6 +17,10 @@ import {
 } from "@/lib/itinerary-model-schema";
 import { buildRepairSuffix } from "@/lib/ai/repairLoop";
 import { jsonSchemaOutputFormat } from "@/lib/ai/structured-output";
+import {
+  formatGroundingForPrompt,
+  type GroundedDestination,
+} from "@/lib/grounding/grounding-schema";
 
 export type ItineraryGenerationInput = {
   destination: string;
@@ -29,6 +33,8 @@ export type ItineraryGenerationInput = {
   usedZones: string | null;
   localPassCityCount: number;
   locale: SupportedAiLocale;
+  /** POI/ristoranti verificati via ricerca web (cache condivisa); assente = si genera solo dalla conoscenza del modello. */
+  grounding?: { grounding: GroundedDestination; fetchedAt: string } | null;
 };
 
 export type ItineraryGenerationResult = ReturnType<
@@ -104,6 +110,7 @@ function buildStableUserPrompt(args: {
   dayCalendar: string;
   localPassCityCount: number;
   locale: SupportedAiLocale;
+  groundingBlock: string | null;
 }): string {
   const localPassBlock =
     args.localPassCityCount > 0
@@ -114,6 +121,9 @@ L'utente ha acquistato LocalPass per ${args.localPassCityCount} città (o altret
       : "";
   const budgetInstruction =
     BUDGET_PROMPT_MAP[args.budgetLevel] ?? BUDGET_PROMPT_MAP.moderate;
+  const groundingSection = args.groundingBlock
+    ? `\n${args.groundingBlock}\n`
+    : "";
 
   return `
 SEZIONE — CONTESTO
@@ -132,7 +142,7 @@ ${args.dayCalendar}
 
 SEZIONE — ISTRUZIONI BUDGET
 ${budgetInstruction}
-${localPassBlock}
+${localPassBlock}${groundingSection}
 
 SEZIONE — OUTPUT ATTESO
 Rispondi con un unico oggetto JSON con:
@@ -235,6 +245,13 @@ export class ItineraryGenerationService {
       dayCalendar: buildDayCalendar(input.startDate, input.numDays, locale),
       localPassCityCount: input.localPassCityCount,
       locale,
+      groundingBlock: input.grounding
+        ? formatGroundingForPrompt(
+            input.grounding.grounding,
+            input.destination,
+            input.grounding.fetchedAt.slice(0, 10),
+          )
+        : null,
     });
     const usedZonesBlock = buildUsedZonesBlock(input.usedZones);
 

@@ -173,7 +173,9 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
 
     mocks.messagesCreate.mockClear();
     await service.suggest(baseInput({ localHour: 8 }));
-    expect(lastPromptTextForCall()).toContain("Momento della giornata: mattina");
+    expect(lastPromptTextForCall()).toContain(
+      "Momento della giornata: mattina",
+    );
   });
 
   it("mappa un errore Anthropic generico (es. overload/rate limit) su AppError 502 AI_UNAVAILABLE", async () => {

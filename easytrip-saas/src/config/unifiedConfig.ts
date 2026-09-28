@@ -93,6 +93,15 @@ const envSchema = z
      * Riferimento: https://docs.anthropic.com/en/docs/about-claude/models
      */
     ANTHROPIC_MODEL: z.string().min(1).optional(),
+    /**
+     * Grounding "EasyTrip Verified": prima di generare l'itinerario, i POI e i
+     * ristoranti della destinazione vengono verificati via web_search (costo
+     * per ricerca) e messi in cache condivisa. "false" = kill switch: si
+     * genera solo dalla conoscenza parametrica del modello, come prima.
+     */
+    VERIFIED_GROUNDING_ENABLED: z.enum(["true", "false"]).default("true"),
+    /** Giorni di validità di una destinazione nella cache di grounding. */
+    VERIFIED_POI_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
     /** Giorni dopo cui eliminare versioni itinerario non attive (solo storico carosello). */
     RETENTION_INACTIVE_TRIP_VERSION_DAYS: z.coerce
@@ -224,6 +233,8 @@ export const config = {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
     /** Default: Sonnet 5 (gli snapshot datati vengono ritirati periodicamente da Anthropic). */
     anthropicModel: env.ANTHROPIC_MODEL ?? "claude-sonnet-5",
+    groundingEnabled: env.VERIFIED_GROUNDING_ENABLED === "true",
+    groundingTtlDays: env.VERIFIED_POI_TTL_DAYS,
   },
   retention: {
     inactiveTripVersionDays: env.RETENTION_INACTIVE_TRIP_VERSION_DAYS,

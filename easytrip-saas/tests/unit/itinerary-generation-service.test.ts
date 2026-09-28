@@ -205,6 +205,71 @@ describe("ItineraryGenerationService.generate — Structured Outputs", () => {
   });
 });
 
+describe("ItineraryGenerationService.generate — grounding (EasyTrip Verified)", () => {
+  const grounding = {
+    fetchedAt: "2026-09-28T10:00:00.000Z",
+    grounding: {
+      areas: [
+        {
+          name: "Centro Storico",
+          attractions: [{ name: "Colosseo", kind: "monument", note: "n" }],
+          restaurants: [
+            { name: "Trattoria Da Enzo", cuisine: "roman", note: "n" },
+          ],
+        },
+      ],
+    },
+  };
+
+  it("inserisce il blocco FONTI VERIFICATE nella parte stabile del prompt, prima di OUTPUT ATTESO", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput({ grounding }));
+
+    const stable = mocks.messagesCreate.mock.calls[0][0].messages[0].content[0];
+    expect(stable.text).toContain(
+      "SEZIONE — FONTI VERIFICATE (ricerca web del 2026-09-28)",
+    );
+    expect(stable.text).toContain("Colosseo (monument)");
+    expect(stable.text).toContain("Trattoria Da Enzo (roman)");
+    expect(stable.text.indexOf("FONTI VERIFICATE")).toBeLessThan(
+      stable.text.indexOf("SEZIONE — OUTPUT ATTESO"),
+    );
+    // Resta il blocco cacheable: i tentativi di riparazione lo leggono dalla cache.
+    expect(stable.cache_control).toEqual({ type: "ephemeral" });
+  });
+
+  it("senza grounding il prompt non contiene il blocco (nessun cambiamento rispetto a prima)", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput());
+    await service.generate(baseInput({ grounding: null }));
+
+    for (const call of mocks.messagesCreate.mock.calls) {
+      expect(call[0].messages[0].content[0].text).not.toContain(
+        "FONTI VERIFICATE",
+      );
+    }
+  });
+
+  it("il tentativo di riparazione riusa byte-per-byte il blocco stabile con il grounding (cache hit)", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // numDays sbagliato
+      .mockResolvedValueOnce(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput({ grounding }));
+
+    const [first, repair] = mocks.messagesCreate.mock.calls.map(
+      (c) => c[0].messages[0].content,
+    );
+    expect(repair[0]).toEqual(first[0]);
+    expect(repair[0].text).toContain("FONTI VERIFICATE");
+  });
+});
+
 describe("ItineraryGenerationService.generate — prompt caching", () => {
   it("marca con cache_control il blocco stabile del prompt (non le zone già usate)", async () => {
     mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));

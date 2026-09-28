@@ -99,6 +99,7 @@ erDiagram
 
 - I campi `morning`, `afternoon`, `evening`, `restaurants` su `Day` sono persistiti come stringhe (serializzazione JSON lato applicazione).
 - `zoneFocus` alimenta `usedZones` sul `Trip` per variare le rigenerazioni.
+- `VerifiedPoiCache` (tabella `verified_poi_cache`): cache **condivisa tra utenti**, una riga per destinazione (`destinationKey` normalizzata, univoca), con `payload` (`Json`/jsonb: aree, attrazioni, ristoranti verificati via `web_search`), `sources` (`Json`: URL consultati) e `expiresAt` (TTL `VERIFIED_POI_TTL_DAYS`, default 30). Solo dati pubblici, nessun dato personale.
 
 ## 5. Indici e vincoli rilevanti
 

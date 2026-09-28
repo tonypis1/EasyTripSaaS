@@ -313,6 +313,25 @@ model Referral {
   @@map("referral")
 }
 
+/// purpose: cache condivisa tra utenti di POI/ristoranti verificati via ricerca web, per destinazione (grounding della generazione itinerari)
+/// retention: solo dati pubblici, nessun dato personale; una riga per destinazione, sovrascritta al refresh; le righe scadute (expires_at) non vengono più lette
+model VerifiedPoiCache {
+  id               String   @id @default(cuid())
+  /// Destinazione normalizzata (minuscolo, senza diacritici/punteggiatura): chiave di lookup condivisa tra utenti.
+  destinationKey   String   @unique @map("destination_key")
+  /// Destinazione come digitata dall'utente che ha popolato la cache (solo per diagnostica).
+  destinationLabel String   @map("destination_label")
+  /// Aree, attrazioni e ristoranti verificati (forma: GroundedDestinationSchema).
+  payload          Json
+  /// Pagine web consultate dalla ricerca: [{ url, title }] (provenienza; base per le citazioni future).
+  sources          Json     @default("[]")
+  fetchedAt        DateTime @default(now()) @map("fetched_at")
+  expiresAt        DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("verified_poi_cache")
+}
+
 /// Dedup webhook (Stripe event id, Clerk svix id) per idempotenza invii email.
 model WebhookDelivery {
   id         String          @id @default(cuid())
