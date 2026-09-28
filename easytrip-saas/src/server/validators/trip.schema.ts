@@ -47,4 +47,10 @@ export const liveSuggestSchema = z.object({
     .enum(["morning", "afternoon", "evening"])
     .optional()
     .nullable(),
+  /**
+   * Ora locale del dispositivo dell'utente (0-23), NON quella del server.
+   * L'utente è fisicamente sul posto: solo il client conosce l'ora reale
+   * della destinazione (gestisce fuso e ora legale nativamente via `Date`).
+   */
+  localHour: z.number().int().min(0).max(23),
 });

@@ -140,6 +140,7 @@ export class LiveSuggestService {
     lng: number;
     reason: string;
     currentSlot: string | null;
+    localHour: number;
   }): Promise<LiveSuggestResult> {
     const day = await prisma.day.findFirst({
       where: { id: input.dayId },
@@ -186,8 +187,12 @@ export class LiveSuggestService {
         )
       : "Nessuno slot specifico — l'utente cerca suggerimenti generici";
 
-    const hour = new Date().getUTCHours() + 1;
-    const timeOfDay = hour < 12 ? "mattina" : hour < 17 ? "pomeriggio" : "sera";
+    const timeOfDay =
+      input.localHour < 12
+        ? "mattina"
+        : input.localHour < 17
+          ? "pomeriggio"
+          : "sera";
 
     const locale = normalizeAiLocale(trip.organizer?.language);
     const prompt = buildUserPrompt({

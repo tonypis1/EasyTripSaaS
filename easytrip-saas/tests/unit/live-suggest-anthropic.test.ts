@@ -97,8 +97,16 @@ function baseInput(overrides: Record<string, unknown> = {}) {
     lng: 12.45,
     reason: "bored",
     currentSlot: null,
+    localHour: 14, // pomeriggio, valore neutro di default per i test esistenti
     ...overrides,
   };
+}
+
+/** Estrae il testo del prompt utente inviato ad Anthropic dall'ultima chiamata mockata. */
+function lastPromptText(): string {
+  const call = mocks.messagesCreate.mock.calls[0];
+  const args = call[0] as { messages: { content: string }[] };
+  return args.messages[0].content;
 }
 
 beforeEach(() => {
@@ -151,6 +159,21 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
       code: "AI_TIMEOUT",
       statusCode: 503,
     });
+  });
+
+  it("usa l'ora locale del dispositivo (localHour) per il time-of-day, non l'orario del server", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
+
+    const service = new LiveSuggestService();
+
+    // 21:00 locali a destinazione: senza il fix sarebbe sempre "mattina/pomeriggio"
+    // se il server gira in UTC e il vecchio calcolo era UTC+1 fisso.
+    await service.suggest(baseInput({ localHour: 21 }));
+    expect(lastPromptText()).toContain("Momento della giornata: sera");
+
+    mocks.messagesCreate.mockClear();
+    await service.suggest(baseInput({ localHour: 8 }));
+    expect(lastPromptText()).toContain("Momento della giornata: mattina");
   });
 
   it("mappa un errore Anthropic generico (es. overload/rate limit) su AppError 502 AI_UNAVAILABLE", async () => {

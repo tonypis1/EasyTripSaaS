@@ -53,14 +53,27 @@ describe("replaceSlotSchema", () => {
 });
 
 describe("liveSuggestSchema", () => {
-  it("accetta coordinate e motivo", () => {
+  it("accetta coordinate, motivo e ora locale del dispositivo", () => {
     const r = liveSuggestSchema.parse({
       dayId: "day_1",
       lat: 45.4,
       lng: 9.18,
       reason: "weather",
+      localHour: 21,
     });
     expect(r.reason).toBe("weather");
+    expect(r.localHour).toBe(21);
+  });
+
+  it("rifiuta localHour fuori dal range 0-23", () => {
+    expect(() =>
+      liveSuggestSchema.parse({
+        dayId: "day_1",
+        lat: 45.4,
+        lng: 9.18,
+        localHour: 24,
+      }),
+    ).toThrow();
   });
 });
 

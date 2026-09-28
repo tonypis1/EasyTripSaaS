@@ -601,6 +601,7 @@ export function TripDetailClient({
           lat: coords.lat,
           lng: coords.lng,
           reason: "other",
+          localHour: new Date().getHours(),
         }),
       });
       const json = await res.json();
