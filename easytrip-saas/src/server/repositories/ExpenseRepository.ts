@@ -61,7 +61,13 @@ export class ExpenseRepository {
 
   /**
    * Ricalcola balance e totalPaid di ogni membro basandosi su tutte le spese.
-   * Formula: quota = amount / memberCount (per splitEqually=true)
+   * Formula: quota = amount / memberCount (per splitEqually=true).
+   *
+   * Le spese con splitEqually=false sono personali: non essendo condivise dal
+   * gruppo, sono escluse sia da totalPaid ("totale pagato per spese
+   * condivise", vedi commento su TripMember in schema.prisma) sia da owed —
+   * altrimenti chi le paga risulterebbe creditore dell'intero importo verso
+   * un gruppo che non ha mai generato quel debito.
    */
   async recalculateBalances(tripId: string) {
     const members = await prisma.tripMember.findMany({
@@ -83,16 +89,16 @@ export class ExpenseRepository {
     }
 
     for (const exp of expenses) {
+      if (!exp.splitEqually) continue; // spesa personale: non tocca i saldi di gruppo
+
       const amount = Number(exp.amount);
       const payerId = exp.paidById;
 
       paidMap.set(payerId, (paidMap.get(payerId) ?? 0) + amount);
 
-      if (exp.splitEqually) {
-        const quota = amount / memberCount;
-        for (const m of members) {
-          owedMap.set(m.id, (owedMap.get(m.id) ?? 0) + quota);
-        }
+      const quota = amount / memberCount;
+      for (const m of members) {
+        owedMap.set(m.id, (owedMap.get(m.id) ?? 0) + quota);
       }
     }
 

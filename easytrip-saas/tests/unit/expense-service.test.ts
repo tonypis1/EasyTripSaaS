@@ -158,6 +158,60 @@ describe("ExpenseService.addExpense", () => {
     });
   });
 
+  it("spesa personale (splitEqually:false) non genera credito/debito di gruppo", async () => {
+    mocks.tripMemberFindMany.mockResolvedValue([
+      member({ id: "m1", userId: "user1" }),
+      member({
+        id: "m2",
+        userId: "user2",
+        user: { id: "user2", name: "Bob", email: "bob@example.com" },
+      }),
+    ]);
+    mocks.expenseCreate.mockResolvedValue({
+      id: "exp1",
+      amount: 40,
+      description: "Souvenir personale",
+      category: "altro",
+      splitEqually: false,
+      dayNumber: 1,
+      createdAt: new Date("2026-06-01T20:00:00Z"),
+      paidBy: { id: "m1", user: { name: "Anna", email: "anna@example.com" } },
+    });
+    // getMembers() per trovare il memberId di user1
+    mocks.tripMemberFindMany.mockResolvedValueOnce([
+      member({ id: "m1", userId: "user1" }),
+      member({ id: "m2", userId: "user2" }),
+    ]);
+    // recalculateBalances() rilegge i membri una seconda volta
+    mocks.tripMemberFindMany.mockResolvedValueOnce([
+      member({ id: "m1", userId: "user1" }),
+      member({ id: "m2", userId: "user2" }),
+    ]);
+    mocks.expenseFindMany.mockResolvedValue([
+      { id: "exp1", amount: 40, paidById: "m1", splitEqually: false },
+    ]);
+
+    const { service } = makeService();
+    await service.addExpense("trip1", {
+      amount: 40,
+      description: "Souvenir personale",
+      category: "altro",
+      splitEqually: false,
+      dayNumber: 1,
+    });
+
+    // Non deve comparire alcun credito fantasma per m1 né debito per m2:
+    // una spesa non condivisa è esclusa sia da totalPaid sia da balance.
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m1" },
+      data: { totalPaid: 0, balance: 0 },
+    });
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m2" },
+      data: { totalPaid: 0, balance: 0 },
+    });
+  });
+
   it("lancia 404 MEMBER_NOT_FOUND se l'utente membro del trip non ha una riga TripMember", async () => {
     mocks.tripMemberFindMany.mockResolvedValue([]); // getMembers() vuoto
 
