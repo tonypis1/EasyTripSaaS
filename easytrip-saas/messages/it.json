@@ -509,7 +509,8 @@
           "afternoonShort": "P",
           "eveningShort": "S",
           "changePrefix": "Cambia",
-          "addToGoogleCalendar": "Aggiungi a Google Calendar"
+          "addToGoogleCalendar": "Aggiungi a Google Calendar",
+          "unverifiedLink": "Link esterno non verificato"
         },
         "errors": {
           "generic": "Operazione non riuscita",

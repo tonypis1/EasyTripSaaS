@@ -509,7 +509,8 @@
           "afternoonShort": "N",
           "eveningShort": "A",
           "changePrefix": "Ändern",
-          "addToGoogleCalendar": "Zu Google Kalender hinzufügen"
+          "addToGoogleCalendar": "Zu Google Kalender hinzufügen",
+          "unverifiedLink": "Nicht verifizierter externer Link"
         },
         "errors": {
           "generic": "Vorgang fehlgeschlagen",

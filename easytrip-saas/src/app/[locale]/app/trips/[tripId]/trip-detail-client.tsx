@@ -67,6 +67,7 @@ import {
   theForkUrl,
   viatorUrl,
 } from "@/lib/affiliate";
+import { isKnownBookingDomain } from "@/lib/safe-url";
 import { openCrispChat, isCrispEnabled } from "../../crisp-chat";
 import { ExpensePanel } from "./expense-panel";
 import { roundCoordForAi } from "@/lib/geo-privacy";
@@ -291,6 +292,54 @@ function googleCalendarAddEventUrl(params: {
   u.searchParams.set("location", params.location);
   if (params.details) u.searchParams.set("details", params.details);
   return u.toString();
+}
+
+/**
+ * Un bookingLink generato dal modello passa `httpUrlSchema` (schema http/s
+ * sicuro) ma può comunque puntare a una pagina inventata: qui riceve un
+ * trattamento visivo diverso a seconda che il dominio sia una piattaforma di
+ * prenotazione nota (CTA piena) o no (link cliccabile ma etichettato come
+ * non verificato), invece di essere nascosto — un dominio non elencato è
+ * spesso il sito ufficiale legittimo di un singolo POI.
+ */
+function BookingLinkPill({
+  url,
+  activityName,
+  tripId,
+  unverifiedLabel,
+}: {
+  url: string;
+  activityName: string;
+  tripId: string;
+  unverifiedLabel: string;
+}) {
+  const verified = isKnownBookingDomain(url);
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      onClick={() =>
+        posthog.capture("affiliate_click", {
+          partner: verified ? "direct" : "unverified",
+          activity: activityName,
+          tripId,
+        })
+      }
+      className={
+        verified
+          ? "inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
+          : "border-et-border text-et-ink/50 hover:text-et-ink/70 hover:border-et-ink/30 inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border bg-transparent px-2.5 py-1 text-xs font-medium transition-colors duration-200"
+      }
+    >
+      {verified ? (
+        <ExternalLink className="h-3 w-3" />
+      ) : (
+        <ShieldAlert className="h-3 w-3" />
+      )}
+      {verified ? "Prenota / Biglietti" : unverifiedLabel}
+    </a>
+  );
 }
 
 const SLOT_KEYS = {
@@ -1537,22 +1586,14 @@ export function TripDetailClient({
                                       {td("slot.addToGoogleCalendar")}
                                     </a>
                                     {slot.bookingLink ? (
-                                      <a
-                                        href={slot.bookingLink}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        onClick={() =>
-                                          posthog.capture("affiliate_click", {
-                                            partner: "direct",
-                                            activity: slot.title,
-                                            tripId: trip.id,
-                                          })
-                                        }
-                                        className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
-                                      >
-                                        <ExternalLink className="h-3 w-3" />
-                                        Prenota / Biglietti
-                                      </a>
+                                      <BookingLinkPill
+                                        url={slot.bookingLink}
+                                        activityName={slot.title}
+                                        tripId={trip.id}
+                                        unverifiedLabel={td(
+                                          "slot.unverifiedLink",
+                                        )}
+                                      />
                                     ) : null}
                                     {(() => {
                                       const gygUrl = getYourGuideUrl(
@@ -2107,25 +2148,14 @@ export function TripDetailClient({
                                       </div>
                                       <div className="mt-2 flex flex-wrap gap-1.5">
                                         {sug.bookingLink ? (
-                                          <a
-                                            href={sug.bookingLink}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            onClick={() =>
-                                              posthog.capture(
-                                                "affiliate_click",
-                                                {
-                                                  partner: "direct",
-                                                  activity: sug.name,
-                                                  tripId: trip.id,
-                                                },
-                                              )
-                                            }
-                                            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
-                                          >
-                                            <ExternalLink className="h-3 w-3" />
-                                            Prenota / Biglietti
-                                          </a>
+                                          <BookingLinkPill
+                                            url={sug.bookingLink}
+                                            activityName={sug.name}
+                                            tripId={trip.id}
+                                            unverifiedLabel={td(
+                                              "slot.unverifiedLink",
+                                            )}
+                                          />
                                         ) : null}
                                         {(() => {
                                           const gygUrl = getYourGuideUrl(
