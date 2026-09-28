@@ -163,9 +163,11 @@ model TripMember {
   totalPaid Decimal  @default(0) @map("total_paid") @db.Decimal(10, 2) // totale pagato per spese condivise
   joinedAt  DateTime @default(now()) @map("joined_at")
 
-  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses Expense[] @relation("ExpensePaidBy")
+  trip          Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses      Expense[]            @relation("ExpensePaidBy")
+  /// Quote di spese di gruppo attribuite a questo membro (split personalizzato).
+  expenseShares ExpenseParticipant[]
 
   // tripId è già coperto (come colonna sinistra) da questo vincolo; userId no.
   @@unique([tripId, userId])
@@ -191,11 +193,31 @@ model Expense {
   dayNumber    Int?            @map("day_number")
   createdAt    DateTime        @default(now()) @map("created_at")
 
-  trip   Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  paidBy TripMember @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+  trip         Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  paidBy       TripMember           @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+  /// Vuoto = spesa divisa in parti uguali tra tutti i membri (comportamento storico).
+  participants ExpenseParticipant[]
 
   @@index([tripId])
   @@index([paidById])
+}
+
+/// purpose: attribuzione di una spesa di gruppo ai membri che la condividono (split tra sottoinsieme / quote pesate)
+/// retention: come Expense e TripMember (eliminata in cascata con la spesa o il membro); inclusa nell'export dati utente
+model ExpenseParticipant {
+  id        String  @id @default(cuid())
+  expenseId String  @map("expense_id")
+  memberId  String  @map("member_id")
+  /// Peso relativo della quota (1 = quota intera); max 2 decimali. Le quote sono proporzionali ai pesi.
+  weight    Decimal @default(1) @db.Decimal(6, 2)
+
+  expense Expense    @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member  TripMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // expenseId è già coperto (come colonna sinistra) da questo vincolo; memberId no.
+  @@unique([expenseId, memberId])
+  @@index([memberId])
+  @@map("expense_participant")
 }
 
 model Payment {

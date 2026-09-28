@@ -16,7 +16,16 @@ export type ExpenseDto = {
     name: string | null;
     email: string;
   };
+  /** null = divisa in parti uguali tra tutti i membri; altrimenti solo tra questi, in proporzione al peso. */
+  participants: ExpenseParticipantDto[] | null;
   createdAt: string;
+};
+
+export type ExpenseParticipantDto = {
+  memberId: string;
+  name: string | null;
+  email: string;
+  weight: number;
 };
 
 export type BalanceEntryDto = {
@@ -41,6 +50,48 @@ function decToNum(v: unknown): number {
     return (v as { toNumber: () => number }).toNumber();
   }
   return 0;
+}
+
+type ExpenseRow = {
+  id: string;
+  amount: unknown;
+  description: string;
+  category: string;
+  splitEqually: boolean;
+  dayNumber: number | null;
+  createdAt: Date;
+  paidBy: { id: string; user: { name: string | null; email: string } };
+  participants: {
+    memberId: string;
+    weight: unknown;
+    member: { user: { name: string | null; email: string } };
+  }[];
+};
+
+function toExpenseDto(e: ExpenseRow): ExpenseDto {
+  return {
+    id: e.id,
+    amount: decToNum(e.amount),
+    description: e.description,
+    category: e.category,
+    splitEqually: e.splitEqually,
+    dayNumber: e.dayNumber,
+    paidBy: {
+      memberId: e.paidBy.id,
+      name: e.paidBy.user.name,
+      email: e.paidBy.user.email,
+    },
+    participants:
+      e.participants.length > 0
+        ? e.participants.map((p) => ({
+            memberId: p.memberId,
+            name: p.member.user.name,
+            email: p.member.user.email,
+            weight: decToNum(p.weight),
+          }))
+        : null,
+    createdAt: e.createdAt.toISOString(),
+  };
 }
 
 export class ExpenseService {
@@ -71,6 +122,20 @@ export class ExpenseService {
       throw new AppError("Membro non trovato", 404, "MEMBER_NOT_FOUND");
     }
 
+    // I partecipanti arrivano dal client: devono essere membri di QUESTO viaggio
+    // (altrimenti si potrebbero attribuire quote a membri di altri viaggi).
+    const memberIds = new Set(members.map((m) => m.id));
+    const unknown = (input.participants ?? []).find(
+      (p) => !memberIds.has(p.memberId),
+    );
+    if (unknown) {
+      throw new AppError(
+        "Partecipante non membro di questo viaggio",
+        400,
+        "INVALID_PARTICIPANT",
+      );
+    }
+
     const expense = await this.expenseRepo.create({
       tripId,
       paidById: member.id,
@@ -79,44 +144,18 @@ export class ExpenseService {
       category: input.category,
       splitEqually: input.splitEqually,
       dayNumber: input.dayNumber ?? null,
+      participants: input.participants,
     });
 
     await this.expenseRepo.recalculateBalances(tripId);
 
-    return {
-      id: expense.id,
-      amount: Number(expense.amount),
-      description: expense.description,
-      category: expense.category,
-      splitEqually: expense.splitEqually,
-      dayNumber: expense.dayNumber,
-      paidBy: {
-        memberId: expense.paidBy.id,
-        name: expense.paidBy.user.name,
-        email: expense.paidBy.user.email,
-      },
-      createdAt: expense.createdAt.toISOString(),
-    };
+    return toExpenseDto(expense);
   }
 
   async listExpenses(tripId: string): Promise<ExpenseDto[]> {
     await this.requireMembership(tripId);
     const expenses = await this.expenseRepo.listByTrip(tripId);
-
-    return expenses.map((e) => ({
-      id: e.id,
-      amount: Number(e.amount),
-      description: e.description,
-      category: e.category,
-      splitEqually: e.splitEqually,
-      dayNumber: e.dayNumber,
-      paidBy: {
-        memberId: e.paidBy.id,
-        name: e.paidBy.user.name,
-        email: e.paidBy.user.email,
-      },
-      createdAt: e.createdAt.toISOString(),
-    }));
+    return expenses.map(toExpenseDto);
   }
 
   async deleteExpense(

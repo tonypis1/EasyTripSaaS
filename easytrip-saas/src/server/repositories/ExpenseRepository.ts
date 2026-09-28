@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { computeMemberTotals } from "@/lib/expense-split";
 
 export type CreateExpenseInput = {
   tripId: string;
@@ -8,7 +9,23 @@ export type CreateExpenseInput = {
   category: "cibo" | "trasporti" | "attivita" | "alloggio" | "altro";
   splitEqually: boolean;
   dayNumber?: number | null;
+  /** Vuoto/assente = tra tutti i membri in parti uguali. `memberId` è l'id di TripMember. */
+  participants?: { memberId: string; weight: number }[];
 };
+
+const expenseInclude = {
+  paidBy: {
+    include: { user: { select: { id: true, name: true, email: true } } },
+  },
+  participants: {
+    include: {
+      member: {
+        include: { user: { select: { id: true, name: true, email: true } } },
+      },
+    },
+    orderBy: { memberId: "asc" },
+  },
+} as const;
 
 export class ExpenseRepository {
   async create(input: CreateExpenseInput) {
@@ -21,12 +38,18 @@ export class ExpenseRepository {
         category: input.category,
         splitEqually: input.splitEqually,
         dayNumber: input.dayNumber ?? null,
+        ...(input.participants && input.participants.length > 0
+          ? {
+              participants: {
+                create: input.participants.map((p) => ({
+                  memberId: p.memberId,
+                  weight: p.weight,
+                })),
+              },
+            }
+          : {}),
       },
-      include: {
-        paidBy: {
-          include: { user: { select: { id: true, name: true, email: true } } },
-        },
-      },
+      include: expenseInclude,
     });
   }
 
@@ -34,11 +57,7 @@ export class ExpenseRepository {
     return prisma.expense.findMany({
       where: { tripId },
       orderBy: { createdAt: "desc" },
-      include: {
-        paidBy: {
-          include: { user: { select: { id: true, name: true, email: true } } },
-        },
-      },
+      include: expenseInclude,
     });
   }
 
@@ -60,58 +79,49 @@ export class ExpenseRepository {
   }
 
   /**
-   * Ricalcola balance e totalPaid di ogni membro basandosi su tutte le spese.
-   * Formula: quota = amount / memberCount (per splitEqually=true).
+   * Ricalcola balance e totalPaid di ogni membro dalle spese condivise.
    *
-   * Le spese con splitEqually=false sono personali: non essendo condivise dal
-   * gruppo, sono escluse sia da totalPaid ("totale pagato per spese
-   * condivise", vedi commento su TripMember in schema.prisma) sia da owed —
-   * altrimenti chi le paga risulterebbe creditore dell'intero importo verso
-   * un gruppo che non ha mai generato quel debito.
+   * - splitEqually=false: spesa personale, esclusa da totalPaid ("totale
+   *   pagato per spese condivise", vedi commento su TripMember in
+   *   schema.prisma) e dai saldi — altrimenti chi la paga risulterebbe
+   *   creditore di un debito che il gruppo non ha mai generato.
+   * - senza `participants`: divisa in parti uguali tra tutti i membri.
+   * - con `participants`: divisa solo tra loro, in proporzione al peso.
+   *
+   * La matematica è in centesimi interi (src/lib/expense-split.ts): la somma
+   * dei saldi è esattamente zero anche con quote pesate.
    */
   async recalculateBalances(tripId: string) {
     const members = await prisma.tripMember.findMany({
       where: { tripId },
     });
+    if (members.length === 0) return;
+
     const expenses = await prisma.expense.findMany({
       where: { tripId },
+      include: { participants: true },
     });
 
-    const memberCount = members.length;
-    if (memberCount === 0) return;
-
-    const paidMap = new Map<string, number>();
-    const owedMap = new Map<string, number>();
-
-    for (const m of members) {
-      paidMap.set(m.id, 0);
-      owedMap.set(m.id, 0);
-    }
-
-    for (const exp of expenses) {
-      if (!exp.splitEqually) continue; // spesa personale: non tocca i saldi di gruppo
-
-      const amount = Number(exp.amount);
-      const payerId = exp.paidById;
-
-      paidMap.set(payerId, (paidMap.get(payerId) ?? 0) + amount);
-
-      const quota = amount / memberCount;
-      for (const m of members) {
-        owedMap.set(m.id, (owedMap.get(m.id) ?? 0) + quota);
-      }
-    }
+    const totals = computeMemberTotals(
+      members.map((m) => m.id),
+      expenses.map((e) => ({
+        amount: Number(e.amount),
+        paidById: e.paidById,
+        splitEqually: e.splitEqually,
+        participants: e.participants.map((p) => ({
+          memberId: p.memberId,
+          weight: Number(p.weight),
+        })),
+      })),
+    );
 
     const updates = members.map((m) => {
-      const paid = paidMap.get(m.id) ?? 0;
-      const owed = owedMap.get(m.id) ?? 0;
-      const balance = paid - owed;
-
+      const t = totals.get(m.id);
       return prisma.tripMember.update({
         where: { id: m.id },
         data: {
-          totalPaid: paid,
-          balance,
+          totalPaid: (t?.paidCents ?? 0) / 100,
+          balance: (t?.balanceCents ?? 0) / 100,
         },
       });
     });

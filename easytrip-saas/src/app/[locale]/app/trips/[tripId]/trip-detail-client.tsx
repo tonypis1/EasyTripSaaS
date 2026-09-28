@@ -2390,7 +2390,11 @@ export function TripDetailClient({
               </p>
             </div>
           </div>
-          <ExpensePanel tripId={trip.id} totalDays={trip.days.length} />
+          <ExpensePanel
+            tripId={trip.id}
+            totalDays={trip.days.length}
+            budgetLevel={trip.budgetLevel}
+          />
         </section>
       ) : null}
 

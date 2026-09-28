@@ -34,6 +34,8 @@ erDiagram
   TripVersion ||--o{ Day : days
 
   TripMember ||--o{ Expense : paidBy
+  Expense ||--o{ ExpenseParticipant : participants
+  TripMember ||--o{ ExpenseParticipant : expenseShares
 
   Credit ||--o{ Referral : rewardCredit
 
@@ -99,6 +101,7 @@ erDiagram
 
 - I campi `morning`, `afternoon`, `evening`, `restaurants` su `Day` sono persistiti come stringhe (serializzazione JSON lato applicazione).
 - `zoneFocus` alimenta `usedZones` sul `Trip` per variare le rigenerazioni.
+- **Spese e split** (`Expense`, `ExpenseParticipant`, tabella `expense_participant`): `splitEqually=false` = spesa **personale**, esclusa da `totalPaid` e dai saldi; `splitEqually=true` = spesa di gruppo. Una spesa di gruppo **senza** righe `ExpenseParticipant` è divisa in parti uguali tra tutti i membri (comportamento storico, nessun backfill); **con** righe è divisa solo tra i membri elencati, in proporzione a `weight` (1 = quota intera, max 2 decimali). Il pagatore non deve essere un partecipante. I saldi si calcolano in centesimi interi (`src/lib/expense-split.ts`, metodo del resto maggiore): la somma dei saldi è esattamente 0.
 - `VerifiedPoiCache` (tabella `verified_poi_cache`): cache **condivisa tra utenti**, una riga per destinazione (`destinationKey` normalizzata, univoca), con `payload` (`Json`/jsonb: aree, attrazioni, ristoranti verificati via `web_search`), `sources` (`Json`: URL consultati) e `expiresAt` (TTL `VERIFIED_POI_TTL_DAYS`, default 30). Solo dati pubblici, nessun dato personale.
 
 ## 5. Indici e vincoli rilevanti
