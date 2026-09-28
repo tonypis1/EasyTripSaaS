@@ -11,6 +11,7 @@ import { PostTripScreen } from "./post-trip-screen";
 import { PostTripReferralPromo } from "@/components/referral/post-trip-referral-promo";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
 import { ShareButton } from "@/components/trips/ShareButton";
+import { CalendarExportButton } from "@/components/trips/CalendarExportButton";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useState } from "react";
@@ -260,6 +261,36 @@ function formatDuration(min: number): string {
 
 function googleMapsUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/**
+ * Link "quick add" di Google Calendar per un singolo slot: nessuna
+ * autenticazione richiesta (a differenza di un feed .ics da sottoscrivere),
+ * apre GCal precompilato e l'utente conferma il salvataggio. Orario passato
+ * come wall-clock "flottante" (nessun suffisso Z/ctz): rappresenta l'ora
+ * locale della destinazione, non va convertita al fuso del viewer.
+ */
+function googleCalendarAddEventUrl(params: {
+  title: string;
+  location: string;
+  details: string;
+  dateStr: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+}): string {
+  const toGCalDateTime = (timeStr: string) =>
+    `${params.dateStr.replace(/-/g, "")}T${timeStr.replace(":", "")}00`;
+
+  const u = new URL("https://calendar.google.com/calendar/render");
+  u.searchParams.set("action", "TEMPLATE");
+  u.searchParams.set("text", params.title);
+  u.searchParams.set(
+    "dates",
+    `${toGCalDateTime(params.startTime)}/${toGCalDateTime(params.endTime)}`,
+  );
+  u.searchParams.set("location", params.location);
+  if (params.details) u.searchParams.set("details", params.details);
+  return u.toString();
 }
 
 const SLOT_KEYS = {
@@ -775,20 +806,28 @@ export function TripDetailClient({
           <span>{trip.isPaid ? td("paid") : td("unpaid")}</span>
         </div>
 
-        {/* Geo-score nell'header quando disponibile */}
-        {trip.activeGeoScore != null ? (
+        {/* Geo-score, condivisione ed export calendario nell'header */}
+        {hasDays ? (
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <div className="border-et-accent/25 bg-et-accent/8 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
-              <Star className="text-et-accent h-4 w-4" />
-              <span className="text-et-accent text-sm font-medium">
-                {formatGeoScoreLabel(trip.activeGeoScore)}
-              </span>
-            </div>
-            <ShareButton
+            {trip.activeGeoScore != null ? (
+              <>
+                <div className="border-et-accent/25 bg-et-accent/8 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
+                  <Star className="text-et-accent h-4 w-4" />
+                  <span className="text-et-accent text-sm font-medium">
+                    {formatGeoScoreLabel(trip.activeGeoScore)}
+                  </span>
+                </div>
+                <ShareButton
+                  tripId={trip.id}
+                  destination={trip.destination}
+                  geoScore={trip.activeGeoScore}
+                  locale={locale}
+                />
+              </>
+            ) : null}
+            <CalendarExportButton
               tripId={trip.id}
               destination={trip.destination}
-              geoScore={trip.activeGeoScore}
-              locale={locale}
             />
           </div>
         ) : null}
@@ -1472,6 +1511,31 @@ export function TripDetailClient({
                                   </p>
                                   {/* Affiliate + booking links */}
                                   <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                    <a
+                                      href={googleCalendarAddEventUrl({
+                                        title: slot.title,
+                                        location: `${slot.place}, ${trip.destination}`,
+                                        details: slot.why,
+                                        dateStr: day.unlockDate,
+                                        startTime: slot.startTime,
+                                        endTime: slot.endTime,
+                                      })}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={() =>
+                                        posthog.capture(
+                                          "slot_calendar_add_clicked",
+                                          {
+                                            activity: slot.title,
+                                            tripId: trip.id,
+                                          },
+                                        )
+                                      }
+                                      className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-sky-400/25 bg-sky-500/8 px-2.5 py-1 text-xs font-medium text-sky-300 transition-colors duration-200 hover:border-sky-400/40 hover:bg-sky-500/15"
+                                    >
+                                      <Calendar className="h-3 w-3" />
+                                      {td("slot.addToGoogleCalendar")}
+                                    </a>
                                     {slot.bookingLink ? (
                                       <a
                                         href={slot.bookingLink}

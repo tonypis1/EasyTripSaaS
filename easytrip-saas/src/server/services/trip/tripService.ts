@@ -22,6 +22,10 @@ import {
   isPaidRegeneration,
   nextVersionNum,
 } from "@/lib/trip-regen-rules";
+import {
+  buildTripIcsCalendar,
+  icsFilenameForDestination,
+} from "@/lib/ics-export";
 
 /** Throttle sync nomi membri da Clerk (vedi syncMemberNamesFromClerkForTrip). */
 const CLERK_NAME_SYNC_TTL_MS = 15 * 60 * 1000;
@@ -409,6 +413,17 @@ export class TripService {
         needsPaidCheckout,
         freeRegenFromPrefChange,
       },
+    };
+  }
+
+  /** Esportazione calendario (.ics) dell'itinerario attivo: riusa getTripDetail per auth/visibilità (organizer o membro). */
+  async getTripIcsExport(
+    tripId: string,
+  ): Promise<{ filename: string; content: string }> {
+    const trip = await this.getTripDetail(tripId);
+    return {
+      filename: icsFilenameForDestination(trip.destination),
+      content: buildTripIcsCalendar(trip.destination, trip.days),
     };
   }
 

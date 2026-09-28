@@ -482,6 +482,12 @@
           "preparing": "Preparing your card…",
           "errorGeneric": "Unable to share the card. Please try again."
         },
+        "calendarExport": {
+          "buttonLabel": "Export calendar (.ics)",
+          "preparing": "Preparing your calendar file…",
+          "downloadDone": "Calendar downloaded!",
+          "errorGeneric": "Unable to export the calendar. Please try again."
+        },
         "expenses": {
           "title": "Expense split",
           "subtitle": "Log expenses and see who owes what to whom"
@@ -502,7 +508,8 @@
           "morningShort": "M",
           "afternoonShort": "A",
           "eveningShort": "E",
-          "changePrefix": "Change"
+          "changePrefix": "Change",
+          "addToGoogleCalendar": "Add to Google Calendar"
         },
         "errors": {
           "generic": "Operation failed",

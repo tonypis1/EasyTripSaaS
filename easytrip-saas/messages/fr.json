@@ -482,6 +482,12 @@
           "preparing": "Préparation de la card…",
           "errorGeneric": "Impossible de partager la card. Réessayez."
         },
+        "calendarExport": {
+          "buttonLabel": "Exporter le calendrier (.ics)",
+          "preparing": "Préparation du fichier calendrier…",
+          "downloadDone": "Calendrier téléchargé !",
+          "errorGeneric": "Impossible d'exporter le calendrier. Réessayez."
+        },
         "expenses": {
           "title": "Partage des dépenses",
           "subtitle": "Enregistre les dépenses et découvre qui doit quoi à qui"
@@ -502,7 +508,8 @@
           "morningShort": "M",
           "afternoonShort": "A",
           "eveningShort": "S",
-          "changePrefix": "Changer"
+          "changePrefix": "Changer",
+          "addToGoogleCalendar": "Ajouter à Google Agenda"
         },
         "errors": {
           "generic": "Opération échouée",

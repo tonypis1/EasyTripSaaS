@@ -482,6 +482,12 @@
           "preparing": "Preparando tu card…",
           "errorGeneric": "No se pudo compartir la card. Inténtalo de nuevo."
         },
+        "calendarExport": {
+          "buttonLabel": "Exportar calendario (.ics)",
+          "preparing": "Preparando el archivo de calendario…",
+          "downloadDone": "¡Calendario descargado!",
+          "errorGeneric": "No se pudo exportar el calendario. Inténtalo de nuevo."
+        },
         "expenses": {
           "title": "División de gastos",
           "subtitle": "Registra los gastos y descubre quién le debe qué a quién"
@@ -502,7 +508,8 @@
           "morningShort": "M",
           "afternoonShort": "T",
           "eveningShort": "N",
-          "changePrefix": "Cambiar"
+          "changePrefix": "Cambiar",
+          "addToGoogleCalendar": "Añadir a Google Calendar"
         },
         "errors": {
           "generic": "Operación fallida",

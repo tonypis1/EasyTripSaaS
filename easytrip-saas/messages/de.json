@@ -482,6 +482,12 @@
           "preparing": "Card wird vorbereitet…",
           "errorGeneric": "Die Card konnte nicht geteilt werden. Bitte erneut versuchen."
         },
+        "calendarExport": {
+          "buttonLabel": "Kalender exportieren (.ics)",
+          "preparing": "Kalenderdatei wird vorbereitet…",
+          "downloadDone": "Kalender heruntergeladen!",
+          "errorGeneric": "Kalender konnte nicht exportiert werden. Bitte erneut versuchen."
+        },
         "expenses": {
           "title": "Kostenaufteilung",
           "subtitle": "Erfasse Ausgaben und sieh, wer wem was schuldet"
@@ -502,7 +508,8 @@
           "morningShort": "M",
           "afternoonShort": "N",
           "eveningShort": "A",
-          "changePrefix": "Ändern"
+          "changePrefix": "Ändern",
+          "addToGoogleCalendar": "Zu Google Kalender hinzufügen"
         },
         "errors": {
           "generic": "Vorgang fehlgeschlagen",
