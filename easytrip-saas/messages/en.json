@@ -501,6 +501,23 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "slotVote": {
+          "title": "Group vote",
+          "progress": "{voted} of {total} have voted",
+          "closesIn": "closes in {hours} h",
+          "closesSoon": "closing soon",
+          "keepCurrent": "Keep the current one",
+          "yourVote": "Your vote",
+          "votes": "{count, plural, one {# vote} other {# votes}}",
+          "closeNow": "Close now",
+          "closeHint": "Apply the leading option right away (a tie keeps the current one).",
+          "errorGeneric": "Vote not saved. Please try again.",
+          "opened": "Vote open: the group can choose between the current slot and the alternatives.",
+          "closedKept": "Vote closed: the group keeps the current slot.",
+          "closedApplied": "Vote closed: the alternative chosen by the group was applied.",
+          "proposeButton": "Let the group vote",
+          "proposeHint": "The group chooses between the current slot and the alternatives. It closes on a majority, when everyone has voted, or after 24 hours."
+        },
         "slot": {
           "morning": "Morning",
           "afternoon": "Afternoon",

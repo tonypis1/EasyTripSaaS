@@ -149,9 +149,62 @@ model Day {
   localGem      String?  @map("local_gem")
   tips          String?
 
-  tripVersion TripVersion @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+  tripVersion TripVersion    @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+  /// Votazioni di gruppo sulle alternative dei tre slot del giorno.
+  proposals   SlotProposal[]
 
   @@index([tripVersionId])
+}
+
+enum SlotProposalStatus {
+  draft // generata dalla sostituzione dello slot, non ancora aperta al voto
+  open // il gruppo sta votando
+  resolved // chiusa: l'opzione vincente è stata applicata (o l'attuale mantenuta)
+  cancelled // superata da una nuova sostituzione dello stesso slot
+}
+
+/// purpose: votazione di gruppo sulle alternative generate dalla sostituzione di uno slot
+/// retention: eliminata in cascata con il giorno (rigenerazione o eliminazione del trip); i voti seguono la proposta e il membro
+model SlotProposal {
+  id          String             @id @default(cuid())
+  dayId       String             @map("day_id")
+  /// morning | afternoon | evening
+  slotKey     String             @map("slot_key")
+  status      SlotProposalStatus @default(draft)
+  /// [{ slot, distance, note }]: indice 0 = contenuto attuale dello slot, 1.. = alternative generate dall'AI (forma: SlotProposalOptionsSchema).
+  options     Json
+  winnerIndex Int?               @map("winner_index")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  openedAt    DateTime?          @map("opened_at")
+  /// Fine della finestra di voto: oltre questo istante un job chiude la proposta con l'opzione in testa.
+  expiresAt   DateTime?          @map("expires_at")
+  resolvedAt  DateTime?          @map("resolved_at")
+
+  day   Day        @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  votes SlotVote[]
+
+  @@index([dayId, slotKey])
+  @@index([status, expiresAt])
+  @@map("slot_proposal")
+}
+
+/// purpose: voto di un membro su una proposta di sostituzione slot (uno per membro)
+/// retention: come SlotProposal e TripMember (eliminato in cascata); non incluso in altri trattamenti
+model SlotVote {
+  id          String   @id @default(cuid())
+  proposalId  String   @map("proposal_id")
+  memberId    String   @map("member_id")
+  optionIndex Int      @map("option_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  proposal SlotProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  member   TripMember   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // proposalId è già coperto (come colonna sinistra) da questo vincolo; memberId no.
+  @@unique([proposalId, memberId])
+  @@index([memberId])
+  @@map("slot_vote")
 }
 
 model TripMember {
@@ -168,6 +221,8 @@ model TripMember {
   expenses      Expense[]            @relation("ExpensePaidBy")
   /// Quote di spese di gruppo attribuite a questo membro (split personalizzato).
   expenseShares ExpenseParticipant[]
+  /// Voti espressi dal membro sulle alternative di uno slot.
+  slotVotes     SlotVote[]
 
   // tripId è già coperto (come colonna sinistra) da questo vincolo; userId no.
   @@unique([tripId, userId])

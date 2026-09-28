@@ -12,6 +12,7 @@ import { PostTripReferralPromo } from "@/components/referral/post-trip-referral-
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
 import { ShareButton } from "@/components/trips/ShareButton";
 import { CalendarExportButton } from "@/components/trips/CalendarExportButton";
+import { SlotVotePanel } from "@/components/trips/SlotVotePanel";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useState } from "react";
@@ -119,6 +120,8 @@ type SlotReplaceResult = {
   geoContinuityNote: string;
   dayRouteUpdated: string;
   alternatives: { name: string; distance: string; note: string }[];
+  /** Bozza di votazione di gruppo con le alternative (null per i viaggi con un solo membro). */
+  proposalId: string | null;
 };
 
 type LiveSuggestion = {
@@ -629,6 +632,7 @@ export function TripDetailClient({
             geoContinuityNote: d.geoContinuityNote,
             dayRouteUpdated: d.dayRouteUpdated,
             alternatives: d.alternatives as SlotReplaceResult["alternatives"],
+            proposalId: typeof d.proposalId === "string" ? d.proposalId : null,
           },
         });
       }
@@ -639,6 +643,47 @@ export function TripDetailClient({
     } finally {
       setBusy(null);
     }
+  }
+
+  /** L'organizzatore apre al voto del gruppo la bozza generata dalla sostituzione. */
+  async function onOpenVote(proposalId: string) {
+    setBusy(`open-vote-${proposalId}`);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        `/api/trips/${trip.id}/slot-proposals/${proposalId}/open`,
+        { method: "POST" },
+      );
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setMsg(apiMsg(json));
+        return;
+      }
+      posthog.capture("slot_vote_opened", { tripId: trip.id, proposalId });
+      setReplaceResult(null);
+      setMsg(td("slotVote.opened"));
+      await refreshTrip();
+      router.refresh();
+    } catch {
+      setMsg(td("errors.network"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function onVoteChanged(outcome: {
+    resolved: boolean;
+    winnerIndex: number | null;
+  }) {
+    if (outcome.resolved) {
+      setMsg(
+        outcome.winnerIndex === 0
+          ? td("slotVote.closedKept")
+          : td("slotVote.closedApplied"),
+      );
+    }
+    void refreshTrip();
+    router.refresh();
   }
 
   async function onLiveSuggest(dayId: string) {
@@ -1697,6 +1742,21 @@ export function TripDetailClient({
                               </div>
                             ) : null}
 
+                            {/* Votazione di gruppo aperta su questo slot */}
+                            {(() => {
+                              const proposal = trip.slotProposals.find(
+                                (p) => p.dayId === day.id && p.slotKey === key,
+                              );
+                              return proposal ? (
+                                <SlotVotePanel
+                                  tripId={trip.id}
+                                  proposal={proposal}
+                                  isOrganizer={trip.isOrganizer}
+                                  onChanged={onVoteChanged}
+                                />
+                              ) : null;
+                            })()}
+
                             {/* Enriched replacement result panel */}
                             {replaceResult?.key === `${day.id}-${key}` ? (
                               <div className="to-et-accent/5 mt-3 space-y-3 rounded-xl border-2 border-purple-400/30 bg-gradient-to-br from-purple-500/8 p-4">
@@ -1775,6 +1835,33 @@ export function TripDetailClient({
                                         ),
                                       )}
                                     </div>
+                                    {replaceResult.data.proposalId &&
+                                    trip.isOrganizer ? (
+                                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-et-ink/50 max-w-md text-xs">
+                                          {td("slotVote.proposeHint")}
+                                        </p>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void onOpenVote(
+                                              replaceResult.data
+                                                .proposalId as string,
+                                            )
+                                          }
+                                          disabled={busy !== null}
+                                          className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-sky-400/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-300 transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          {busy ===
+                                          `open-vote-${replaceResult.data.proposalId}` ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <Users className="h-4 w-4" />
+                                          )}
+                                          {td("slotVote.proposeButton")}
+                                        </button>
+                                      </div>
+                                    ) : null}
                                   </div>
                                 ) : null}
                               </div>

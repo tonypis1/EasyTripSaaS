@@ -501,6 +501,23 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "slotVote": {
+          "title": "Votazione del gruppo",
+          "progress": "{voted} di {total} hanno votato",
+          "closesIn": "si chiude tra {hours} h",
+          "closesSoon": "sta per chiudersi",
+          "keepCurrent": "Mantieni l'attuale",
+          "yourVote": "Il tuo voto",
+          "votes": "{count, plural, one {# voto} other {# voti}}",
+          "closeNow": "Chiudi ora",
+          "closeHint": "Applica subito l'opzione in testa (a parità resta l'attuale).",
+          "errorGeneric": "Voto non registrato. Riprova.",
+          "opened": "Votazione aperta: il gruppo può scegliere tra lo slot attuale e le alternative.",
+          "closedKept": "Votazione conclusa: il gruppo mantiene lo slot attuale.",
+          "closedApplied": "Votazione conclusa: applicata l'alternativa scelta dal gruppo.",
+          "proposeButton": "Fai votare il gruppo",
+          "proposeHint": "Il gruppo sceglie tra lo slot attuale e le alternative. Si chiude con una maggioranza, quando hanno votato tutti o dopo 24 ore."
+        },
         "slot": {
           "morning": "Mattina",
           "afternoon": "Pomeriggio",

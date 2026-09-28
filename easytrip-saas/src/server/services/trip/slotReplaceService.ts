@@ -13,8 +13,10 @@ import {
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
 import { AppError } from "@/server/errors/AppError";
-import { httpUrlSchema } from "@/lib/safe-url";
+import { DaySlotSchema } from "@/lib/itinerary-model-schema";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
+import { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
+import { logger } from "@/lib/observability";
 import { z } from "zod";
 
 const SlotKeySchema = z.enum(["morning", "afternoon", "evening"]);
@@ -27,36 +29,18 @@ const SLOT_LABEL: Record<string, string> = {
   evening: "Sera",
 };
 
-function normalizeTime(s: string): string {
-  const [h, m] = s.split(":");
-  return `${String(h).padStart(2, "0")}:${m}`;
-}
-
-const DaySlotSchema = z.object({
-  title: z.string().min(1),
-  place: z.string().min(1),
-  why: z.string().min(1),
-  startTime: z
-    .string()
-    .regex(/^\d{1,2}:\d{2}$/)
-    .transform(normalizeTime),
-  endTime: z
-    .string()
-    .regex(/^\d{1,2}:\d{2}$/)
-    .transform(normalizeTime),
-  durationMin: z.coerce.number().int().min(10).max(600),
-  googleMapsQuery: z.string().min(3),
-  bookingLink: z.union([httpUrlSchema, z.null()]).default(null),
-  tips: z.array(z.string().min(1)).min(1).max(6),
-  lat: z.union([z.number(), z.null()]).default(null),
-  lng: z.union([z.number(), z.null()]).default(null),
-});
-
-const AlternativeSchema = z.object({
-  name: z.string().min(1),
-  distance: z.string().min(1),
-  note: z.string().min(1),
-});
+/**
+ * Alternativa proposta al gruppo: uno slot COMPLETO (stessa forma di
+ * `replacement`), così se vince il voto si applica senza un'altra chiamata AI.
+ * `name` è derivato dal titolo dello slot, per la UI che mostra l'elenco.
+ */
+const AlternativeSchema = z
+  .object({
+    distance: z.string().min(1),
+    note: z.string().min(1),
+    slot: DaySlotSchema,
+  })
+  .transform((alt) => ({ ...alt, name: alt.slot.title }));
 
 const EnrichedResponseSchema = z.object({
   replacement: DaySlotSchema,
@@ -74,6 +58,8 @@ export type EnrichedSlotResult = {
   geoContinuityNote: string;
   dayRouteUpdated: string;
   alternatives: SlotAlternative[];
+  /** Bozza di votazione di gruppo con le alternative (solo viaggi con almeno 2 membri). */
+  proposalId: string | null;
 };
 
 function extractJsonText(raw: string): string {
@@ -84,7 +70,9 @@ function extractJsonText(raw: string): string {
   return trimmed;
 }
 
-function parseSlotReplaceModelJson(raw: string): EnrichedSlotResult {
+function parseSlotReplaceModelJson(
+  raw: string,
+): Omit<EnrichedSlotResult, "proposalId"> {
   const text = extractJsonText(raw);
   let parsed: unknown;
   try {
@@ -132,7 +120,7 @@ function buildSystemPrompt(locale: SupportedAiLocale): string {
     "NON rigenerare l'intero giorno. NON toccare gli altri slot.",
     "Mantieni la coerenza geografica con le attività ADIACENTI (precedente e successiva).",
     "Rispetta il vincolo di quartiere/zona se presente.",
-    "Aggiungi SEMPRE 2 alternative contestuali con nota sul timing/apertura.",
+    "Aggiungi SEMPRE 2 alternative contestuali, ciascuna uno slot completo e applicabile, con nota sul timing/apertura.",
     "Se un'alternativa ha restrizioni orarie, spiegale chiaramente.",
     "Rispondi SOLO con JSON valido, zero testo extra, zero markdown.",
     systemLanguageDirective(locale),
@@ -200,8 +188,24 @@ Rispondi con un UNICO oggetto JSON con questa struttura:
   "geoContinuityNote": "Spiega come la sostituzione si integra nel percorso del giorno (es. 'A 5 min a piedi dal pranzo, sulla strada verso i Jardins')",
   "dayRouteUpdated": "Riassunto percorso aggiornato (es. 'Pranzo Quimet → 5 min → El Sortidor → 5 min → Jardins')",
   "alternatives": [
-    { "name": "Nome alternativa 1", "distance": "Xm · Y min a piedi", "note": "Nota su timing/apertura/contesto" },
-    { "name": "Nome alternativa 2", "distance": "Xm · Y min a piedi", "note": "Nota su timing/apertura/contesto" }
+    {
+      "distance": "Xm · Y min a piedi",
+      "note": "Nota su timing/apertura/contesto",
+      "slot": {
+        "title": "nome breve del POI",
+        "place": "quartiere/strada",
+        "why": "perché è consigliato (specifico, non generico)",
+        "startTime": "HH:mm",
+        "endTime": "HH:mm",
+        "durationMin": 150,
+        "googleMapsQuery": "Nome POI Città Quartiere",
+        "bookingLink": null,
+        "tips": ["consiglio 1"],
+        "lat": 41.9029,
+        "lng": 12.4534
+      }
+    },
+    { "distance": "...", "note": "...", "slot": { "...": "stessi campi dell'alternativa 1" } }
   ]
 }
 
@@ -213,12 +217,17 @@ REGOLE
 - NON duplicare attività già presenti negli altri slot del giorno.
 - ESCLUDI lo slot rimosso e posti nello stesso isolato.
 - Se un'alternativa ha restrizioni orarie (apre tardi, chiude presto), spiegalo nella "note".
+- Le 2 alternative sono slot COMPLETI e applicabili al posto di "replacement": stessi campi e stesse regole (orari HH:mm coerenti con la fascia, coordinate WGS84 reali, "bookingLink" reale o null). Devono essere diverse tra loro, da "replacement" e dagli altri slot del giorno.
 - "lat" e "lng" nel replacement DEVONO essere le coordinate WGS84 reali del POI specifico. NON usare coordinate generiche del centro città.
 - LINGUA DI RISPOSTA: ${userLanguageReminder(args.locale)} Tutti i campi testuali liberi del JSON (title, place, why, tips, whyNotOriginal, geoContinuityNote, dayRouteUpdated, alternatives[].note, ecc.) DEVONO essere in questa lingua.
 `.trim();
 }
 
 export class SlotReplaceService {
+  constructor(
+    private readonly proposals: SlotProposalRepository = new SlotProposalRepository(),
+  ) {}
+
   async replaceSlot(input: {
     organizerId: string;
     tripId: string;
@@ -240,6 +249,7 @@ export class SlotReplaceService {
             trip: {
               include: {
                 organizer: { select: { language: true } },
+                _count: { select: { members: true } },
               },
             },
           },
@@ -347,12 +357,41 @@ export class SlotReplaceService {
       data: { [field]: JSON.stringify(result.replacement) },
     });
 
+    // Con almeno 2 membri le alternative diventano una bozza di votazione,
+    // salvata dal server (mai ricevuta dal client: il contenuto che il gruppo
+    // vota e che verrà applicato allo slot non è manipolabile dai membri).
+    // Non deve far fallire la sostituzione, già applicata.
+    let proposalId: string | null = null;
+    if (trip._count.members >= 2) {
+      try {
+        const draft = await this.proposals.createDraft({
+          dayId: day.id,
+          slotKey: input.slot,
+          options: [
+            { slot: result.replacement, distance: null, note: null },
+            ...result.alternatives.map((alt) => ({
+              slot: alt.slot,
+              distance: alt.distance,
+              note: alt.note,
+            })),
+          ],
+        });
+        proposalId = draft.id;
+      } catch (error) {
+        logger.warn("Bozza di votazione non creata", {
+          dayId: day.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
     return {
       replacement: result.replacement,
       whyNotOriginal: result.whyNotOriginal,
       geoContinuityNote: result.geoContinuityNote,
       dayRouteUpdated: result.dayRouteUpdated,
       alternatives: result.alternatives,
+      proposalId,
     };
   }
 }

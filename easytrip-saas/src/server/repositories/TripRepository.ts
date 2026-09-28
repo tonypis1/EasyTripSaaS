@@ -47,6 +47,10 @@ async function findActiveVersionDays(activeVersionId: string | undefined) {
   return prisma.day.findMany({
     where: { tripVersionId: activeVersionId },
     orderBy: { dayNumber: "asc" },
+    // Votazioni di gruppo aperte sugli slot del giorno (con i voti, per i conteggi).
+    include: {
+      proposals: { where: { status: "open" }, include: { votes: true } },
+    },
   });
 }
 

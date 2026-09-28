@@ -90,6 +90,7 @@ function baseTrip() {
             dowWarning: "",
             localGem: "",
             tips: "",
+            proposals: [],
           },
         ],
       },

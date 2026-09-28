@@ -501,6 +501,23 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "slotVote": {
+          "title": "Gruppenabstimmung",
+          "progress": "{voted} von {total} haben abgestimmt",
+          "closesIn": "endet in {hours} Std.",
+          "closesSoon": "endet bald",
+          "keepCurrent": "Aktuellen behalten",
+          "yourVote": "Deine Stimme",
+          "votes": "{count, plural, one {# Stimme} other {# Stimmen}}",
+          "closeNow": "Jetzt beenden",
+          "closeHint": "Übernimmt sofort die führende Option (bei Gleichstand bleibt der aktuelle Slot).",
+          "errorGeneric": "Stimme nicht gespeichert. Bitte erneut versuchen.",
+          "opened": "Abstimmung offen: Die Gruppe kann zwischen dem aktuellen Slot und den Alternativen wählen.",
+          "closedKept": "Abstimmung beendet: Die Gruppe behält den aktuellen Slot.",
+          "closedApplied": "Abstimmung beendet: Die von der Gruppe gewählte Alternative wurde übernommen.",
+          "proposeButton": "Gruppe abstimmen lassen",
+          "proposeHint": "Die Gruppe wählt zwischen dem aktuellen Slot und den Alternativen. Endet bei einer Mehrheit, wenn alle abgestimmt haben oder nach 24 Stunden."
+        },
         "slot": {
           "morning": "Morgen",
           "afternoon": "Nachmittag",

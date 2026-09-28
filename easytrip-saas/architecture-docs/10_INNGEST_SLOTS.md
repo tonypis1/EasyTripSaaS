@@ -35,7 +35,18 @@ Vedi [02_ARCHITECTURE.md](02_ARCHITECTURE.md) per elenco: scadenze trip, reminde
 - **API**: `POST /api/trips/[tripId]/replace-slot`
 - **Input** (`replaceSlotSchema`): `dayId`, `slot` (`morning` | `afternoon` | `evening`), `lat` / `lng` opzionali.
 - **Comportamento**: costruisce contesto dal giorno corrente (slot JSON), chiama Anthropic, valida risposta con `EnrichedResponseSchema` (sostituto + alternative + note di continuità geografica).
+- **Alternative**: ogni alternativa è uno **slot completo** (`slot: DaySlotSchema`, più `distance` e `note`), non solo un nome: può quindi essere applicata così com'è allo slot. La risposta include `proposalId` (bozza di votazione) solo se il viaggio ha almeno 2 membri; se la creazione della bozza fallisce la sostituzione va comunque a buon fine (`proposalId: null`).
 - Coordinate nei contenuti slot: schema `DaySlotSchema` include `lat`, `lng` nullable; `googleMapsQuery` per navigazione.
+
+### 5.1 Group voting sulle alternative
+
+- **Service**: `SlotProposalService` (apertura / voto / chiusura), `SlotProposalResolver` (chiusura e applicazione dell'opzione allo slot; usato anche dal cron), repository `SlotProposalRepository`. Regola di decisione pura in `src/lib/slot-vote.ts`.
+- **API**: `POST /api/trips/[tripId]/slot-proposals/[proposalId]/{open|vote|close}`.
+- **Flusso**: `replace-slot` → bozza (`draft`) → l'organizzatore apre la votazione ("Fai votare il gruppo") → ogni membro vota (voto modificabile) → chiusura.
+- **Regola**: vince un'opzione con la **maggioranza stretta di tutti i membri** oppure, quando hanno votato tutti, quella in testa. A parità resta lo slot attuale (indice 0). L'organizzatore può chiudere prima; dopo 24h chiude il cron con l'opzione in testa (senza voti: attuale).
+- **Sicurezza**: il `tripId` dell'URL deve coincidere con quello reale della proposta; solo i membri votano, solo l'organizzatore apre/chiude; il contenuto applicato allo slot viene dal database (mai dal client) ed è rivalidato con `SlotProposalOptionsSchema`.
+- **Job**: `slot-proposal-expiry` (cron `0 * * * *`).
+- **Limiti noti**: nessuna notifica push/email ai membri all'apertura della votazione (la vedono aprendo il viaggio).
 
 ## 6. Live suggest (posizione obbligatoria)
 

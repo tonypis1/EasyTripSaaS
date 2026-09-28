@@ -7,6 +7,7 @@ import { preTripReminders } from "@/lib/inngest/functions/pre-trip-reminders";
 import { postTripFollowup } from "@/lib/inngest/functions/post-trip-followup";
 import { dataRetentionPurge } from "@/lib/inngest/functions/data-retention";
 import { nurtureNoTrip } from "@/lib/inngest/functions/nurture-no-trip";
+import { slotProposalExpiry } from "@/lib/inngest/functions/slot-proposal-expiry";
 
 /** Evita risposte GET cached: la sync del Dev Server deve sempre vedere le funzioni aggiornate. */
 export const dynamic = "force-dynamic";
@@ -22,5 +23,6 @@ export const { GET, POST, PUT } = serve({
     postTripFollowup,
     dataRetentionPurge,
     nurtureNoTrip,
+    slotProposalExpiry,
   ],
 });

@@ -36,6 +36,23 @@ vi.mock("@/lib/ai/anthropic", async (importOriginal) => {
 });
 
 import { SlotReplaceService } from "@/server/services/trip/slotReplaceService";
+import type { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
+
+function altSlot(title: string) {
+  return {
+    title,
+    place: "Centro",
+    why: "Alternativa valida",
+    startTime: "10:00",
+    endTime: "12:00",
+    durationMin: 120,
+    googleMapsQuery: `${title} Roma`,
+    bookingLink: null,
+    tips: ["Vai presto"],
+    lat: 41.91,
+    lng: 12.46,
+  };
+}
 
 function aiPayload() {
   return {
@@ -56,8 +73,8 @@ function aiPayload() {
     geoContinuityNote: "Resti in zona",
     dayRouteUpdated: "Mattina aggiornata",
     alternatives: [
-      { name: "Alt1", distance: "100m", note: "A" },
-      { name: "Alt2", distance: "200m", note: "B" },
+      { distance: "100m", note: "A", slot: altSlot("Alt1") },
+      { distance: "200m", note: "B", slot: altSlot("Alt2") },
     ],
   };
 }
@@ -84,6 +101,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
           destination: "Roma",
           budgetLevel: "moderate",
           style: null,
+          _count: { members: 1 },
         },
       },
     });
@@ -119,6 +137,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
           destination: "Roma",
           budgetLevel: "moderate",
           style: null,
+          _count: { members: 1 },
         },
       },
     });
@@ -161,6 +180,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
           destination: "Roma",
           budgetLevel: "moderate",
           style: null,
+          _count: { members: 1 },
         },
       },
     };
@@ -259,6 +279,129 @@ describe("SlotReplaceService + mock Anthropic", () => {
       statusCode: 502,
     });
     expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    expect(mocks.updateDay).not.toHaveBeenCalled();
+  });
+});
+
+describe("SlotReplaceService — bozza di votazione di gruppo", () => {
+  function dayWithMembers(members: number) {
+    return {
+      id: "day1",
+      morning: JSON.stringify({ title: "Old", place: "Roma" }),
+      afternoon: "{}",
+      evening: "{}",
+      dayNumber: 1,
+      zoneFocus: "Centro",
+      tripVersion: {
+        trip: {
+          id: "trip1",
+          organizerId: "org1",
+          destination: "Roma",
+          budgetLevel: "moderate",
+          style: null,
+          _count: { members },
+        },
+      },
+    };
+  }
+
+  const input = {
+    organizerId: "org1",
+    tripId: "trip1",
+    dayId: "day1",
+    slot: "morning" as const,
+    lat: 41.9,
+    lng: 12.45,
+  };
+
+  function setup(
+    members: number,
+    createDraft = vi.fn().mockResolvedValue({ id: "prop1" }),
+  ) {
+    mocks.findFirst.mockResolvedValue(dayWithMembers(members));
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+    const proposals = { createDraft } as unknown as SlotProposalRepository;
+    return { svc: new SlotReplaceService(proposals), createDraft };
+  }
+
+  beforeEach(() => {
+    mocks.findFirst.mockReset();
+    mocks.updateDay.mockReset();
+    mocks.messagesCreate.mockReset();
+  });
+
+  it("con almeno 2 membri salva una bozza [attuale, alt1, alt2] e ritorna il proposalId", async () => {
+    const { svc, createDraft } = setup(3);
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.proposalId).toBe("prop1");
+    const draft = createDraft.mock.calls[0][0];
+    expect(draft.dayId).toBe("day1");
+    expect(draft.slotKey).toBe("morning");
+    // Opzione 0 = lo slot appena applicato; 1..2 = le alternative complete dell'AI
+    expect(
+      draft.options.map((o: { slot: { title: string } }) => o.slot.title),
+    ).toEqual(["Museo X", "Alt1", "Alt2"]);
+    expect(draft.options[0]).toMatchObject({ distance: null, note: null });
+    expect(draft.options[1]).toMatchObject({ distance: "100m", note: "A" });
+  });
+
+  it("le alternative ritornate sono slot completi con `name` derivato dal titolo", async () => {
+    const { svc } = setup(3);
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.alternatives[0]).toMatchObject({
+      name: "Alt1",
+      distance: "100m",
+      note: "A",
+    });
+    expect(result.alternatives[0].slot.startTime).toBe("10:00");
+  });
+
+  it("con un solo membro (viaggio solo) non crea alcuna bozza", async () => {
+    const { svc, createDraft } = setup(1);
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.proposalId).toBeNull();
+    expect(createDraft).not.toHaveBeenCalled();
+  });
+
+  it("se la creazione della bozza fallisce la sostituzione è comunque applicata", async () => {
+    const { svc } = setup(3, vi.fn().mockRejectedValue(new Error("db down")));
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.proposalId).toBeNull();
+    expect(result.replacement.title).toBe("Museo X");
+    expect(mocks.updateDay).toHaveBeenCalled();
+  });
+
+  it("un'alternativa nel vecchio formato (solo nome/nota, senza slot) non passa la validazione", async () => {
+    mocks.findFirst.mockResolvedValue(dayWithMembers(3));
+    const legacy = {
+      ...aiPayload(),
+      alternatives: [
+        { name: "Alt1", distance: "100m", note: "A" },
+        { name: "Alt2", distance: "200m", note: "B" },
+      ],
+    };
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(legacy) }],
+    });
+
+    const svc = new SlotReplaceService({
+      createDraft: vi.fn(),
+    } as unknown as SlotProposalRepository);
+
+    await expect(svc.replaceSlot(input)).rejects.toMatchObject({
+      code: "AI_SCHEMA",
+    });
     expect(mocks.updateDay).not.toHaveBeenCalled();
   });
 });

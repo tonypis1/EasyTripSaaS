@@ -26,6 +26,7 @@ import {
   buildTripIcsCalendar,
   icsFilenameForDestination,
 } from "@/lib/ics-export";
+import { toSlotProposalDto, type SlotProposalDto } from "@/lib/slot-vote";
 
 /** Throttle sync nomi membri da Clerk (vedi syncMemberNamesFromClerkForTrip). */
 const CLERK_NAME_SYNC_TTL_MS = 15 * 60 * 1000;
@@ -95,6 +96,8 @@ export type TripDetailDto = {
   isOrganizer: boolean;
   members: TripMemberDto[];
   days: TripDayDto[];
+  /** Votazioni di gruppo aperte sugli slot dei giorni della versione attiva. */
+  slotProposals: SlotProposalDto[];
   versions: TripVersionSummaryDto[];
   activeGeoScore: number | null;
   prefChangedAfterGen: boolean;
@@ -326,6 +329,19 @@ export class TripService {
           }[])
         : [];
 
+    const myMemberId =
+      membersRaw.find((m) => m.user.id === user.id)?.id ?? null;
+    const slotProposals = days.flatMap((d) =>
+      d.proposals.flatMap((proposal) => {
+        const dto = toSlotProposalDto({
+          proposal,
+          totalMembers: membersRaw.length,
+          myMemberId,
+        });
+        return dto ? [dto] : [];
+      }),
+    );
+
     const membersDto: TripMemberDto[] = membersRaw.map((m) => ({
       id: m.id,
       userId: m.user.id,
@@ -404,6 +420,7 @@ export class TripService {
           dayTips: d.tips,
         }),
       ),
+      slotProposals,
       versions,
       activeGeoScore,
       regen: {
