@@ -70,6 +70,10 @@ export class TripRepository {
         accessExpiresAt,
         tripType: input.tripType,
         style: input.style,
+        interests: input.interests,
+        pace: input.pace,
+        mobilityNeeds: input.mobilityNeeds,
+        dietaryRestrictions: input.dietaryRestrictions,
         budgetLevel: input.budgetLevel ?? "moderate",
         localPassCityCount: input.localPassCityCount ?? 0,
         status: "pending",
@@ -229,13 +233,25 @@ export class TripRepository {
   async updatePreferences(
     tripId: string,
     organizerId: string,
-    data: { style?: string | null; budgetLevel: string },
+    data: {
+      style?: string | null;
+      budgetLevel: string;
+      interests?: string[];
+      pace?: string | null;
+      mobilityNeeds?: string[];
+      dietaryRestrictions?: string[];
+    },
   ) {
+    // I campi omessi (undefined) restano invariati: Prisma ignora le chiavi undefined.
     const result = await prisma.trip.updateMany({
       where: { id: tripId, organizerId, deletedAt: null },
       data: {
         style: data.style,
         budgetLevel: data.budgetLevel,
+        interests: data.interests,
+        pace: data.pace,
+        mobilityNeeds: data.mobilityNeeds,
+        dietaryRestrictions: data.dietaryRestrictions,
         prefChangedAfterGen: true,
       },
     });

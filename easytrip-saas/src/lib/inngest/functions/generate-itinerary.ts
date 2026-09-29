@@ -14,6 +14,14 @@ import { ItineraryGenerationService } from "@/server/services/trip/itineraryGene
 import { GroundingService } from "@/server/services/trip/groundingService";
 import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
 import { computeGroundingCoverage } from "@/lib/grounding/coverage";
+import {
+  findDietaryConflictSuspects,
+  findDietaryGaps,
+  hasPreferences,
+  preferencesFromTrip,
+  requiredDietFits,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
 import { analyzeItineraryGeo, resolveGeoScore } from "@/lib/geo-optimization";
 import { logger } from "@/lib/observability";
 import {
@@ -39,6 +47,8 @@ type TripSnapshot = {
   localPassCityCount: number;
   /** Lingua preferita dell'organizer (passata ai prompt Claude). */
   organizerLanguage: SupportedAiLocale;
+  /** Preferenze strutturate scelte per il viaggio. */
+  preferences: TripPreferences;
 };
 
 export const generateItinerary = inngest.createFunction(
@@ -87,6 +97,7 @@ export const generateItinerary = inngest.createFunction(
           localPassCityCount:
             (t as { localPassCityCount?: number }).localPassCityCount ?? 0,
           organizerLanguage: normalizeAiLocale(t.organizer?.language),
+          preferences: preferencesFromTrip(t),
         };
       },
     );
@@ -129,6 +140,7 @@ export const generateItinerary = inngest.createFunction(
         numDays,
         tripType: trip.tripType,
         style: trip.style,
+        preferences: trip.preferences,
         budgetLevel: trip.budgetLevel,
         usedZones: trip.usedZones,
         localPassCityCount: trip.localPassCityCount,
@@ -151,6 +163,30 @@ export const generateItinerary = inngest.createFunction(
           ...coverage,
         });
         return coverage;
+      });
+    }
+
+    // Telemetria sulle restrizioni alimentari: quanto ci si può fidare di `dietaryFit`
+    // (auto-dichiarato dal modello) e quanti locali sembrano in conflitto. Solo conteggi:
+    // le restrizioni possono essere dati sensibili e non vanno nei log.
+    if (hasPreferences(trip.preferences)) {
+      await step.run("log-preferences-fit", () => {
+        const required = requiredDietFits(trip.preferences);
+        const summary = {
+          tripId: trip.id,
+          dietaryRestrictionsCount: trip.preferences.dietaryRestrictions.length,
+          restaurants: gen.days.reduce(
+            (n, d) => n + (d.restaurants?.length ?? 0),
+            0,
+          ),
+          restaurantsMissingFit: findDietaryGaps(gen.days, required).length,
+          restaurantsSuspectedConflict: findDietaryConflictSuspects(
+            gen.days,
+            required,
+          ).length,
+        };
+        logger.info("Copertura preferenze itinerario", summary);
+        return summary;
       });
     }
 

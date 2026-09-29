@@ -101,6 +101,24 @@ describe("jsonSchemaOutputFormat — schema dell'itinerario", () => {
     expect(dayProps.restaurants.description).toContain("maxItems: 4");
   });
 
+  it("dietaryFit è un array obbligatorio i cui valori sono vincolati all'enum delle diete (enum annidato ripristinato)", () => {
+    const restaurantNode = dayProps.restaurants.items as Node;
+    const fit = (restaurantNode.properties as Record<string, Node>).dietaryFit;
+
+    expect(restaurantNode.required).toEqual(
+      expect.arrayContaining(["dietaryFit"]),
+    );
+    expect(fit.type).toBe("array");
+    expect((fit.items as Node).enum).toEqual([
+      "vegetarian",
+      "vegan",
+      "gluten_free",
+      "lactose_free",
+      "halal",
+      "kosher",
+    ]);
+  });
+
   it("mantiene gli enum (pranzo/cena)", () => {
     const meal = (
       (dayProps.restaurants.items as Node).properties as Record<string, Node>

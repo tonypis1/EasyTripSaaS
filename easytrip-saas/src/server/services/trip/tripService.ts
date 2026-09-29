@@ -33,6 +33,16 @@ import {
   type StoredSlot,
 } from "@/lib/trip/day-slots";
 import {
+  DIET_FIT_KEYS,
+  preferencesFromTrip,
+  type DietFitKey,
+  type DietaryKey,
+  type InterestKey,
+  type MobilityKey,
+  type PaceKey,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
+import {
   analyzeItineraryGeo,
   geoInputFromStoredDay,
   type ItineraryGeoAnalysis,
@@ -50,6 +60,8 @@ export type RestaurantSuggestDto = {
   distance: string;
   reservationNeeded: boolean;
   reservationTip: string;
+  /** Restrizioni alimentari che il locale dichiara di soddisfare (vuoto per gli itinerari precedenti alla funzione). */
+  dietaryFit: DietFitKey[];
 };
 
 export type TripDayDto = {
@@ -99,6 +111,8 @@ export type TripDetailDto = {
   status: string;
   regenCount: number;
   currentVersion: number;
+  /** Preferenze strutturate scelte per il viaggio (vuote se non indicate). */
+  preferences: TripPreferences;
   isPaid: boolean;
   userCreditBalanceCents: number;
   tripPriceCents: number;
@@ -164,6 +178,12 @@ type TripListItemDb = {
   versions: { days: { id: string }[] }[];
 };
 
+/** `dietaryFit` salvato → chiavi note (ignora valori sconosciuti o un tipo inatteso). */
+function readDietaryFit(value: unknown): DietFitKey[] {
+  if (!Array.isArray(value)) return [];
+  return DIET_FIT_KEYS.filter((key) => value.includes(key));
+}
+
 /** Ristoranti salvati (jsonb) → DTO; accetta sia il formato attuale sia quello storico pre-A2. Non lancia mai. */
 function parseRestaurants(value: unknown): RestaurantSuggestDto[] | null {
   const j = readStoredList(value);
@@ -193,6 +213,7 @@ function parseRestaurants(value: unknown): RestaurantSuggestDto[] | null {
         reservationNeeded: o.reservationNeeded,
         reservationTip:
           typeof o.reservationTip === "string" ? o.reservationTip : "",
+        dietaryFit: readDietaryFit(o.dietaryFit),
       });
       continue;
     }
@@ -212,6 +233,7 @@ function parseRestaurants(value: unknown): RestaurantSuggestDto[] | null {
         distance: "",
         reservationNeeded: false,
         reservationTip: "",
+        dietaryFit: [],
       });
     }
   }
@@ -400,6 +422,7 @@ export class TripService {
       status: trip.status,
       regenCount: trip.regenCount,
       currentVersion: trip.currentVersion,
+      preferences: preferencesFromTrip(trip),
       isPaid: trip.amountPaid != null,
       userCreditBalanceCents,
       localPassCityCount:
@@ -581,7 +604,14 @@ export class TripService {
 
   async updatePreferences(
     tripId: string,
-    data: { style?: string | null; budgetLevel: string },
+    data: {
+      style?: string | null;
+      budgetLevel: string;
+      interests?: InterestKey[];
+      pace?: PaceKey | null;
+      mobilityNeeds?: MobilityKey[];
+      dietaryRestrictions?: DietaryKey[];
+    },
   ): Promise<{ ok: true }> {
     const user = await this.authService.getOrCreateCurrentUser();
     const result = await this.tripRepository.updatePreferences(

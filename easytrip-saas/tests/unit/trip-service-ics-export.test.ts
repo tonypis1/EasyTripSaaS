@@ -257,3 +257,87 @@ describe("TripService.getTripDetail — slot jsonb nel DTO", () => {
     }
   });
 });
+
+describe("TripService.getTripDetail — preferenze strutturate", () => {
+  it("espone le preferenze salvate sul viaggio", async () => {
+    const trip = {
+      ...baseTrip(),
+      interests: ["history", "nature"],
+      pace: "packed",
+      mobilityNeeds: ["avoid_stairs"],
+      dietaryRestrictions: ["vegan", "nut_allergy"],
+    };
+    const service = makeService(vi.fn().mockResolvedValue(trip));
+
+    const { preferences } = await service.getTripDetail("trip1");
+
+    expect(preferences).toEqual({
+      interests: ["history", "nature"],
+      pace: "packed",
+      mobilityNeeds: ["avoid_stairs"],
+      dietaryRestrictions: ["vegan", "nut_allergy"],
+    });
+  });
+
+  it("viaggi precedenti alla funzione (campi assenti) → preferenze vuote, mai un errore", async () => {
+    const service = makeService(vi.fn().mockResolvedValue(baseTrip()));
+
+    const { preferences } = await service.getTripDetail("trip1");
+
+    expect(preferences).toEqual({
+      interests: [],
+      pace: null,
+      mobilityNeeds: [],
+      dietaryRestrictions: [],
+    });
+  });
+
+  it("ignora chiavi non più supportate salvate in passato", async () => {
+    const trip = {
+      ...baseTrip(),
+      interests: ["history", "chiave_rimossa"],
+      pace: "x",
+    };
+    const service = makeService(vi.fn().mockResolvedValue(trip));
+
+    const { preferences } = await service.getTripDetail("trip1");
+
+    expect(preferences.interests).toEqual(["history"]);
+    expect(preferences.pace).toBeNull();
+  });
+
+  it("i ristoranti espongono dietaryFit (solo chiavi note; vuoto per i record precedenti)", async () => {
+    const trip = baseTrip();
+    (trip.versions[0].days[0] as Record<string, unknown>).restaurants = [
+      {
+        meal: "pranzo",
+        name: "Verde",
+        cuisine: "veg",
+        why: "Buono",
+        budgetHint: "€10",
+        distance: "50m",
+        reservationNeeded: false,
+        reservationTip: "",
+        dietaryFit: ["vegan", "chiave_sconosciuta", "gluten_free"],
+      },
+      {
+        meal: "cena",
+        name: "Vecchio",
+        cuisine: "trattoria",
+        why: "Buono",
+        budgetHint: "€20",
+        distance: "80m",
+        reservationNeeded: false,
+        reservationTip: "",
+      },
+    ];
+    const service = makeService(vi.fn().mockResolvedValue(trip));
+
+    const { days } = await service.getTripDetail("trip1");
+
+    expect(days[0].restaurants?.map((r) => r.dietaryFit)).toEqual([
+      ["vegan", "gluten_free"],
+      [],
+    ]);
+  });
+});

@@ -14,6 +14,12 @@ import type { StoredSlot } from "@/lib/trip/day-slots";
 import { ShareButton } from "@/components/trips/ShareButton";
 import { CalendarExportButton } from "@/components/trips/CalendarExportButton";
 import { SlotVotePanel } from "@/components/trips/SlotVotePanel";
+import { PreferencesFields } from "@/components/trips/PreferencesFields";
+import {
+  AllergyNotice,
+  RestaurantDietBadges,
+} from "@/components/trips/DietBadges";
+import type { TripPreferences } from "@/lib/trip/preferences";
 import {
   DayRouteSummary,
   GeoScoreDetails,
@@ -379,6 +385,9 @@ export function TripDetailClient({
   const [prefOpen, setPrefOpen] = useState(false);
   const [prefStyle, setPrefStyle] = useState(initialTrip.style ?? "");
   const [prefBudget, setPrefBudget] = useState(initialTrip.budgetLevel);
+  const [prefStructured, setPrefStructured] = useState<TripPreferences>(
+    initialTrip.preferences,
+  );
   const [replaceResult, setReplaceResult] = useState<{
     key: string;
     data: SlotReplaceResult;
@@ -777,6 +786,10 @@ export function TripDetailClient({
         body: JSON.stringify({
           style: prefStyle.trim().length >= 2 ? prefStyle.trim() : null,
           budgetLevel: prefBudget,
+          interests: prefStructured.interests,
+          pace: prefStructured.pace,
+          mobilityNeeds: prefStructured.mobilityNeeds,
+          dietaryRestrictions: prefStructured.dietaryRestrictions,
         }),
       });
       const json = await res.json();
@@ -789,6 +802,11 @@ export function TripDetailClient({
         destination: trip.destination,
         budgetLevel: prefBudget,
         style: prefStyle.trim() || null,
+        // Solo conteggi/flag: le restrizioni alimentari possono essere dati sensibili.
+        interests_count: prefStructured.interests.length,
+        pace: prefStructured.pace,
+        mobility_needs_count: prefStructured.mobilityNeeds.length,
+        has_dietary_restrictions: prefStructured.dietaryRestrictions.length > 0,
       });
       setPrefOpen(false);
       setMsg(td("status.prefsUpdated"));
@@ -1267,6 +1285,12 @@ export function TripDetailClient({
                       )}
                     </div>
                   </fieldset>
+
+                  <PreferencesFields
+                    value={prefStructured}
+                    onChange={setPrefStructured}
+                    disabled={busy !== null}
+                  />
 
                   <div className="flex items-center gap-3">
                     <button
@@ -1903,6 +1927,7 @@ export function TripDetailClient({
                               {td("restaurants.lunchDinnerSeparated")}
                             </p>
                           </div>
+                          <AllergyNotice prefs={trip.preferences} />
 
                           {(() => {
                             const lunch = day.restaurants.filter(
@@ -1990,6 +2015,10 @@ export function TripDetailClient({
                                       <p className="text-et-ink/70 mt-2 text-sm leading-relaxed">
                                         {r.why}
                                       </p>
+                                      <RestaurantDietBadges
+                                        prefs={trip.preferences}
+                                        dietaryFit={r.dietaryFit}
+                                      />
 
                                       {r.reservationNeeded &&
                                       r.reservationTip ? (

@@ -18,6 +18,10 @@ import { generateWithRepair } from "@/lib/ai/repairLoop";
 import { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
 import { GeoScoreService } from "@/server/services/trip/geoScoreService";
 import { readStoredSlot, slotSummary } from "@/lib/trip/day-slots";
+import {
+  buildPreferencesPromptBlock,
+  preferencesFromTrip,
+} from "@/lib/trip/preferences";
 import { logger } from "@/lib/observability";
 import { z } from "zod";
 
@@ -126,6 +130,8 @@ function buildUserPrompt(args: {
   zoneFocus: string | null;
   budgetLevel: string;
   style: string | null;
+  /** Preferenze strutturate del viaggio (mobilità, ritmo, restrizioni…) o null. */
+  preferencesBlock: string | null;
   gpsHint: string;
   locale: SupportedAiLocale;
 }): string {
@@ -140,6 +146,7 @@ Giorno: ${args.dayNumber}
 Budget: ${args.budgetLevel}
 Stile viaggio: ${args.style ?? "non specificato"}
 ${zoneBlock}
+${args.preferencesBlock ? `\n${args.preferencesBlock}\n` : ""}
 
 PROGRAMMA COMPLETO DEL GIORNO (tutti gli slot):
 ${args.allSlotsSummary}
@@ -301,6 +308,10 @@ export class SlotReplaceService {
       zoneFocus: day.zoneFocus,
       budgetLevel: trip.budgetLevel ?? "moderate",
       style: trip.style,
+      preferencesBlock: buildPreferencesPromptBlock(
+        preferencesFromTrip(trip),
+        "slot",
+      ),
       gpsHint,
       locale,
     });

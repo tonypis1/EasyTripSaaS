@@ -21,6 +21,15 @@ import {
   formatGroundingForPrompt,
   type GroundedDestination,
 } from "@/lib/grounding/grounding-schema";
+import {
+  EMPTY_PREFERENCES,
+  buildPreferencesPromptBlock,
+  findDietaryGaps,
+  formatDietaryGaps,
+  requiredDietFits,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
+import { logger } from "@/lib/observability";
 
 export type ItineraryGenerationInput = {
   destination: string;
@@ -33,6 +42,8 @@ export type ItineraryGenerationInput = {
   usedZones: string | null;
   localPassCityCount: number;
   locale: SupportedAiLocale;
+  /** Preferenze strutturate (interessi, ritmo, mobilità, restrizioni alimentari); assenti/vuote = prompt invariato. */
+  preferences?: TripPreferences;
   /** POI/ristoranti verificati via ricerca web (cache condivisa); assente = si genera solo dalla conoscenza del modello. */
   grounding?: { grounding: GroundedDestination; fetchedAt: string } | null;
 };
@@ -111,6 +122,7 @@ function buildStableUserPrompt(args: {
   localPassCityCount: number;
   locale: SupportedAiLocale;
   groundingBlock: string | null;
+  preferencesBlock: string | null;
 }): string {
   const localPassBlock =
     args.localPassCityCount > 0
@@ -123,6 +135,9 @@ L'utente ha acquistato LocalPass per ${args.localPassCityCount} città (o altret
     BUDGET_PROMPT_MAP[args.budgetLevel] ?? BUDGET_PROMPT_MAP.moderate;
   const groundingSection = args.groundingBlock
     ? `\n${args.groundingBlock}\n`
+    : "";
+  const preferencesSection = args.preferencesBlock
+    ? `\n${args.preferencesBlock}\n`
     : "";
 
   return `
@@ -142,7 +157,7 @@ ${args.dayCalendar}
 
 SEZIONE — ISTRUZIONI BUDGET
 ${budgetInstruction}
-${localPassBlock}${groundingSection}
+${localPassBlock}${preferencesSection}${groundingSection}
 
 SEZIONE — OUTPUT ATTESO
 Rispondi con un unico oggetto JSON con:
@@ -165,8 +180,9 @@ Ogni elemento di "days" deve contenere:
   - "distance": distanza approssimativa dalla zona delle attività del giorno (es. "150m dal Pantheon", "5 min a piedi da Piazza Navona")
   - "reservationNeeded": booleano true/false — true se il locale è popolare, piccolo, o chiude presto; false se accetta walk-in facilmente
   - "reservationTip": se reservationNeeded=true, scrivi come prenotare (es. "Prenota su TheFork 1-2gg prima", "Chiama al mattino"); se false, stringa vuota ""
+  - "dietaryFit": array con i codici delle restrizioni alimentari dell'utente che il locale soddisfa davvero (valori ammessi: vegetarian, vegan, gluten_free, lactose_free, halal, kosher). Array vuoto [] se l'utente non ha indicato restrizioni alimentari.
   Esempio di un singolo oggetto ristorante:
-  { "meal": "pranzo", "name": "Trattoria Da Enzo", "cuisine": "cucina romana tradizionale", "why": "Cacio e pepe tra i migliori di Trastevere, porzioni generose", "budgetHint": "€12-16/persona", "distance": "100m da Piazza Santa Maria", "reservationNeeded": true, "reservationTip": "Arriva prima delle 12:30 o fila di 20+ min" }
+  { "meal": "pranzo", "name": "Trattoria Da Enzo", "cuisine": "cucina romana tradizionale", "why": "Cacio e pepe tra i migliori di Trastevere, porzioni generose", "budgetHint": "€12-16/persona", "distance": "100m da Piazza Santa Maria", "reservationNeeded": true, "reservationTip": "Arriva prima delle 12:30 o fila di 20+ min", "dietaryFit": [] }
   NON inventare ristoranti inesistenti: usa solo nomi di locali reali e noti della destinazione. Se non sei sicuro di un nome specifico, descrivi il tipo di locale e la zona.
 - "morning", "afternoon", "evening": ogni slot deve contenere:
   - "title": nome breve del POI
@@ -224,6 +240,33 @@ const ITINERARY_OUTPUT_FORMAT = jsonSchemaOutputFormat(ModelResponseSchema);
 
 export class ItineraryGenerationService {
   /**
+   * Le restrizioni alimentari sono un vincolo: se i ristoranti non dichiarano
+   * di soddisfarle, il primo tentativo viene rifiutato con il motivo (e passa
+   * dalla riparazione). Nella risposta riparata si accetta comunque il
+   * risultato, con un avviso: in una destinazione piccola può non esistere un
+   * locale per ogni pasto, e un itinerario già pagato non deve fallire per un
+   * vincolo morbido (la UI mostra "da verificare" sui locali non confermati).
+   */
+  private checkDietaryFit(
+    result: ItineraryGenerationResult,
+    required: ReturnType<typeof requiredDietFits>,
+    mode: "strict" | "lenient",
+  ): ItineraryGenerationResult {
+    const gaps = findDietaryGaps(result.days, required);
+    if (gaps.length === 0) return result;
+
+    if (mode === "strict") throw new Error(formatDietaryGaps(gaps));
+
+    logger.warn(
+      "Ristoranti non conformi alle restrizioni dopo la riparazione",
+      {
+        restaurantsWithGaps: gaps.length,
+      },
+    );
+    return result;
+  }
+
+  /**
    * Genera e valida l'itinerario via Claude, con fino a `MAX_ATTEMPTS`
    * tentativi: se il JSON restituito non supera `parseAndValidateModelJson`,
    * tenta una riparazione (stesso prompt + frammento della risposta
@@ -234,6 +277,8 @@ export class ItineraryGenerationService {
     input: ItineraryGenerationInput,
   ): Promise<ItineraryGenerationResult> {
     const locale = normalizeAiLocale(input.locale);
+    const preferences = input.preferences ?? EMPTY_PREFERENCES;
+    const requiredDiets = requiredDietFits(preferences);
     const stableUserPrompt = buildStableUserPrompt({
       destination: input.destination,
       startDate: input.startDate.toISOString().slice(0, 10),
@@ -252,6 +297,7 @@ export class ItineraryGenerationService {
             input.grounding.fetchedAt.slice(0, 10),
           )
         : null,
+      preferencesBlock: buildPreferencesPromptBlock(preferences, "itinerary"),
     });
     const usedZonesBlock = buildUsedZonesBlock(input.usedZones);
 
@@ -295,7 +341,11 @@ export class ItineraryGenerationService {
       lastRaw = textBlock.text;
 
       try {
-        return parseAndValidateModelJson(lastRaw, input.numDays);
+        return this.checkDietaryFit(
+          parseAndValidateModelJson(lastRaw, input.numDays),
+          requiredDiets,
+          "strict",
+        );
       } catch (e) {
         lastErr = e;
         if (attempt === MAX_ATTEMPTS) break;
@@ -325,7 +375,11 @@ export class ItineraryGenerationService {
 
         lastRaw = repairTextBlock.text;
         try {
-          return parseAndValidateModelJson(lastRaw, input.numDays);
+          return this.checkDietaryFit(
+            parseAndValidateModelJson(lastRaw, input.numDays),
+            requiredDiets,
+            "lenient",
+          );
         } catch (e2) {
           lastErr = e2;
           continue;

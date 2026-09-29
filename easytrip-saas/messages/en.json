@@ -354,6 +354,70 @@
           "completed": "Completed"
         }
       },
+      "preferences": {
+        "title": "Personalise your trip",
+        "optional": "optional",
+        "hint": "These help the AI build a tailored itinerary. You can change them any time.",
+        "selectedCount": "{count} selected",
+        "interests": {
+          "label": "Interests",
+          "hint": "Up to {max}",
+          "options": {
+            "art_museums": "Art & museums",
+            "history": "History",
+            "food_wine": "Food & wine",
+            "nature": "Nature",
+            "architecture": "Architecture",
+            "nightlife": "Nightlife",
+            "shopping": "Shopping",
+            "local_life": "Local life",
+            "adventure": "Adventure & sports",
+            "wellness": "Relax & wellness"
+          }
+        },
+        "pace": {
+          "label": "Pace",
+          "options": {
+            "relaxed": "Relaxed",
+            "balanced": "Balanced",
+            "packed": "Packed"
+          },
+          "hints": {
+            "relaxed": "Few plans, lots of free time",
+            "balanced": "A bit of everything",
+            "packed": "As much as possible"
+          }
+        },
+        "mobility": {
+          "label": "Mobility",
+          "options": {
+            "limited_walking": "Limited walking",
+            "avoid_stairs": "No stairs",
+            "wheelchair": "Wheelchair",
+            "stroller": "Stroller"
+          }
+        },
+        "dietary": {
+          "label": "Dietary needs",
+          "options": {
+            "vegetarian": "Vegetarian",
+            "vegan": "Vegan",
+            "gluten_free": "Gluten-free",
+            "lactose_free": "Lactose-free",
+            "halal": "Halal",
+            "kosher": "Kosher",
+            "nut_allergy": "Nut allergy",
+            "shellfish_allergy": "Shellfish allergy"
+          },
+          "privacy": "Optional. We only use this to choose restaurants and never share it with analytics tools.",
+          "allergyDisclaimer": "The AI cannot guarantee allergen-free food: always confirm with the restaurant."
+        },
+        "restaurant": {
+          "fit": "Suits: {diets}",
+          "unverified": "To verify: {diets}",
+          "allergyNotice": "You listed an allergy ({allergies}): always confirm with the restaurant before ordering."
+        }
+      },
       "create": {
         "title": "New trip",
         "subtitle": "After creation you can pay and start the AI itinerary generation.",

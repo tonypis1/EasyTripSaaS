@@ -682,6 +682,30 @@ components:
           maximum: 30
           default: 0
           description: Add-on LocalPass — numero di città coperte (prezzo in checkout)
+        interests:
+          type: array
+          maxItems: 6
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/InterestKey"
+          description: Interessi scelti (facoltativo, max 6). Salvati in ordine canonico e senza duplicati.
+        pace:
+          allOf:
+            - $ref: "#/components/schemas/PaceKey"
+          nullable: true
+          description: Ritmo del viaggio (facoltativo).
+        mobilityNeeds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/MobilityKey"
+          description: Esigenze di mobilità (facoltativo).
+        dietaryRestrictions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DietaryKey"
+          description: Restrizioni alimentari e allergie (facoltativo). Dato potenzialmente sensibile; non inviato ad analytics né nei log.
 
     TripListItem:
       type: object
@@ -757,6 +781,7 @@ components:
 
     UpdatePreferencesBody:
       type: object
+      required: [budgetLevel]
       properties:
         style:
           type: string
@@ -764,6 +789,65 @@ components:
         budgetLevel:
           type: string
           enum: [economy, moderate, premium]
+        interests:
+          type: array
+          maxItems: 6
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/InterestKey"
+          description: Interessi scelti (max 6). Campo omesso = invariato; `[]` azzera.
+        pace:
+          allOf:
+            - $ref: "#/components/schemas/PaceKey"
+          nullable: true
+          description: Ritmo del viaggio. Omesso = invariato; `null` azzera.
+        mobilityNeeds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/MobilityKey"
+          description: Esigenze di mobilità. Omesso = invariato; `[]` azzera.
+        dietaryRestrictions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DietaryKey"
+          description: Restrizioni alimentari e allergie. Omesso = invariato; `[]` azzera. Dato potenzialmente sensibile; non inviato ad analytics né nei log.
+
+    InterestKey:
+      type: string
+      enum:
+        [
+          art_museums,
+          history,
+          food_wine,
+          nature,
+          architecture,
+          nightlife,
+          shopping,
+          local_life,
+          adventure,
+          wellness,
+        ]
+    PaceKey:
+      type: string
+      enum: [relaxed, balanced, packed]
+    MobilityKey:
+      type: string
+      enum: [limited_walking, avoid_stairs, wheelchair, stroller]
+    DietaryKey:
+      type: string
+      enum:
+        [
+          vegetarian,
+          vegan,
+          gluten_free,
+          lactose_free,
+          halal,
+          kosher,
+          nut_allergy,
+          shellfish_allergy,
+        ]
 
     ReplaceSlotBody:
       type: object

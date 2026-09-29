@@ -126,6 +126,39 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
     expect(result.suggestions).toHaveLength(3);
   });
 
+  it("nel prompt include le preferenze del viaggio, in particolare la mobilità", async () => {
+    const base = baseDay();
+    mocks.findFirst.mockResolvedValue({
+      ...base,
+      tripVersion: {
+        trip: {
+          ...base.tripVersion.trip,
+          interests: [],
+          pace: null,
+          mobilityNeeds: ["limited_walking", "stroller"],
+          dietaryRestrictions: ["gluten_free"],
+        },
+      },
+    });
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
+
+    await new LiveSuggestService().suggest(baseInput());
+
+    const prompt = lastPromptTextForCall();
+    expect(prompt).toContain("PREFERENZE DEL VIAGGIATORE");
+    expect(prompt).toContain("camminata ridotta");
+    expect(prompt).toContain("passeggino");
+    expect(prompt).toContain("Restrizioni alimentari: senza glutine");
+  });
+
+  it("senza preferenze il prompt live non ha il blocco", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
+
+    await new LiveSuggestService().suggest(baseInput());
+
+    expect(lastPromptTextForCall()).not.toContain("PREFERENZE DEL VIAGGIATORE");
+  });
+
   it("nel prompt riassume gli slot del giorno letti dal jsonb (oggetti), distinguendo vuoto e illeggibile", async () => {
     mocks.findFirst.mockResolvedValue(
       baseDay({

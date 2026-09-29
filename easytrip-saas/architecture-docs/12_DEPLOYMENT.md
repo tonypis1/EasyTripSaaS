@@ -52,6 +52,12 @@ Altri workflow: `codeql.yml`. Segreti, DNS, post-deploy: [13_CICD_SECRETS_AND_DN
 - Vercel: promuovere deployment precedente.
 - Database: pianificare rollback migrazioni separatamente (non automatico nel repo).
 
+### Migrazione `20260929130000_add_trip_preferences` (Trip: preferenze strutturate)
+
+- Additiva: 4 colonne nuove su `Trip` con default (elenchi vuoti / NULL). Non riscrive la tabella e le righe esistenti risultano subito con elenchi vuoti (verificato inserendo un viaggio prima della migrazione).
+- **Ordine di deploy: applicare la migrazione PRIMA del nuovo codice** (a differenza della migrazione `day_slots_to_jsonb`, qui l'ordine conta). Il codice precedente funziona con lo schema nuovo (crea, legge e aggiorna viaggi normalmente); il codice nuovo su uno schema senza le colonne fallisce su ogni lettura di un viaggio (`The column Trip.interests does not exist`). Verificato con Prisma 6.19.3 e PostgreSQL 16.
+- Rollback: `ALTER TABLE "Trip" DROP COLUMN "interests", DROP COLUMN "pace", DROP COLUMN "mobility_needs", DROP COLUMN "dietary_restrictions";` (elimina le preferenze salvate) e cancellare la riga da `_prisma_migrations`.
+
 ### Migrazione `20260929100000_day_slots_to_jsonb` (Day.morning/afternoon/evening/restaurants: testo → jsonb)
 
 - **Non rigenerarla con `prisma migrate dev`**: per questo cambio di tipo Prisma produce `DROP COLUMN` + `ADD COLUMN`, cioè cancella il contenuto di ogni itinerario. La migrazione nel repo converte sul posto (`ALTER COLUMN … TYPE JSONB USING …`).

@@ -354,6 +354,70 @@
           "completed": "Terminé"
         }
       },
+      "preferences": {
+        "title": "Personnalisez votre voyage",
+        "optional": "facultatif",
+        "hint": "Ces choix aident l'IA à créer un itinéraire sur mesure. Vous pouvez les modifier à tout moment.",
+        "selectedCount": "{count} sélectionnés",
+        "interests": {
+          "label": "Centres d'intérêt",
+          "hint": "Jusqu'à {max}",
+          "options": {
+            "art_museums": "Art et musées",
+            "history": "Histoire",
+            "food_wine": "Gastronomie et vin",
+            "nature": "Nature",
+            "architecture": "Architecture",
+            "nightlife": "Vie nocturne",
+            "shopping": "Shopping",
+            "local_life": "Vie locale",
+            "adventure": "Aventure et sport",
+            "wellness": "Détente et bien-être"
+          }
+        },
+        "pace": {
+          "label": "Rythme",
+          "options": {
+            "relaxed": "Tranquille",
+            "balanced": "Équilibré",
+            "packed": "Intense"
+          },
+          "hints": {
+            "relaxed": "Peu d'activités, beaucoup de temps libre",
+            "balanced": "Un peu de tout",
+            "packed": "Le plus possible"
+          }
+        },
+        "mobility": {
+          "label": "Mobilité",
+          "options": {
+            "limited_walking": "Marche limitée",
+            "avoid_stairs": "Pas d'escaliers",
+            "wheelchair": "Fauteuil roulant",
+            "stroller": "Poussette"
+          }
+        },
+        "dietary": {
+          "label": "Régimes alimentaires",
+          "options": {
+            "vegetarian": "Végétarien",
+            "vegan": "Végétalien",
+            "gluten_free": "Sans gluten",
+            "lactose_free": "Sans lactose",
+            "halal": "Halal",
+            "kosher": "Casher",
+            "nut_allergy": "Allergie aux fruits à coque",
+            "shellfish_allergy": "Allergie aux crustacés et mollusques"
+          },
+          "privacy": "Facultatif. Nous l'utilisons uniquement pour choisir les restaurants et ne le partageons jamais avec des outils d'analyse.",
+          "allergyDisclaimer": "L'IA ne peut pas garantir l'absence d'allergènes : confirmez toujours avec le restaurant."
+        },
+        "restaurant": {
+          "fit": "Convient : {diets}",
+          "unverified": "À vérifier : {diets}",
+          "allergyNotice": "Vous avez indiqué une allergie ({allergies}) : confirmez toujours avec le restaurant avant de commander."
+        }
+      },
       "create": {
         "title": "Nouveau voyage",
         "subtitle": "Après la création vous pourrez payer et lancer la génération IA de l'itinéraire.",

@@ -20,6 +20,10 @@ import {
 import { AppError } from "@/server/errors/AppError";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
 import { slotSummary } from "@/lib/trip/day-slots";
+import {
+  buildPreferencesPromptBlock,
+  preferencesFromTrip,
+} from "@/lib/trip/preferences";
 
 const REASONS: Record<string, string> = {
   closed: "il posto previsto è chiuso o inaccessibile",
@@ -85,6 +89,8 @@ function buildUserPrompt(args: {
   allSlotsSummary: string;
   budgetLevel: string;
   style: string | null;
+  /** Preferenze strutturate del viaggio (mobilità, ritmo, restrizioni…) o null. */
+  preferencesBlock: string | null;
   timeOfDay: string;
   locale: SupportedAiLocale;
 }): string {
@@ -104,7 +110,7 @@ ${args.currentSlotSummary}
 PREFERENZE UTENTE:
 - Budget: ${args.budgetLevel}
 - Stile: ${args.style ?? "non specificato"}
-
+${args.preferencesBlock ? `\n${args.preferencesBlock}\n` : ""}
 OUTPUT ATTESO
 Rispondi con un unico oggetto JSON:
 {
@@ -223,6 +229,10 @@ export class LiveSuggestService {
       allSlotsSummary,
       budgetLevel: trip.budgetLevel ?? "moderate",
       style: trip.style,
+      preferencesBlock: buildPreferencesPromptBlock(
+        preferencesFromTrip(trip),
+        "slot",
+      ),
       timeOfDay,
       locale,
     });

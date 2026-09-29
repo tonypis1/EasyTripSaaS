@@ -75,7 +75,7 @@ model User {
   referralsReceived Referral[]      @relation("ReferredUser")
 }
 
-/// purpose: generazione e consultazione itinerari, spese di gruppo
+/// purpose: generazione e consultazione itinerari, spese di gruppo; preferenze di viaggio facoltative (interessi, ritmo, mobilità, restrizioni alimentari — queste ultime possono rivelare dati sensibili: solo su scelta esplicita dell'utente, usate unicamente per generare l'itinerario, mai inviate ad analytics né nei log)
 /// retention: soft-delete + hard-delete dopo RETENTION_SOFT_DELETED_TRIP_DAYS; versioni non attive secondo policy Inngest
 model Trip {
   id                  String     @id @default(cuid())
@@ -85,7 +85,15 @@ model Trip {
   endDate             DateTime   @map("end_date") @db.Date
   accessExpiresAt     DateTime   @map("access_expires_at") @db.Date
   tripType            TripType   @map("trip_type")
-  style               String? // foodie, cultura, ecc.
+  style               String? // foodie, cultura, ecc. (testo libero; le scelte strutturate sono nei campi sotto)
+  /// Interessi scelti (chiavi di src/lib/trip/preferences.ts, max 6). Elenco di testo, non enum DB: aggiungere un'opzione non richiede migrazioni.
+  interests           String[]   @default([])
+  /// Ritmo: relaxed | balanced | packed (null = nessuna preferenza).
+  pace                String?
+  /// Esigenze di mobilità: limited_walking | avoid_stairs | wheelchair | stroller.
+  mobilityNeeds       String[]   @default([]) @map("mobility_needs")
+  /// Restrizioni alimentari e allergie (vedi purpose sopra: dato potenzialmente sensibile).
+  dietaryRestrictions String[]   @default([]) @map("dietary_restrictions")
   budgetLevel         String     @default("moderate") @map("budget_level") // economy | moderate | premium
   status              TripStatus @default(pending)
   regenCount          Int        @default(0) @map("regen_count") // 0..7

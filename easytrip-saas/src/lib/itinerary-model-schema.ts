@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { httpUrlSchema } from "@/lib/safe-url";
+import { DIET_FIT_KEYS } from "@/lib/trip/preferences";
 
 /** Claude a volte avvolge il JSON in ```json ... ``` */
 export function extractJsonText(raw: string): string {
@@ -19,6 +20,12 @@ export const RestaurantEntrySchema = z.object({
   distance: z.string().min(1),
   reservationNeeded: z.boolean(),
   reservationTip: z.string().default(""),
+  /**
+   * Restrizioni alimentari dell'utente che il locale soddisfa davvero (auto-
+   * dichiarate dal modello, poi verificate contro le restrizioni richieste).
+   * Vuoto se l'utente non ne ha indicate o nessuna è soddisfatta.
+   */
+  dietaryFit: z.array(z.enum(DIET_FIT_KEYS)).default([]),
 });
 
 export const DaySlotSchema = z.object({

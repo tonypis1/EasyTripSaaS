@@ -354,6 +354,70 @@
           "completed": "Abgeschlossen"
         }
       },
+      "preferences": {
+        "title": "Reise personalisieren",
+        "optional": "optional",
+        "hint": "Diese Angaben helfen der KI, eine maßgeschneiderte Route zu erstellen. Du kannst sie jederzeit ändern.",
+        "selectedCount": "{count} ausgewählt",
+        "interests": {
+          "label": "Interessen",
+          "hint": "Bis zu {max}",
+          "options": {
+            "art_museums": "Kunst und Museen",
+            "history": "Geschichte",
+            "food_wine": "Essen und Wein",
+            "nature": "Natur",
+            "architecture": "Architektur",
+            "nightlife": "Nachtleben",
+            "shopping": "Shopping",
+            "local_life": "Lokales Leben",
+            "adventure": "Abenteuer und Sport",
+            "wellness": "Entspannung und Wellness"
+          }
+        },
+        "pace": {
+          "label": "Tempo",
+          "options": {
+            "relaxed": "Entspannt",
+            "balanced": "Ausgewogen",
+            "packed": "Straff"
+          },
+          "hints": {
+            "relaxed": "Wenige Termine, viel Freizeit",
+            "balanced": "Von allem etwas",
+            "packed": "So viel wie möglich"
+          }
+        },
+        "mobility": {
+          "label": "Mobilität",
+          "options": {
+            "limited_walking": "Wenig laufen",
+            "avoid_stairs": "Keine Treppen",
+            "wheelchair": "Rollstuhl",
+            "stroller": "Kinderwagen"
+          }
+        },
+        "dietary": {
+          "label": "Ernährung",
+          "options": {
+            "vegetarian": "Vegetarisch",
+            "vegan": "Vegan",
+            "gluten_free": "Glutenfrei",
+            "lactose_free": "Laktosefrei",
+            "halal": "Halal",
+            "kosher": "Koscher",
+            "nut_allergy": "Nussallergie",
+            "shellfish_allergy": "Allergie gegen Meeresfrüchte"
+          },
+          "privacy": "Optional. Wir nutzen das nur zur Auswahl der Restaurants und geben es nie an Analyse-Tools weiter.",
+          "allergyDisclaimer": "Die KI kann Allergenfreiheit nicht garantieren: Frag immer im Restaurant nach."
+        },
+        "restaurant": {
+          "fit": "Geeignet: {diets}",
+          "unverified": "Zu prüfen: {diets}",
+          "allergyNotice": "Du hast eine Allergie angegeben ({allergies}): Frag vor dem Bestellen immer im Restaurant nach."
+        }
+      },
       "create": {
         "title": "Neue Reise",
         "subtitle": "Nach der Erstellung kannst du bezahlen und die KI-Generierung der Route starten.",

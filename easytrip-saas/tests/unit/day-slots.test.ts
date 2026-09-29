@@ -146,6 +146,7 @@ describe("fallbackSlot / dayContentForDb", () => {
           distance: "100m",
           reservationNeeded: true,
           reservationTip: "Prenota",
+          dietaryFit: [],
         },
       ],
     });

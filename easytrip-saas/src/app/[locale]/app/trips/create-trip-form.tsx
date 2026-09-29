@@ -4,6 +4,14 @@ import posthog from "posthog-js";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import {
+  PreferencesFields,
+  countPreferences,
+} from "@/components/trips/PreferencesFields";
+import {
+  EMPTY_PREFERENCES,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
 
 type TripType = "solo" | "coppia" | "gruppo";
 type BudgetLevel = "economy" | "moderate" | "premium";
@@ -11,7 +19,9 @@ type BudgetLevel = "economy" | "moderate" | "premium";
 export function CreateTripForm() {
   const router = useRouter();
   const t = useTranslations("app.trips.create");
+  const tp = useTranslations("app.trips.preferences");
   const [loading, setLoading] = useState(false);
+  const [prefs, setPrefs] = useState<TripPreferences>(EMPTY_PREFERENCES);
   const [error, setError] = useState<string | null>(null);
   const [budgetLevel, setBudgetLevel] = useState<BudgetLevel>("moderate");
   const [localPassCities, setLocalPassCities] = useState(0);
@@ -62,6 +72,10 @@ export function CreateTripForm() {
           budgetLevel,
           localPassCityCount: Math.min(30, Math.max(0, localPassCities)),
           ...(styleRaw.length >= 2 ? { style: styleRaw } : {}),
+          interests: prefs.interests,
+          pace: prefs.pace,
+          mobilityNeeds: prefs.mobilityNeeds,
+          dietaryRestrictions: prefs.dietaryRestrictions,
         }),
       });
       const json = await res.json();
@@ -69,14 +83,21 @@ export function CreateTripForm() {
         setError(json.error?.message ?? t("errorGeneric"));
         return;
       }
+      // Solo conteggi/flag: le restrizioni alimentari possono essere dati sensibili
+      // (religione, salute) e non vanno negli analytics.
       posthog.capture("trip_created", {
         destination,
         tripType,
         budgetLevel,
         startDate,
         endDate,
+        interests_count: prefs.interests.length,
+        pace: prefs.pace,
+        mobility_needs_count: prefs.mobilityNeeds.length,
+        has_dietary_restrictions: prefs.dietaryRestrictions.length > 0,
       });
       form.reset();
+      setPrefs(EMPTY_PREFERENCES);
       router.push(`/app/trips/${json.data.id}`);
       router.refresh();
     } catch {
@@ -210,6 +231,33 @@ export function CreateTripForm() {
             {BUDGET_OPTIONS.find((o) => o.value === budgetLevel)?.hint}
           </p>
         </fieldset>
+
+        <details
+          className="border-et-border/70 bg-et-deep/40 rounded-xl border sm:col-span-2"
+          data-testid="create-preferences"
+        >
+          <summary className="text-et-ink/80 flex cursor-pointer list-none flex-wrap items-center gap-2 px-4 py-3 text-sm font-medium">
+            {tp("title")}
+            <span className="text-et-ink/40 text-xs font-normal">
+              ({tp("optional")})
+            </span>
+            {countPreferences(prefs) > 0 ? (
+              <span className="border-et-accent/30 bg-et-accent/10 text-et-accent rounded-full border px-2 py-0.5 text-xs font-normal">
+                {tp("selectedCount", { count: countPreferences(prefs) })}
+              </span>
+            ) : null}
+          </summary>
+          <div className="border-et-border/60 border-t px-4 py-4">
+            <p className="text-et-ink/50 mb-4 text-xs leading-relaxed">
+              {tp("hint")}
+            </p>
+            <PreferencesFields
+              value={prefs}
+              onChange={setPrefs}
+              disabled={loading}
+            />
+          </div>
+        </details>
 
         <div className="sm:col-span-2">
           <label

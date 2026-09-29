@@ -170,6 +170,52 @@ describe("SlotReplaceService + mock Anthropic", () => {
     expect(written).toMatchObject({ title: "Museo X", lat: 41.9, lng: 12.45 });
   });
 
+  it("nel prompt include le preferenze del viaggio (mobilità, ritmo, restrizioni) così le alternative le rispettano", async () => {
+    const day = dayFixture();
+    mocks.findFirst.mockResolvedValue({
+      ...day,
+      tripVersion: {
+        trip: {
+          ...day.tripVersion.trip,
+          interests: ["art_museums"],
+          pace: "relaxed",
+          mobilityNeeds: ["wheelchair"],
+          dietaryRestrictions: ["vegetarian", "nut_allergy"],
+        },
+      },
+    });
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain("PREFERENZE DEL VIAGGIATORE");
+    expect(prompt).toContain("sedia a rotelle");
+    expect(prompt).toContain("RILASSATO");
+    expect(prompt).toContain("Restrizioni alimentari: vegetariano");
+    expect(prompt).toContain("allergia alla frutta a guscio");
+    // Non è la generazione completa: niente contratto sui ristoranti.
+    expect(prompt).not.toContain("dietaryFit");
+  });
+
+  it("senza preferenze il prompt di sostituzione non ha il blocco", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    expect(
+      mocks.messagesCreate.mock.calls[0][0].messages[0].content,
+    ).not.toContain("PREFERENZE DEL VIAGGIATORE");
+  });
+
   it("nel prompt usa il contenuto degli slot letto dal jsonb (oggetti, non stringhe)", async () => {
     mocks.findFirst.mockResolvedValue({
       ...dayFixture(),

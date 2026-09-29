@@ -101,6 +101,21 @@ Ogni elemento di `data` corrisponde al DTO `TripListItem` in [`docs/openapi.yaml
 
 Le distanze sono in linea d'aria; `walkMinutes` assume ~5 km/h e la UI lo mostra solo se la tratta più lunga del giorno è ≤ 3 km.
 
+### 3.3. Preferenze strutturate del viaggio
+
+Facoltative, validate con enum chiusi (valori sconosciuti → `400 VALIDATION_ERROR`):
+
+| Campo                 | Tipo           | Valori                                                                                                                          | Note                                                                  |
+| --------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `interests`           | array, max 6   | `art_museums`, `history`, `food_wine`, `nature`, `architecture`, `nightlife`, `shopping`, `local_life`, `adventure`, `wellness` | Senza duplicati, ordine canonico                                      |
+| `pace`                | string \| null | `relaxed`, `balanced`, `packed`                                                                                                 | `null` = nessuna preferenza                                           |
+| `mobilityNeeds`       | array          | `limited_walking`, `avoid_stairs`, `wheelchair`, `stroller`                                                                     |                                                                       |
+| `dietaryRestrictions` | array          | `vegetarian`, `vegan`, `gluten_free`, `lactose_free`, `halal`, `kosher`, `nut_allergy`, `shellfish_allergy`                     | Dato potenzialmente sensibile (vedi [03_DATABASE.md](03_DATABASE.md)) |
+
+- `POST /api/trips`: i campi omessi valgono vuoto/`null` (i client esistenti continuano a funzionare).
+- `PATCH /api/trips/{tripId}/preferences`: accetta gli stessi campi insieme a `style`/`budgetLevel`; **campo omesso = invariato**, `[]`/`null` = azzera. Come per le altre preferenze, ogni salvataggio marca il viaggio come "preferenze cambiate" (`prefChangedAfterGen`).
+- `GET /api/trips/{tripId}`: `preferences` (stessa forma, sempre presente; vuota per i viaggi precedenti) e, per ogni ristorante, `dietaryFit`: le restrizioni alimentari che il locale dichiara di soddisfare (`vegetarian`, `vegan`, `gluten_free`, `lactose_free`, `halal`, `kosher`; vuoto per gli itinerari generati prima della funzione).
+
 ## 4. Autenticazione
 
 - La maggior parte delle route trip/billing/user richiede sessione **Clerk** (cookie / header secondo configurazione SDK).

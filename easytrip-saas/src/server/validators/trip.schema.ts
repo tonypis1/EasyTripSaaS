@@ -1,4 +1,8 @@
 ﻿import { z } from "zod";
+import {
+  preferencesCreateShape,
+  preferencesUpdateShape,
+} from "@/lib/trip/preferences";
 
 export const BUDGET_LEVELS = ["economy", "moderate", "premium"] as const;
 export type BudgetLevel = (typeof BUDGET_LEVELS)[number];
@@ -10,6 +14,8 @@ export const createTripSchema = z.object({
   tripType: z.enum(["solo", "coppia", "gruppo"]),
   style: z.string().min(2).max(120).optional(),
   budgetLevel: z.enum(BUDGET_LEVELS).default("moderate"),
+  /** Preferenze strutturate (facoltative): interessi, ritmo, mobilità, restrizioni alimentari. */
+  ...preferencesCreateShape,
   /** Add-on LocalPass: numero di città (0 = nessun add-on). */
   localPassCityCount: z.coerce.number().int().min(0).max(30).default(0),
 });
@@ -34,6 +40,8 @@ export const replaceSlotSchema = z.object({
 export const updatePreferencesSchema = z.object({
   style: z.string().min(2).max(120).optional().nullable(),
   budgetLevel: z.enum(BUDGET_LEVELS),
+  /** Campo omesso = invariato; `[]` / `null` = azzera. */
+  ...preferencesUpdateShape,
 });
 
 export const liveSuggestSchema = z.object({

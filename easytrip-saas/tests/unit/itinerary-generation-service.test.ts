@@ -336,3 +336,204 @@ describe("ItineraryGenerationService.generate — prompt caching", () => {
     expect(secondGenContent[0]).toEqual(firstGenContent[0]);
   });
 });
+
+describe("ItineraryGenerationService.generate — preferenze strutturate", () => {
+  const veg = {
+    interests: [],
+    pace: null,
+    mobilityNeeds: [],
+    dietaryRestrictions: ["vegetarian" as const],
+  };
+
+  /** Payload in cui ogni ristorante dichiara le restrizioni indicate (una lista per ristorante, uguale per tutti i giorni). */
+  function payloadWithFit(numDays: number, fit: string[]) {
+    return JSON.stringify({
+      optimizationScore: 8,
+      days: Array.from({ length: numDays }, (_, i) => ({
+        ...day(i + 1),
+        restaurants: [
+          restaurant({ dietaryFit: fit }),
+          restaurant({ meal: "cena", name: "Osteria", dietaryFit: fit }),
+        ],
+      })),
+    });
+  }
+
+  it("senza preferenze il prompt non cambia: nessun blocco, identico a preferenze vuote", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(baseInput());
+    await service.generate(
+      baseInput({
+        preferences: {
+          interests: [],
+          pace: null,
+          mobilityNeeds: [],
+          dietaryRestrictions: [],
+        },
+      }),
+    );
+
+    const [a, b] = mocks.messagesCreate.mock.calls.map(
+      (c) => c[0].messages[0].content[0].text,
+    );
+    expect(a).not.toContain("PREFERENZE DEL VIAGGIATORE");
+    expect(b).toBe(a);
+  });
+
+  it("il blocco PREFERENZE sta nella parte stabile (cacheable), prima di OUTPUT ATTESO, e la riparazione lo riusa byte-per-byte", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // numDays sbagliato → riparazione
+      .mockResolvedValueOnce(textResponse(payloadWithFit(2, ["vegetarian"])));
+
+    const service = new ItineraryGenerationService();
+    await service.generate(
+      baseInput({
+        preferences: { ...veg, interests: ["art_museums"], pace: "relaxed" },
+      }),
+    );
+
+    const [first, repair] = mocks.messagesCreate.mock.calls.map(
+      (c) => c[0].messages[0].content,
+    );
+    expect(first[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(first[0].text).toContain("PREFERENZE DEL VIAGGIATORE");
+    expect(first[0].text).toContain("arte e musei");
+    expect(first[0].text).toContain("RILASSATO");
+    expect(first[0].text).toContain("vegetariano");
+    expect(first[0].text.indexOf("PREFERENZE DEL VIAGGIATORE")).toBeLessThan(
+      first[0].text.indexOf("SEZIONE — OUTPUT ATTESO"),
+    );
+    expect(repair[0]).toEqual(first[0]);
+  });
+
+  it("il formato di output chiede sempre dietaryFit per ogni ristorante", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    await new ItineraryGenerationService().generate(baseInput());
+
+    const stable = mocks.messagesCreate.mock.calls[0][0].messages[0].content[0];
+    expect(stable.text).toContain('"dietaryFit"');
+    expect(stable.text).toContain("vegetarian, vegan, gluten_free");
+  });
+
+  it("dietaryFit dichiarato viene letto e conservato nel risultato", async () => {
+    mocks.messagesCreate.mockResolvedValue(
+      textResponse(payloadWithFit(2, ["vegetarian", "gluten_free"])),
+    );
+
+    const result = await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    expect(result.days[0].restaurants[0].dietaryFit).toEqual([
+      "vegetarian",
+      "gluten_free",
+    ]);
+  });
+
+  it("ristoranti che soddisfano le restrizioni: una sola chiamata", async () => {
+    mocks.messagesCreate.mockResolvedValue(
+      textResponse(payloadWithFit(2, ["vegetarian"])),
+    );
+
+    await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("un locale vegano soddisfa la richiesta vegetariana", async () => {
+    mocks.messagesCreate.mockResolvedValue(
+      textResponse(payloadWithFit(2, ["vegan"])),
+    );
+
+    await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("ristoranti che non dichiarano la restrizione: il primo tentativo viene rifiutato con il motivo e si ripara", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(payloadWithFit(2, []))) // nessun locale dichiara "vegetarian"
+      .mockResolvedValueOnce(textResponse(payloadWithFit(2, ["vegetarian"])));
+
+    const result = await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    const repairText =
+      mocks.messagesCreate.mock.calls[1][0].messages[0].content.at(-1).text;
+    expect(repairText).toContain("dietaryFit");
+    expect(repairText).toContain('"Trattoria" (manca: vegetarian)');
+    expect(result.days[0].restaurants[0].dietaryFit).toEqual(["vegetarian"]);
+  });
+
+  it("se anche la risposta riparata ha lacune si accetta comunque (vincolo morbido): l'itinerario pagato non fallisce", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(payloadWithFit(2, [])));
+
+    const result = await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    // main (rifiutato) + riparazione (accettata con avviso): mai un ciclo di rigenerazioni.
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    expect(result.days).toHaveLength(2);
+  });
+
+  it("senza restrizioni alimentari ristoranti senza dietaryFit sono validi (nessuna chiamata extra)", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    await new ItineraryGenerationService().generate(
+      baseInput({
+        preferences: {
+          interests: ["nature"],
+          pace: "packed",
+          mobilityNeeds: ["stroller"],
+          dietaryRestrictions: [],
+        },
+      }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("le sole allergie non creano un contratto dietaryFit (l'AI non può garantirle) ma il prompt le tiene presenti", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    await new ItineraryGenerationService().generate(
+      baseInput({
+        preferences: {
+          interests: [],
+          pace: null,
+          mobilityNeeds: [],
+          dietaryRestrictions: ["nut_allergy"],
+        },
+      }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
+    const text =
+      mocks.messagesCreate.mock.calls[0][0].messages[0].content[0].text;
+    expect(text).toContain("allergia alla frutta a guscio");
+    expect(text).toContain("non fare promesse di sicurezza");
+  });
+
+  it("errori strutturali e lacune dietetiche insieme: il conteggio delle chiamate resta limitato", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // struttura errata
+      .mockResolvedValueOnce(textResponse(payloadWithFit(2, []))); // struttura ok, lacune → accettata (lenient)
+
+    const result = await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    expect(result.days).toHaveLength(2);
+  });
+});
