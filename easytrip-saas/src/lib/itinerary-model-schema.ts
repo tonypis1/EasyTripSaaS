@@ -63,6 +63,11 @@ export const DayPlanExtendedSchema = z.object({
 });
 
 export const ModelResponseSchema = z.object({
+  /**
+   * Auto-valutazione del modello: NON è il GeoScore mostrato all'utente (quello
+   * si calcola dalle coordinate, vedi `geo-optimization.ts`). Resta come ripiego
+   * quando le coordinate non bastano e come termine di confronto nei log.
+   */
   optimizationScore: z.coerce.number().min(1).max(10),
   days: z.array(DayPlanExtendedSchema),
 });

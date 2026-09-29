@@ -13,6 +13,10 @@ import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
 import { ShareButton } from "@/components/trips/ShareButton";
 import { CalendarExportButton } from "@/components/trips/CalendarExportButton";
 import { SlotVotePanel } from "@/components/trips/SlotVotePanel";
+import {
+  DayRouteSummary,
+  GeoScoreDetails,
+} from "@/components/trips/GeoScoreDetails";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useState } from "react";
@@ -925,6 +929,7 @@ export function TripDetailClient({
             />
           </div>
         ) : null}
+        {hasDays && trip.geo ? <GeoScoreDetails geo={trip.geo} /> : null}
       </header>
 
       {/* ── Countdown banner ── */}
@@ -1469,6 +1474,9 @@ export function TripDetailClient({
               const afternoon = parseSlot(day.afternoon);
               const evening = parseSlot(day.evening);
               const hasAnySlot = Boolean(morning || afternoon || evening);
+              const dayGeo = trip.geo?.days.find(
+                (g) => g.dayNumber === day.dayNumber,
+              );
 
               return (
                 <li
@@ -1517,6 +1525,9 @@ export function TripDetailClient({
 
                   {open ? (
                     <div className="space-y-4 px-5 pb-5">
+                      {/* Percorso del giorno (km, a piedi, riordino suggerito) */}
+                      {dayGeo ? <DayRouteSummary day={dayGeo} /> : null}
+
                       {/* Day-of-week warning */}
                       {day.dowWarning ? (
                         <div className="flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-500/8 px-3.5 py-2.5">

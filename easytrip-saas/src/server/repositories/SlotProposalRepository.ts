@@ -7,6 +7,7 @@ const proposalContextInclude = {
   day: {
     select: {
       id: true,
+      tripVersionId: true,
       tripVersion: {
         select: {
           tripId: true,

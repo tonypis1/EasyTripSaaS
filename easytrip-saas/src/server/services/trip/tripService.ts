@@ -27,6 +27,11 @@ import {
   icsFilenameForDestination,
 } from "@/lib/ics-export";
 import { toSlotProposalDto, type SlotProposalDto } from "@/lib/slot-vote";
+import {
+  analyzeItineraryGeo,
+  geoInputFromStoredDay,
+  type ItineraryGeoAnalysis,
+} from "@/lib/geo-optimization";
 
 /** Throttle sync nomi membri da Clerk (vedi syncMemberNamesFromClerkForTrip). */
 const CLERK_NAME_SYNC_TTL_MS = 15 * 60 * 1000;
@@ -99,7 +104,10 @@ export type TripDetailDto = {
   /** Votazioni di gruppo aperte sugli slot dei giorni della versione attiva. */
   slotProposals: SlotProposalDto[];
   versions: TripVersionSummaryDto[];
+  /** Calcolato dalle coordinate delle tappe; ripiega sul valore salvato se non bastano. */
   activeGeoScore: number | null;
+  /** Analisi geografica della versione attiva (null se nessun giorno ha coordinate sufficienti). */
+  geo: ItineraryGeoAnalysis | null;
   prefChangedAfterGen: boolean;
   isAccessExpired: boolean;
   postTripReferralWindowActive: boolean;
@@ -231,6 +239,28 @@ function decToNumber(v: unknown): number | null {
   return null;
 }
 
+/**
+ * GeoScore della versione attiva: calcolato dalle coordinate correnti degli
+ * slot (quindi sempre coerente con ciò che l'utente vede, anche per versioni
+ * generate prima che il punteggio fosse calcolato). Ripiega sul valore salvato
+ * se le coordinate non bastano.
+ */
+function activeVersionGeo(active: {
+  geoScore: unknown;
+  days: {
+    dayNumber: number;
+    morning: string | null;
+    afternoon: string | null;
+    evening: string | null;
+  }[];
+}) {
+  const analysis = analyzeItineraryGeo(active.days.map(geoInputFromStoredDay));
+  return {
+    analysis,
+    score: analysis.score ?? decToNumber(active.geoScore),
+  };
+}
+
 export class TripService {
   constructor(
     private readonly authService: AuthService,
@@ -288,16 +318,18 @@ export class TripService {
       trip.members,
     );
 
+    const active = trip.versions.find((v) => v.isActive);
+    const days = active?.days ?? [];
+    const activeGeo = active ? activeVersionGeo(active) : null;
+    const activeGeoScore = activeGeo?.score ?? null;
+
     const versions = trip.versions.map((v) => ({
       versionNum: v.versionNum,
-      geoScore: decToNumber(v.geoScore),
+      // Le versioni non attive non hanno i giorni caricati: restano col valore salvato.
+      geoScore: v.isActive ? activeGeoScore : decToNumber(v.geoScore),
       generatedAt: v.generatedAt.toISOString(),
       isActive: v.isActive,
     }));
-
-    const active = trip.versions.find((v) => v.isActive);
-    const days = active?.days ?? [];
-    const activeGeoScore = active ? decToNumber(active.geoScore) : null;
 
     const rc = trip.regenCount;
     const nextV = nextVersionNum(rc);
@@ -423,6 +455,10 @@ export class TripService {
       slotProposals,
       versions,
       activeGeoScore,
+      geo:
+        activeGeo && activeGeo.analysis.scoredDays > 0
+          ? activeGeo.analysis
+          : null,
       regen: {
         nextVersion: nextV,
         atMax,
@@ -459,7 +495,7 @@ export class TripService {
     }
 
     const active = trip.versions.find((v) => v.isActive);
-    const geoScore = active ? decToNumber(active.geoScore) : null;
+    const geoScore = active ? activeVersionGeo(active).score : null;
     if (geoScore == null) {
       throw new AppError(
         "GeoScore non disponibile per questo viaggio",

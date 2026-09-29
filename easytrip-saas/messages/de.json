@@ -501,6 +501,16 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "geo": {
+          "detailsSummary": "So wird der GeoScore berechnet",
+          "totalKm": "Wege zwischen den Stationen: insgesamt {km} km",
+          "avoidableKm": "Einsparbar durch neue Reihenfolge: {km} km",
+          "daysAnalyzed": "Analysierte Tage: {scored} von {total}",
+          "method": "Berechnet aus den Koordinaten der Stationen (Luftlinie), nicht von der KI geschätzt.",
+          "dayRoute": "{km} km zwischen den Stationen",
+          "dayWalk": "≈ {min} Min. zu Fuß",
+          "betterOrder": "Effizientere Reihenfolge: {order} (−{km} km)"
+        },
         "slotVote": {
           "title": "Gruppenabstimmung",
           "progress": "{voted} von {total} haben abgestimmt",

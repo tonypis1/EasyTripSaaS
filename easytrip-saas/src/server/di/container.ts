@@ -10,6 +10,8 @@ import { TripService } from "@/server/services/trip/tripService";
 import { SlotReplaceService } from "@/server/services/trip/slotReplaceService";
 import { LiveSuggestService } from "@/server/services/trip/liveSuggestService";
 import { SlotProposalService } from "@/server/services/trip/slotProposalService";
+import { SlotProposalResolver } from "@/server/services/trip/slotProposalResolver";
+import { GeoScoreService } from "@/server/services/trip/geoScoreService";
 import { BillingService } from "@/server/services/billing/billingService";
 import { SupportService } from "@/server/services/support/supportService";
 import { ExpenseService } from "@/server/services/expense/expenseService";
@@ -33,7 +35,11 @@ const slotProposalRepository = new SlotProposalRepository();
 
 const authService = new AuthService(userRepository);
 const tripService = new TripService(authService, tripRepository);
-const slotReplaceService = new SlotReplaceService(slotProposalRepository);
+const geoScoreService = new GeoScoreService(tripRepository);
+const slotReplaceService = new SlotReplaceService(
+  slotProposalRepository,
+  geoScoreService,
+);
 const liveSuggestService = new LiveSuggestService();
 const billingService = new BillingService(
   authService,
@@ -54,6 +60,7 @@ const referralService = new ReferralService(authService, referralRepository);
 const slotProposalService = new SlotProposalService(
   authService,
   slotProposalRepository,
+  new SlotProposalResolver(slotProposalRepository, geoScoreService),
 );
 const userDataService = new UserDataService();
 
@@ -90,6 +97,7 @@ export const container = {
     expenseService,
     referralService,
     slotProposalService,
+    geoScoreService,
     userDataService,
   },
   controllers: {

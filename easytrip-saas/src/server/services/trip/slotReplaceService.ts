@@ -16,6 +16,7 @@ import { AppError } from "@/server/errors/AppError";
 import { DaySlotSchema } from "@/lib/itinerary-model-schema";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
 import { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
+import { GeoScoreService } from "@/server/services/trip/geoScoreService";
 import { logger } from "@/lib/observability";
 import { z } from "zod";
 
@@ -226,6 +227,7 @@ REGOLE
 export class SlotReplaceService {
   constructor(
     private readonly proposals: SlotProposalRepository = new SlotProposalRepository(),
+    private readonly geoScore: GeoScoreService = new GeoScoreService(),
   ) {}
 
   async replaceSlot(input: {
@@ -356,6 +358,8 @@ export class SlotReplaceService {
       where: { id: day.id },
       data: { [field]: JSON.stringify(result.replacement) },
     });
+    // Le coordinate dello slot sono cambiate: riallinea il GeoScore della versione.
+    await this.geoScore.refreshForVersion(day.tripVersionId);
 
     // Con almeno 2 membri le alternative diventano una bozza di votazione,
     // salvata dal server (mai ricevuta dal client: il contenuto che il gruppo

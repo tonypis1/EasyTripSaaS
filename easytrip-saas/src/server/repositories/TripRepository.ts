@@ -443,4 +443,25 @@ export class TripRepository {
     if (result.count === 0) return null;
     return token;
   }
+
+  /** Slot (JSON) di tutti i giorni di una versione: input dell'analisi geografica. */
+  async findVersionDaySlots(tripVersionId: string) {
+    return prisma.day.findMany({
+      where: { tripVersionId },
+      orderBy: { dayNumber: "asc" },
+      select: {
+        dayNumber: true,
+        morning: true,
+        afternoon: true,
+        evening: true,
+      },
+    });
+  }
+
+  async updateVersionGeoScore(tripVersionId: string, geoScore: number) {
+    await prisma.tripVersion.update({
+      where: { id: tripVersionId },
+      data: { geoScore },
+    });
+  }
 }

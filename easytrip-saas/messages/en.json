@@ -501,6 +501,16 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "geo": {
+          "detailsSummary": "How the GeoScore is calculated",
+          "totalKm": "Travel between stops: {km} km in total",
+          "avoidableKm": "Avoidable by reordering stops: {km} km",
+          "daysAnalyzed": "Days analysed: {scored} of {total}",
+          "method": "Calculated from the coordinates of each stop (straight-line distances), not estimated by the AI.",
+          "dayRoute": "{km} km between stops",
+          "dayWalk": "≈ {min} min on foot",
+          "betterOrder": "More efficient order: {order} (−{km} km)"
+        },
         "slotVote": {
           "title": "Group vote",
           "progress": "{voted} of {total} have voted",

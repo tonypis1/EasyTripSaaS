@@ -89,6 +89,16 @@ Ogni elemento di `data` corrisponde al DTO `TripListItem` in [`docs/openapi.yaml
 | `isPaid`             | boolean                        | `true` se `amountPaid` valorizzato sul trip                                                                                                                                                                               |
 | `localPassCityCount` | integer (0–30)                 | Add-on **LocalPass** per questo viaggio: numero di città scelte in creazione (`0` = assente). Stesso significato del campo omonimo nel dettaglio `GET /api/trips/{tripId}`; esposto in lista per UI (badge) e client API. |
 
+### 3.2. Campi geografici di GET `/api/trips/{tripId}`
+
+| Campo            | Tipo                          | Note                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeGeoScore` | number \| null (1–10)         | GeoScore della versione attiva, **calcolato alla lettura** dalle coordinate correnti degli slot (quindi coerente con sostituzioni e votazioni); se le coordinate non bastano ripiega sul valore salvato. Stesso valore della card di condivisione (`share-image`).                                                                       |
+| `geo`            | object \| null                | Analisi geografica della versione attiva; `null` se nessun giorno è valutabile. Campi: `score`, `totalKm`, `avoidableKm` (km risparmiabili riordinando le tappe), `scoredDays`, `totalDays`, `days[]` con `dayNumber`, `scored`, `routeKm`, `optimalKm`, `avoidableKm`, `longestLegKm`, `walkMinutes`, `bestOrder`, `isOrderImprovable`. |
+| `versions[]`     | `{ versionNum, geoScore, … }` | `geoScore` della versione attiva = `activeGeoScore`; per le altre è il valore salvato.                                                                                                                                                                                                                                                   |
+
+Le distanze sono in linea d'aria; `walkMinutes` assume ~5 km/h e la UI lo mostra solo se la tratta più lunga del giorno è ≤ 3 km.
+
 ## 4. Autenticazione
 
 - La maggior parte delle route trip/billing/user richiede sessione **Clerk** (cookie / header secondo configurazione SDK).

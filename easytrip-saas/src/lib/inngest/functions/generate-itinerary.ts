@@ -14,6 +14,7 @@ import { ItineraryGenerationService } from "@/server/services/trip/itineraryGene
 import { GroundingService } from "@/server/services/trip/groundingService";
 import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
 import { computeGroundingCoverage } from "@/lib/grounding/coverage";
+import { analyzeItineraryGeo, resolveGeoScore } from "@/lib/geo-optimization";
 import { logger } from "@/lib/observability";
 import {
   itineraryReadyHtml,
@@ -169,6 +170,33 @@ export const generateItinerary = inngest.createFunction(
       });
     }
 
+    /**
+     * GeoScore calcolato dalle coordinate delle tappe (Haversine), non quello
+     * che il modello dichiara di sé: nessuno lo verifica e tende a essere
+     * ottimista. Il valore dichiarato resta come ripiego quando le coordinate
+     * non bastano e come termine di confronto nei log.
+     */
+    const geo = await step.run("calcola-geo-score", () => {
+      const analysis = analyzeItineraryGeo(gen.days);
+      const resolved = resolveGeoScore(analysis, gen.optimizationScore);
+      logger.info("GeoScore itinerario", {
+        tripId: trip.id,
+        source: resolved.source,
+        declared: gen.optimizationScore,
+        computed: analysis.score,
+        delta:
+          analysis.score != null
+            ? Math.round((analysis.score - gen.optimizationScore) * 10) / 10
+            : null,
+        scoredDays: analysis.scoredDays,
+        totalDays: analysis.totalDays,
+        totalKm: analysis.totalKm,
+        avoidableKm: analysis.avoidableKm,
+        improvableDays: analysis.days.filter((d) => d.isOrderImprovable).length,
+      });
+      return { geoScore: resolved.score ?? gen.optimizationScore };
+    });
+
     // -------------------------------------------------------------------
     // Persistenza versione + giorni — split in 4 step Inngest idempotenti.
     //
@@ -221,7 +249,7 @@ export const generateItinerary = inngest.createFunction(
       if (existing) {
         await prisma.tripVersion.update({
           where: { id: existing.id },
-          data: { isActive: true, geoScore: gen.optimizationScore },
+          data: { isActive: true, geoScore: geo.geoScore },
         });
         return existing.id;
       }
@@ -232,7 +260,7 @@ export const generateItinerary = inngest.createFunction(
             tripId: trip.id,
             versionNum,
             isActive: true,
-            geoScore: gen.optimizationScore,
+            geoScore: geo.geoScore,
           },
           select: { id: true },
         });
@@ -251,7 +279,7 @@ export const generateItinerary = inngest.createFunction(
           });
           await prisma.tripVersion.update({
             where: { id: found.id },
-            data: { isActive: true, geoScore: gen.optimizationScore },
+            data: { isActive: true, geoScore: geo.geoScore },
           });
           return found.id;
         }
@@ -325,7 +353,7 @@ export const generateItinerary = inngest.createFunction(
       return {
         versionNum,
         daysCreated: numDays,
-        optimizationScore: gen.optimizationScore,
+        geoScore: geo.geoScore,
       };
     });
 
@@ -345,7 +373,7 @@ export const generateItinerary = inngest.createFunction(
       if (!full?.organizer?.email) return;
 
       const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
-      const label = formatGeoScoreLabel(result.optimizationScore);
+      const label = formatGeoScoreLabel(result.geoScore);
       const organizerLocale = normalizeEmailLocale(full.organizer.language);
 
       await sendTransactionalEmail({

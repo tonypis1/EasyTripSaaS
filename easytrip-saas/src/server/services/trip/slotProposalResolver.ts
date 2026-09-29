@@ -2,6 +2,7 @@ import {
   SlotProposalRepository,
   type SlotProposalWithContext,
 } from "@/server/repositories/SlotProposalRepository";
+import type { GeoScoreService } from "@/server/services/trip/geoScoreService";
 import { AppError } from "@/server/errors/AppError";
 import { logger } from "@/lib/observability";
 import {
@@ -17,7 +18,11 @@ import {
  * lo usa anche il job schedulato che chiude le votazioni scadute.
  */
 export class SlotProposalResolver {
-  constructor(private readonly repo: SlotProposalRepository) {}
+  constructor(
+    private readonly repo: SlotProposalRepository,
+    /** Se presente, il GeoScore della versione viene ricalcolato dopo aver applicato un'alternativa. */
+    private readonly geoScore?: GeoScoreService,
+  ) {}
 
   /** Opzioni della proposta, validate: contenuto corrotto non viene mai applicato a uno slot. */
   parseOptions(proposal: SlotProposalWithContext) {
@@ -47,11 +52,17 @@ export class SlotProposalResolver {
             slotJson: JSON.stringify(options[winnerIndex].slot),
           };
 
-    return this.repo.resolve({
+    const resolved = await this.repo.resolve({
       proposalId: proposal.id,
       winnerIndex,
       apply,
     });
+
+    // Lo slot è cambiato: il punteggio calcolato alla generazione non vale più.
+    if (resolved && apply) {
+      await this.geoScore?.refreshForVersion(proposal.day.tripVersionId);
+    }
+    return resolved;
   }
 
   /**

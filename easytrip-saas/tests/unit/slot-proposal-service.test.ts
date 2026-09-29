@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SlotProposalService } from "@/server/services/trip/slotProposalService";
 import { SlotProposalResolver } from "@/server/services/trip/slotProposalResolver";
-import type { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
+import type {
+  SlotProposalRepository,
+  SlotProposalWithContext,
+} from "@/server/repositories/SlotProposalRepository";
 import type { AuthService } from "@/server/services/auth/authService";
+import type { GeoScoreService } from "@/server/services/trip/geoScoreService";
 
 function slot(title: string) {
   return {
@@ -38,6 +42,7 @@ function proposal(overrides: Record<string, unknown> = {}) {
     votes: [] as { memberId: string; optionIndex: number }[],
     day: {
       id: "d1",
+      tripVersionId: "ver1",
       tripVersion: {
         tripId: "trip1",
         trip: { organizerId: "org", deletedAt: null },
@@ -393,5 +398,56 @@ describe("SlotProposalResolver.resolveExpired", () => {
     expect(await resolver.resolveExpired()).toBe(1);
     expect(repo.resolve).toHaveBeenCalledTimes(1);
     expect(repo.resolve.mock.calls[0][0].proposalId).toBe("buona");
+  });
+});
+
+describe("SlotProposalResolver — GeoScore", () => {
+  // Il fixture omette i campi Prisma dei voti che il resolver non legge.
+  const asContext = (p: ReturnType<typeof proposal>) =>
+    p as unknown as SlotProposalWithContext;
+
+  function resolverWithGeo() {
+    const { repo } = setup();
+    const geoScore = {
+      refreshForVersion: vi.fn().mockResolvedValue(8.1),
+    } as unknown as GeoScoreService;
+    const resolver = new SlotProposalResolver(
+      repo as unknown as SlotProposalRepository,
+      geoScore,
+    );
+    return { repo, geoScore, resolver };
+  }
+
+  it("ricalcola il GeoScore della versione quando un'alternativa viene applicata allo slot", async () => {
+    const { geoScore, resolver } = resolverWithGeo();
+
+    await resolver.finalize(asContext(proposal()), 1);
+
+    expect(geoScore.refreshForVersion).toHaveBeenCalledWith("ver1");
+  });
+
+  it("non lo ricalcola se si mantiene lo slot attuale (nulla è cambiato)", async () => {
+    const { geoScore, resolver } = resolverWithGeo();
+
+    await resolver.finalize(asContext(proposal()), 0);
+
+    expect(geoScore.refreshForVersion).not.toHaveBeenCalled();
+  });
+
+  it("non lo ricalcola se un altro processo ha già chiuso la proposta (resolve → false)", async () => {
+    const { repo, geoScore, resolver } = resolverWithGeo();
+    repo.resolve.mockResolvedValue(false);
+
+    expect(await resolver.finalize(asContext(proposal()), 1)).toBe(false);
+    expect(geoScore.refreshForVersion).not.toHaveBeenCalled();
+  });
+
+  it("funziona anche senza GeoScoreService (parametro opzionale)", async () => {
+    const { repo } = setup();
+    const resolver = new SlotProposalResolver(
+      repo as unknown as SlotProposalRepository,
+    );
+
+    expect(await resolver.finalize(asContext(proposal()), 2)).toBe(true);
   });
 });

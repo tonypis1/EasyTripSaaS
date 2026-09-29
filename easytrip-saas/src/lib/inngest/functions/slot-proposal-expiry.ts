@@ -2,6 +2,7 @@ import { inngest } from "../client";
 import { logger } from "@/lib/observability";
 import { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
 import { SlotProposalResolver } from "@/server/services/trip/slotProposalResolver";
+import { GeoScoreService } from "@/server/services/trip/geoScoreService";
 
 /**
  * Cron orario: chiude le votazioni di gruppo sugli slot la cui finestra
@@ -18,7 +19,10 @@ export const slotProposalExpiry = inngest.createFunction(
   },
   async ({ step }) => {
     const resolved = await step.run("resolve-expired", async () => {
-      const resolver = new SlotProposalResolver(new SlotProposalRepository());
+      const resolver = new SlotProposalResolver(
+        new SlotProposalRepository(),
+        new GeoScoreService(),
+      );
       const count = await resolver.resolveExpired();
       logger.info("Votazioni slot scadute chiuse", { resolved: count });
       return count;

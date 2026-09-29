@@ -37,6 +37,7 @@ vi.mock("@/lib/ai/anthropic", async (importOriginal) => {
 
 import { SlotReplaceService } from "@/server/services/trip/slotReplaceService";
 import type { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
+import type { GeoScoreService } from "@/server/services/trip/geoScoreService";
 
 function altSlot(title: string) {
   return {
@@ -168,6 +169,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
   function dayFixture() {
     return {
       id: "day1",
+      tripVersionId: "ver1",
       morning: JSON.stringify({ title: "Old", place: "Roma" }),
       afternoon: "{}",
       evening: "{}",
@@ -211,6 +213,48 @@ describe("SlotReplaceService + mock Anthropic", () => {
       expect.objectContaining({ model: "claude-test" }),
       { timeout: 20_000, maxRetries: 1 },
     );
+  });
+
+  it("dopo aver salvato lo slot riallinea il GeoScore della versione del giorno", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+    const geoScore = {
+      refreshForVersion: vi.fn().mockResolvedValue(8.4),
+    } as unknown as GeoScoreService;
+
+    const svc = new SlotReplaceService(
+      { createDraft: vi.fn() } as unknown as SlotProposalRepository,
+      geoScore,
+    );
+    await svc.replaceSlot(callArgs());
+
+    expect(geoScore.refreshForVersion).toHaveBeenCalledWith("ver1");
+    // Il ricalcolo legge i giorni da DB: deve avvenire DOPO l'update dello slot.
+    expect(mocks.updateDay.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(geoScore.refreshForVersion).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("non tocca il GeoScore se la sostituzione fallisce prima di salvare", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockRejectedValue(
+      new Anthropic.APIConnectionTimeoutError(),
+    );
+    const geoScore = {
+      refreshForVersion: vi.fn(),
+    } as unknown as GeoScoreService;
+
+    const svc = new SlotReplaceService(
+      { createDraft: vi.fn() } as unknown as SlotProposalRepository,
+      geoScore,
+    );
+    await expect(svc.replaceSlot(callArgs())).rejects.toBeDefined();
+
+    expect(mocks.updateDay).not.toHaveBeenCalled();
+    expect(geoScore.refreshForVersion).not.toHaveBeenCalled();
   });
 
   it("mappa un timeout Anthropic su AppError 503 AI_TIMEOUT (degradazione controllata)", async () => {

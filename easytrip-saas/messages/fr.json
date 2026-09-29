@@ -501,6 +501,16 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "geo": {
+          "detailsSummary": "Comment le GeoScore est calculé",
+          "totalKm": "Trajets entre les étapes : {km} km au total",
+          "avoidableKm": "Économisables en réorganisant les étapes : {km} km",
+          "daysAnalyzed": "Jours analysés : {scored} sur {total}",
+          "method": "Calculé à partir des coordonnées de chaque étape (distances à vol d'oiseau), et non estimé par l'IA.",
+          "dayRoute": "{km} km entre les étapes",
+          "dayWalk": "≈ {min} min à pied",
+          "betterOrder": "Ordre plus efficace : {order} (−{km} km)"
+        },
         "slotVote": {
           "title": "Vote du groupe",
           "progress": "{voted} sur {total} ont voté",
