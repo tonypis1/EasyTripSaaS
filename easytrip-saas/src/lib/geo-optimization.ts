@@ -3,6 +3,7 @@ import {
   walkMinutesEstimateKm,
 } from "@/lib/haversine-walk-estimate";
 import { SLOT_KEYS, type SlotKey } from "@/lib/slot-vote";
+import { readStoredSlot } from "@/lib/trip/day-slots";
 
 /**
  * Analisi geografica indipendente dell'itinerario.
@@ -286,29 +287,17 @@ export function resolveGeoScore(
   return { score: null, source: "none" };
 }
 
-function parseStoredSlot(raw: string | null): GeoSlotLike {
-  if (!raw) return null;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return parsed && typeof parsed === "object"
-      ? (parsed as GeoSlotLike)
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Adattatore per i giorni salvati a DB, dove gli slot sono stringhe JSON. */
+/** Adattatore per i giorni salvati a DB (slot jsonb, letti in modo tollerante). */
 export function geoInputFromStoredDay(day: {
   dayNumber: number;
-  morning: string | null;
-  afternoon: string | null;
-  evening: string | null;
+  morning: unknown;
+  afternoon: unknown;
+  evening: unknown;
 }): DayGeoInput {
   return {
     dayNumber: day.dayNumber,
-    morning: parseStoredSlot(day.morning),
-    afternoon: parseStoredSlot(day.afternoon),
-    evening: parseStoredSlot(day.evening),
+    morning: readStoredSlot(day.morning),
+    afternoon: readStoredSlot(day.afternoon),
+    evening: readStoredSlot(day.evening),
   };
 }

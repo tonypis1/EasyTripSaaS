@@ -17,6 +17,7 @@ import { DaySlotSchema } from "@/lib/itinerary-model-schema";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
 import { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
 import { GeoScoreService } from "@/server/services/trip/geoScoreService";
+import { readStoredSlot, slotSummary } from "@/lib/trip/day-slots";
 import { logger } from "@/lib/observability";
 import { z } from "zod";
 
@@ -100,20 +101,6 @@ function parseSlotReplaceModelJson(
 /** Un solo tentativo di riparazione: sufficiente per gli errori di schema più comuni, e resta sotto il maxDuration della route (v. replace-slot/route.ts). */
 const MAX_ATTEMPTS = 2;
 
-function slotSummary(raw: string | null, label: string): string {
-  if (!raw || raw === "{}" || raw === "null") return `${label}: vuoto`;
-  try {
-    const o = JSON.parse(raw) as Record<string, unknown>;
-    const title = o.title ?? "?";
-    const place = o.place ?? "";
-    const start = o.startTime ?? "?";
-    const end = o.endTime ?? "?";
-    return `${label}: "${title}" — ${place} (${start}–${end})`;
-  } catch {
-    return `${label}: dati non leggibili`;
-  }
-}
-
 function buildSystemPrompt(locale: SupportedAiLocale): string {
   return [
     "Sei EasyTrip AI in modalità sostituzione slot.",
@@ -132,7 +119,7 @@ function buildUserPrompt(args: {
   destination: string;
   dayNumber: number;
   slotKey: string;
-  currentSlotRaw: string;
+  currentSlotJson: string;
   allSlotsSummary: string;
   prevActivity: string;
   nextActivity: string;
@@ -159,7 +146,7 @@ ${args.allSlotsSummary}
 
 SLOT DA SOSTITUIRE: ${SLOT_LABEL[args.slotKey] ?? args.slotKey}
 Contenuto attuale (JSON):
-${args.currentSlotRaw}
+${args.currentSlotJson}
 
 ATTIVITÀ ADIACENTI (per coerenza geografica):
 - Attività PRECEDENTE: ${args.prevActivity}
@@ -279,7 +266,7 @@ export class SlotReplaceService {
     const prevKey = slotIdx > 0 ? SLOT_ORDER[slotIdx - 1] : null;
     const nextKey = slotIdx < 2 ? SLOT_ORDER[slotIdx + 1] : null;
 
-    const slotContents: Record<string, string | null> = {
+    const slotContents: Record<string, unknown> = {
       morning: day.morning,
       afternoon: day.afternoon,
       evening: day.evening,
@@ -307,7 +294,7 @@ export class SlotReplaceService {
       destination: trip.destination,
       dayNumber: day.dayNumber,
       slotKey: input.slot,
-      currentSlotRaw: currentRaw ?? "{}",
+      currentSlotJson: JSON.stringify(readStoredSlot(currentRaw) ?? {}),
       allSlotsSummary,
       prevActivity,
       nextActivity,
@@ -356,7 +343,7 @@ export class SlotReplaceService {
 
     await prisma.day.update({
       where: { id: day.id },
-      data: { [field]: JSON.stringify(result.replacement) },
+      data: { [field]: result.replacement },
     });
     // Le coordinate dello slot sono cambiate: riallinea il GeoScore della versione.
     await this.geoScore.refreshForVersion(day.tripVersionId);

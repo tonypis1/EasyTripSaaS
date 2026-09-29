@@ -7,8 +7,8 @@ import {
   type TripDayForIcs,
 } from "@/lib/ics-export";
 
-function slotJson(overrides: Record<string, unknown> = {}): string {
-  return JSON.stringify({
+function slotFixture(overrides: Record<string, unknown> = {}) {
+  return {
     title: "Colosseo",
     place: "Rione Monti",
     why: "Simbolo di Roma",
@@ -18,7 +18,7 @@ function slotJson(overrides: Record<string, unknown> = {}): string {
     lat: 41.8902,
     lng: 12.4922,
     ...overrides,
-  });
+  };
 }
 
 describe("buildIcsCalendar", () => {
@@ -137,13 +137,13 @@ describe("buildTripIcsEvents", () => {
       {
         id: "day1",
         unlockDate: "2026-06-01",
-        morning: slotJson({ title: "Colosseo" }),
-        afternoon: slotJson({
+        morning: slotFixture({ title: "Colosseo" }),
+        afternoon: slotFixture({
           title: "Foro Romano",
           startTime: "14:00",
           endTime: "16:00",
         }),
-        evening: slotJson({
+        evening: slotFixture({
           title: "Trastevere",
           startTime: "19:00",
           endTime: "21:00",
@@ -184,7 +184,7 @@ describe("buildTripIcsEvents", () => {
         id: "day3",
         unlockDate: "2026-06-03",
         morning: "{not valid json",
-        afternoon: slotJson({ title: "Musei Vaticani" }),
+        afternoon: slotFixture({ title: "Musei Vaticani" }),
         evening: null,
       },
     ];
@@ -199,7 +199,7 @@ describe("buildTripIcsEvents", () => {
       {
         id: "day1",
         unlockDate: "2026-06-01",
-        morning: slotJson(),
+        morning: slotFixture(),
         afternoon: null,
         evening: null,
       },
@@ -218,7 +218,7 @@ describe("buildTripIcsCalendar", () => {
       {
         id: "day1",
         unlockDate: "2026-06-01",
-        morning: slotJson(),
+        morning: slotFixture(),
         afternoon: null,
         evening: null,
       },

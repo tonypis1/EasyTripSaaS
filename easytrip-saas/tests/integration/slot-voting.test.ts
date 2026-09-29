@@ -51,13 +51,13 @@ describe.skipIf(!run)("Group voting sugli slot (integration)", () => {
 
   async function dayMorning() {
     const day = await prisma.day.findUniqueOrThrow({ where: { id: dayId } });
-    return day.morning ? (JSON.parse(day.morning) as { title: string }) : null;
+    return day.morning as { title: string } | null;
   }
 
   async function freshDraft() {
     await prisma.day.update({
       where: { id: dayId },
-      data: { morning: JSON.stringify(slot("Attuale")) },
+      data: { morning: slot("Attuale") },
     });
     return repo.createDraft({ dayId, slotKey: "morning", options });
   }
@@ -106,7 +106,7 @@ describe.skipIf(!run)("Group voting sugli slot (integration)", () => {
         tripVersionId: version.id,
         dayNumber: 1,
         unlockDate: new Date(Date.UTC(2026, 5, 1)),
-        morning: JSON.stringify(slot("Attuale")),
+        morning: slot("Attuale"),
       },
     });
     dayId = day.id;
@@ -199,6 +199,10 @@ describe.skipIf(!run)("Group voting sugli slot (integration)", () => {
     expect(outcome).toMatchObject({ resolved: true, winnerIndex: 1 });
 
     expect((await dayMorning())?.title).toBe("Alt 1");
+    // Lo slot applicato è un vero oggetto jsonb, non una stringa JSON doppiamente serializzata.
+    const [stored] = await prisma.$queryRaw<{ type: string }[]>`
+      SELECT jsonb_typeof("morning") AS type FROM "Day" WHERE "id" = ${dayId}`;
+    expect(stored.type).toBe("object");
     const closed = await prisma.slotProposal.findUniqueOrThrow({
       where: { id: draft.id },
     });

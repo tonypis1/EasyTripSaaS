@@ -9,6 +9,8 @@
  * hanno solo "pranzo"/"cena" senza un orario fisso.
  */
 
+import { readStoredSlot } from "@/lib/trip/day-slots";
+
 const ICS_DOMAIN = "easytripsaas.com";
 /** Limite di colonna conservativo per il line-folding RFC 5545 (semplificato: conta caratteri, non ottetti UTF-8). */
 const ICS_FOLD_WIDTH = 70;
@@ -137,36 +139,31 @@ type ParsedIcsSlot = {
   lng: number | null;
 };
 
-/** Parsing difensivo dello slot JSON grezzo (vedi Day.morning/afternoon/evening): campi mancanti/malformati ⇒ null, mai un'eccezione. */
-function parseSlotForIcs(raw: string | null): ParsedIcsSlot | null {
-  if (!raw || raw === "{}" || raw === "null") return null;
-  try {
-    const o = JSON.parse(raw) as Record<string, unknown> | null;
-    if (!o || typeof o !== "object") return null;
-    if (
-      typeof o.title !== "string" ||
-      typeof o.place !== "string" ||
-      typeof o.startTime !== "string" ||
-      typeof o.endTime !== "string"
-    ) {
-      return null;
-    }
-    return {
-      title: o.title,
-      place: o.place,
-      why: typeof o.why === "string" ? o.why : "",
-      startTime: o.startTime,
-      endTime: o.endTime,
-      googleMapsQuery:
-        typeof o.googleMapsQuery === "string" && o.googleMapsQuery.length > 0
-          ? o.googleMapsQuery
-          : null,
-      lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
-      lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
-    };
-  } catch {
+/** Validazione difensiva di uno slot salvato (vedi Day.morning/afternoon/evening): campi mancanti/malformati ⇒ null, mai un'eccezione. */
+function parseSlotForIcs(value: unknown): ParsedIcsSlot | null {
+  const o = readStoredSlot(value);
+  if (!o) return null;
+  if (
+    typeof o.title !== "string" ||
+    typeof o.place !== "string" ||
+    typeof o.startTime !== "string" ||
+    typeof o.endTime !== "string"
+  ) {
     return null;
   }
+  return {
+    title: o.title,
+    place: o.place,
+    why: typeof o.why === "string" ? o.why : "",
+    startTime: o.startTime,
+    endTime: o.endTime,
+    googleMapsQuery:
+      typeof o.googleMapsQuery === "string" && o.googleMapsQuery.length > 0
+        ? o.googleMapsQuery
+        : null,
+    lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
+    lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
+  };
 }
 
 const SLOT_KEYS = ["morning", "afternoon", "evening"] as const;
@@ -175,9 +172,10 @@ type SlotKey = (typeof SLOT_KEYS)[number];
 export type TripDayForIcs = {
   id: string;
   unlockDate: string; // YYYY-MM-DD
-  morning: string | null;
-  afternoon: string | null;
-  evening: string | null;
+  /** Slot come salvati (oggetto jsonb); qualunque forma illeggibile viene ignorata. */
+  morning: unknown;
+  afternoon: unknown;
+  evening: unknown;
 };
 
 function buildSlotDescription(slot: ParsedIcsSlot): string | null {
@@ -199,7 +197,7 @@ export function buildTripIcsEvents(
   const events: IcsEvent[] = [];
 
   for (const day of days) {
-    const slots: Record<SlotKey, string | null> = {
+    const slots: Record<SlotKey, unknown> = {
       morning: day.morning,
       afternoon: day.afternoon,
       evening: day.evening,

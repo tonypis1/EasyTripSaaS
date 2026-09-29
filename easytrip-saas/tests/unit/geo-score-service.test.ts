@@ -2,8 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GeoScoreService } from "@/server/services/trip/geoScoreService";
 import type { TripRepository } from "@/server/repositories/TripRepository";
 
-const slot = (lat: number, lng: number) =>
-  JSON.stringify({ title: "x", lat, lng });
+const slot = (lat: number, lng: number) => ({ title: "x", lat, lng });
 
 // Colosseo → Foro → Pantheon (lineare) e Colosseo → Vaticano → Foro (zig-zag).
 const linear = {
@@ -20,7 +19,7 @@ const zigzag = {
 };
 const noCoords = {
   dayNumber: 3,
-  morning: JSON.stringify({ title: "Mattina libera", lat: null, lng: null }),
+  morning: { title: "Mattina libera", lat: null, lng: null },
   afternoon: null,
   evening: null,
 };

@@ -164,6 +164,44 @@ describe("SlotReplaceService + mock Anthropic", () => {
 
     expect(result.replacement.title).toBe("Museo X");
     expect(mocks.updateDay).toHaveBeenCalled();
+    // Colonna jsonb: la sostituzione si scrive come oggetto, non come stringa JSON.
+    const written = mocks.updateDay.mock.calls[0][0].data.morning;
+    expect(typeof written).toBe("object");
+    expect(written).toMatchObject({ title: "Museo X", lat: 41.9, lng: 12.45 });
+  });
+
+  it("nel prompt usa il contenuto degli slot letto dal jsonb (oggetti, non stringhe)", async () => {
+    mocks.findFirst.mockResolvedValue({
+      ...dayFixture(),
+      morning: {
+        title: "Vecchio museo",
+        place: "Centro",
+        startTime: "09:00",
+        endTime: "11:00",
+      },
+      afternoon: {
+        title: "Pranzo lungo",
+        place: "Trastevere",
+        startTime: "13:00",
+        endTime: "15:00",
+      },
+      evening: null,
+    });
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain('"title":"Vecchio museo"');
+    expect(prompt).toContain('Mattina: "Vecchio museo" — Centro (09:00–11:00)');
+    expect(prompt).toContain(
+      'Pomeriggio: "Pranzo lungo" — Trastevere (13:00–15:00)',
+    );
+    expect(prompt).toContain("Sera: vuoto");
   });
 
   function dayFixture() {

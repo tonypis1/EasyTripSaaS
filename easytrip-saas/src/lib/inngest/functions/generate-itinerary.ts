@@ -9,7 +9,7 @@ import {
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
-import { type DaySlot } from "@/lib/itinerary-model-schema";
+import { dayContentForDb } from "@/lib/trip/day-slots";
 import { ItineraryGenerationService } from "@/server/services/trip/itineraryGenerationService";
 import { GroundingService } from "@/server/services/trip/groundingService";
 import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
@@ -40,22 +40,6 @@ type TripSnapshot = {
   /** Lingua preferita dell'organizer (passata ai prompt Claude). */
   organizerLanguage: SupportedAiLocale;
 };
-
-function fallbackSlot(label: string): DaySlot {
-  return {
-    title: label,
-    place: "Da definire",
-    why: "Contenuto in rigenerazione",
-    startTime: "09:00",
-    endTime: "11:00",
-    durationMin: 120,
-    googleMapsQuery: label,
-    bookingLink: null,
-    tips: ["Riprova la generazione tra poco"],
-    lat: null,
-    lng: null,
-  };
-}
 
 export const generateItinerary = inngest.createFunction(
   {
@@ -306,19 +290,8 @@ export const generateItinerary = inngest.createFunction(
             dayNumber: day.dayNumber,
             unlockDate,
             title: day.title || `Giorno ${day.dayNumber}`,
-            morning: JSON.stringify(
-              day.morning ?? fallbackSlot("Mattina libera"),
-            ),
-            afternoon: JSON.stringify(
-              day.afternoon ?? fallbackSlot("Pomeriggio libero"),
-            ),
-            evening: JSON.stringify(
-              day.evening ?? fallbackSlot("Serata libera"),
-            ),
-            restaurants:
-              day.restaurants && day.restaurants.length > 0
-                ? JSON.stringify(day.restaurants)
-                : null,
+            // Slot e ristoranti sono jsonb: oggetti, mai JSON.stringify (doppia serializzazione).
+            ...dayContentForDb(day),
             mapCenterLat: day.mapCenterLat != null ? day.mapCenterLat : null,
             mapCenterLng: day.mapCenterLng != null ? day.mapCenterLng : null,
             zoneFocus: day.zoneFocus || null,

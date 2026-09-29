@@ -238,7 +238,9 @@ describe("SlotProposalService.vote", () => {
     expect(args.winnerIndex).toBe(2);
     expect(args.apply.dayId).toBe("d1");
     expect(args.apply.slotKey).toBe("morning");
-    expect(JSON.parse(args.apply.slotJson).title).toBe("Alt 2");
+    // Oggetto, non stringa: le colonne sono jsonb e una stringa verrebbe doppiamente serializzata.
+    expect(typeof args.apply.slot).toBe("object");
+    expect(args.apply.slot).toMatchObject({ title: "Alt 2" });
   });
 
   it("se vince 'mantieni l'attuale' chiude senza modificare lo slot", async () => {
@@ -332,9 +334,9 @@ describe("SlotProposalService.close", () => {
     const out = await service.close("trip1", "p1");
 
     expect(out).toEqual({ resolved: true, winnerIndex: 1, proposal: null });
-    expect(JSON.parse(repo.resolve.mock.calls[0][0].apply.slotJson).title).toBe(
-      "Alt 1",
-    );
+    expect(repo.resolve.mock.calls[0][0].apply.slot).toMatchObject({
+      title: "Alt 1",
+    });
   });
 
   it("senza voti mantiene l'attuale", async () => {

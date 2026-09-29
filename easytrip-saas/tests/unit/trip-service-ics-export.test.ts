@@ -30,8 +30,8 @@ import { TripService } from "@/server/services/trip/tripService";
 import type { AuthService } from "@/server/services/auth/authService";
 import type { TripRepository } from "@/server/repositories/TripRepository";
 
-function slotJson(overrides: Record<string, unknown> = {}): string {
-  return JSON.stringify({
+function slotFixture(overrides: Record<string, unknown> = {}) {
+  return {
     title: "Colosseo",
     place: "Rione Monti",
     why: "Simbolo di Roma",
@@ -42,7 +42,7 @@ function slotJson(overrides: Record<string, unknown> = {}): string {
     lng: 12.4922,
     tips: [],
     ...overrides,
-  });
+  };
 }
 
 function baseTrip() {
@@ -76,8 +76,8 @@ function baseTrip() {
             dayNumber: 1,
             unlockDate: new Date("2026-06-01"),
             title: "Giorno 1",
-            morning: slotJson({ title: "Colosseo" }),
-            afternoon: slotJson({
+            morning: slotFixture({ title: "Colosseo" }),
+            afternoon: slotFixture({
               title: "Foro Romano",
               startTime: "14:00",
               endTime: "16:00",
@@ -145,5 +145,115 @@ describe("TripService.getTripIcsExport", () => {
       code: "TRIP_NOT_FOUND",
       statusCode: 404,
     });
+  });
+});
+
+describe("TripService.getTripDetail — slot jsonb nel DTO", () => {
+  function tripWithDay(day: Record<string, unknown>) {
+    const trip = baseTrip();
+    trip.versions[0].days = [{ ...trip.versions[0].days[0], ...day }];
+    return trip;
+  }
+
+  it("espone gli slot come oggetti già letti dal jsonb (il client non fa JSON.parse)", async () => {
+    const service = makeService(vi.fn().mockResolvedValue(baseTrip()));
+
+    const { days } = await service.getTripDetail("trip1");
+
+    expect(days[0].morning).toMatchObject({
+      title: "Colosseo",
+      startTime: "09:00",
+    });
+    expect(days[0].afternoon).toMatchObject({ title: "Foro Romano" });
+    expect(days[0].evening).toBeNull();
+  });
+
+  it("slot vuoti, illeggibili o non oggetto diventano null (mai un'eccezione)", async () => {
+    for (const bad of [
+      {},
+      "",
+      "null",
+      "{non json",
+      "testo libero",
+      42,
+      [1, 2],
+    ]) {
+      const service = makeService(
+        vi.fn().mockResolvedValue(tripWithDay({ morning: bad })),
+      );
+
+      const { days } = await service.getTripDetail("trip1");
+
+      expect(days[0].morning).toBeNull();
+    }
+  });
+
+  it("legge anche uno slot ancora salvato come stringa JSON (riga non convertita)", async () => {
+    const service = makeService(
+      vi.fn().mockResolvedValue(
+        tripWithDay({
+          morning: JSON.stringify(slotFixture({ title: "Legacy" })),
+        }),
+      ),
+    );
+
+    const { days } = await service.getTripDetail("trip1");
+
+    expect(days[0].morning).toMatchObject({ title: "Legacy" });
+  });
+
+  it("i ristoranti si leggono da un array jsonb, anche nel formato storico pre-A2", async () => {
+    const service = makeService(
+      vi.fn().mockResolvedValue(
+        tripWithDay({
+          restaurants: [
+            {
+              meal: "cena",
+              name: "Da Enzo",
+              cuisine: "romana",
+              why: "Cacio e pepe",
+              budgetHint: "€12-16",
+              distance: "100m",
+              reservationNeeded: true,
+              reservationTip: "Prenota",
+            },
+          ],
+        }),
+      ),
+    );
+    const legacy = makeService(
+      vi.fn().mockResolvedValue(
+        tripWithDay({
+          restaurants: [
+            { name: "Uno", why: "Buono", budgetHint: "€10" },
+            { name: "Due", why: "Ottimo", budgetHint: "€20" },
+          ],
+        }),
+      ),
+    );
+
+    const current = (await service.getTripDetail("trip1")).days[0].restaurants;
+    const old = (await legacy.getTripDetail("trip1")).days[0].restaurants;
+
+    expect(current).toEqual([
+      expect.objectContaining({ meal: "cena", name: "Da Enzo" }),
+    ]);
+    // Formato storico: 1° pranzo, 2° cena.
+    expect(old?.map((r) => [r.name, r.meal])).toEqual([
+      ["Uno", "pranzo"],
+      ["Due", "cena"],
+    ]);
+  });
+
+  it("senza ristoranti (colonna NULL) o con un valore non lista il DTO ha null", async () => {
+    for (const value of [null, {}, "n/d"]) {
+      const service = makeService(
+        vi.fn().mockResolvedValue(tripWithDay({ restaurants: value })),
+      );
+
+      expect(
+        (await service.getTripDetail("trip1")).days[0].restaurants,
+      ).toBeNull();
+    }
   });
 });

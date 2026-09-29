@@ -67,7 +67,7 @@ describe.skipIf(!run)("TripRepository detail queries (integration)", () => {
         tripVersionId: oldVersionId,
         dayNumber: 1,
         unlockDate: start,
-        morning: "OLD_VERSION_SHOULD_NOT_BE_RETURNED",
+        morning: { title: "OLD_VERSION_SHOULD_NOT_BE_RETURNED" },
       },
     });
 
@@ -80,7 +80,7 @@ describe.skipIf(!run)("TripRepository detail queries (integration)", () => {
         tripVersionId: activeVersionId,
         dayNumber: 1,
         unlockDate: start,
-        morning: "ACTIVE_VERSION_DAY",
+        morning: { title: "ACTIVE_VERSION_DAY" },
       },
     });
   });
@@ -107,7 +107,7 @@ describe.skipIf(!run)("TripRepository detail queries (integration)", () => {
     const old = trip?.versions.find((v) => !v.isActive);
 
     expect(active?.days).toHaveLength(1);
-    expect(active?.days[0].morning).toBe("ACTIVE_VERSION_DAY");
+    expect(active?.days[0].morning).toEqual({ title: "ACTIVE_VERSION_DAY" });
     expect(old?.days).toHaveLength(0);
 
     expect(trip?.members).toHaveLength(2);
@@ -121,7 +121,7 @@ describe.skipIf(!run)("TripRepository detail queries (integration)", () => {
     const old = trip?.versions.find((v) => !v.isActive);
 
     expect(active?.days).toHaveLength(1);
-    expect(active?.days[0].morning).toBe("ACTIVE_VERSION_DAY");
+    expect(active?.days[0].morning).toEqual({ title: "ACTIVE_VERSION_DAY" });
     expect(old?.days).toHaveLength(0);
   });
 

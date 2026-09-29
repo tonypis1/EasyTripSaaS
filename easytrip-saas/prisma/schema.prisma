@@ -138,10 +138,12 @@ model Day {
   dayNumber     Int      @map("day_number")
   unlockDate    DateTime @map("unlock_date") @db.Date
   title         String?
-  morning       String? // JSON attività
-  afternoon     String?
-  evening       String?
-  restaurants   String? // JSON
+  /// Slot come oggetto JSON (jsonb): { title, place, why, startTime, endTime, durationMin, googleMapsQuery, bookingLink, tips[], lat, lng } (vedi DaySlotSchema).
+  morning       Json?    @db.JsonB
+  afternoon     Json?    @db.JsonB
+  evening       Json?    @db.JsonB
+  /// Array di ristoranti (jsonb): [{ meal, name, cuisine, why, budgetHint, distance, reservationNeeded, reservationTip }] (vedi RestaurantEntrySchema).
+  restaurants   Json?    @db.JsonB
   mapCenterLat  Decimal? @map("map_center_lat") @db.Decimal(10, 7)
   mapCenterLng  Decimal? @map("map_center_lng") @db.Decimal(10, 7)
   zoneFocus     String?  @map("zone_focus") // per used_zones rigenera

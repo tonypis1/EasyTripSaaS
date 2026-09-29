@@ -97,6 +97,8 @@ Ogni elemento di `data` corrisponde al DTO `TripListItem` in [`docs/openapi.yaml
 | `geo`            | object \| null                | Analisi geografica della versione attiva; `null` se nessun giorno è valutabile. Campi: `score`, `totalKm`, `avoidableKm` (km risparmiabili riordinando le tappe), `scoredDays`, `totalDays`, `days[]` con `dayNumber`, `scored`, `routeKm`, `optimalKm`, `avoidableKm`, `longestLegKm`, `walkMinutes`, `bestOrder`, `isOrderImprovable`. |
 | `versions[]`     | `{ versionNum, geoScore, … }` | `geoScore` della versione attiva = `activeGeoScore`; per le altre è il valore salvato.                                                                                                                                                                                                                                                   |
 
+**Slot dei giorni**: in `days[]`, `morning`, `afternoon` ed `evening` sono **oggetti slot** già letti dal `jsonb` (`{ title, place, why, startTime, endTime, durationMin, googleMapsQuery, bookingLink, tips[], lat, lng }`) oppure `null` se lo slot è assente, vuoto o illeggibile. Prima della migrazione a `jsonb` erano stringhe JSON da parsare lato client: chi consuma l'endpoint non deve più chiamare `JSON.parse`. `restaurants` resta un array di ristoranti o `null`.
+
 Le distanze sono in linea d'aria; `walkMinutes` assume ~5 km/h e la UI lo mostra solo se la tratta più lunga del giorno è ≤ 3 km.
 
 ## 4. Autenticazione

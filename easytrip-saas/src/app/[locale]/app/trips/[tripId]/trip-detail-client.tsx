@@ -10,6 +10,7 @@ import { DEV_PREVIEW_UNLOCK_CONTENT } from "@/lib/dev-flags";
 import { PostTripScreen } from "./post-trip-screen";
 import { PostTripReferralPromo } from "@/components/referral/post-trip-referral-promo";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
+import type { StoredSlot } from "@/lib/trip/day-slots";
 import { ShareButton } from "@/components/trips/ShareButton";
 import { CalendarExportButton } from "@/components/trips/CalendarExportButton";
 import { SlotVotePanel } from "@/components/trips/SlotVotePanel";
@@ -216,47 +217,42 @@ function buildGoogleSearchQuery(
   return `${t} ${city}`;
 }
 
-function parseSlot(raw: string | null): Slot | null {
-  if (!raw || raw === "{}" || raw === "null") return null;
-  try {
-    const o = JSON.parse(raw) as Record<string, unknown> | null;
-    if (!o || typeof o !== "object") return null;
-    if (
-      typeof o.title !== "string" ||
-      typeof o.place !== "string" ||
-      typeof o.why !== "string" ||
-      typeof o.startTime !== "string" ||
-      typeof o.endTime !== "string" ||
-      !Array.isArray(o.tips)
-    )
-      return null;
-    return {
-      title: o.title,
-      place: o.place,
-      why: o.why,
-      startTime: o.startTime,
-      endTime: o.endTime,
-      durationMin:
-        typeof o.durationMin === "number" && Number.isFinite(o.durationMin)
-          ? o.durationMin
-          : null,
-      googleMapsQuery:
-        typeof o.googleMapsQuery === "string" && o.googleMapsQuery.length > 0
-          ? o.googleMapsQuery
-          : null,
-      bookingLink:
-        typeof o.bookingLink === "string" && o.bookingLink.length > 0
-          ? o.bookingLink
-          : null,
-      tips: (o.tips as unknown[]).filter(
-        (t): t is string => typeof t === "string",
-      ),
-      lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
-      lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
-    };
-  } catch {
+/** Valida la forma di uno slot già letto dal server (nessun JSON.parse: il DTO porta l'oggetto). */
+function parseSlot(o: StoredSlot | null): Slot | null {
+  if (!o) return null;
+  if (
+    typeof o.title !== "string" ||
+    typeof o.place !== "string" ||
+    typeof o.why !== "string" ||
+    typeof o.startTime !== "string" ||
+    typeof o.endTime !== "string" ||
+    !Array.isArray(o.tips)
+  )
     return null;
-  }
+  return {
+    title: o.title,
+    place: o.place,
+    why: o.why,
+    startTime: o.startTime,
+    endTime: o.endTime,
+    durationMin:
+      typeof o.durationMin === "number" && Number.isFinite(o.durationMin)
+        ? o.durationMin
+        : null,
+    googleMapsQuery:
+      typeof o.googleMapsQuery === "string" && o.googleMapsQuery.length > 0
+        ? o.googleMapsQuery
+        : null,
+    bookingLink:
+      typeof o.bookingLink === "string" && o.bookingLink.length > 0
+        ? o.bookingLink
+        : null,
+    tips: (o.tips as unknown[]).filter(
+      (t): t is string => typeof t === "string",
+    ),
+    lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
+    lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
+  };
 }
 
 function formatDuration(min: number): string {

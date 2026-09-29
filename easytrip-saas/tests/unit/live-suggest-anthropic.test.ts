@@ -71,9 +71,10 @@ function baseDay(overrides: Record<string, unknown> = {}) {
   return {
     id: "day1",
     dayNumber: 1,
-    morning: "{}",
-    afternoon: "{}",
-    evening: "{}",
+    // Come li restituisce Prisma per le colonne jsonb.
+    morning: {},
+    afternoon: {},
+    evening: {},
     tripVersion: {
       trip: {
         id: "trip1",
@@ -123,6 +124,32 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
     const result = await service.suggest(baseInput());
 
     expect(result.suggestions).toHaveLength(3);
+  });
+
+  it("nel prompt riassume gli slot del giorno letti dal jsonb (oggetti), distinguendo vuoto e illeggibile", async () => {
+    mocks.findFirst.mockResolvedValue(
+      baseDay({
+        morning: {
+          title: "Colosseo",
+          place: "Rione Monti",
+          startTime: "09:00",
+          endTime: "11:30",
+        },
+        afternoon: "testo che non è JSON",
+        evening: null,
+      }),
+    );
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
+
+    await new LiveSuggestService().suggest(
+      baseInput({ currentSlot: "morning" }),
+    );
+
+    const prompt = lastPromptTextForCall();
+    expect(prompt).toContain('Mattina: "Colosseo" — Rione Monti (09:00–11:30)');
+    expect(prompt).toContain("Pomeriggio: dati non leggibili");
+    expect(prompt).toContain("Sera: vuoto");
+    expect(prompt).toContain('morning: "Colosseo" — Rione Monti (09:00–11:30)');
   });
 
   it("passa timeout e maxRetries per-richiesta ad anthropic.messages.create", async () => {

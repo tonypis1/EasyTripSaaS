@@ -19,6 +19,7 @@ import {
 } from "@/lib/trip/liveSuggestModel";
 import { AppError } from "@/server/errors/AppError";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
+import { slotSummary } from "@/lib/trip/day-slots";
 
 const REASONS: Record<string, string> = {
   closed: "il posto previsto è chiuso o inaccessibile",
@@ -60,16 +61,6 @@ function parseAndMapLiveSuggest(raw: string): LiveSuggestResult {
 
 /** Un solo tentativo di riparazione: sufficiente per gli errori di schema più comuni, e resta sotto il maxDuration della route (v. live-suggest/route.ts). */
 const MAX_ATTEMPTS = 2;
-
-function slotSummary(raw: string | null, label: string): string {
-  if (!raw || raw === "{}" || raw === "null") return `${label}: vuoto`;
-  try {
-    const o = JSON.parse(raw) as Record<string, unknown>;
-    return `${label}: "${o.title ?? "?"}" — ${o.place ?? "?"} (${o.startTime ?? "?"}–${o.endTime ?? "?"})`;
-  } catch {
-    return `${label}: dati non leggibili`;
-  }
-}
 
 function buildSystemPrompt(locale: SupportedAiLocale): string {
   return [

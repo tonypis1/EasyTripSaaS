@@ -30,8 +30,11 @@ import { TripService } from "@/server/services/trip/tripService";
 import type { AuthService } from "@/server/services/auth/authService";
 import type { TripRepository } from "@/server/repositories/TripRepository";
 
-const slot = (lat: number | null, lng: number | null) =>
-  JSON.stringify({ title: "Tappa", lat, lng });
+const slot = (lat: number | null, lng: number | null) => ({
+  title: "Tappa",
+  lat,
+  lng,
+});
 
 const COLOSSEO = [41.8902, 12.4922] as const;
 const FORO = [41.8925, 12.4853] as const;

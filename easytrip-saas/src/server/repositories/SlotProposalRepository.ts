@@ -105,7 +105,12 @@ export class SlotProposalRepository {
   async resolve(input: {
     proposalId: string;
     winnerIndex: number;
-    apply: { dayId: string; slotKey: SlotKey; slotJson: string } | null;
+    /** Lo slot va passato come oggetto: le colonne sono jsonb, una stringa verrebbe salvata doppiamente serializzata. */
+    apply: {
+      dayId: string;
+      slotKey: SlotKey;
+      slot: Prisma.InputJsonValue;
+    } | null;
     now?: Date;
   }) {
     return prisma.$transaction(async (tx) => {
@@ -122,7 +127,7 @@ export class SlotProposalRepository {
       if (input.apply) {
         await tx.day.update({
           where: { id: input.apply.dayId },
-          data: { [input.apply.slotKey]: input.apply.slotJson },
+          data: { [input.apply.slotKey]: input.apply.slot },
         });
       }
       return true;

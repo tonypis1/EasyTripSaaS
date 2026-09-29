@@ -28,6 +28,11 @@ import {
 } from "@/lib/ics-export";
 import { toSlotProposalDto, type SlotProposalDto } from "@/lib/slot-vote";
 import {
+  readStoredList,
+  readStoredSlot,
+  type StoredSlot,
+} from "@/lib/trip/day-slots";
+import {
   analyzeItineraryGeo,
   geoInputFromStoredDay,
   type ItineraryGeoAnalysis,
@@ -52,9 +57,10 @@ export type TripDayDto = {
   dayNumber: number;
   unlockDate: string;
   title: string | null;
-  morning: string | null;
-  afternoon: string | null;
-  evening: string | null;
+  /** Slot come oggetto (già letto dal jsonb); null se assente, vuoto o illeggibile. */
+  morning: StoredSlot | null;
+  afternoon: StoredSlot | null;
+  evening: StoredSlot | null;
   restaurants: RestaurantSuggestDto[] | null;
   mapCenterLat: number | null;
   mapCenterLng: number | null;
@@ -158,75 +164,71 @@ type TripListItemDb = {
   versions: { days: { id: string }[] }[];
 };
 
-function parseRestaurants(raw: string | null): RestaurantSuggestDto[] | null {
-  if (!raw || raw === "null") return null;
-  try {
-    const j = JSON.parse(raw) as unknown;
-    if (!Array.isArray(j)) return null;
-    const out: RestaurantSuggestDto[] = [];
-    for (const item of j) {
-      if (!item || typeof item !== "object") continue;
-      const o = item as Record<string, unknown>;
+/** Ristoranti salvati (jsonb) → DTO; accetta sia il formato attuale sia quello storico pre-A2. Non lancia mai. */
+function parseRestaurants(value: unknown): RestaurantSuggestDto[] | null {
+  const j = readStoredList(value);
+  if (!j) return null;
+  const out: RestaurantSuggestDto[] = [];
+  for (const item of j) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
 
-      // Nuovo formato (A2)
-      if (
-        (o.meal === "pranzo" || o.meal === "cena") &&
-        typeof o.name === "string" &&
-        typeof o.cuisine === "string" &&
-        typeof o.why === "string" &&
-        typeof o.budgetHint === "string" &&
-        typeof o.distance === "string" &&
-        typeof o.reservationNeeded === "boolean"
-      ) {
-        out.push({
-          meal: o.meal,
-          name: o.name,
-          cuisine: o.cuisine,
-          why: o.why,
-          budgetHint: o.budgetHint,
-          distance: o.distance,
-          reservationNeeded: o.reservationNeeded,
-          reservationTip:
-            typeof o.reservationTip === "string" ? o.reservationTip : "",
-        });
-        continue;
-      }
-
-      // Vecchio formato (pre-A2): { name, why, budgetHint }
-      if (
-        typeof o.name === "string" &&
-        typeof o.why === "string" &&
-        typeof o.budgetHint === "string"
-      ) {
-        out.push({
-          meal: "pranzo",
-          name: o.name,
-          cuisine: "ristorante",
-          why: o.why,
-          budgetHint: o.budgetHint,
-          distance: "",
-          reservationNeeded: false,
-          reservationTip: "",
-        });
-      }
+    // Nuovo formato (A2)
+    if (
+      (o.meal === "pranzo" || o.meal === "cena") &&
+      typeof o.name === "string" &&
+      typeof o.cuisine === "string" &&
+      typeof o.why === "string" &&
+      typeof o.budgetHint === "string" &&
+      typeof o.distance === "string" &&
+      typeof o.reservationNeeded === "boolean"
+    ) {
+      out.push({
+        meal: o.meal,
+        name: o.name,
+        cuisine: o.cuisine,
+        why: o.why,
+        budgetHint: o.budgetHint,
+        distance: o.distance,
+        reservationNeeded: o.reservationNeeded,
+        reservationTip:
+          typeof o.reservationTip === "string" ? o.reservationTip : "",
+      });
+      continue;
     }
 
-    // Se arrivano record vecchi, assegna pranzo/cena in modo deterministico:
-    // - 2 elementi: 1° pranzo, 2° cena
-    // - >2 elementi: alterna pranzo/cena per index
-    const hasAnyLegacy = out.some(
-      (r) => r.cuisine === "ristorante" && r.distance === "",
-    );
-    if (hasAnyLegacy && out.length >= 2) {
-      for (let i = 0; i < out.length; i++) {
-        out[i] = { ...out[i], meal: i % 2 === 0 ? "pranzo" : "cena" };
-      }
+    // Vecchio formato (pre-A2): { name, why, budgetHint }
+    if (
+      typeof o.name === "string" &&
+      typeof o.why === "string" &&
+      typeof o.budgetHint === "string"
+    ) {
+      out.push({
+        meal: "pranzo",
+        name: o.name,
+        cuisine: "ristorante",
+        why: o.why,
+        budgetHint: o.budgetHint,
+        distance: "",
+        reservationNeeded: false,
+        reservationTip: "",
+      });
     }
-
-    return out.length > 0 ? out : null;
-  } catch {
-    return null;
   }
+
+  // Se arrivano record vecchi, assegna pranzo/cena in modo deterministico:
+  // - 2 elementi: 1° pranzo, 2° cena
+  // - >2 elementi: alterna pranzo/cena per index
+  const hasAnyLegacy = out.some(
+    (r) => r.cuisine === "ristorante" && r.distance === "",
+  );
+  if (hasAnyLegacy && out.length >= 2) {
+    for (let i = 0; i < out.length; i++) {
+      out[i] = { ...out[i], meal: i % 2 === 0 ? "pranzo" : "cena" };
+    }
+  }
+
+  return out.length > 0 ? out : null;
 }
 
 function decToNumber(v: unknown): number | null {
@@ -249,9 +251,9 @@ function activeVersionGeo(active: {
   geoScore: unknown;
   days: {
     dayNumber: number;
-    morning: string | null;
-    afternoon: string | null;
-    evening: string | null;
+    morning: unknown;
+    afternoon: unknown;
+    evening: unknown;
   }[];
 }) {
   const analysis = analyzeItineraryGeo(active.days.map(geoInputFromStoredDay));
@@ -425,10 +427,10 @@ export class TripService {
           dayNumber: number;
           unlockDate: Date;
           title: string | null;
-          morning: string | null;
-          afternoon: string | null;
-          evening: string | null;
-          restaurants: string | null;
+          morning: unknown;
+          afternoon: unknown;
+          evening: unknown;
+          restaurants: unknown;
           mapCenterLat: unknown;
           mapCenterLng: unknown;
           zoneFocus: string | null;
@@ -440,9 +442,9 @@ export class TripService {
           dayNumber: d.dayNumber,
           unlockDate: toDateOnlyIsoUtc(d.unlockDate),
           title: d.title,
-          morning: d.morning,
-          afternoon: d.afternoon,
-          evening: d.evening,
+          morning: readStoredSlot(d.morning),
+          afternoon: readStoredSlot(d.afternoon),
+          evening: readStoredSlot(d.evening),
           restaurants: parseRestaurants(d.restaurants),
           mapCenterLat: decToNumber(d.mapCenterLat),
           mapCenterLng: decToNumber(d.mapCenterLng),

@@ -81,9 +81,9 @@ describe.skipIf(!run)("GeoScore (integration)", () => {
         tripVersionId: versionId,
         dayNumber: 1,
         unlockDate: new Date(Date.UTC(2026, 5, 1)),
-        morning: JSON.stringify(COLOSSEO),
-        afternoon: JSON.stringify(FORO),
-        evening: JSON.stringify(PANTHEON),
+        morning: COLOSSEO,
+        afternoon: FORO,
+        evening: PANTHEON,
       },
     });
     dayId = day.id;
@@ -146,7 +146,7 @@ describe.skipIf(!run)("GeoScore (integration)", () => {
     expect(await resolver.finalize(loaded, 1)).toBe(true);
 
     const day = await prisma.day.findUniqueOrThrow({ where: { id: dayId } });
-    expect(JSON.parse(day.morning ?? "{}").title).toBe("Reggia di Versailles");
+    expect(day.morning).toMatchObject({ title: "Reggia di Versailles" });
     // Mattina a Versailles + pomeriggio/sera a Roma: tratta di ~1400 km.
     expect(await stored()).toBeLessThan(before - 3);
   });
@@ -181,9 +181,9 @@ describe.skipIf(!run)("GeoScore (integration)", () => {
     await prisma.day.update({
       where: { id: dayId },
       data: {
-        morning: JSON.stringify(slot("Mattina libera", null, null)),
-        afternoon: JSON.stringify(slot("Pomeriggio libero", null, null)),
-        evening: JSON.stringify(slot("Serata libera", null, null)),
+        morning: slot("Mattina libera", null, null),
+        afternoon: slot("Pomeriggio libero", null, null),
+        evening: slot("Serata libera", null, null),
       },
     });
     const before = await stored();

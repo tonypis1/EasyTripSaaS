@@ -49,7 +49,7 @@ export class SlotProposalResolver {
         : {
             dayId: proposal.dayId,
             slotKey: proposal.slotKey as SlotKey,
-            slotJson: JSON.stringify(options[winnerIndex].slot),
+            slot: options[winnerIndex].slot,
           };
 
     const resolved = await this.repo.resolve({

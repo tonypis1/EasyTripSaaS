@@ -83,6 +83,10 @@ erDiagram
     string tripVersionId FK
     int dayNumber
     date unlockDate
+    jsonb morning
+    jsonb afternoon
+    jsonb evening
+    jsonb restaurants
     decimal mapCenterLat
     decimal mapCenterLng
     string zoneFocus
@@ -102,7 +106,7 @@ erDiagram
 
 ## 4. Note su itinerari e JSON
 
-- I campi `morning`, `afternoon`, `evening`, `restaurants` su `Day` sono persistiti come stringhe (serializzazione JSON lato applicazione).
+- **Slot e ristoranti del giorno** (`Day.morning`, `afternoon`, `evening`, `restaurants`): colonne **`jsonb`** (`Json? @db.JsonB`), non più testo serializzato. Prisma restituisce e accetta oggetti/array: in scrittura **non** va usato `JSON.stringify` (Prisma accetta una stringa come valore Json e la salverebbe doppiamente serializzata; un test di guardia, `tests/unit/day-json-guard.test.ts`, lo impedisce). Forma di uno slot: `DaySlotSchema`; dei ristoranti: `RestaurantEntrySchema`. Il modulo unico per costruire (`dayContentForDb`) e leggere in modo tollerante (`readStoredSlot`, `readStoredList`, `slotSummary`) è `src/lib/trip/day-slots.ts`: una riga con contenuto illeggibile (dati storici, modifiche manuali) diventa "slot assente" invece di un errore. Le colonne sono interrogabili con filtri JSON (`where: { morning: { path: ["title"], equals: "Colosseo" } }`). La migrazione `20260929100000_day_slots_to_jsonb` converte sul posto senza perdere dati (vedi [12_DEPLOYMENT.md §4](12_DEPLOYMENT.md#4-rollback)).
 - `zoneFocus` alimenta `usedZones` sul `Trip` per variare le rigenerazioni.
 - **Spese e split** (`Expense`, `ExpenseParticipant`, tabella `expense_participant`): `splitEqually=false` = spesa **personale**, esclusa da `totalPaid` e dai saldi; `splitEqually=true` = spesa di gruppo. Una spesa di gruppo **senza** righe `ExpenseParticipant` è divisa in parti uguali tra tutti i membri (comportamento storico, nessun backfill); **con** righe è divisa solo tra i membri elencati, in proporzione a `weight` (1 = quota intera, max 2 decimali). Il pagatore non deve essere un partecipante. I saldi si calcolano in centesimi interi (`src/lib/expense-split.ts`, metodo del resto maggiore): la somma dei saldi è esattamente 0.
 - **Group voting sugli slot** (`SlotProposal` → `slot_proposal`, `SlotVote` → `slot_vote`): quando `replace-slot` produce alternative in un viaggio con almeno 2 membri, il server salva una proposta in stato `draft` con `options` (`Json`: da 2 a 4 opzioni di slot completo `{ slot, distance, note }`; l'indice 0 è sempre lo slot attuale). L'organizzatore la porta a `open` (scadenza dopo 24h, `SLOT_VOTE_WINDOW_HOURS`); ogni membro ha al più un voto (`@@unique([proposalId, memberId])`, modificabile). Si chiude (`resolved`, `winnerIndex`) quando un'opzione ha la maggioranza stretta dei membri, quando hanno votato tutti, per chiusura anticipata dell'organizzatore o per scadenza (job orario). A parità resta lo slot attuale; senza voti resta l'attuale. Una nuova sostituzione dello stesso slot elimina la bozza precedente e annulla (`cancelled`) una votazione aperta. Il contenuto delle opzioni proviene sempre dal database, mai dal client. La chiusura è idempotente (update condizionale `status = open` in transazione con l'applicazione dello slot). Cascade su `Day`, `TripMember` e quindi `Trip`.

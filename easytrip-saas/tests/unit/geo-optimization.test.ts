@@ -329,7 +329,18 @@ describe("resolveGeoScore", () => {
 });
 
 describe("geoInputFromStoredDay", () => {
-  it("legge le coordinate dagli slot salvati come JSON", () => {
+  it("legge le coordinate dagli slot salvati (oggetti jsonb)", () => {
+    const input = geoInputFromStoredDay({
+      dayNumber: 1,
+      morning: { title: "Colosseo", ...ROME.colosseo },
+      afternoon: { title: "Foro", ...ROME.foro },
+      evening: { title: "Pantheon", ...ROME.pantheon },
+    });
+
+    expect(analyzeDay(input)).toEqual(analyzeDay(linearDay));
+  });
+
+  it("legge anche slot ancora salvati come stringa JSON (dati pre-migrazione)", () => {
     const input = geoInputFromStoredDay({
       dayNumber: 1,
       morning: JSON.stringify({ title: "Colosseo", ...ROME.colosseo }),
@@ -346,6 +357,9 @@ describe("geoInputFromStoredDay", () => {
     ["JSON non valido", "{non json"],
     ["valore non oggetto", "42"],
     ["null JSON", "null"],
+    ["numero jsonb", 42],
+    ["array jsonb", [1, 2]],
+    ["oggetto vuoto", {}],
   ])("tollera slot illeggibili: %s", (_label, raw) => {
     const input = geoInputFromStoredDay({
       dayNumber: 1,
