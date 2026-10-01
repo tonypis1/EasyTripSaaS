@@ -48,6 +48,26 @@ export function allocateByWeights(
   return shares;
 }
 
+/**
+ * Quote in centesimi per partecipante, calcolate in ordine stabile per id: il
+ * centesimo di resto va sempre agli stessi membri, qualunque sia l'ordine in
+ * cui arrivano. Unica funzione per i saldi (server) e per l'anteprima nel
+ * modulo della spesa (client): l'anteprima mostra esattamente ciò che si salva.
+ */
+export function splitCentsByMember(
+  totalCents: number,
+  participants: readonly { memberId: string; weight: number }[],
+): Map<string, number> {
+  const ordered = [...participants].sort((a, b) =>
+    a.memberId < b.memberId ? -1 : a.memberId > b.memberId ? 1 : 0,
+  );
+  const shares = allocateByWeights(
+    totalCents,
+    ordered.map((p) => p.weight),
+  );
+  return new Map(ordered.map((p, i) => [p.memberId, shares[i]]));
+}
+
 export type SplitExpense = {
   amount: number;
   paidById: string;
@@ -100,16 +120,10 @@ export function computeMemberTotals(
         ? recipients
         : memberIds.map((memberId) => ({ memberId, weight: 1 }));
 
-    // Ordine stabile per id: il resto va sempre agli stessi membri, qualunque sia l'ordine di lettura dal DB.
-    split.sort((a, b) => (a.memberId < b.memberId ? -1 : 1));
-    const shares = allocateByWeights(
-      cents,
-      split.map((p) => p.weight),
-    );
-    split.forEach((p, i) => {
-      const member = totals.get(p.memberId);
-      if (member) member.owedCents += shares[i];
-    });
+    for (const [memberId, share] of splitCentsByMember(cents, split)) {
+      const member = totals.get(memberId);
+      if (member) member.owedCents += share;
+    }
   }
 
   for (const t of totals.values()) t.balanceCents = t.paidCents - t.owedCents;

@@ -138,7 +138,13 @@ export class SlotProposalService {
   ): Promise<VoteOutcome> {
     const { member, proposal } = await this.loadForMember(tripId, proposalId);
 
-    if (proposal.status !== "open") {
+    // Scaduta = chiusa, anche se il job orario non l'ha ancora risolta: un voto
+    // dopo la scadenza cambierebbe l'esito che valeva alla chiusura.
+    const now = new Date();
+    if (
+      proposal.status !== "open" ||
+      (proposal.expiresAt !== null && proposal.expiresAt <= now)
+    ) {
       throw new AppError("La votazione non è aperta", 409, "PROPOSAL_NOT_OPEN");
     }
     const optionCount = this.resolver.parseOptions(proposal).length;
@@ -146,7 +152,16 @@ export class SlotProposalService {
       throw new AppError("Opzione non valida", 400, "INVALID_OPTION");
     }
 
-    await this.repo.upsertVote(proposal.id, member.id, optionIndex);
+    if (
+      !(await this.repo.upsertVoteIfOpen(
+        proposal.id,
+        member.id,
+        optionIndex,
+        now,
+      ))
+    ) {
+      throw new AppError("La votazione non è aperta", 409, "PROPOSAL_NOT_OPEN");
+    }
 
     const [votes, totalMembers] = await Promise.all([
       this.repo.listVotes(proposal.id),
@@ -161,10 +176,22 @@ export class SlotProposalService {
     });
 
     if (decision.done && decision.winnerIndex !== null) {
-      await this.resolver.finalize(proposal, decision.winnerIndex);
+      if (await this.resolver.finalize(proposal, decision.winnerIndex)) {
+        return {
+          resolved: true,
+          winnerIndex: decision.winnerIndex,
+          proposal: null,
+        };
+      }
+      // Chiusa nel frattempo da un'altra richiesta (organizzatore, job orario,
+      // nuova sostituzione): l'esito vero è quello salvato, non questo calcolo.
+      const saved = await this.repo.findOutcome(proposal.id);
       return {
         resolved: true,
-        winnerIndex: decision.winnerIndex,
+        winnerIndex:
+          saved?.status === "resolved" && saved.winnerIndex !== null
+            ? saved.winnerIndex
+            : KEEP_CURRENT_INDEX,
         proposal: null,
       };
     }

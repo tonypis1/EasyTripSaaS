@@ -8,11 +8,15 @@
  * deve saltare il grounding invece di usare una chiave vuota.
  */
 export function normalizeDestinationKey(destination: string): string {
-  return destination
+  return normalizePlaceName(destination).slice(0, 120);
+}
+
+/** Minuscolo, senza diacritici né punteggiatura: "Trattoria Da Enzo al 29" ~ "trattoria da enzo al 29". */
+export function normalizePlaceName(name: string): string {
+  return name
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .slice(0, 120);
+    .trim();
 }

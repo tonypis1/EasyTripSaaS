@@ -1,6 +1,7 @@
 "use client";
 
 import type { TripDetailDto } from "@/server/services/trip/tripService";
+import { slotEndDate } from "@/lib/ics-export";
 import { isDayUnlocked, daysUntilUnlock, tripPhase } from "@/lib/day-unlock";
 import {
   tripStatusDisplayLabel,
@@ -288,15 +289,21 @@ function googleCalendarAddEventUrl(params: {
   startTime: string; // HH:mm
   endTime: string; // HH:mm
 }): string {
-  const toGCalDateTime = (timeStr: string) =>
-    `${params.dateStr.replace(/-/g, "")}T${timeStr.replace(":", "")}00`;
+  const toGCalDateTime = (dateStr: string, timeStr: string) =>
+    `${dateStr.replace(/-/g, "")}T${timeStr.replace(":", "")}00`;
+  // Slot che passa la mezzanotte (es. 22:00–01:00): la fine è il giorno dopo.
+  const endDateStr = slotEndDate(
+    params.dateStr,
+    params.startTime,
+    params.endTime,
+  );
 
   const u = new URL("https://calendar.google.com/calendar/render");
   u.searchParams.set("action", "TEMPLATE");
   u.searchParams.set("text", params.title);
   u.searchParams.set(
     "dates",
-    `${toGCalDateTime(params.startTime)}/${toGCalDateTime(params.endTime)}`,
+    `${toGCalDateTime(params.dateStr, params.startTime)}/${toGCalDateTime(endDateStr, params.endTime)}`,
   );
   u.searchParams.set("location", params.location);
   if (params.details) u.searchParams.set("details", params.details);

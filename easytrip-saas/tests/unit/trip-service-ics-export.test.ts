@@ -129,6 +129,9 @@ describe("TripService.getTripIcsExport", () => {
     expect(content).toContain("UID:day1-morning@easytripsaas.com");
     // Evening è null: nessun terzo evento per quello slot.
     expect(content.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+    // Solo i giorni: nessuna chiamata a Clerk né ai crediti come nel dettaglio completo.
+    expect(mocks.clerkClient).not.toHaveBeenCalled();
+    expect(mocks.creditAggregate).not.toHaveBeenCalled();
   });
 
   it("propaga l'errore TRIP_NOT_FOUND se il trip non esiste o non è visibile all'utente", async () => {

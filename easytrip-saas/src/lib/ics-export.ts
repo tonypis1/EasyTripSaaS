@@ -7,13 +7,20 @@
  * Scope volutamente limitato ai 3 slot giornalieri (morning/afternoon/
  * evening), che hanno un orario reale — a differenza dei ristoranti, che
  * hanno solo "pranzo"/"cena" senza un orario fisso.
+ *
+ * Limite noto: gli orari sono "floating" (senza TZID), perché il viaggio non
+ * memorizza il fuso della destinazione. Un calendario li mostra nel fuso del
+ * dispositivo o dell'account: corretti sul posto con il telefono sul fuso
+ * locale, spostati se il calendario resta sul fuso di casa (es. Google
+ * Calendar web impostato su Roma durante un viaggio a Tokyo).
  */
 
 import { readStoredSlot } from "@/lib/trip/day-slots";
 
 const ICS_DOMAIN = "easytripsaas.com";
-/** Limite di colonna conservativo per il line-folding RFC 5545 (semplificato: conta caratteri, non ottetti UTF-8). */
-const ICS_FOLD_WIDTH = 70;
+/** Lunghezza massima di una riga .ics in ottetti UTF-8, CRLF escluso (RFC 5545 §3.1). */
+const ICS_FOLD_OCTETS = 75;
+const utf8 = new TextEncoder();
 
 function escapeIcsText(value: string): string {
   return value
@@ -23,15 +30,31 @@ function escapeIcsText(value: string): string {
     .replace(/\r?\n/g, "\\n");
 }
 
+/**
+ * Line-folding RFC 5545: righe di al massimo 75 ottetti, le continuazioni
+ * iniziano con uno spazio. Conta i byte UTF-8 (un carattere accentato ne vale
+ * 2, un ideogramma 3, un'emoji 4) e taglia solo tra un carattere e l'altro:
+ * mai a metà di una sequenza (un'emoji spezzata diventerebbe "\uFFFD").
+ */
 function foldIcsLine(line: string): string {
-  if (line.length <= ICS_FOLD_WIDTH) return line;
-  const parts: string[] = [line.slice(0, ICS_FOLD_WIDTH)];
-  let rest = line.slice(ICS_FOLD_WIDTH);
-  while (rest.length > 0) {
-    parts.push(` ${rest.slice(0, ICS_FOLD_WIDTH - 1)}`);
-    rest = rest.slice(ICS_FOLD_WIDTH - 1);
+  if (utf8.encode(line).length <= ICS_FOLD_OCTETS) return line;
+  const parts: string[] = [];
+  let current = "";
+  let octets = 0;
+  let limit = ICS_FOLD_OCTETS;
+  for (const char of line) {
+    const size = utf8.encode(char).length;
+    if (octets + size > limit) {
+      parts.push(current);
+      current = "";
+      octets = 0;
+      limit = ICS_FOLD_OCTETS - 1; // lo spazio iniziale della continuazione conta
+    }
+    current += char;
+    octets += size;
   }
-  return parts.join("\r\n");
+  parts.push(current);
+  return parts.join("\r\n ");
 }
 
 function formatIcsDateOnly(dateStr: string): string {
@@ -53,6 +76,26 @@ function addDaysToDateOnly(dateStr: string, days: number): string {
   const date = new Date(Date.UTC(y, m - 1, d));
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function minutesOfDay(timeStr: string): number {
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+/**
+ * Data (YYYY-MM-DD) in cui finisce uno slot: il giorno dopo se l'orario di
+ * fine è prima di quello di inizio (es. 22:00–01:00). Senza, la fine cadrebbe
+ * prima dell'inizio: evento non valido per RFC 5545 e per Google Calendar.
+ */
+export function slotEndDate(
+  dateStr: string,
+  startTime: string,
+  endTime: string,
+): string {
+  return minutesOfDay(endTime) < minutesOfDay(startTime)
+    ? addDaysToDateOnly(dateStr, 1)
+    : dateStr;
 }
 
 export type IcsEvent = {
@@ -81,8 +124,9 @@ function buildEventLines(event: IcsEvent, dtstamp: string): string[] {
     lines.push(
       `DTSTART:${formatIcsLocalDateTime(event.startDate, event.startTime)}`,
     );
+    const endTime = event.endTime ?? event.startTime;
     lines.push(
-      `DTEND:${formatIcsLocalDateTime(event.startDate, event.endTime ?? event.startTime)}`,
+      `DTEND:${formatIcsLocalDateTime(slotEndDate(event.startDate, event.startTime, endTime), endTime)}`,
     );
   } else {
     lines.push(`DTSTART;VALUE=DATE:${formatIcsDateOnly(event.startDate)}`);

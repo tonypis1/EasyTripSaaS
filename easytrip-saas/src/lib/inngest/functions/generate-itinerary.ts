@@ -10,7 +10,14 @@ import {
 } from "@/lib/ai/prompt-locale";
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
 import { dayContentForDb } from "@/lib/trip/day-slots";
-import { ItineraryGenerationService } from "@/server/services/trip/itineraryGenerationService";
+import {
+  generationExhaustedError,
+  ItineraryGenerationService,
+  nextGenerationCall,
+  type FailedGeneration,
+  type GenerationCallOutcome,
+  type ItineraryGenerationResult,
+} from "@/server/services/trip/itineraryGenerationService";
 import { GroundingService } from "@/server/services/trip/groundingService";
 import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
 import { computeGroundingCoverage } from "@/lib/grounding/coverage";
@@ -132,22 +139,53 @@ export const generateItinerary = inngest.createFunction(
       return result;
     });
 
-    const gen = await step.run("genera-con-claude", () =>
-      itineraryGenerationService.generate({
-        destination: trip.destination,
-        startDate,
-        endDate,
-        numDays,
-        tripType: trip.tripType,
-        style: trip.style,
-        preferences: trip.preferences,
-        budgetLevel: trip.budgetLevel,
-        usedZones: trip.usedZones,
-        localPassCityCount: trip.localPassCityCount,
-        locale: trip.organizerLanguage,
-        grounding,
-      }),
-    );
+    const generationInput = {
+      destination: trip.destination,
+      startDate,
+      endDate,
+      numDays,
+      tripType: trip.tripType,
+      style: trip.style,
+      preferences: trip.preferences,
+      budgetLevel: trip.budgetLevel,
+      usedZones: trip.usedZones,
+      localPassCityCount: trip.localPassCityCount,
+      locale: trip.organizerLanguage,
+      grounding,
+    };
+
+    /**
+     * Uno step per chiamata al modello (tentativo o riparazione): ogni step è
+     * una richiesta separata alla route `/api/inngest`, e una generazione dura
+     * ~2 minuti per 3 giorni. Con tutti i tentativi nello stesso step una sola
+     * riparazione bastava a superare il `maxDuration` della route; un errore
+     * dell'API ritenta solo la chiamata fallita, non quelle già riuscite.
+     */
+    let gen: ItineraryGenerationResult | null = null;
+    let previous: FailedGeneration | null = null;
+    for (
+      let call = nextGenerationCall(null);
+      call;
+      call = nextGenerationCall(previous)
+    ) {
+      const current = call;
+      const outcome = (await step.run(
+        current.repair
+          ? `ripara-con-claude-${current.attempt}`
+          : `genera-con-claude-${current.attempt}`,
+        () =>
+          itineraryGenerationService.runGenerationCall(
+            generationInput,
+            current,
+          ),
+      )) as GenerationCallOutcome;
+      if (outcome.ok) {
+        gen = outcome.result;
+        break;
+      }
+      previous = { call: current, outcome };
+    }
+    if (!gen) throw generationExhaustedError(previous);
 
     // Telemetria: quanti POI/ristoranti generati compaiono tra quelli verificati
     // (copertura bassa sui ristoranti = probabile invenzione di nomi).

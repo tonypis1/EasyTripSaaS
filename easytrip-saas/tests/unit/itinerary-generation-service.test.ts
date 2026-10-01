@@ -16,7 +16,11 @@ vi.mock("@/lib/ai/anthropic", () => ({
   },
 }));
 
-import { ItineraryGenerationService } from "@/server/services/trip/itineraryGenerationService";
+import {
+  ItineraryGenerationService,
+  nextGenerationCall,
+  type FailedGeneration,
+} from "@/server/services/trip/itineraryGenerationService";
 
 function slot(overrides: Record<string, unknown> = {}) {
   return {
@@ -143,7 +147,7 @@ describe("ItineraryGenerationService.generate", () => {
     expect(mocks.messagesCreate).toHaveBeenCalledTimes(5);
   });
 
-  it("lancia un errore se Claude non restituisce un blocco testuale", async () => {
+  it("senza blocco testuale non c'è nulla da riparare: nuovi tentativi, poi errore", async () => {
     mocks.messagesCreate.mockResolvedValue({
       content: [{ type: "image", source: {} }],
     });
@@ -153,7 +157,8 @@ describe("ItineraryGenerationService.generate", () => {
     await expect(service.generate(baseInput())).rejects.toThrow(
       "Claude non ha restituito un blocco testuale",
     );
-    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
+    // 3 tentativi da zero, nessuna riparazione.
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(3);
   });
 
   it("passa il modello configurato e un max_tokens che lascia spazio a ragionamento + JSON (cresce con i giorni)", async () => {
@@ -178,7 +183,27 @@ describe("ItineraryGenerationService.generate", () => {
     expect(mocks.messagesCreate.mock.calls[0][0].max_tokens).toBe(64_000);
   });
 
-  it("risposta troncata per max_tokens: errore esplicito invece di un JSON incompleto", async () => {
+  it("risposta troncata per max_tokens: mai riparata (JSON incompleto), si riprova da zero", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce({
+        ...textResponse(validPayload(2)),
+        stop_reason: "max_tokens",
+      })
+      .mockResolvedValueOnce(textResponse(validPayload(2)));
+
+    const result = await new ItineraryGenerationService().generate(baseInput());
+
+    expect(result.days).toHaveLength(2);
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    // Il secondo è un tentativo da zero, non una riparazione del testo troncato.
+    expect(
+      mocks.messagesCreate.mock.calls[1][0].messages[0].content,
+    ).toHaveLength(
+      mocks.messagesCreate.mock.calls[0][0].messages[0].content.length,
+    );
+  });
+
+  it("risposte sempre troncate: errore esplicito dopo i tentativi", async () => {
     mocks.messagesCreate.mockResolvedValue({
       ...textResponse(validPayload(2)),
       stop_reason: "max_tokens",
@@ -187,7 +212,7 @@ describe("ItineraryGenerationService.generate", () => {
     await expect(
       new ItineraryGenerationService().generate(baseInput()),
     ).rejects.toThrow("Risposta troncata (max_tokens)");
-    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -550,6 +575,40 @@ describe("ItineraryGenerationService.generate — preferenze strutturate", () =>
     expect(text).toContain("non fare promesse di sicurezza");
   });
 
+  it("anche l'ultimo tentativo accetta le lacune dietetiche (vincolo morbido): l'itinerario pagato non fallisce", async () => {
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // 1: struttura errata
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // riparazione 1: ancora errata
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // 2: errata
+      .mockResolvedValueOnce(textResponse(validPayload(1))) // riparazione 2: errata
+      .mockResolvedValueOnce(textResponse(payloadWithFit(2, []))); // 3: valida ma con lacune
+
+    const result = await new ItineraryGenerationService().generate(
+      baseInput({ preferences: veg }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(5);
+    expect(result.days).toHaveLength(2);
+  });
+
+  it("l'errore finale non contiene le restrizioni alimentari (finisce nei log di Inngest)", async () => {
+    // Lacune al tentativo 1 (strict) → riparazione con struttura errata → ... → tentativo 3 errato.
+    mocks.messagesCreate
+      .mockResolvedValueOnce(textResponse(payloadWithFit(2, [])))
+      .mockResolvedValue(textResponse(validPayload(1)));
+
+    const error = await new ItineraryGenerationService()
+      .generate(baseInput({ preferences: veg }))
+      .catch((e: Error) => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).not.toContain("vegetarian");
+    // Il dettaglio resta solo nel prompt di riparazione per il modello.
+    const repairText =
+      mocks.messagesCreate.mock.calls[1][0].messages[0].content.at(-1).text;
+    expect(repairText).toContain("(manca: vegetarian)");
+  });
+
   it("errori strutturali e lacune dietetiche insieme: il conteggio delle chiamate resta limitato", async () => {
     mocks.messagesCreate
       .mockResolvedValueOnce(textResponse(validPayload(1))) // struttura errata
@@ -561,5 +620,46 @@ describe("ItineraryGenerationService.generate — preferenze strutturate", () =>
 
     expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
     expect(result.days).toHaveLength(2);
+  });
+});
+
+describe("nextGenerationCall — sequenza delle chiamate", () => {
+  const failed = (raw: string | null) => ({
+    ok: false as const,
+    raw,
+    reason: "motivo",
+    logReason: "motivo",
+  });
+
+  it("tentativo, riparazione, tentativo, riparazione, tentativo: poi basta", () => {
+    const seen: string[] = [];
+    let previous: FailedGeneration | null = null;
+    for (
+      let call = nextGenerationCall(null);
+      call;
+      call = nextGenerationCall(previous)
+    ) {
+      seen.push(`${call.repair ? "r" : "t"}${call.attempt}`);
+      previous = { call, outcome: failed("{}") };
+    }
+    expect(seen).toEqual(["t1", "r1", "t2", "r2", "t3"]);
+  });
+
+  it("niente da riparare (troncata o senza testo): si passa al tentativo successivo", () => {
+    expect(
+      nextGenerationCall({
+        call: { attempt: 1, repair: null },
+        outcome: failed(null),
+      }),
+    ).toEqual({ attempt: 2, repair: null });
+  });
+
+  it("la riparazione riceve il testo e il motivo dettagliato del tentativo", () => {
+    expect(
+      nextGenerationCall({
+        call: { attempt: 2, repair: null },
+        outcome: { ok: false, raw: "{x}", reason: "dettaglio", logReason: "n" },
+      }),
+    ).toEqual({ attempt: 2, repair: { raw: "{x}", reason: "dettaglio" } });
   });
 });

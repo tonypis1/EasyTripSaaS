@@ -38,7 +38,8 @@ function proposal(overrides: Record<string, unknown> = {}) {
     status: "open",
     options,
     winnerIndex: null,
-    expiresAt: new Date("2026-09-30T12:00:00Z"),
+    // Nel futuro: una proposta scaduta non accetta voti.
+    expiresAt: new Date("2099-01-01T12:00:00Z"),
     votes: [] as { memberId: string; optionIndex: number }[],
     day: {
       id: "d1",
@@ -74,7 +75,8 @@ function setup(
         opts.proposal === undefined ? proposal() : opts.proposal,
       ),
     open: vi.fn().mockResolvedValue(true),
-    upsertVote: vi.fn().mockResolvedValue({}),
+    upsertVoteIfOpen: vi.fn().mockResolvedValue(true),
+    findOutcome: vi.fn().mockResolvedValue(null),
     listVotes: vi.fn().mockResolvedValue(opts.votes ?? []),
     resolve: vi.fn().mockResolvedValue(true),
     listExpiredOpen: vi.fn().mockResolvedValue([]),
@@ -104,7 +106,7 @@ describe("SlotProposalService — accesso", () => {
       code: "NOT_MEMBER",
       statusCode: 403,
     });
-    expect(repo.upsertVote).not.toHaveBeenCalled();
+    expect(repo.upsertVoteIfOpen).not.toHaveBeenCalled();
   });
 
   it("404 se la proposta appartiene a un altro viaggio (id manipolato nell'URL)", async () => {
@@ -114,7 +116,7 @@ describe("SlotProposalService — accesso", () => {
       code: "PROPOSAL_NOT_FOUND",
       statusCode: 404,
     });
-    expect(repo.upsertVote).not.toHaveBeenCalled();
+    expect(repo.upsertVoteIfOpen).not.toHaveBeenCalled();
   });
 
   it("404 se la proposta non esiste o il viaggio è stato eliminato", async () => {
@@ -212,7 +214,12 @@ describe("SlotProposalService.vote", () => {
 
     const out = await service.vote("trip1", "p1", 1);
 
-    expect(repo.upsertVote).toHaveBeenCalledWith("p1", "m2", 1);
+    expect(repo.upsertVoteIfOpen).toHaveBeenCalledWith(
+      "p1",
+      "m2",
+      1,
+      expect.any(Date),
+    );
     expect(out.resolved).toBe(false);
     expect(out.proposal?.tally).toEqual([0, 1, 0]);
     expect(out.proposal?.myVote).toBe(1);
@@ -290,8 +297,55 @@ describe("SlotProposalService.vote", () => {
         code: "PROPOSAL_NOT_OPEN",
         statusCode: 409,
       });
-      expect(repo.upsertVote).not.toHaveBeenCalled();
+      expect(repo.upsertVoteIfOpen).not.toHaveBeenCalled();
     }
+  });
+
+  it("409 se la votazione è scaduta anche se il job orario non l'ha ancora chiusa (nessun voto registrato)", async () => {
+    const { service, repo } = setup({
+      userId: "u2",
+      memberId: "m2",
+      proposal: proposal({ expiresAt: new Date(Date.now() - 60_000) }),
+    });
+
+    await expect(service.vote("trip1", "p1", 1)).rejects.toMatchObject({
+      code: "PROPOSAL_NOT_OPEN",
+      statusCode: 409,
+    });
+    expect(repo.upsertVoteIfOpen).not.toHaveBeenCalled();
+  });
+
+  it("409 se la proposta si chiude tra la lettura e il voto (il voto non viene registrato)", async () => {
+    const { service, repo } = setup({ userId: "u2", memberId: "m2" });
+    repo.upsertVoteIfOpen.mockResolvedValueOnce(false);
+
+    await expect(service.vote("trip1", "p1", 1)).rejects.toMatchObject({
+      code: "PROPOSAL_NOT_OPEN",
+      statusCode: 409,
+    });
+    expect(repo.resolve).not.toHaveBeenCalled();
+  });
+
+  it("voto decisivo ma la proposta è già stata chiusa da un'altra richiesta: risponde con l'esito salvato", async () => {
+    const { service, repo } = setup({
+      userId: "u3",
+      memberId: "m3",
+      members: 4,
+      votes: [
+        { memberId: "m1", optionIndex: 2 },
+        { memberId: "m2", optionIndex: 2 },
+        { memberId: "m3", optionIndex: 2 },
+      ],
+    });
+    repo.resolve.mockResolvedValueOnce(false); // l'organizzatore ha chiuso un attimo prima
+    repo.findOutcome.mockResolvedValueOnce({
+      status: "resolved",
+      winnerIndex: 0,
+    });
+
+    const out = await service.vote("trip1", "p1", 2);
+
+    expect(out).toEqual({ resolved: true, winnerIndex: 0, proposal: null });
   });
 
   it("400 se l'opzione non esiste in questa proposta", async () => {
@@ -301,7 +355,7 @@ describe("SlotProposalService.vote", () => {
       code: "INVALID_OPTION",
       statusCode: 400,
     });
-    expect(repo.upsertVote).not.toHaveBeenCalled();
+    expect(repo.upsertVoteIfOpen).not.toHaveBeenCalled();
   });
 
   it("500 PROPOSAL_CORRUPT se le opzioni salvate non sono valide (mai applicare contenuto non validato)", async () => {

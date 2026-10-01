@@ -494,14 +494,36 @@ export class TripService {
     };
   }
 
-  /** Esportazione calendario (.ics) dell'itinerario attivo: riusa getTripDetail per auth/visibilità (organizer o membro). */
+  /**
+   * Esportazione calendario (.ics) dell'itinerario attivo. Stessa visibilità
+   * del dettaglio (organizzatore o membro) ma senza il resto del dettaglio:
+   * niente sincronizzazione dei nomi con Clerk, crediti, GeoScore o votazioni
+   * a ogni download, servono solo i giorni.
+   */
   async getTripIcsExport(
     tripId: string,
   ): Promise<{ filename: string; content: string }> {
-    const trip = await this.getTripDetail(tripId);
+    const user = await this.authService.getOrCreateCurrentUser();
+    const trip =
+      (await this.tripRepository.findDetailForOrganizer(tripId, user.id)) ??
+      (await this.tripRepository.findDetailForMember(tripId, user.id));
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    const days = trip.versions.find((v) => v.isActive)?.days ?? [];
     return {
       filename: icsFilenameForDestination(trip.destination),
-      content: buildTripIcsCalendar(trip.destination, trip.days),
+      content: buildTripIcsCalendar(
+        trip.destination,
+        days.map((d) => ({
+          id: d.id,
+          unlockDate: toDateOnlyIsoUtc(d.unlockDate),
+          morning: d.morning,
+          afternoon: d.afternoon,
+          evening: d.evening,
+        })),
+      ),
     };
   }
 

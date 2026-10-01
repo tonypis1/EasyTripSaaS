@@ -4,6 +4,7 @@ import {
   computeMemberTotals,
   toCents,
   type SplitExpense,
+  splitCentsByMember,
 } from "@/lib/expense-split";
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -253,5 +254,41 @@ describe("toCents", () => {
     expect(toCents(0.1 + 0.2)).toBe(30);
     expect(toCents(1.005 * 100) / 100).toBeCloseTo(100.5, 2);
     expect(toCents(19.99)).toBe(1999);
+  });
+});
+
+describe("splitCentsByMember (saldi e anteprima del modulo)", () => {
+  it("lo stesso risultato in qualunque ordine arrivino i partecipanti: il resto va ai primi id", () => {
+    const members = [
+      { memberId: "c", weight: 1 },
+      { memberId: "a", weight: 1 },
+      { memberId: "b", weight: 1 },
+    ];
+    const forward = splitCentsByMember(1000, members);
+    const reversed = splitCentsByMember(1000, [...members].reverse());
+
+    expect([...forward.entries()].sort()).toEqual([
+      ["a", 334],
+      ["b", 333],
+      ["c", 333],
+    ]);
+    expect([...reversed.entries()].sort()).toEqual(
+      [...forward.entries()].sort(),
+    );
+  });
+
+  it("i saldi del server usano la stessa ripartizione dell'anteprima", () => {
+    const participants = [
+      { memberId: "m2", weight: 1 },
+      { memberId: "m1", weight: 2 },
+    ];
+    const preview = splitCentsByMember(1001, participants);
+    const totals = computeMemberTotals(
+      ["m1", "m2"],
+      [{ amount: 10.01, paidById: "m1", splitEqually: true, participants }],
+    );
+
+    expect(totals.get("m1")?.owedCents).toBe(preview.get("m1"));
+    expect(totals.get("m2")?.owedCents).toBe(preview.get("m2"));
   });
 });

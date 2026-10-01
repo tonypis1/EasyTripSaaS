@@ -5,6 +5,7 @@ import {
   buildTripIcsEvents,
   icsFilenameForDestination,
   type TripDayForIcs,
+  slotEndDate,
 } from "@/lib/ics-export";
 
 function slotFixture(overrides: Record<string, unknown> = {}) {
@@ -105,29 +106,67 @@ describe("buildIcsCalendar", () => {
     expect(withoutGeo).not.toContain("GEO:");
   });
 
-  it("va a capo (fold) le righe più lunghe di 70 caratteri con un singolo spazio iniziale", () => {
-    const longDescription = "x".repeat(200);
-    const ics = buildIcsCalendar({
+  function icsWithDescription(description: string) {
+    return buildIcsCalendar({
       calendarName: "Test",
       events: [
         {
           uid: "a@easytripsaas.com",
           summary: "A",
-          description: longDescription,
+          description,
           startDate: "2026-06-01",
         },
       ],
     });
+  }
+
+  const octets = (line: string) => new TextEncoder().encode(line).length;
+  const unfold = (ics: string) => ics.replace(/\r\n /g, "");
+
+  it("va a capo (fold) le righe oltre 75 ottetti con un singolo spazio iniziale, senza perdere testo", () => {
+    const ics = icsWithDescription("x".repeat(200));
 
     const lines = ics.split("\r\n");
-    const continuationLines = lines.filter((l) => l.startsWith(" "));
-    expect(continuationLines.length).toBeGreaterThan(0);
-    // Nessuna riga (a parte le continuazioni) supera il limite di colonna.
-    for (const line of lines) {
-      if (!line.startsWith(" ")) {
-        expect(line.length).toBeLessThanOrEqual(70);
-      }
+    expect(lines.filter((l) => l.startsWith(" ")).length).toBeGreaterThan(0);
+    for (const line of lines) expect(octets(line)).toBeLessThanOrEqual(75);
+    expect(unfold(ics)).toContain(`DESCRIPTION:${"x".repeat(200)}`);
+  });
+
+  it("conta gli ottetti UTF-8 e non spezza mai un carattere (emoji, ideogrammi, accenti)", () => {
+    const text = "東京タワー🗼 è bellissima ".repeat(12);
+    const ics = icsWithDescription(text);
+
+    for (const line of ics.split("\r\n")) {
+      expect(octets(line)).toBeLessThanOrEqual(75);
+      // Nessun surrogato isolato: ogni riga è UTF-8 valido da sola.
+      expect(line).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+      expect(line).not.toMatch(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/);
     }
+    expect(unfold(ics)).toContain(`DESCRIPTION:${text.replace(/,/g, "\\,")}`);
+  });
+
+  it("uno slot che passa la mezzanotte finisce il giorno dopo (mai DTEND prima di DTSTART)", () => {
+    const ics = buildIcsCalendar({
+      calendarName: "Test",
+      events: [
+        {
+          uid: "n@easytripsaas.com",
+          summary: "Locali",
+          startDate: "2026-10-05",
+          startTime: "22:00",
+          endTime: "01:00",
+        },
+      ],
+    });
+
+    expect(ics).toContain("DTSTART:20261005T220000");
+    expect(ics).toContain("DTEND:20261006T010000");
+  });
+
+  it("slotEndDate: stesso giorno se la fine è dopo l'inizio, giorno dopo se prima (anche a fine mese)", () => {
+    expect(slotEndDate("2026-10-05", "09:00", "11:30")).toBe("2026-10-05");
+    expect(slotEndDate("2026-10-31", "23:00", "00:30")).toBe("2026-11-01");
+    expect(slotEndDate("2026-10-05", "10:00", "10:00")).toBe("2026-10-05");
   });
 });
 

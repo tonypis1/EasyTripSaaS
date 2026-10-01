@@ -4,21 +4,12 @@ import { useCallback, useState } from "react";
 import posthog from "posthog-js";
 import { Calendar, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { icsFilenameForDestination } from "@/lib/ics-export";
 
 type CalendarExportButtonProps = {
   tripId: string;
   destination: string;
 };
-
-function slugifyDestination(destination: string): string {
-  return destination
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-}
 
 /** Scarica l'itinerario come file .ics (GET /api/trips/[tripId]/calendar.ics), importabile in Google/Apple/Outlook Calendar. */
 export function CalendarExportButton({
@@ -49,9 +40,14 @@ export function CalendarExportButton({
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
-      anchor.download = `easytrip-${slugifyDestination(destination) || "trip"}.ics`;
+      // Stesso nome del file servito dal server (Content-Disposition).
+      anchor.download = icsFilenameForDestination(destination);
+      document.body.appendChild(anchor);
       anchor.click();
-      URL.revokeObjectURL(objectUrl);
+      anchor.remove();
+      // Firefox e Safari avviano il download dopo il click: revocare l'URL
+      // subito può annullarlo.
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
 
       posthog.capture("trip_calendar_exported", {
         trip_id: tripId,

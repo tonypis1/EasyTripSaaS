@@ -1,15 +1,8 @@
 import type { DayPlanExtended } from "@/lib/itinerary-model-schema";
 import type { GroundedDestination } from "./grounding-schema";
+import { normalizePlaceName } from "./destination-key";
 
-/** Minuscolo, senza diacritici né punteggiatura: "Trattoria Da Enzo al 29" ~ "trattoria da enzo al 29". */
-export function normalizePlaceName(name: string): string {
-  return name
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim();
-}
+export { normalizePlaceName };
 
 /** Uguaglianza, oppure contenimento reciproco per nomi abbastanza lunghi da non produrre falsi positivi ("Duomo" vs "Duomo di Milano"). */
 function namesMatch(a: string, b: string): boolean {

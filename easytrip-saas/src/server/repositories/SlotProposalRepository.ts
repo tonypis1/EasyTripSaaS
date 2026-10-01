@@ -84,11 +84,42 @@ export class SlotProposalRepository {
     return res.count === 1;
   }
 
-  async upsertVote(proposalId: string, memberId: string, optionIndex: number) {
-    return prisma.slotVote.upsert({
-      where: { proposalId_memberId: { proposalId, memberId } },
-      create: { proposalId, memberId, optionIndex },
-      update: { optionIndex },
+  /**
+   * Registra (o cambia) il voto solo se la proposta è aperta e non scaduta,
+   * con la riga della proposta bloccata (`FOR UPDATE`): una chiusura
+   * concorrente (organizzatore, cron) o aspetta questo voto o lo fa
+   * rifiutare, e nessun voto finisce su una proposta già chiusa.
+   * Ritorna false se la proposta non è (più) votabile.
+   */
+  async upsertVoteIfOpen(
+    proposalId: string,
+    memberId: string,
+    optionIndex: number,
+    now = new Date(),
+  ): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      const open = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM slot_proposal
+        WHERE id = ${proposalId}
+          AND status = 'open'
+          AND (expires_at IS NULL OR expires_at > ${now})
+        FOR UPDATE`;
+      if (open.length === 0) return false;
+
+      await tx.slotVote.upsert({
+        where: { proposalId_memberId: { proposalId, memberId } },
+        create: { proposalId, memberId, optionIndex },
+        update: { optionIndex },
+      });
+      return true;
+    });
+  }
+
+  /** Esito salvato di una proposta (per rispondere col vero esito dopo una chiusura concorrente). */
+  async findOutcome(proposalId: string) {
+    return prisma.slotProposal.findUnique({
+      where: { id: proposalId },
+      select: { status: true, winnerIndex: true },
     });
   }
 

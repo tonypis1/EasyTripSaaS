@@ -19,7 +19,8 @@ export const DAILY_BUDGET_PER_PERSON_EUR: Record<BudgetLevelKey, number> = {
 const WARNING_RATIO = 0.8;
 
 export function resolveBudgetLevel(level: string): BudgetLevelKey {
-  return level in DAILY_BUDGET_PER_PERSON_EUR
+  // `Object.hasOwn`, non `in`: "toString" o "constructor" non sono livelli validi.
+  return Object.hasOwn(DAILY_BUDGET_PER_PERSON_EUR, level)
     ? (level as BudgetLevelKey)
     : "moderate";
 }

@@ -29,11 +29,11 @@ const MAX_PAUSE_CONTINUATIONS = 3;
  * Con l'API reale un turno con 6 ricerche dura da meno di un minuto a oltre
  * due: la richiesta va in streaming, perché senza streaming le intestazioni
  * arrivano solo a risposta completa e un timeout per richiesta interrompeva
- * ricerche sane (verificato).
- * Il tetto resta ben sotto il timeout della funzione Inngest (15 minuti), che
- * deve ancora generare l'itinerario.
+ * ricerche sane (verificato). Il tetto sta sotto il `maxDuration` della route
+ * `/api/inngest` (300s): scade prima che la piattaforma interrompa lo step,
+ * così `getGrounding` ritorna null e la generazione prosegue senza fonti.
  */
-const SEARCH_BUDGET_MS = 300_000;
+const SEARCH_BUDGET_MS = 200_000;
 /** `timeout` dell'SDK in streaming copre solo l'attesa della risposta iniziale. */
 const SEARCH_REQUEST_OPTIONS = { timeout: 60_000, maxRetries: 1 };
 

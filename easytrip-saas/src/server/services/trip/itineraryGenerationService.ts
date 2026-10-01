@@ -240,13 +240,14 @@ function generationMaxTokens(numDays: number): number {
 /**
  * Una richiesta di generazione, in streaming: con un budget di output ampio
  * una richiesta non in streaming può superare i 10 minuti e l'SDK la rifiuta.
+ * Ritorna il testo completo, o il motivo per cui non c'è (nessun blocco di
+ * testo, risposta troncata): in quei casi non c'è un JSON da riparare.
  */
-async function requestItineraryText(
+async function requestItinerary(
   locale: SupportedAiLocale,
   numDays: number,
   content: Anthropic.TextBlockParam[],
-  label: string,
-): Promise<string> {
+): Promise<{ text: string } | { text: null; problem: string }> {
   const response = await anthropic.messages
     .stream({
       model: ANTHROPIC_MODEL,
@@ -259,12 +260,90 @@ async function requestItineraryText(
 
   const textBlock = response.content.find((c) => c.type === "text");
   if (!textBlock || textBlock.type !== "text") {
-    throw new Error(`Claude non ha restituito un blocco testuale${label}`);
+    return {
+      text: null,
+      problem: "Claude non ha restituito un blocco testuale",
+    };
   }
   if (response.stop_reason === "max_tokens") {
-    throw new Error(`Risposta troncata (max_tokens)${label}`);
+    return { text: null, problem: "Risposta troncata (max_tokens)" };
   }
-  return textBlock.text;
+  return { text: textBlock.text };
+}
+
+/** Una chiamata al modello nel ciclo tentativi/riparazioni. */
+export type GenerationCall = {
+  /** Tentativo, da 1 a `MAX_ATTEMPTS`. */
+  attempt: number;
+  /** Risposta del tentativo da riparare (testo + motivo), o null = tentativo da zero. */
+  repair: { raw: string; reason: string } | null;
+};
+
+type FailedGenerationCall = {
+  ok: false;
+  /** Testo completo da riparare; null = niente da riparare (troncato o senza testo). */
+  raw: string | null;
+  /** Motivo dettagliato, solo per il prompt di riparazione: può citare le restrizioni alimentari. */
+  reason: string;
+  /** Motivo senza dati personali, per log ed errori. */
+  logReason: string;
+};
+
+/** Esito di una chiamata, serializzabile: passa tra gli step Inngest. */
+export type GenerationCallOutcome =
+  | { ok: true; result: ItineraryGenerationResult }
+  | FailedGenerationCall;
+
+export type FailedGeneration = {
+  call: GenerationCall;
+  outcome: FailedGenerationCall;
+};
+
+/**
+ * La chiamata successiva a un esito negativo (`null` = la prima): la
+ * riparazione della risposta se c'è un testo completo da riparare, altrimenti
+ * un nuovo tentativo; `null` = tentativi esauriti. Sequenza massima:
+ * 1, riparazione 1, 2, riparazione 2, 3 (5 chiamate). Il job Inngest esegue
+ * ogni chiamata in uno step separato: una sola richiesta al modello per
+ * invocazione della route, invece di tutte nella stessa.
+ */
+export function nextGenerationCall(
+  previous: FailedGeneration | null,
+): GenerationCall | null {
+  if (!previous) return { attempt: 1, repair: null };
+  const { call, outcome } = previous;
+  if (
+    call.repair === null &&
+    outcome.raw !== null &&
+    call.attempt < MAX_ATTEMPTS
+  ) {
+    return {
+      attempt: call.attempt,
+      repair: { raw: outcome.raw, reason: outcome.reason },
+    };
+  }
+  return call.attempt < MAX_ATTEMPTS
+    ? { attempt: call.attempt + 1, repair: null }
+    : null;
+}
+
+/** Errore finale quando nessuna chiamata ha prodotto un itinerario valido (senza dati personali). */
+export function generationExhaustedError(last: FailedGeneration | null): Error {
+  return new Error(
+    `Claude JSON non valido dopo ${MAX_ATTEMPTS} tentativi: ${last?.outcome.logReason ?? "errore sconosciuto"}`,
+  );
+}
+
+/** Lacune dietetiche: dettaglio per il modello, solo conteggi nel messaggio (che finisce nei log). */
+class DietaryGapsError extends Error {
+  constructor(
+    readonly modelReason: string,
+    count: number,
+  ) {
+    super(
+      `${count} ristoranti non dichiarano tutte le restrizioni alimentari richieste`,
+    );
+  }
 }
 
 /*
@@ -293,7 +372,9 @@ export class ItineraryGenerationService {
     const gaps = findDietaryGaps(result.days, required);
     if (gaps.length === 0) return result;
 
-    if (mode === "strict") throw new Error(formatDietaryGaps(gaps));
+    if (mode === "strict") {
+      throw new DietaryGapsError(formatDietaryGaps(gaps), gaps.length);
+    }
 
     logger.warn(
       "Ristoranti non conformi alle restrizioni dopo la riparazione",
@@ -304,16 +385,8 @@ export class ItineraryGenerationService {
     return result;
   }
 
-  /**
-   * Genera e valida l'itinerario via Claude, con fino a `MAX_ATTEMPTS`
-   * tentativi: se il JSON restituito non supera `parseAndValidateModelJson`,
-   * tenta una riparazione (stesso prompt + frammento della risposta
-   * precedente + motivo dell'errore) prima di ripartire dal tentativo
-   * successivo.
-   */
-  async generate(
-    input: ItineraryGenerationInput,
-  ): Promise<ItineraryGenerationResult> {
+  /** Prompt (stabile + zone già usate) e vincoli della generazione: identici per ogni chiamata. */
+  private buildRequest(input: ItineraryGenerationInput) {
     const locale = normalizeAiLocale(input.locale);
     const preferences = input.preferences ?? EMPTY_PREFERENCES;
     const requiredDiets = requiredDietFits(preferences);
@@ -359,56 +432,113 @@ export class ItineraryGenerationService {
         : []),
     ];
 
-    let lastErr: unknown = null;
-    let lastRaw = "";
+    return { locale, requiredDiets, baseContent };
+  }
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      lastRaw = await requestItineraryText(
-        locale,
-        input.numDays,
-        baseContent,
-        "",
-      );
-
-      try {
-        return this.checkDietaryFit(
-          parseAndValidateModelJson(lastRaw, input.numDays),
-          requiredDiets,
-          "strict",
-        );
-      } catch (e) {
-        lastErr = e;
-        if (attempt === MAX_ATTEMPTS) break;
-
-        const reason = e instanceof Error ? e.message : "errore sconosciuto";
-        const repairContent: Anthropic.TextBlockParam[] = [
+  /**
+   * Una chiamata al modello (tentativo o riparazione) e la validazione della
+   * risposta. Non lancia per risposte non valide: le descrive nell'esito, così
+   * il chiamante decide la chiamata successiva (`nextGenerationCall`). Lancia
+   * solo per errori dell'API (li ritenta lo step Inngest).
+   */
+  async runGenerationCall(
+    input: ItineraryGenerationInput,
+    call: GenerationCall,
+  ): Promise<GenerationCallOutcome> {
+    const { locale, requiredDiets, baseContent } = this.buildRequest(input);
+    const content: Anthropic.TextBlockParam[] = call.repair
+      ? [
           ...baseContent,
-          { type: "text", text: buildRepairSuffix(lastRaw, reason) },
-        ];
+          {
+            type: "text",
+            text: buildRepairSuffix(call.repair.raw, call.repair.reason),
+          },
+        ]
+      : baseContent;
 
-        lastRaw = await requestItineraryText(
-          locale,
-          input.numDays,
-          repairContent,
-          " (riparazione)",
-        );
-        try {
-          return this.checkDietaryFit(
-            parseAndValidateModelJson(lastRaw, input.numDays),
-            requiredDiets,
-            "lenient",
-          );
-        } catch (e2) {
-          lastErr = e2;
-          continue;
-        }
-      }
-    }
-
-    const msg =
-      lastErr instanceof Error ? lastErr.message : "errore sconosciuto";
-    throw new Error(
-      `Claude JSON non valido dopo ${MAX_ATTEMPTS} tentativi: ${msg}`,
+    const outcome = await this.validateResponse(
+      await requestItinerary(locale, input.numDays, content),
+      input.numDays,
+      requiredDiets,
+      // Riparazioni e ultimo tentativo accettano le lacune dietetiche (vincolo
+      // morbido): un itinerario già pagato non deve fallire per questo.
+      call.repair !== null || call.attempt === MAX_ATTEMPTS
+        ? "lenient"
+        : "strict",
     );
+    if (!outcome.ok) {
+      logger.warn("Generazione itinerario: risposta non valida", {
+        attempt: call.attempt,
+        repair: call.repair !== null,
+        reason: outcome.logReason,
+      });
+    }
+    return outcome;
+  }
+
+  private async validateResponse(
+    response: Awaited<ReturnType<typeof requestItinerary>>,
+    numDays: number,
+    requiredDiets: ReturnType<typeof requiredDietFits>,
+    mode: "strict" | "lenient",
+  ): Promise<GenerationCallOutcome> {
+    if (response.text === null) {
+      return {
+        ok: false,
+        raw: null,
+        reason: response.problem,
+        logReason: response.problem,
+      };
+    }
+    try {
+      return {
+        ok: true,
+        result: this.checkDietaryFit(
+          parseAndValidateModelJson(response.text, numDays),
+          requiredDiets,
+          mode,
+        ),
+      };
+    } catch (e) {
+      if (e instanceof DietaryGapsError) {
+        return {
+          ok: false,
+          raw: response.text,
+          reason: e.modelReason,
+          logReason: e.message,
+        };
+      }
+      const message = e instanceof Error ? e.message : "errore sconosciuto";
+      return {
+        ok: false,
+        raw: response.text,
+        reason: message,
+        logReason: message,
+      };
+    }
+  }
+
+  /**
+   * Genera e valida l'itinerario via Claude, con fino a `MAX_ATTEMPTS`
+   * tentativi: se il JSON restituito non supera `parseAndValidateModelJson`,
+   * tenta una riparazione (stesso prompt + frammento della risposta
+   * precedente + motivo dell'errore) prima di ripartire dal tentativo
+   * successivo. Il job Inngest esegue la stessa sequenza con uno step per
+   * chiamata.
+   */
+  async generate(
+    input: ItineraryGenerationInput,
+  ): Promise<ItineraryGenerationResult> {
+    let previous: FailedGeneration | null = null;
+    for (
+      let call = nextGenerationCall(null);
+      call;
+      call = nextGenerationCall(previous)
+    ) {
+      const outcome = await this.runGenerationCall(input, call);
+      if (outcome.ok) return outcome.result;
+      previous = { call, outcome };
+    }
+    throw generationExhaustedError(previous);
   }
 }

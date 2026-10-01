@@ -13,7 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { allocateByWeights, toCents } from "@/lib/expense-split";
+import { splitCentsByMember, toCents } from "@/lib/expense-split";
 import { summarizeBudget } from "@/lib/expense-budget";
 
 type ExpenseDto = {
@@ -78,6 +78,9 @@ const BUDGET_BAR_COLOR = {
 
 type ShareInput = { included: boolean; weight: string };
 
+/** Quota di un membro senza scelta esplicita (es. entrato dopo l'apertura del modulo): incluso, peso 1. */
+const DEFAULT_SHARE: ShareInput = { included: true, weight: "1" };
+
 function displayName(m: { name: string | null; email: string }) {
   return m.name ?? m.email.split("@")[0];
 }
@@ -127,9 +130,7 @@ export function ExpensePanel({ tripId, totalDays, budgetLevel }: Props) {
 
   function openForm() {
     setShares(
-      Object.fromEntries(
-        balances.map((b) => [b.memberId, { included: true, weight: "1" }]),
-      ),
+      Object.fromEntries(balances.map((b) => [b.memberId, DEFAULT_SHARE])),
     );
     setSplitMode("all");
     setShowForm(true);
@@ -138,18 +139,22 @@ export function ExpensePanel({ tripId, totalDays, budgetLevel }: Props) {
   function updateShare(memberId: string, patch: Partial<ShareInput>) {
     setShares((prev) => ({
       ...prev,
-      [memberId]: { ...prev[memberId], ...patch },
+      [memberId]: { ...(prev[memberId] ?? DEFAULT_SHARE), ...patch },
     }));
   }
 
-  /** Partecipanti scelti nella modalità "Personalizza" (solo quelli inclusi), con il peso digitato. */
+  /**
+   * Partecipanti scelti nella modalità "Personalizza" (solo quelli inclusi), con il peso digitato.
+   * Un membro senza scelta esplicita vale come mostrato nel modulo: incluso, peso 1.
+   */
   const customParticipants = useMemo(
     () =>
       balances
-        .filter((b) => shares[b.memberId]?.included)
-        .map((b) => ({
-          member: b,
-          weight: parseFloat(shares[b.memberId].weight),
+        .map((b) => ({ member: b, share: shares[b.memberId] ?? DEFAULT_SHARE }))
+        .filter(({ share }) => share.included)
+        .map(({ member, share }) => ({
+          member,
+          weight: parseFloat(share.weight),
         })),
     [balances, shares],
   );
@@ -161,13 +166,16 @@ export function ExpensePanel({ tripId, totalDays, budgetLevel }: Props) {
   const preview = useMemo(() => {
     const amountNum = parseFloat(amount);
     if (splitMode !== "custom" || !customValid || !(amountNum > 0)) return [];
-    const cents = allocateByWeights(
+    const cents = splitCentsByMember(
       toCents(amountNum),
-      customParticipants.map((p) => p.weight),
+      customParticipants.map((p) => ({
+        memberId: p.member.memberId,
+        weight: p.weight,
+      })),
     );
-    return customParticipants.map((p, i) => ({
+    return customParticipants.map((p) => ({
       name: displayName(p.member),
-      amount: cents[i] / 100,
+      amount: (cents.get(p.member.memberId) ?? 0) / 100,
     }));
   }, [amount, splitMode, customValid, customParticipants]);
 
@@ -479,10 +487,7 @@ export function ExpensePanel({ tripId, totalDays, budgetLevel }: Props) {
                     {t("splitCustomHint")}
                   </p>
                   {balances.map((b) => {
-                    const share = shares[b.memberId] ?? {
-                      included: true,
-                      weight: "1",
-                    };
+                    const share = shares[b.memberId] ?? DEFAULT_SHARE;
                     return (
                       <div
                         key={b.memberId}

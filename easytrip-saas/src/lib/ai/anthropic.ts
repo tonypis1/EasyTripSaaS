@@ -14,15 +14,17 @@ export const ANTHROPIC_MODEL = config.ai.anthropicModel;
  * richiesta HTTP in attesa fino al timeout di default dell'SDK (10 minuti),
  * ben oltre il maxDuration della route — il chiamante restava bloccato senza
  * alcuna degradazione controllata. Un solo retry (non il default 2 dell'SDK)
- * per restare abbondantemente sotto il maxDuration della route anche nel
- * caso peggiore (timeout + un retry).
+ * per restare sotto il maxDuration delle route (150s) anche nel caso
+ * peggiore (tentativo + riparazione, ciascuno con timeout + un retry = 140s).
+ * 35s per tentativo: con l'API reale la sostituzione di uno slot ha richiesto
+ * 14-18s, il live suggest 9-11s; con 20s il margine era troppo stretto.
  *
  * Non si applica a generate-itinerary (ItineraryGenerationService): quella
  * gira dentro un job Inngest con un proprio timeout (15 minuti) e già un suo
  * loop di retry/riparazione applicativo — un timeout così basso la
  * interromperebbe inutilmente su generazioni lunghe ma legittime.
  */
-export const SYNC_REQUEST_OPTIONS = { timeout: 20_000, maxRetries: 1 };
+export const SYNC_REQUEST_OPTIONS = { timeout: 35_000, maxRetries: 1 };
 
 /**
  * Parametri di output per le stesse chiamate sincrone. Su Claude Sonnet 5,

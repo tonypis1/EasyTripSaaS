@@ -216,6 +216,46 @@ describe.skipIf(!run)("Group voting sugli slot (integration)", () => {
     });
   });
 
+  it("dopo la scadenza (anche prima del job orario) un voto viene rifiutato e non registrato", async () => {
+    const draft = await freshDraft();
+    asUser(0);
+    await service.open(tripId, draft.id);
+    await prisma.slotProposal.update({
+      where: { id: draft.id },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    asUser(1);
+    await expect(service.vote(tripId, draft.id, 2)).rejects.toMatchObject({
+      code: "PROPOSAL_NOT_OPEN",
+    });
+    expect(
+      await prisma.slotVote.count({ where: { proposalId: draft.id } }),
+    ).toBe(0);
+  });
+
+  it("il voto atomico rifiuta una proposta chiusa nel frattempo (nessun voto su proposte risolte)", async () => {
+    const draft = await freshDraft();
+    asUser(0);
+    await service.open(tripId, draft.id);
+    const member = await prisma.tripMember.findFirstOrThrow({
+      where: { tripId },
+    });
+    const repo = new SlotProposalRepository();
+
+    expect(await repo.upsertVoteIfOpen(draft.id, member.id, 1)).toBe(true);
+    await prisma.slotProposal.update({
+      where: { id: draft.id },
+      data: { status: "resolved", winnerIndex: 0, resolvedAt: new Date() },
+    });
+    expect(await repo.upsertVoteIfOpen(draft.id, member.id, 2)).toBe(false);
+
+    const votes = await prisma.slotVote.findMany({
+      where: { proposalId: draft.id },
+    });
+    expect(votes.map((v) => v.optionIndex)).toEqual([1]);
+  });
+
   it("voti simultanei che innescano la stessa decisione applicano lo slot una volta sola", async () => {
     const draft = await freshDraft();
     asUser(0);

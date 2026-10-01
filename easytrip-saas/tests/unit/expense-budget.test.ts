@@ -24,6 +24,11 @@ describe("resolveBudgetLevel", () => {
     expect(resolveBudgetLevel("premium")).toBe("premium");
     expect(resolveBudgetLevel("boh")).toBe("moderate");
   });
+
+  it("le chiavi ereditate dal prototipo non sono livelli (toString, constructor)", () => {
+    expect(resolveBudgetLevel("toString")).toBe("moderate");
+    expect(resolveBudgetLevel("constructor")).toBe("moderate");
+  });
 });
 
 describe("summarizeBudget", () => {

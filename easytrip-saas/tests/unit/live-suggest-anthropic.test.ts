@@ -198,7 +198,7 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
         model: "claude-test",
         output_config: { effort: "low" },
       }),
-      { timeout: 20_000, maxRetries: 1 },
+      { timeout: 35_000, maxRetries: 1 },
     );
   });
 
