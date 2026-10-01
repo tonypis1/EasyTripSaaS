@@ -412,6 +412,11 @@
           "privacy": "Optional. Wir nutzen das nur zur Auswahl der Restaurants und geben es nie an Analyse-Tools weiter.",
           "allergyDisclaimer": "Die KI kann Allergenfreiheit nicht garantieren: Frag immer im Restaurant nach."
         },
+        "consent": {
+          "label": "Ich willige in die Verarbeitung dieser Angaben ein, die Gesundheitsdaten oder religiöse Überzeugungen offenbaren können – nur zur Erstellung meiner Reiseroute (<link>Datenschutzerklärung</link>).",
+          "hint": "Du kannst sie jederzeit widerrufen, indem du diese Präferenzen entfernst.",
+          "required": "Um Ernährungs- oder Mobilitätsbedürfnisse zu speichern, brauchen wir deine Einwilligung: Setze das Häkchen."
+        },
         "restaurant": {
           "fit": "Geeignet: {diets}",
           "unverified": "Zu prüfen: {diets}",

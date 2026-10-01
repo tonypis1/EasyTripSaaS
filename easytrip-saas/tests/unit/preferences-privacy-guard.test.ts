@@ -41,9 +41,10 @@ export function callsOf(text: string, callee: RegExp): string[] {
 
 const CALLEES = [/posthog\.capture/, /logger\.(?:info|warn|error)/];
 
-// Il valore dell'elenco (non il suo .length) o l'intero oggetto preferenze.
+// Il valore degli elenchi sensibili (non il loro .length) o l'intero oggetto
+// preferenze. Anche le esigenze di mobilità possono rivelare dati sulla salute.
 const LEAKS =
-  /\bdietaryRestrictions\b(?!\.length)|\b(?:prefs|preferences|prefStructured)\b(?![.\w])/;
+  /\b(?:dietaryRestrictions|mobilityNeeds)\b(?!\.length)|\b(?:prefs|preferences|prefStructured)\b(?![.\w])/;
 
 describe("Preferenze alimentari: privacy", () => {
   const files = sourceFiles(SRC).map((file) => ({
@@ -67,6 +68,8 @@ describe("Preferenze alimentari: privacy", () => {
     const leaky = `posthog.capture("x", { diet: prefs.dietaryRestrictions })`;
     const leakyWhole = `logger.info("x", { prefs })`;
     const leakyPrefsArg = `logger.warn("x", preferences)`;
+    const leakyMobility = `posthog.capture("x", { m: prefStructured.mobilityNeeds })`;
+    const safeMobility = `posthog.capture("x", { n: prefStructured.mobilityNeeds.length })`;
     const safe = `posthog.capture("x", { n: prefs.dietaryRestrictions.length, has: true, c: prefs.interests.length })`;
     const safeCount = `logger.info("x", { dietaryRestrictionsCount: trip.preferences.dietaryRestrictions.length })`;
 
@@ -76,6 +79,8 @@ describe("Preferenze alimentari: privacy", () => {
     expect(flagged(leaky)).toBe(true);
     expect(flagged(leakyWhole)).toBe(true);
     expect(flagged(leakyPrefsArg)).toBe(true);
+    expect(flagged(leakyMobility)).toBe(true);
+    expect(flagged(safeMobility)).toBe(false);
     expect(flagged(safe)).toBe(false);
     expect(flagged(safeCount)).toBe(false);
   });

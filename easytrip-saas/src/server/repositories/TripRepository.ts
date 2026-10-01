@@ -4,6 +4,8 @@ import { CreateTripInput } from "@/server/validators/trip.schema";
 
 type CreateTripDbInput = CreateTripInput & {
   organizerId: string;
+  /** Consenso art. 9 alle preferenze sensibili (null se non ce ne sono). */
+  sensitivePrefsConsentAt?: Date | null;
 };
 
 function generateToken(): string {
@@ -74,6 +76,7 @@ export class TripRepository {
         pace: input.pace,
         mobilityNeeds: input.mobilityNeeds,
         dietaryRestrictions: input.dietaryRestrictions,
+        sensitivePrefsConsentAt: input.sensitivePrefsConsentAt ?? null,
         budgetLevel: input.budgetLevel ?? "moderate",
         localPassCityCount: input.localPassCityCount ?? 0,
         status: "pending",
@@ -230,6 +233,20 @@ export class TripRepository {
     });
   }
 
+  /** Preferenze salvate e consenso, solo per l'organizzatore (null se il viaggio non è suo o non esiste). */
+  async findPreferencesForOrganizer(tripId: string, organizerId: string) {
+    return prisma.trip.findFirst({
+      where: { id: tripId, organizerId, deletedAt: null },
+      select: {
+        interests: true,
+        pace: true,
+        mobilityNeeds: true,
+        dietaryRestrictions: true,
+        sensitivePrefsConsentAt: true,
+      },
+    });
+  }
+
   async updatePreferences(
     tripId: string,
     organizerId: string,
@@ -240,6 +257,7 @@ export class TripRepository {
       pace?: string | null;
       mobilityNeeds?: string[];
       dietaryRestrictions?: string[];
+      sensitivePrefsConsentAt?: Date | null;
     },
   ) {
     // I campi omessi (undefined) restano invariati: Prisma ignora le chiavi undefined.
@@ -252,6 +270,7 @@ export class TripRepository {
         pace: data.pace,
         mobilityNeeds: data.mobilityNeeds,
         dietaryRestrictions: data.dietaryRestrictions,
+        sensitivePrefsConsentAt: data.sensitivePrefsConsentAt,
         prefChangedAfterGen: true,
       },
     });

@@ -1,12 +1,14 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   DIETARY_KEYS,
   INTEREST_KEYS,
   MAX_INTERESTS,
   MOBILITY_KEYS,
   PACE_KEYS,
+  requiresSensitiveConsent,
   selectedAllergies,
   type TripPreferences,
 } from "@/lib/trip/preferences";
@@ -14,6 +16,9 @@ import {
 type Props = {
   value: TripPreferences;
   onChange: (next: TripPreferences) => void;
+  /** Consenso esplicito (art. 9) alle scelte sensibili: casella mai preselezionata per un nuovo viaggio. */
+  consent: boolean;
+  onConsentChange: (next: boolean) => void;
   disabled?: boolean;
 };
 
@@ -78,10 +83,17 @@ function Legend({ children }: { children: React.ReactNode }) {
  * alimentari. Componente controllato, usato sia alla creazione sia nel
  * pannello di modifica delle preferenze.
  */
-export function PreferencesFields({ value, onChange, disabled }: Props) {
+export function PreferencesFields({
+  value,
+  onChange,
+  consent,
+  onConsentChange,
+  disabled,
+}: Props) {
   const t = useTranslations("app.trips.preferences");
   const atMaxInterests = value.interests.length >= MAX_INTERESTS;
   const allergies = selectedAllergies(value);
+  const needsConsent = requiresSensitiveConsent(value);
 
   return (
     <div className="space-y-4" data-testid="preferences-fields">
@@ -188,6 +200,40 @@ export function PreferencesFields({ value, onChange, disabled }: Props) {
           </p>
         ) : null}
       </fieldset>
+
+      {needsConsent ? (
+        <div
+          className="border-et-accent/30 bg-et-accent/5 rounded-lg border px-3 py-2.5"
+          data-testid="sensitive-consent"
+        >
+          <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed">
+            <input
+              type="checkbox"
+              checked={consent}
+              disabled={disabled}
+              onChange={(e) => onConsentChange(e.target.checked)}
+              className="accent-et-accent mt-0.5 h-4 w-4 shrink-0"
+              data-testid="sensitive-consent-checkbox"
+            />
+            <span className="text-et-ink/80">
+              {t.rich("consent.label", {
+                link: (chunks) => (
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-et-accent underline underline-offset-2"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </span>
+          </label>
+          <p className="text-et-ink/45 mt-1.5 pl-6.5 text-xs">
+            {t("consent.hint")}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "@/components/trips/PreferencesFields";
 import {
   EMPTY_PREFERENCES,
+  requiresSensitiveConsent,
   type TripPreferences,
 } from "@/lib/trip/preferences";
 
@@ -22,6 +23,8 @@ export function CreateTripForm() {
   const tp = useTranslations("app.trips.preferences");
   const [loading, setLoading] = useState(false);
   const [prefs, setPrefs] = useState<TripPreferences>(EMPTY_PREFERENCES);
+  /** Consenso art. 9: mai preselezionato. */
+  const [sensitiveConsent, setSensitiveConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [budgetLevel, setBudgetLevel] = useState<BudgetLevel>("moderate");
   const [localPassCities, setLocalPassCities] = useState(0);
@@ -50,6 +53,10 @@ export function CreateTripForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (requiresSensitiveConsent(prefs) && !sensitiveConsent) {
+      setError(tp("consent.required"));
+      return;
+    }
     setLoading(true);
     const form = e.currentTarget;
     const fd = new FormData(form);
@@ -76,6 +83,7 @@ export function CreateTripForm() {
           pace: prefs.pace,
           mobilityNeeds: prefs.mobilityNeeds,
           dietaryRestrictions: prefs.dietaryRestrictions,
+          sensitiveDataConsent: sensitiveConsent,
         }),
       });
       const json = await res.json();
@@ -98,6 +106,7 @@ export function CreateTripForm() {
       });
       form.reset();
       setPrefs(EMPTY_PREFERENCES);
+      setSensitiveConsent(false);
       router.push(`/app/trips/${json.data.id}`);
       router.refresh();
     } catch {
@@ -254,6 +263,8 @@ export function CreateTripForm() {
             <PreferencesFields
               value={prefs}
               onChange={setPrefs}
+              consent={sensitiveConsent}
+              onConsentChange={setSensitiveConsent}
               disabled={loading}
             />
           </div>

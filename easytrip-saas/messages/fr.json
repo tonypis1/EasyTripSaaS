@@ -412,6 +412,11 @@
           "privacy": "Facultatif. Nous l'utilisons uniquement pour choisir les restaurants et ne le partageons jamais avec des outils d'analyse.",
           "allergyDisclaimer": "L'IA ne peut pas garantir l'absence d'allergènes : confirmez toujours avec le restaurant."
         },
+        "consent": {
+          "label": "J'accepte le traitement de ces informations, qui peuvent révéler des données de santé ou des convictions religieuses, uniquement pour créer mon itinéraire (<link>politique de confidentialité</link>).",
+          "hint": "Vous pouvez le retirer à tout moment en supprimant ces préférences.",
+          "required": "Pour enregistrer des besoins alimentaires ou de mobilité, nous avons besoin de votre consentement : cochez la case."
+        },
         "restaurant": {
           "fit": "Convient : {diets}",
           "unverified": "À vérifier : {diets}",

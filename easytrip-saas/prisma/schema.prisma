@@ -75,40 +75,42 @@ model User {
   referralsReceived Referral[]      @relation("ReferredUser")
 }
 
-/// purpose: generazione e consultazione itinerari, spese di gruppo; preferenze di viaggio facoltative (interessi, ritmo, mobilità, restrizioni alimentari — queste ultime possono rivelare dati sensibili: solo su scelta esplicita dell'utente, usate unicamente per generare l'itinerario, mai inviate ad analytics né nei log)
+/// purpose: generazione e consultazione itinerari, spese di gruppo; preferenze di viaggio facoltative (interessi, ritmo, mobilità, restrizioni alimentari — restrizioni ed esigenze di mobilità sanitarie sono dati particolari art. 9: trattate solo con consenso esplicito registrato in sensitive_prefs_consent_at, usate unicamente per generare l'itinerario, mai inviate ad analytics né nei log)
 /// retention: soft-delete + hard-delete dopo RETENTION_SOFT_DELETED_TRIP_DAYS; versioni non attive secondo policy Inngest
 model Trip {
-  id                  String     @id @default(cuid())
-  organizerId         String     @map("organizer_id")
-  destination         String
-  startDate           DateTime   @map("start_date") @db.Date
-  endDate             DateTime   @map("end_date") @db.Date
-  accessExpiresAt     DateTime   @map("access_expires_at") @db.Date
-  tripType            TripType   @map("trip_type")
-  style               String? // foodie, cultura, ecc. (testo libero; le scelte strutturate sono nei campi sotto)
+  id                      String     @id @default(cuid())
+  organizerId             String     @map("organizer_id")
+  destination             String
+  startDate               DateTime   @map("start_date") @db.Date
+  endDate                 DateTime   @map("end_date") @db.Date
+  accessExpiresAt         DateTime   @map("access_expires_at") @db.Date
+  tripType                TripType   @map("trip_type")
+  style                   String? // foodie, cultura, ecc. (testo libero; le scelte strutturate sono nei campi sotto)
   /// Interessi scelti (chiavi di src/lib/trip/preferences.ts, max 6). Elenco di testo, non enum DB: aggiungere un'opzione non richiede migrazioni.
-  interests           String[]   @default([])
+  interests               String[]   @default([])
   /// Ritmo: relaxed | balanced | packed (null = nessuna preferenza).
-  pace                String?
+  pace                    String?
   /// Esigenze di mobilità: limited_walking | avoid_stairs | wheelchair | stroller.
-  mobilityNeeds       String[]   @default([]) @map("mobility_needs")
+  mobilityNeeds           String[]   @default([]) @map("mobility_needs")
   /// Restrizioni alimentari e allergie (vedi purpose sopra: dato potenzialmente sensibile).
-  dietaryRestrictions String[]   @default([]) @map("dietary_restrictions")
-  budgetLevel         String     @default("moderate") @map("budget_level") // economy | moderate | premium
-  status              TripStatus @default(pending)
-  regenCount          Int        @default(0) @map("regen_count") // 0..7
-  currentVersion      Int        @default(1) @map("current_version") // carosello
-  usedZones           String?    @map("used_zones") // zone_focus concatenate per rigenera
-  prefChangedAfterGen Boolean    @default(false) @map("pref_changed_after_gen")
+  dietaryRestrictions     String[]   @default([]) @map("dietary_restrictions")
+  /// Consenso esplicito (art. 9.2.a GDPR) alle scelte sensibili: valorizzato solo finché ce ne sono, null quando vengono tolte.
+  sensitivePrefsConsentAt DateTime?  @map("sensitive_prefs_consent_at")
+  budgetLevel             String     @default("moderate") @map("budget_level") // economy | moderate | premium
+  status                  TripStatus @default(pending)
+  regenCount              Int        @default(0) @map("regen_count") // 0..7
+  currentVersion          Int        @default(1) @map("current_version") // carosello
+  usedZones               String?    @map("used_zones") // zone_focus concatenate per rigenera
+  prefChangedAfterGen     Boolean    @default(false) @map("pref_changed_after_gen")
   /// Add-on LocalPass: numero di città coperte (€3,99/città in checkout).
-  localPassCityCount  Int        @default(0) @map("local_pass_city_count")
-  inviteToken         String?    @unique @map("invite_token") // token unico per link invito gruppo
-  paymentId           String?    @map("payment_id") // Stripe payment/session
-  amountPaid          Decimal?   @map("amount_paid") @db.Decimal(10, 2)
+  localPassCityCount      Int        @default(0) @map("local_pass_city_count")
+  inviteToken             String?    @unique @map("invite_token") // token unico per link invito gruppo
+  paymentId               String?    @map("payment_id") // Stripe payment/session
+  amountPaid              Decimal?   @map("amount_paid") @db.Decimal(10, 2)
   /// Soft-delete lato utente: il record resta in DB (pagamenti, versioni, audit / fiscale).
-  deletedAt           DateTime?  @map("deleted_at")
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
+  deletedAt               DateTime?  @map("deleted_at")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @updatedAt @map("updated_at")
 
   organizer      User            @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
   versions       TripVersion[]

@@ -20,7 +20,10 @@ import {
   AllergyNotice,
   RestaurantDietBadges,
 } from "@/components/trips/DietBadges";
-import type { TripPreferences } from "@/lib/trip/preferences";
+import {
+  requiresSensitiveConsent,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
 import {
   DayRouteSummary,
   GeoScoreDetails,
@@ -383,6 +386,7 @@ export function TripDetailClient({
   const td = useTranslations("app.trips.detail");
   const locale = useLocale() as AppLocale;
   const tShared = useTranslations("app.trips.shared");
+  const tp = useTranslations("app.trips.preferences");
   const [trip, setTrip] = useState(initialTrip);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -394,6 +398,10 @@ export function TripDetailClient({
   const [prefBudget, setPrefBudget] = useState(initialTrip.budgetLevel);
   const [prefStructured, setPrefStructured] = useState<TripPreferences>(
     initialTrip.preferences,
+  );
+  /** Consenso art. 9 già registrato per il viaggio (la casella parte spuntata solo in quel caso). */
+  const [prefConsent, setPrefConsent] = useState(
+    initialTrip.sensitivePrefsConsent,
   );
   const [replaceResult, setReplaceResult] = useState<{
     key: string;
@@ -784,6 +792,10 @@ export function TripDetailClient({
   }
 
   async function onSavePreferences() {
+    if (requiresSensitiveConsent(prefStructured) && !prefConsent) {
+      setMsg(tp("consent.required"));
+      return;
+    }
     setBusy("pref");
     setMsg(null);
     try {
@@ -797,6 +809,7 @@ export function TripDetailClient({
           pace: prefStructured.pace,
           mobilityNeeds: prefStructured.mobilityNeeds,
           dietaryRestrictions: prefStructured.dietaryRestrictions,
+          sensitiveDataConsent: prefConsent,
         }),
       });
       const json = await res.json();
@@ -1296,6 +1309,8 @@ export function TripDetailClient({
                   <PreferencesFields
                     value={prefStructured}
                     onChange={setPrefStructured}
+                    consent={prefConsent}
+                    onConsentChange={setPrefConsent}
                     disabled={busy !== null}
                   />
 

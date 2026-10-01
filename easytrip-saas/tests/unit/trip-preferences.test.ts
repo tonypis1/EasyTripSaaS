@@ -18,6 +18,8 @@ import {
   requiredDietFits,
   selectedAllergies,
   type TripPreferences,
+  requiresSensitiveConsent,
+  resolveSensitiveConsent,
 } from "@/lib/trip/preferences";
 
 const createSchema = z.object(preferencesCreateShape);
@@ -362,5 +364,78 @@ describe("buildPreferencesPromptBlock", () => {
     expect(buildPreferencesPromptBlock(full, "itinerary")).toBe(
       buildPreferencesPromptBlock({ ...full }, "itinerary"),
     );
+  });
+});
+
+describe("consenso esplicito (art. 9) alle scelte sensibili", () => {
+  const none = { mobilityNeeds: [], dietaryRestrictions: [] } as const;
+  const now = new Date("2026-10-01T12:00:00Z");
+  const before = new Date("2026-09-01T12:00:00Z");
+
+  it("ogni restrizione alimentare e le esigenze di mobilità sanitarie richiedono il consenso", () => {
+    expect(requiresSensitiveConsent(none)).toBe(false);
+    for (const diet of ["vegetarian", "halal", "gluten_free", "nut_allergy"]) {
+      expect(
+        requiresSensitiveConsent({
+          ...none,
+          dietaryRestrictions: [diet as never],
+        }),
+      ).toBe(true);
+    }
+    for (const mob of ["limited_walking", "avoid_stairs", "wheelchair"]) {
+      expect(
+        requiresSensitiveConsent({ ...none, mobilityNeeds: [mob as never] }),
+      ).toBe(true);
+    }
+  });
+
+  it("il passeggino no: non è un dato sulla salute", () => {
+    expect(
+      requiresSensitiveConsent({ ...none, mobilityNeeds: ["stroller"] }),
+    ).toBe(false);
+  });
+
+  it("senza scelte sensibili la data è sempre null (togliere le scelte revoca il consenso)", () => {
+    expect(
+      resolveSensitiveConsent({
+        prefs: none,
+        consent: true,
+        storedAt: before,
+        now,
+      }),
+    ).toEqual({ ok: true, consentAt: null });
+  });
+
+  it("scelte sensibili: consenso nuovo = adesso, consenso già dato = data originale", () => {
+    const prefs = { ...none, dietaryRestrictions: ["kosher" as const] };
+    expect(
+      resolveSensitiveConsent({ prefs, consent: true, storedAt: null, now }),
+    ).toEqual({ ok: true, consentAt: now });
+    expect(
+      resolveSensitiveConsent({ prefs, consent: true, storedAt: before, now }),
+    ).toEqual({ ok: true, consentAt: before });
+    expect(
+      resolveSensitiveConsent({
+        prefs,
+        consent: undefined,
+        storedAt: before,
+        now,
+      }),
+    ).toEqual({ ok: true, consentAt: before });
+  });
+
+  it("scelte sensibili senza consenso, o con consenso negato: rifiutate", () => {
+    const prefs = { ...none, mobilityNeeds: ["wheelchair" as const] };
+    expect(
+      resolveSensitiveConsent({
+        prefs,
+        consent: undefined,
+        storedAt: null,
+        now,
+      }),
+    ).toEqual({ ok: false });
+    expect(
+      resolveSensitiveConsent({ prefs, consent: false, storedAt: before, now }),
+    ).toEqual({ ok: false });
   });
 });

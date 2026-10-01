@@ -2,6 +2,7 @@
 import {
   preferencesCreateShape,
   preferencesUpdateShape,
+  sensitiveConsentShape,
 } from "@/lib/trip/preferences";
 
 export const BUDGET_LEVELS = ["economy", "moderate", "premium"] as const;
@@ -16,6 +17,8 @@ export const createTripSchema = z.object({
   budgetLevel: z.enum(BUDGET_LEVELS).default("moderate"),
   /** Preferenze strutturate (facoltative): interessi, ritmo, mobilità, restrizioni alimentari. */
   ...preferencesCreateShape,
+  /** Consenso esplicito (art. 9) se tra le preferenze ci sono scelte sensibili. */
+  ...sensitiveConsentShape,
   /** Add-on LocalPass: numero di città (0 = nessun add-on). */
   localPassCityCount: z.coerce.number().int().min(0).max(30).default(0),
 });
@@ -42,6 +45,8 @@ export const updatePreferencesSchema = z.object({
   budgetLevel: z.enum(BUDGET_LEVELS),
   /** Campo omesso = invariato; `[]` / `null` = azzera. */
   ...preferencesUpdateShape,
+  /** Omesso = resta il consenso già dato (se le scelte restano sensibili). */
+  ...sensitiveConsentShape,
 });
 
 export const liveSuggestSchema = z.object({

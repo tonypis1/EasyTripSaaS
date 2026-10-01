@@ -112,9 +112,10 @@ Facoltative, validate con enum chiusi (valori sconosciuti → `400 VALIDATION_ER
 | `mobilityNeeds`       | array          | `limited_walking`, `avoid_stairs`, `wheelchair`, `stroller`                                                                     |                                                                       |
 | `dietaryRestrictions` | array          | `vegetarian`, `vegan`, `gluten_free`, `lactose_free`, `halal`, `kosher`, `nut_allergy`, `shellfish_allergy`                     | Dato potenzialmente sensibile (vedi [03_DATABASE.md](03_DATABASE.md)) |
 
+- **Consenso esplicito (art. 9 GDPR)** — campo `sensitiveDataConsent` (boolean, facoltativo). Ogni restrizione alimentare e le esigenze di mobilità `limited_walking`, `avoid_stairs`, `wheelchair` sono scelte sensibili: senza consenso la scrittura è rifiutata con `400 SENSITIVE_CONSENT_REQUIRED`. In `PATCH`, se il campo è omesso vale il consenso già registrato; `false` lo nega (400 se restano scelte sensibili). Togliere tutte le scelte sensibili revoca il consenso. `stroller`, interessi e ritmo non lo richiedono.
 - `POST /api/trips`: i campi omessi valgono vuoto/`null` (i client esistenti continuano a funzionare).
 - `PATCH /api/trips/{tripId}/preferences`: accetta gli stessi campi insieme a `style`/`budgetLevel`; **campo omesso = invariato**, `[]`/`null` = azzera. Come per le altre preferenze, ogni salvataggio marca il viaggio come "preferenze cambiate" (`prefChangedAfterGen`).
-- `GET /api/trips/{tripId}`: `preferences` (stessa forma, sempre presente; vuota per i viaggi precedenti) e, per ogni ristorante, `dietaryFit`: le restrizioni alimentari che il locale dichiara di soddisfare (`vegetarian`, `vegan`, `gluten_free`, `lactose_free`, `halal`, `kosher`; vuoto per gli itinerari generati prima della funzione).
+- `GET /api/trips/{tripId}`: `preferences` (stessa forma, sempre presente; vuota per i viaggi precedenti), `sensitivePrefsConsent` (boolean: c'è un consenso registrato) e, per ogni ristorante, `dietaryFit`: le restrizioni alimentari che il locale dichiara di soddisfare (`vegetarian`, `vegan`, `gluten_free`, `lactose_free`, `halal`, `kosher`; vuoto per gli itinerari generati prima della funzione).
 
 ## 4. Autenticazione
 

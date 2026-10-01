@@ -63,6 +63,62 @@ export type TripPreferences = {
   dietaryRestrictions: DietaryKey[];
 };
 
+/**
+ * Esigenze di mobilità che rivelano dati sulla salute (art. 9 GDPR). Il
+ * passeggino no: non dice nulla sulla salute di chi viaggia.
+ */
+export const SENSITIVE_MOBILITY_KEYS = [
+  "limited_walking",
+  "avoid_stairs",
+  "wheelchair",
+] as const satisfies readonly MobilityKey[];
+
+type SensitiveChoices = {
+  mobilityNeeds: readonly MobilityKey[];
+  dietaryRestrictions: readonly DietaryKey[];
+};
+
+/**
+ * Scelte che richiedono il consenso esplicito (art. 9.2.a GDPR): ogni
+ * restrizione alimentare (halal e kosher rivelano convinzioni religiose;
+ * senza glutine, senza lattosio e allergie la salute; vegetariano e vegano
+ * possono rivelare convinzioni) e le esigenze di mobilità sanitarie.
+ * Interessi e ritmo no.
+ */
+export function requiresSensitiveConsent(prefs: SensitiveChoices): boolean {
+  return (
+    prefs.dietaryRestrictions.length > 0 ||
+    prefs.mobilityNeeds.some((key) =>
+      (SENSITIVE_MOBILITY_KEYS as readonly string[]).includes(key),
+    )
+  );
+}
+
+/**
+ * Data del consenso da salvare dopo una scrittura delle preferenze.
+ * - Scelte sensibili: serve il consenso in questa richiesta (`true`) oppure,
+ *   se il campo è omesso, un consenso già salvato, che si conserva.
+ *   `false` esplicito o nessun consenso → `ok: false` (la scrittura va rifiutata).
+ * - Nessuna scelta sensibile: `null`. Togliere le scelte revoca il consenso.
+ */
+export function resolveSensitiveConsent(args: {
+  prefs: SensitiveChoices;
+  consent: boolean | undefined;
+  storedAt: Date | null;
+  now: Date;
+}): { ok: true; consentAt: Date | null } | { ok: false } {
+  if (!requiresSensitiveConsent(args.prefs)) {
+    return { ok: true, consentAt: null };
+  }
+  if (args.consent === true) {
+    return { ok: true, consentAt: args.storedAt ?? args.now };
+  }
+  if (args.consent === undefined && args.storedAt) {
+    return { ok: true, consentAt: args.storedAt };
+  }
+  return { ok: false };
+}
+
 export const EMPTY_PREFERENCES: TripPreferences = {
   interests: [],
   pace: null,
@@ -93,6 +149,14 @@ export const preferencesCreateShape = {
   dietaryRestrictions: canonicalList(DIETARY_KEYS, DIETARY_KEYS.length).default(
     [],
   ),
+};
+
+/**
+ * Consenso esplicito alle scelte sensibili (vedi `resolveSensitiveConsent`):
+ * casella separata e non preselezionata nel modulo.
+ */
+export const sensitiveConsentShape = {
+  sensitiveDataConsent: z.boolean().optional(),
 };
 
 /**

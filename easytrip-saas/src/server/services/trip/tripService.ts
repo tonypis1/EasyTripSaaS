@@ -35,6 +35,7 @@ import {
 import {
   DIET_FIT_KEYS,
   preferencesFromTrip,
+  resolveSensitiveConsent,
   type DietFitKey,
   type DietaryKey,
   type InterestKey,
@@ -113,6 +114,8 @@ export type TripDetailDto = {
   currentVersion: number;
   /** Preferenze strutturate scelte per il viaggio (vuote se non indicate). */
   preferences: TripPreferences;
+  /** true se c'è un consenso art. 9 registrato per le preferenze sensibili. */
+  sensitivePrefsConsent: boolean;
   isPaid: boolean;
   userCreditBalanceCents: number;
   tripPriceCents: number;
@@ -285,6 +288,15 @@ function activeVersionGeo(active: {
   };
 }
 
+/** Preferenze sensibili (art. 9) senza consenso esplicito: la scrittura viene rifiutata. */
+function sensitiveConsentRequired(): AppError {
+  return new AppError(
+    "Per salvare restrizioni alimentari o esigenze di mobilità serve il consenso esplicito al loro trattamento",
+    400,
+    "SENSITIVE_CONSENT_REQUIRED",
+  );
+}
+
 export class TripService {
   constructor(
     private readonly authService: AuthService,
@@ -300,10 +312,19 @@ export class TripService {
       );
     }
 
+    const consent = resolveSensitiveConsent({
+      prefs: input,
+      consent: input.sensitiveDataConsent,
+      storedAt: null,
+      now: new Date(),
+    });
+    if (!consent.ok) throw sensitiveConsentRequired();
+
     const user = await this.authService.getOrCreateCurrentUser();
     const trip = await this.tripRepository.create({
       ...input,
       organizerId: user.id,
+      sensitivePrefsConsentAt: consent.consentAt,
     });
 
     return {
@@ -423,6 +444,7 @@ export class TripService {
       regenCount: trip.regenCount,
       currentVersion: trip.currentVersion,
       preferences: preferencesFromTrip(trip),
+      sensitivePrefsConsent: trip.sensitivePrefsConsentAt != null,
       isPaid: trip.amountPaid != null,
       userCreditBalanceCents,
       localPassCityCount:
@@ -633,13 +655,36 @@ export class TripService {
       pace?: PaceKey | null;
       mobilityNeeds?: MobilityKey[];
       dietaryRestrictions?: DietaryKey[];
+      sensitiveDataConsent?: boolean;
     },
   ): Promise<{ ok: true }> {
     const user = await this.authService.getOrCreateCurrentUser();
+    const stored = await this.tripRepository.findPreferencesForOrganizer(
+      tripId,
+      user.id,
+    );
+    if (!stored) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    // Le preferenze come saranno dopo la scrittura: i campi omessi restano quelli salvati.
+    const current = preferencesFromTrip(stored);
+    const consent = resolveSensitiveConsent({
+      prefs: {
+        mobilityNeeds: data.mobilityNeeds ?? current.mobilityNeeds,
+        dietaryRestrictions:
+          data.dietaryRestrictions ?? current.dietaryRestrictions,
+      },
+      consent: data.sensitiveDataConsent,
+      storedAt: stored.sensitivePrefsConsentAt,
+      now: new Date(),
+    });
+    if (!consent.ok) throw sensitiveConsentRequired();
+
     const result = await this.tripRepository.updatePreferences(
       tripId,
       user.id,
-      data,
+      { ...data, sensitivePrefsConsentAt: consent.consentAt },
     );
     if (!result.updated) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");

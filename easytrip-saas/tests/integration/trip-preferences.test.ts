@@ -203,6 +203,57 @@ describe.skipIf(!run)(
       });
     });
 
+    it("consenso art. 9: la data si salva con le scelte sensibili, si azzera quando vengono tolte ed esce nell'export", async () => {
+      const consentAt = new Date("2026-10-01T10:00:00.000Z");
+      const trip = await createTrip({
+        dietaryRestrictions: ["halal"],
+        mobilityNeeds: ["wheelchair"],
+        sensitiveDataConsent: true,
+      });
+      tripIds.push(trip.id);
+      // Il repository scrive ciò che il servizio ha deciso (vedi resolveSensitiveConsent).
+      await prisma.trip.update({
+        where: { id: trip.id },
+        data: { sensitivePrefsConsentAt: consentAt },
+      });
+
+      const exported = await prisma.user.findUniqueOrThrow({
+        where: { id: organizerId },
+        include: { tripsAsOrganizer: { where: { id: trip.id } } },
+      });
+      expect(exported.tripsAsOrganizer[0].sensitivePrefsConsentAt).toEqual(
+        consentAt,
+      );
+
+      await repo.updatePreferences(trip.id, organizerId, {
+        budgetLevel: "moderate",
+        mobilityNeeds: [],
+        dietaryRestrictions: [],
+        sensitivePrefsConsentAt: null,
+      });
+      expect((await reload(trip.id)).sensitivePrefsConsentAt).toBeNull();
+    });
+
+    it("le preferenze salvate e il consenso si rileggono per l'organizzatore, mai per altri", async () => {
+      const consentAt = new Date("2026-10-01T10:00:00.000Z");
+      const created = await createTrip({ dietaryRestrictions: ["vegan"] });
+      tripIds.push(created.id);
+      const trip = await prisma.trip.update({
+        where: { id: created.id },
+        data: { sensitivePrefsConsentAt: consentAt },
+      });
+
+      expect(
+        await repo.findPreferencesForOrganizer(trip.id, organizerId),
+      ).toMatchObject({
+        dietaryRestrictions: ["vegan"],
+        sensitivePrefsConsentAt: new Date("2026-10-01T10:00:00.000Z"),
+      });
+      expect(
+        await repo.findPreferencesForOrganizer(trip.id, otherUserId),
+      ).toBeNull();
+    });
+
     it("eliminando il viaggio spariscono anche le preferenze (nessuna tabella a parte)", async () => {
       const trip = await createTrip({ dietaryRestrictions: ["halal"] });
 
