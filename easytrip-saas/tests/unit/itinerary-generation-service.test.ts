@@ -6,9 +6,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/ai/anthropic", () => ({
   ANTHROPIC_MODEL: "claude-test",
+  // La generazione usa lo streaming: `finalMessage()` restituisce il messaggio completo.
   anthropic: {
     messages: {
-      create: mocks.messagesCreate,
+      stream: (...args: unknown[]) => ({
+        finalMessage: () => mocks.messagesCreate(...args),
+      }),
     },
   },
 }));
@@ -153,15 +156,38 @@ describe("ItineraryGenerationService.generate", () => {
     expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
   });
 
-  it("passa il modello configurato e un max_tokens coerente con l'output atteso", async () => {
+  it("passa il modello configurato e un max_tokens che lascia spazio a ragionamento + JSON (cresce con i giorni)", async () => {
     mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
 
     const service = new ItineraryGenerationService();
     await service.generate(baseInput());
 
+    // 2 giorni: 16.000 + 2 × 2.500. Il vecchio limite fisso (12.000) troncava già 3 giorni.
     expect(mocks.messagesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "claude-test", max_tokens: 12000 }),
+      expect.objectContaining({ model: "claude-test", max_tokens: 21_000 }),
     );
+  });
+
+  it("il budget di output ha un tetto anche per viaggi molto lunghi", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
+
+    await new ItineraryGenerationService()
+      .generate({ ...baseInput(), numDays: 40 })
+      .catch(() => {}); // 2 giorni restituiti invece di 40: qui conta solo la richiesta
+
+    expect(mocks.messagesCreate.mock.calls[0][0].max_tokens).toBe(64_000);
+  });
+
+  it("risposta troncata per max_tokens: errore esplicito invece di un JSON incompleto", async () => {
+    mocks.messagesCreate.mockResolvedValue({
+      ...textResponse(validPayload(2)),
+      stop_reason: "max_tokens",
+    });
+
+    await expect(
+      new ItineraryGenerationService().generate(baseInput()),
+    ).rejects.toThrow("Risposta troncata (max_tokens)");
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(1);
   });
 });
 

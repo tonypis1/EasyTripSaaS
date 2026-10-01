@@ -137,7 +137,7 @@ model TripVersion {
   // Garantisce che non possano esistere due righe con lo stesso (trip, versionNum).
   // Protegge da race condition / retry Inngest in cui versionNum era derivato da
   // trip.regenCount + 1 senza atomicità. Vedi `dedupe-trip-versions.mjs`.
-  @@unique([tripId, versionNum])
+  @@unique([tripId, versionNum], map: "TripVersion_tripId_versionNum_key")
 }
 
 model Day {

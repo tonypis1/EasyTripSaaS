@@ -88,11 +88,30 @@ function restoreEnums(source: unknown, transformed: unknown): void {
   }
 }
 
+/**
+ * `definitions`: sotto-schemi ripetuti (es. lo slot, presente 3 volte per
+ * giorno) da dichiarare una volta in `$defs` e richiamare con `$ref`. Non è
+ * solo una questione di dimensioni: con le copie inline l'API rifiuta lo
+ * schema dell'itinerario ("The compiled grammar is too large", 400 —
+ * verificato con l'API reale), con `$defs` lo accetta.
+ */
 export function jsonSchemaOutputFormat(
   schema: ZodTypeAny,
+  definitions?: Record<string, ZodTypeAny>,
 ): Anthropic.Messages.JSONOutputFormat {
   const jsonSchema: Record<string, unknown> = {
-    ...zodToJsonSchema(schema, { target: "jsonSchema7", $refStrategy: "none" }),
+    ...zodToJsonSchema(
+      schema,
+      definitions
+        ? {
+            target: "jsonSchema7",
+            // "root": i `definitions` diventano `$ref: "#/$defs/<nome>"`.
+            $refStrategy: "root",
+            definitionPath: "$defs",
+            definitions,
+          }
+        : { target: "jsonSchema7", $refStrategy: "none" },
+    ),
   };
   delete jsonSchema.$schema;
 

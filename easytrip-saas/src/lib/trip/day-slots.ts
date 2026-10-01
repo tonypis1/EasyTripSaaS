@@ -88,6 +88,31 @@ export function slotSummary(value: unknown, label: string): string {
   return `${label}: "${title ?? "?"}" — ${place ?? "?"} (${startTime ?? "?"}–${endTime ?? "?"})`;
 }
 
+/**
+ * Blocco di prompt con i luoghi già in programma negli ALTRI giorni del
+ * viaggio (titoli unici, nell'ordine dei giorni), o null se non ce ne sono.
+ * Senza, sostituzioni e suggerimenti live riproponevano luoghi già previsti in
+ * un altro giorno (verificato con l'API reale).
+ */
+export function plannedElsewherePromptBlock(
+  otherDays: { morning: unknown; afternoon: unknown; evening: unknown }[],
+  max = 60,
+): string | null {
+  const titles = new Set<string>();
+  for (const day of otherDays) {
+    for (const value of [day.morning, day.afternoon, day.evening]) {
+      const title = readStoredSlot(value)?.title;
+      if (typeof title === "string" && title.trim()) titles.add(title.trim());
+    }
+  }
+  if (titles.size === 0) return null;
+  const list = [...titles]
+    .slice(0, max)
+    .map((title) => `- ${title}`)
+    .join("\n");
+  return `GIÀ IN PROGRAMMA NEGLI ALTRI GIORNI (non riproporli):\n${list}`;
+}
+
 /** Slot segnaposto quando il modello non ne restituisce uno: la giornata resta consultabile. */
 export function fallbackSlot(label: string): DaySlot {
   return {

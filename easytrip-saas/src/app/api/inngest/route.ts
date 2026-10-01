@@ -12,6 +12,13 @@ import { slotProposalExpiry } from "@/lib/inngest/functions/slot-proposal-expiry
 /** Evita risposte GET cached: la sync del Dev Server deve sempre vedere le funzioni aggiornate. */
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+/**
+ * Ogni step Inngest è una richiesta a questa route: la generazione
+ * dell'itinerario (un solo step) dura ~2 minuti per 3 giorni con l'API reale,
+ * la ricerca di grounding ~1 minuto. Senza un valore esplicito valeva il
+ * default della piattaforma, che può essere più basso.
+ */
+export const maxDuration = 300;
 
 export const { GET, POST, PUT } = serve({
   client: inngest,

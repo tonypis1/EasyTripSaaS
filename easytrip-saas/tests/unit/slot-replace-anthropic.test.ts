@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const mocks = vi.hoisted(() => ({
   findFirst: vi.fn(),
+  findManyDays: vi.fn(async (): Promise<unknown[]> => []),
   updateDay: vi.fn(),
   messagesCreate: vi.fn(),
 }));
@@ -11,6 +12,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     day: {
       findFirst: mocks.findFirst,
+      findMany: mocks.findManyDays,
       update: mocks.updateDay,
     },
   },
@@ -283,7 +285,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
     };
   }
 
-  it("passa timeout e maxRetries per-richiesta ad anthropic.messages.create", async () => {
+  it("passa timeout, maxRetries ed effort basso per-richiesta ad anthropic.messages.create", async () => {
     mocks.findFirst.mockResolvedValue(dayFixture());
     mocks.messagesCreate.mockResolvedValue({
       content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
@@ -294,8 +296,40 @@ describe("SlotReplaceService + mock Anthropic", () => {
     await svc.replaceSlot(callArgs());
 
     expect(mocks.messagesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "claude-test" }),
+      // effort "low": con il default (high) Sonnet 5 esauriva max_tokens nel ragionamento.
+      expect.objectContaining({
+        model: "claude-test",
+        output_config: { effort: "low" },
+      }),
       { timeout: 20_000, maxRetries: 1 },
+    );
+  });
+
+  it("passa all'AI i luoghi già in programma negli altri giorni (né sostituto né alternative li ripetono)", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.findManyDays.mockResolvedValueOnce([
+      {
+        morning: { title: "Palazzo Lanfranchi" },
+        afternoon: null,
+        evening: { title: "MUSMA" },
+      },
+    ]);
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    expect(mocks.findManyDays).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tripVersionId: "ver1", id: { not: "day1" } },
+      }),
+    );
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain(
+      "GIÀ IN PROGRAMMA NEGLI ALTRI GIORNI (non riproporli):\n- Palazzo Lanfranchi\n- MUSMA",
     );
   });
 

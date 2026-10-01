@@ -11,12 +11,9 @@ import {
   userLanguageReminder,
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
-import {
-  ModelResponseSchema,
-  parseAndValidateModelJson,
-} from "@/lib/itinerary-model-schema";
+import { parseAndValidateModelJson } from "@/lib/itinerary-model-schema";
 import { buildRepairSuffix } from "@/lib/ai/repairLoop";
-import { jsonSchemaOutputFormat } from "@/lib/ai/structured-output";
+import { ITINERARY_OUTPUT_FORMAT } from "@/lib/ai/itinerary-output-format";
 import {
   formatGroundingForPrompt,
   type GroundedDestination,
@@ -229,14 +226,55 @@ ${usedZones}
 const MAX_ATTEMPTS = 3;
 
 /**
- * Structured Outputs: la risposta è vincolata server-side allo schema, quindi
- * gli errori strutturali/di parsing non consumano più un tentativo. Restano
- * possibili (e gestiti dal loop di riparazione) i soli errori di business
- * logic e di valore: numero di giorni, limiti min/max che l'API non supporta.
- * Costruito una volta sola: lo schema è costante e la sua compilazione lato
- * API viene messa in cache.
+ * Budget di output: ragionamento adattivo + JSON. Su Claude Sonnet 5 il
+ * ragionamento è attivo di default (effort "high") e conta in `max_tokens`.
+ * Misurato con l'API reale (3 giorni): ~12.800 token in uscita, di cui ~4.700
+ * di JSON (~1.550 per giorno) e ~8.100 di ragionamento: il vecchio limite fisso
+ * di 12.000 troncava la risposta senza lasciare alcun testo. Con effort
+ * "medium" il ragionamento si dimezza ma è servito un giro di riparazione.
  */
-const ITINERARY_OUTPUT_FORMAT = jsonSchemaOutputFormat(ModelResponseSchema);
+function generationMaxTokens(numDays: number): number {
+  return Math.min(64_000, 16_000 + numDays * 2_500);
+}
+
+/**
+ * Una richiesta di generazione, in streaming: con un budget di output ampio
+ * una richiesta non in streaming può superare i 10 minuti e l'SDK la rifiuta.
+ */
+async function requestItineraryText(
+  locale: SupportedAiLocale,
+  numDays: number,
+  content: Anthropic.TextBlockParam[],
+  label: string,
+): Promise<string> {
+  const response = await anthropic.messages
+    .stream({
+      model: ANTHROPIC_MODEL,
+      max_tokens: generationMaxTokens(numDays),
+      system: buildSystemPrompt(locale),
+      output_config: { format: ITINERARY_OUTPUT_FORMAT },
+      messages: [{ role: "user", content }],
+    })
+    .finalMessage();
+
+  const textBlock = response.content.find((c) => c.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error(`Claude non ha restituito un blocco testuale${label}`);
+  }
+  if (response.stop_reason === "max_tokens") {
+    throw new Error(`Risposta troncata (max_tokens)${label}`);
+  }
+  return textBlock.text;
+}
+
+/*
+ * Structured Outputs (`ITINERARY_OUTPUT_FORMAT`): la risposta è vincolata
+ * server-side allo schema, quindi gli errori strutturali/di parsing non
+ * consumano più un tentativo. Restano possibili (e gestiti dal loop di
+ * riparazione) i soli errori di business logic e di valore: numero di giorni,
+ * limiti min/max che l'API non supporta. Lo schema è costante: la sua
+ * compilazione lato API viene messa in cache.
+ */
 
 export class ItineraryGenerationService {
   /**
@@ -325,20 +363,12 @@ export class ItineraryGenerationService {
     let lastRaw = "";
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      const response = await anthropic.messages.create({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 12000,
-        system: buildSystemPrompt(locale),
-        output_config: { format: ITINERARY_OUTPUT_FORMAT },
-        messages: [{ role: "user", content: baseContent }],
-      });
-
-      const textBlock = response.content.find((c) => c.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        throw new Error("Claude non ha restituito un blocco testuale");
-      }
-
-      lastRaw = textBlock.text;
+      lastRaw = await requestItineraryText(
+        locale,
+        input.numDays,
+        baseContent,
+        "",
+      );
 
       try {
         return this.checkDietaryFit(
@@ -356,24 +386,12 @@ export class ItineraryGenerationService {
           { type: "text", text: buildRepairSuffix(lastRaw, reason) },
         ];
 
-        const repairResponse = await anthropic.messages.create({
-          model: ANTHROPIC_MODEL,
-          max_tokens: 12000,
-          system: buildSystemPrompt(locale),
-          output_config: { format: ITINERARY_OUTPUT_FORMAT },
-          messages: [{ role: "user", content: repairContent }],
-        });
-
-        const repairTextBlock = repairResponse.content.find(
-          (c) => c.type === "text",
+        lastRaw = await requestItineraryText(
+          locale,
+          input.numDays,
+          repairContent,
+          " (riparazione)",
         );
-        if (!repairTextBlock || repairTextBlock.type !== "text") {
-          throw new Error(
-            "Claude non ha restituito un blocco testuale (riparazione)",
-          );
-        }
-
-        lastRaw = repairTextBlock.text;
         try {
           return this.checkDietaryFit(
             parseAndValidateModelJson(lastRaw, input.numDays),

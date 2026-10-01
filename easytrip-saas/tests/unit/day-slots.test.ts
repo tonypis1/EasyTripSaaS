@@ -3,6 +3,7 @@ import { DaySlotSchema } from "@/lib/itinerary-model-schema";
 import {
   dayContentForDb,
   fallbackSlot,
+  plannedElsewherePromptBlock,
   readStoredList,
   readStoredSlot,
   slotSummary,
@@ -170,5 +171,41 @@ describe("fallbackSlot / dayContentForDb", () => {
     expect(dayContentForDb({}).restaurants).toBeUndefined();
     expect(dayContentForDb({ restaurants: [] }).restaurants).toBeUndefined();
     expect(dayContentForDb({ restaurants: null }).restaurants).toBeUndefined();
+  });
+});
+
+describe("plannedElsewherePromptBlock", () => {
+  it("elenca i titoli degli altri giorni una sola volta, nell'ordine, saltando slot vuoti o illeggibili", () => {
+    const block = plannedElsewherePromptBlock([
+      { morning: { title: "Colosseo" }, afternoon: null, evening: "{rotto" },
+      {
+        morning: JSON.stringify({ title: "Pantheon" }),
+        afternoon: { title: " Colosseo " },
+        evening: { place: "senza titolo" },
+      },
+    ]);
+
+    expect(block).toBe(
+      "GIÀ IN PROGRAMMA NEGLI ALTRI GIORNI (non riproporli):\n- Colosseo\n- Pantheon",
+    );
+  });
+
+  it("null se non c'è nulla da elencare (viaggio di un giorno)", () => {
+    expect(plannedElsewherePromptBlock([])).toBeNull();
+    expect(
+      plannedElsewherePromptBlock([
+        { morning: null, afternoon: null, evening: null },
+      ]),
+    ).toBeNull();
+  });
+
+  it("limita la lunghezza dell'elenco", () => {
+    const days = Array.from({ length: 30 }, (_, i) => ({
+      morning: { title: `A${i}` },
+      afternoon: { title: `B${i}` },
+      evening: { title: `C${i}` },
+    }));
+    const lines = plannedElsewherePromptBlock(days, 5)!.split("\n");
+    expect(lines).toHaveLength(6);
   });
 });

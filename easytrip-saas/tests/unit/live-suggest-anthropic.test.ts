@@ -3,12 +3,13 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const mocks = vi.hoisted(() => ({
   findFirst: vi.fn(),
+  findManyDays: vi.fn(async (): Promise<unknown[]> => []),
   messagesCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    day: { findFirst: mocks.findFirst },
+    day: { findFirst: mocks.findFirst, findMany: mocks.findManyDays },
   },
 }));
 
@@ -185,16 +186,45 @@ describe("LiveSuggestService.suggest — chiamata Anthropic", () => {
     expect(prompt).toContain('morning: "Colosseo" — Rione Monti (09:00–11:30)');
   });
 
-  it("passa timeout e maxRetries per-richiesta ad anthropic.messages.create", async () => {
+  it("passa timeout, maxRetries ed effort basso per-richiesta ad anthropic.messages.create", async () => {
     mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
 
     const service = new LiveSuggestService();
     await service.suggest(baseInput());
 
     expect(mocks.messagesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "claude-test" }),
+      // effort "low": con il default (high) Sonnet 5 esauriva max_tokens nel ragionamento.
+      expect.objectContaining({
+        model: "claude-test",
+        output_config: { effort: "low" },
+      }),
       { timeout: 20_000, maxRetries: 1 },
     );
+  });
+
+  it("passa all'AI i luoghi già in programma negli altri giorni", async () => {
+    mocks.findManyDays.mockResolvedValueOnce([
+      { morning: { title: "MUSMA" }, afternoon: null, evening: null },
+    ]);
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
+
+    await new LiveSuggestService().suggest(baseInput());
+
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain(
+      "GIÀ IN PROGRAMMA NEGLI ALTRI GIORNI (non riproporli):\n- MUSMA",
+    );
+  });
+
+  it("senza altri giorni il prompt non contiene il blocco", async () => {
+    mocks.messagesCreate.mockResolvedValue(textResponse(validPayload()));
+
+    await new LiveSuggestService().suggest(baseInput());
+
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).not.toContain("GIÀ IN PROGRAMMA");
   });
 
   it("lancia AppError 502 AI_ERROR se la risposta non ha un blocco testuale", async () => {

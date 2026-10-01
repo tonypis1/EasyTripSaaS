@@ -5,6 +5,7 @@ import {
   SYNC_REQUEST_OPTIONS,
   anthropic,
   toAiUnavailableError,
+  SYNC_OUTPUT_CONFIG,
 } from "@/lib/ai/anthropic";
 import {
   normalizeAiLocale,
@@ -19,7 +20,7 @@ import {
 } from "@/lib/trip/liveSuggestModel";
 import { AppError } from "@/server/errors/AppError";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
-import { slotSummary } from "@/lib/trip/day-slots";
+import { plannedElsewherePromptBlock, slotSummary } from "@/lib/trip/day-slots";
 import {
   buildPreferencesPromptBlock,
   preferencesFromTrip,
@@ -91,6 +92,8 @@ function buildUserPrompt(args: {
   style: string | null;
   /** Preferenze strutturate del viaggio (mobilità, ritmo, restrizioni…) o null. */
   preferencesBlock: string | null;
+  /** Luoghi già in programma negli altri giorni, o null. */
+  plannedElsewhereBlock: string | null;
   timeOfDay: string;
   locale: SupportedAiLocale;
 }): string {
@@ -103,7 +106,7 @@ Motivo della richiesta: ${args.reasonDetail}
 
 PROGRAMMA ORIGINALE DEL GIORNO:
 ${args.allSlotsSummary}
-
+${args.plannedElsewhereBlock ? `\n${args.plannedElsewhereBlock}\n` : ""}
 SLOT PROBLEMATICO (se applicabile):
 ${args.currentSlotSummary}
 
@@ -217,6 +220,12 @@ export class LiveSuggestService {
           ? "pomeriggio"
           : "sera";
 
+    const otherDays = await prisma.day.findMany({
+      where: { tripVersionId: day.tripVersionId, id: { not: day.id } },
+      select: { morning: true, afternoon: true, evening: true },
+      orderBy: { dayNumber: "asc" },
+    });
+
     const locale = normalizeAiLocale(trip.organizer?.language);
     const prompt = buildUserPrompt({
       destination: trip.destination,
@@ -233,6 +242,7 @@ export class LiveSuggestService {
         preferencesFromTrip(trip),
         "slot",
       ),
+      plannedElsewhereBlock: plannedElsewherePromptBlock(otherDays),
       timeOfDay,
       locale,
     });
@@ -249,6 +259,7 @@ export class LiveSuggestService {
             {
               model: ANTHROPIC_MODEL,
               max_tokens: 3000,
+              output_config: SYNC_OUTPUT_CONFIG,
               system: buildSystemPrompt(locale),
               messages: [{ role: "user", content }],
             },

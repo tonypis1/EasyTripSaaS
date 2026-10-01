@@ -76,6 +76,13 @@ Altri workflow: `codeql.yml`. Segreti, DNS, post-deploy: [13_CICD_SECRETS_AND_DN
 
   Dopo la conversione inversa il testo è JSON normalizzato da PostgreSQL (chiavi riordinate, spazi dopo `:`), equivalente per il parsing. Poi eliminare la riga della migrazione da `_prisma_migrations` (`DELETE FROM "_prisma_migrations" WHERE migration_name = '20260929100000_day_slots_to_jsonb'`) così che `migrate deploy` non la consideri applicata: `prisma migrate resolve --rolled-back` non funziona su una migrazione riuscita (errore P3012). Le righe conservate come stringa JSON (vedi sopra) tornano come testo tra virgolette: il codice precedente le tratta, come prima, come slot illeggibili.
 
+### Stato migrazioni in produzione (Neon `production`)
+
+- **1 ottobre 2026: produzione allineata a tutte le 12 migrazioni del repo** (fino a `20260929130000_add_trip_preferences`). Prima lo schema era stato creato con `prisma db push` e un `migrate deploy` del 20 maggio aveva lasciato la prima migrazione registrata come fallita (P3009: errore 42710, oggetti già esistenti), bloccando ogni deploy successivo; lo schema reale corrispondeva esattamente alle migrazioni 1-3 (confronto di colonne, indici, vincoli ed enum). Mancavano 4-12, tra cui `add_user_clerk_name_synced_at`, già usata dal codice di `main`.
+- Procedura eseguita, equivalente a `prisma migrate resolve --applied` per 1-3 seguito da `prisma migrate deploy` (registrazioni in `_prisma_migrations` identiche a quelle della CLI, verificate riga per riga): snapshot `pre-migrate-deploy-20261001`, prova completa su un branch Neon copiato dalla produzione, poi un'unica transazione con controllo dello stato iniziale (rifiuta di ripartire) e verifica finale. Dati verificati invariati (stesso hash del contenuto dei giorni prima e dopo la conversione jsonb, stessi conteggi). Stessa operazione sul branch di preview `preview/claude/easytripssaas-competitive-roadmap-x2szj9`.
+- Da qui in avanti `npx prisma migrate deploy` funziona normalmente (P3009 risolto).
+- Lo schema Prisma dichiara il nome dell'indice di `TripVersion(tripId, versionNum)` creato dalla migrazione (`map: "TripVersion_tripId_versionNum_key"`): `prisma migrate diff` tra produzione e schema non mostra differenze.
+
 ## 5. Domini personalizzati
 
 - Configurazione DNS e Vercel Domains (documentazione operativa esterna; aggiornare `APP_BASE_URL`).

@@ -5,6 +5,7 @@ import {
   SYNC_REQUEST_OPTIONS,
   anthropic,
   toAiUnavailableError,
+  SYNC_OUTPUT_CONFIG,
 } from "@/lib/ai/anthropic";
 import {
   normalizeAiLocale,
@@ -17,7 +18,11 @@ import { DaySlotSchema } from "@/lib/itinerary-model-schema";
 import { generateWithRepair } from "@/lib/ai/repairLoop";
 import { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
 import { GeoScoreService } from "@/server/services/trip/geoScoreService";
-import { readStoredSlot, slotSummary } from "@/lib/trip/day-slots";
+import {
+  plannedElsewherePromptBlock,
+  readStoredSlot,
+  slotSummary,
+} from "@/lib/trip/day-slots";
 import {
   buildPreferencesPromptBlock,
   preferencesFromTrip,
@@ -132,6 +137,8 @@ function buildUserPrompt(args: {
   style: string | null;
   /** Preferenze strutturate del viaggio (mobilità, ritmo, restrizioni…) o null. */
   preferencesBlock: string | null;
+  /** Luoghi già in programma negli altri giorni, o null. */
+  plannedElsewhereBlock: string | null;
   gpsHint: string;
   locale: SupportedAiLocale;
 }): string {
@@ -150,7 +157,7 @@ ${args.preferencesBlock ? `\n${args.preferencesBlock}\n` : ""}
 
 PROGRAMMA COMPLETO DEL GIORNO (tutti gli slot):
 ${args.allSlotsSummary}
-
+${args.plannedElsewhereBlock ? `\n${args.plannedElsewhereBlock}\nVale sia per il sostituto sia per le alternative.\n` : ""}
 SLOT DA SOSTITUIRE: ${SLOT_LABEL[args.slotKey] ?? args.slotKey}
 Contenuto attuale (JSON):
 ${args.currentSlotJson}
@@ -291,6 +298,12 @@ export class SlotReplaceService {
       ? slotSummary(slotContents[nextKey], SLOT_LABEL[nextKey])
       : "Nessuna (è l'ultimo slot della giornata)";
 
+    const otherDays = await prisma.day.findMany({
+      where: { tripVersionId: day.tripVersionId, id: { not: day.id } },
+      select: { morning: true, afternoon: true, evening: true },
+      orderBy: { dayNumber: "asc" },
+    });
+
     const gpsHint =
       input.lat != null && input.lng != null
         ? `Area approssimativa utente (precisione ridotta): lat ${roundCoordForAi(input.lat)}, lng ${roundCoordForAi(input.lng)}. Preferisci luoghi raggiungibili da questa zona. Calcola le distanze da questo punto.`
@@ -312,6 +325,7 @@ export class SlotReplaceService {
         preferencesFromTrip(trip),
         "slot",
       ),
+      plannedElsewhereBlock: plannedElsewherePromptBlock(otherDays),
       gpsHint,
       locale,
     });
@@ -328,6 +342,7 @@ export class SlotReplaceService {
             {
               model: ANTHROPIC_MODEL,
               max_tokens: 3000,
+              output_config: SYNC_OUTPUT_CONFIG,
               system: buildSystemPrompt(locale),
               messages: [{ role: "user", content }],
             },

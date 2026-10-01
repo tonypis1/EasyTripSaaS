@@ -12,12 +12,30 @@ import {
 import { logger } from "@/lib/observability";
 import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
 
+/**
+ * Versione base del tool, senza "dynamic filtering". Misurato con l'API reale
+ * (Roma, 6 ricerche, Sonnet 5): la versione `web_search_20260209` filtra i
+ * risultati eseguendo codice e, per questo compito (elencare luoghi reali),
+ * ha richiesto da 110k a 750k token in input e 1-3,5 minuti; la versione base
+ * ~105k token e ~50 secondi, con luoghi e fonti di qualità equivalente.
+ */
+const WEB_SEARCH_TOOL = "web_search_20250305";
 /** Ricerche web massime per destinazione: ogni ricerca costa, e il risultato è cachato per tutti gli utenti. */
 const WEB_SEARCH_MAX_USES = 6;
 /** Riprese massime se il turno server-side si interrompe con `pause_turn`. */
 const MAX_PAUSE_CONTINUATIONS = 3;
-/** La ricerca gira dentro uno step Inngest (non su una richiesta HTTP utente): timeout ampio ma finito. */
-const SEARCH_REQUEST_OPTIONS = { timeout: 120_000, maxRetries: 1 };
+/**
+ * Tempo massimo complessivo della ricerca (tutti i turni, riprese incluse).
+ * Con l'API reale un turno con 6 ricerche dura da meno di un minuto a oltre
+ * due: la richiesta va in streaming, perché senza streaming le intestazioni
+ * arrivano solo a risposta completa e un timeout per richiesta interrompeva
+ * ricerche sane (verificato).
+ * Il tetto resta ben sotto il timeout della funzione Inngest (15 minuti), che
+ * deve ancora generare l'itinerario.
+ */
+const SEARCH_BUDGET_MS = 300_000;
+/** `timeout` dell'SDK in streaming copre solo l'attesa della risposta iniziale. */
+const SEARCH_REQUEST_OPTIONS = { timeout: 60_000, maxRetries: 1 };
 
 const SEARCH_SYSTEM_PROMPT =
   "Sei un ricercatore di viaggi rigoroso. Non inventi mai luoghi: riporti solo ciò che trovi nelle fonti consultate.";
@@ -44,6 +62,23 @@ REGOLE
 - Dopo le ricerche, come ULTIMO messaggio rispondi SOLO con un oggetto JSON, senza testo né markdown, con questa forma:
 { "areas": [ { "name": "...", "attractions": [ { "name": "...", "kind": "...", "note": "..." } ], "restaurants": [ { "name": "...", "cuisine": "...", "note": "..." } ] } ] }
 `.trim();
+}
+
+/**
+ * Testo della risposta finale: i blocchi di testo DOPO l'ultimo blocco non
+ * testuale (ricerche, esecuzione di codice, ragionamento). Tra una ricerca e
+ * l'altra il modello scrive note di avanzamento ("Ora cerco i ristoranti…"):
+ * unite al JSON finale lo rendevano illeggibile (verificato con l'API reale).
+ * Con le citazioni la risposta finale può essere spezzata in più blocchi.
+ */
+export function finalAnswerText(content: Anthropic.ContentBlock[]): string {
+  const tail: string[] = [];
+  for (let i = content.length - 1; i >= 0; i--) {
+    const block = content[i];
+    if (block.type !== "text") break;
+    tail.unshift(block.text);
+  }
+  return tail.join("");
 }
 
 export type GroundingResult = {
@@ -139,24 +174,33 @@ export class GroundingService {
       { role: "user", content: buildSearchPrompt(destination) },
     ];
     const seenSources: { url: string; title: string }[] = [];
+    const deadline = Date.now() + SEARCH_BUDGET_MS;
 
     for (let turn = 0; turn <= MAX_PAUSE_CONTINUATIONS; turn++) {
-      const response = await anthropic.messages.create(
-        {
-          model: ANTHROPIC_MODEL,
-          max_tokens: 6000,
-          system: SEARCH_SYSTEM_PROMPT,
-          tools: [
-            {
-              type: "web_search_20260209",
-              name: "web_search",
-              max_uses: WEB_SEARCH_MAX_USES,
-            },
-          ],
-          messages,
-        },
-        SEARCH_REQUEST_OPTIONS,
-      );
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) break;
+
+      const response = await anthropic.messages
+        .stream(
+          {
+            model: ANTHROPIC_MODEL,
+            max_tokens: 6000,
+            system: SEARCH_SYSTEM_PROMPT,
+            tools: [
+              {
+                type: WEB_SEARCH_TOOL,
+                name: "web_search",
+                max_uses: WEB_SEARCH_MAX_USES,
+              },
+            ],
+            messages,
+          },
+          {
+            ...SEARCH_REQUEST_OPTIONS,
+            signal: AbortSignal.timeout(remainingMs),
+          },
+        )
+        .finalMessage();
 
       for (const block of response.content) {
         if (
@@ -176,18 +220,14 @@ export class GroundingService {
         continue;
       }
 
-      // Con le citazioni la risposta può essere spezzata in più blocchi di testo.
-      const text = response.content
-        .flatMap((block) => (block.type === "text" ? [block.text] : []))
-        .join("");
       return {
-        grounding: parseGroundingJson(text),
+        grounding: parseGroundingJson(finalAnswerText(response.content)),
         sources: sanitizeSources(seenSources),
       };
     }
 
     throw new Error(
-      `Grounding: ricerca non completata dopo ${MAX_PAUSE_CONTINUATIONS} riprese`,
+      `Grounding: ricerca non completata (riprese o tempo esauriti)`,
     );
   }
 }

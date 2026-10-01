@@ -8,7 +8,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/ai/anthropic", () => ({
   ANTHROPIC_MODEL: "claude-test",
-  anthropic: { messages: { create: mocks.messagesCreate } },
+  // La ricerca usa lo streaming: `finalMessage()` restituisce il messaggio completo.
+  anthropic: {
+    messages: {
+      stream: (...args: unknown[]) => ({
+        finalMessage: () => mocks.messagesCreate(...args),
+      }),
+    },
+  },
 }));
 
 vi.mock("@/lib/observability", () => ({
@@ -19,7 +26,10 @@ vi.mock("@/lib/observability", () => ({
   },
 }));
 
-import { GroundingService } from "@/server/services/trip/groundingService";
+import {
+  finalAnswerText,
+  GroundingService,
+} from "@/server/services/trip/groundingService";
 import type { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
 
 const groundingPayload = {
@@ -133,16 +143,16 @@ describe("GroundingService.getGrounding — cache condivisa", () => {
     expect(params.model).toBe("claude-test");
     expect(params.tools).toEqual([
       expect.objectContaining({
-        type: "web_search_20260209",
+        type: "web_search_20250305",
         name: "web_search",
       }),
     ]);
     expect(params.tools[0].max_uses).toBeGreaterThan(0);
-    // Timeout e retry espliciti: la ricerca non deve poter restare appesa.
-    expect(mocks.messagesCreate.mock.calls[0][1]).toEqual({
-      timeout: 120_000,
-      maxRetries: 1,
-    });
+    // Timeout, retry e tetto complessivo espliciti: la ricerca non deve poter restare appesa.
+    const options = mocks.messagesCreate.mock.calls[0][1];
+    expect(options).toMatchObject({ timeout: 60_000, maxRetries: 1 });
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(options.signal.aborted).toBe(false);
 
     expect(repo.upsert).toHaveBeenCalledTimes(1);
     const saved = repo.upsert.mock.calls[0][0];
@@ -263,10 +273,50 @@ describe("GroundingService.getGrounding — degradazione (non lancia mai)", () =
     expect(repo.upsert).not.toHaveBeenCalled();
   });
 
+  it("ignora le note di avanzamento scritte tra una ricerca e l'altra (anche con parentesi graffe)", async () => {
+    // Forma reale osservata con web_search: testo intermedio, altre ricerche, poi il JSON finale.
+    mocks.messagesCreate.mockResolvedValue({
+      stop_reason: "end_turn",
+      content: [
+        { type: "server_tool_use", name: "web_search" },
+        { type: "web_search_tool_result", content: [] },
+        { type: "text", text: "Ora cerco i ristoranti {Centro, Monti}." },
+        { type: "server_tool_use", name: "web_search" },
+        { type: "web_search_tool_result", content: [] },
+        { type: "thinking", thinking: "assemblo" },
+        { type: "text", text: JSON.stringify(groundingPayload) },
+      ],
+    });
+
+    const result = await makeService(makeRepo(null)).getGrounding("Roma");
+
+    expect(result?.grounding.areas[0].name).toBe("Centro Storico");
+  });
+
   it("errore di lettura dalla cache: ritorna null senza lanciare", async () => {
     const repo = makeRepo(null);
     repo.findFresh.mockRejectedValue(new Error("db down"));
 
     expect(await makeService(repo).getGrounding("Roma")).toBeNull();
+  });
+});
+
+describe("finalAnswerText", () => {
+  const text = (t: string) => ({ type: "text", text: t, citations: null });
+  const tool = {
+    type: "server_tool_use",
+    id: "x",
+    name: "web_search",
+    input: {},
+  };
+
+  it("prende solo i blocchi di testo dopo l'ultimo blocco non testuale, uniti", () => {
+    const content = [text("nota {"), tool, text('{"a":'), text("1}")];
+    expect(finalAnswerText(content as never)).toBe('{"a":1}');
+  });
+
+  it("stringa vuota se la risposta non termina con del testo", () => {
+    expect(finalAnswerText([text("x"), tool] as never)).toBe("");
+    expect(finalAnswerText([])).toBe("");
   });
 });

@@ -25,6 +25,16 @@ export const ANTHROPIC_MODEL = config.ai.anthropicModel;
 export const SYNC_REQUEST_OPTIONS = { timeout: 20_000, maxRetries: 1 };
 
 /**
+ * Parametri di output per le stesse chiamate sincrone. Su Claude Sonnet 5,
+ * senza `thinking` il ragionamento adattivo è attivo con effort "high":
+ * misurato con l'API reale, la sostituzione di uno slot impiegava ~30s per
+ * tentativo ed esauriva `max_tokens` (3000) in ragionamento, troncando il
+ * JSON. Con effort "low" (consigliato per richieste brevi e sensibili alla
+ * latenza): ~13s e ~1400 token per la sostituzione, ~11s per il live suggest.
+ */
+export const SYNC_OUTPUT_CONFIG = { effort: "low" } as const;
+
+/**
  * Traduce un errore SDK Anthropic (timeout, connessione, overload/rate
  * limit) in un AppError con status code e messaggio adatti a una risposta
  * HTTP, invece di farlo propagare come errore generico verso
