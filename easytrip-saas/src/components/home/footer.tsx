@@ -1,8 +1,10 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { CookiePreferencesLink } from "@/components/consent/CookieConsentBanner";
 
 export function MarketingFooter() {
   const t = useTranslations("home.footer");
+  const tLegal = useTranslations("legal");
   const tCommon = useTranslations("common");
   const year = new Date().getFullYear();
 
@@ -49,8 +51,12 @@ export function MarketingFooter() {
             </Link>
           </div>
         </div>
-        <div className="text-et-ink/45 mt-8 text-xs">
-          {t("rights", { year })}
+        <div className="text-et-ink/45 mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+          <span>{t("rights", { year })}</span>
+          <Link className="hover:text-et-ink/80" href="/privacy">
+            {tLegal("privacyLink")}
+          </Link>
+          <CookiePreferencesLink className="hover:text-et-ink/80 cursor-pointer" />
         </div>
       </div>
     </footer>

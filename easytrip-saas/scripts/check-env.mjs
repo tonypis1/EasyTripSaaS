@@ -39,6 +39,10 @@ const recommendedProduction = [
   "CLERK_WEBHOOK_SIGNING_SECRET",
   "RESEND_API_KEY",
   "EMAIL_FROM",
+  "LEGAL_COMPANY_NAME",
+  "LEGAL_ADDRESS",
+  "LEGAL_VAT_ID",
+  "LEGAL_PRIVACY_EMAIL",
 ];
 
 function missing(keys) {

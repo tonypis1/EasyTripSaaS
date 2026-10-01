@@ -4,12 +4,14 @@ import { useClerk } from "@clerk/nextjs";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { CookiePreferencesLink } from "@/components/consent/CookieConsentBanner";
 
 export default function AccountPrivacyPage() {
   const locale = useLocale();
   const tPrivacy = useTranslations("app.privacyPage");
   const tDelete = useTranslations("app.privacyDelete");
   const tCommon = useTranslations("common");
+  const tLegal = useTranslations("legal");
   const [phrase, setPhrase] = useState("");
   const [busy, setBusy] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
@@ -126,6 +128,12 @@ export default function AccountPrivacyPage() {
         </h1>
         <p className="text-et-ink/65 mt-2 max-w-xl text-sm">
           {tPrivacy("description")}
+        </p>
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+          <Link href="/privacy" className="text-et-accent hover:underline">
+            {tLegal("privacyLink")}
+          </Link>
+          <CookiePreferencesLink className="text-et-accent cursor-pointer hover:underline" />
         </p>
       </div>
 

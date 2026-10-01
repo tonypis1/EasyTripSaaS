@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
+import { MessageCircle } from "lucide-react";
 
 const CRISP_ID = process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID ?? "";
 const CRISP_SCRIPT_SRC = "https://client.crisp.chat/l.js";
@@ -33,15 +34,31 @@ function ensureCrispClient(): boolean {
 }
 
 /**
- * Initializes Crisp live chat widget.
- * If NEXT_PUBLIC_CRISP_WEBSITE_ID is not set, nothing is rendered.
+ * Pulsante di assistenza: Crisp (script e cookie) viene caricato solo al
+ * primo click, cioè quando l'utente chiede il servizio. Prima veniva caricato
+ * su ogni pagina dell'area riservata, impostando cookie senza alcuna
+ * richiesta. Dopo il click Crisp mostra la propria bolla e questo pulsante
+ * sparisce. Senza NEXT_PUBLIC_CRISP_WEBSITE_ID non viene mostrato nulla.
  */
-export function CrispChat() {
-  useEffect(() => {
-    ensureCrispClient();
-  }, []);
+export function CrispChat({ label }: { label: string }) {
+  const [loaded, setLoaded] = useState(false);
+  if (!CRISP_ID || loaded) return null;
 
-  return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        openCrispChat();
+        setLoaded(true);
+      }}
+      aria-label={label}
+      title={label}
+      data-testid="crisp-open"
+      className="bg-et-accent text-et-deep focus:ring-et-accent/50 fixed right-5 bottom-5 z-40 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full shadow-lg transition-transform hover:scale-105 focus:ring-2 focus:outline-none"
+    >
+      <MessageCircle className="h-5 w-5" aria-hidden />
+    </button>
+  );
 }
 
 /**

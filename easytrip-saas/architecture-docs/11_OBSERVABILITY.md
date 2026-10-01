@@ -24,7 +24,10 @@
 
 ### PostHog
 
-- **Pacchetto**: `posthog-js` in `package.json`; inizializzazione lato client tramite `PostHogProvider` (cercare `posthog` in `src/`).
+- **Pacchetto**: `posthog-js` in `package.json`; inizializzazione lato client tramite `PostHogProvider` (`src/app/posthog-provider.tsx`), con le opzioni in `src/lib/analytics/posthog-options.ts`.
+- **Solo con consenso** (linee guida del Garante sui cookie, 2021): `posthog.init` parte solo dopo "Accetta" nel banner (`src/components/consent/CookieConsentBanner.tsx`, montato in `src/app/[locale]/layout.tsx`). Prima di allora le `posthog.capture` sparse nei componenti non inviano nulla e non salvano nulla nel browser (senza `init` sono no-op). "Rifiuta" e "Accetta" hanno la stessa evidenza; chiudere il banner = rifiutare. La scelta è in localStorage (`easytrip_analytics_consent_v1`, logica in `src/lib/analytics/consent.ts`) e vale 6 mesi; si cambia dal link "Preferenze cookie" nel footer pubblico, nel footer dell'area riservata e in Account → Privacy. Revocare = `opt_out_capturing()` + `reset()`. Senza `NEXT_PUBLIC_POSTHOG_KEY` non c'è banner. Consigliato nel progetto PostHog: "Discard client IP data".
+- **Crisp** (`src/app/[locale]/app/crisp-chat.tsx`): lo script (e i suoi cookie) si carica solo quando l'utente apre la chat, dal pulsante di assistenza in basso a destra o da "Hai bisogno di aiuto?": servizio richiesto dall'utente, nessun consenso preventivo necessario.
+- **Informativa pubblica**: `/[locale]/privacy` (`src/app/[locale]/privacy/page.tsx`, testi in `legal.privacy` nelle 5 lingue; dati del titolare da `LEGAL_*`).
 - **Uso**: funnel, eventi custom, sessioni (policy privacy e retention lato progetto PostHog).
 
 ### Vercel Web Analytics e Speed Insights

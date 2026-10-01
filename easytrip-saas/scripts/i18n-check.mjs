@@ -191,6 +191,9 @@ function flatten(obj, prefix = "", out = new Set()) {
     if (typeof v === "string") {
       out.add(full);
     } else if (typeof v === "object" && v !== null) {
+      // Un array (es. righe di una tabella) si legge intero con `t.raw("…")`:
+      // anche il suo percorso è una chiave valida.
+      if (Array.isArray(v)) out.add(full);
       flatten(v, full, out);
     }
   }

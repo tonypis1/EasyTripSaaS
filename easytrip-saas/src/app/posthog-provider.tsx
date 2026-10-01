@@ -3,11 +3,16 @@
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-
-const PH_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY ?? "";
-const PH_HOST =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  currentConsent,
+  shouldStartAnalytics,
+  subscribeConsent,
+} from "@/lib/analytics/consent";
+import {
+  POSTHOG_INIT_OPTIONS,
+  POSTHOG_KEY,
+} from "@/lib/analytics/posthog-options";
 
 function PostHogPageView() {
   const pathname = usePathname();
@@ -15,7 +20,6 @@ function PostHogPageView() {
   const lastUrl = useRef("");
 
   useEffect(() => {
-    if (!PH_KEY) return;
     const url = pathname + (searchParams?.toString() ? `?${searchParams}` : "");
     if (url === lastUrl.current) return;
     lastUrl.current = url;
@@ -25,25 +29,44 @@ function PostHogPageView() {
   return null;
 }
 
+/**
+ * PostHog solo con il consenso ai cookie di analisi. Senza `init` le chiamate
+ * `posthog.capture` sparse nei componenti non inviano nulla e non salvano
+ * nulla nel browser. Revocare il consenso ferma l'invio e cancella
+ * l'identificativo salvato.
+ */
 export default function PostHogProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [ready, setReady] = useState(false);
+  const consent = useSyncExternalStore(
+    subscribeConsent,
+    currentConsent,
+    () => null,
+  );
+  const enabled = shouldStartAnalytics(consent, Boolean(POSTHOG_KEY));
+  const [loaded, setLoaded] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (!PH_KEY) return;
-    posthog.init(PH_KEY, {
-      api_host: PH_HOST,
-      person_profiles: "identified_only",
-      capture_pageview: false,
-      capture_pageleave: true,
-    });
-    setReady(true);
-  }, []);
+    if (enabled) {
+      if (initialized.current) {
+        posthog.opt_in_capturing();
+      } else {
+        initialized.current = true;
+        posthog.init(POSTHOG_KEY, {
+          ...POSTHOG_INIT_OPTIONS,
+          loaded: () => setLoaded(true),
+        });
+      }
+    } else if (initialized.current) {
+      posthog.opt_out_capturing();
+      posthog.reset();
+    }
+  }, [enabled]);
 
-  if (!PH_KEY || !ready) return <>{children}</>;
+  if (!enabled || !loaded) return <>{children}</>;
 
   return (
     <PHProvider client={posthog}>
