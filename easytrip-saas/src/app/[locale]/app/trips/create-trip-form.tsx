@@ -13,6 +13,11 @@ import {
   requiresSensitiveConsent,
   type TripPreferences,
 } from "@/lib/trip/preferences";
+import {
+  MAX_TRIP_DAYS,
+  maxTripEndIso,
+  tripLengthDaysFromIso,
+} from "@/lib/trip/trip-limits";
 
 type TripType = "solo" | "coppia" | "gruppo";
 type BudgetLevel = "economy" | "moderate" | "premium";
@@ -28,6 +33,8 @@ export function CreateTripForm() {
   const [error, setError] = useState<string | null>(null);
   const [budgetLevel, setBudgetLevel] = useState<BudgetLevel>("moderate");
   const [localPassCities, setLocalPassCities] = useState(0);
+  /** Data di inizio scelta: limita la data di fine a `MAX_TRIP_DAYS` giorni. */
+  const [startDateValue, setStartDateValue] = useState("");
 
   // Le opzioni di budget vengono tradotte dinamicamente: label e hint provengono
   // dai file messages/*.json sotto `trips.create.budget.*`.
@@ -57,13 +64,17 @@ export function CreateTripForm() {
       setError(tp("consent.required"));
       return;
     }
-    setLoading(true);
     const form = e.currentTarget;
     const fd = new FormData(form);
 
     const destination = String(fd.get("destination") ?? "").trim();
     const startDate = String(fd.get("startDate") ?? "");
     const endDate = String(fd.get("endDate") ?? "");
+    if ((tripLengthDaysFromIso(startDate, endDate) ?? 0) > MAX_TRIP_DAYS) {
+      setError(t("errorTooLong", { max: MAX_TRIP_DAYS }));
+      return;
+    }
+    setLoading(true);
     const tripType = String(fd.get("tripType") ?? "solo") as TripType;
     const styleRaw = String(fd.get("style") ?? "").trim();
 
@@ -105,6 +116,7 @@ export function CreateTripForm() {
         has_dietary_restrictions: prefs.dietaryRestrictions.length > 0,
       });
       form.reset();
+      setStartDateValue("");
       setPrefs(EMPTY_PREFERENCES);
       setSensitiveConsent(false);
       router.push(`/app/trips/${json.data.id}`);
@@ -159,6 +171,8 @@ export function CreateTripForm() {
             name="startDate"
             type="date"
             required
+            value={startDateValue}
+            onChange={(e) => setStartDateValue(e.target.value)}
             className="border-et-border bg-et-deep text-et-ink focus:border-et-accent/50 mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
           />
         </div>
@@ -174,6 +188,8 @@ export function CreateTripForm() {
             name="endDate"
             type="date"
             required
+            min={startDateValue || undefined}
+            max={maxTripEndIso(startDateValue) ?? undefined}
             className="border-et-border bg-et-deep text-et-ink focus:border-et-accent/50 mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
           />
         </div>

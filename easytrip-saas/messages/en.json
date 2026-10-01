@@ -452,6 +452,7 @@
         "submit": "Create trip",
         "submitting": "Creating…",
         "errorGeneric": "Unable to create the trip",
+        "errorTooLong": "A trip can last at most {max} days.",
         "errorNetwork": "Network error. Please try again."
       },
       "shared": {
@@ -500,8 +501,8 @@
           "inline": "Generating…",
           "title": "We're crafting your itinerary",
           "titleRegen": "We're regenerating your itinerary",
-          "description": "It usually takes 1–2 minutes. You can wait on this page or come back later: it will refresh automatically when it's ready.",
-          "descriptionRegen": "We're preparing a new version of your trip. It usually takes 1–2 minutes and this page will update on its own.",
+          "description": "This trip takes about {minutes, plural, one {# minute} other {# minutes}}. You can wait on this page or come back later: it will refresh automatically when it’s ready.",
+          "descriptionRegen": "We’re preparing a new version of your trip. It takes about {minutes, plural, one {# minute} other {# minutes}} and this page will update on its own.",
           "progressLabel": "Estimated progress",
           "refreshNow": "Refresh now",
           "steps": {

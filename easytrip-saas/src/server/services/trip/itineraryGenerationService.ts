@@ -11,7 +11,10 @@ import {
   userLanguageReminder,
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
-import { parseAndValidateModelJson } from "@/lib/itinerary-model-schema";
+import {
+  parseAndValidateModelJson,
+  type DayPlanExtended,
+} from "@/lib/itinerary-model-schema";
 import { buildRepairSuffix } from "@/lib/ai/repairLoop";
 import { ITINERARY_OUTPUT_FORMAT } from "@/lib/ai/itinerary-output-format";
 import {
@@ -26,6 +29,7 @@ import {
   requiredDietFits,
   type TripPreferences,
 } from "@/lib/trip/preferences";
+import { generationChunks, type DayRange } from "@/lib/trip/generation-chunks";
 import { logger } from "@/lib/observability";
 
 export type ItineraryGenerationInput = {
@@ -97,15 +101,14 @@ const BUDGET_PROMPT_MAP: Record<string, string> = {
 
 /**
  * Prompt utente diviso in una parte stabile (identica per lo stesso trip a
- * ogni tentativo di riparazione E a ogni rigenerazione, finché destinazione/
- * date/tipologia/stile/budget/numDays/locale non cambiano) e una volatile
- * (le zone già usate, che si accumulano ad ogni rigenerazione per
- * diversificare l'itinerario). Separarle permette di marcare la parte
- * stabile — che include il blocco OUTPUT ATTESO, di gran lunga il più
- * pesante — con un `cache_control` breakpoint: le rigenerazioni successive
- * dello stesso trip (e i tentativi di riparazione dentro la stessa
- * generazione) leggono quel blocco dalla cache Anthropic invece di pagarlo
- * per intero ogni volta. Vedi `generate()`.
+ * ogni blocco di giorni, a ogni tentativo di riparazione E a ogni
+ * rigenerazione, finché destinazione/date/tipologia/stile/budget/locale non
+ * cambiano) e una volatile (i giorni da generare, quelli già pianificati e le
+ * zone già usate nelle versioni precedenti). Separarle permette di marcare la
+ * parte stabile — che include il blocco OUTPUT ATTESO, di gran lunga il più
+ * pesante — con un `cache_control` breakpoint: i blocchi successivi, le
+ * riparazioni e le rigenerazioni dello stesso trip leggono quel blocco dalla
+ * cache Anthropic invece di pagarlo per intero ogni volta. Vedi `generate()`.
  */
 function buildStableUserPrompt(args: {
   destination: string;
@@ -158,8 +161,8 @@ ${localPassBlock}${preferencesSection}${groundingSection}
 
 SEZIONE — OUTPUT ATTESO
 Rispondi con un unico oggetto JSON con:
-- "optimizationScore": numero da 1 a 10 (quanto l'itinerario è ottimizzato per ridurre spostamenti inutili tra mattina, pomeriggio e sera nello stesso giorno).
-- "days": array di esattamente ${args.numDays} oggetti giorno.
+- "optimizationScore": numero da 1 a 10 (quanto i giorni generati sono ottimizzati per ridurre spostamenti inutili tra mattina, pomeriggio e sera nello stesso giorno).
+- "days": array con i soli giorni indicati in SEZIONE — GIORNI DA GENERARE (in fondo al messaggio), un oggetto per giorno, in ordine.
 
 Ogni elemento di "days" deve contenere:
 - "dayNumber", "title"
@@ -198,7 +201,7 @@ Ogni elemento di "days" deve contenere:
   { "title": "Colosseo", "place": "Rione Monti", "why": "Simbolo di Roma, imperdibile al mattino prima della folla", "startTime": "09:00", "endTime": "11:30", "durationMin": 150, "googleMapsQuery": "Colosseo Roma", "bookingLink": null, "tips": ["Arrivo ore 8:45 per evitare la coda", "Porta acqua"], "lat": 41.8902, "lng": 12.4922 }
 
 SEZIONE — REGOLE
-- "dayNumber" progressivo da 1 a ${args.numDays}.
+- "dayNumber" = numero del giorno nel viaggio, come nel CALENDARIO GIORNALIERO (per i giorni successivi al primo blocco non ripartire da 1).
 - Per ogni slot: "title" = nome breve del POI; "place" = quartiere/strada senza sostituire il nome in "title".
 - Orari HH:mm, non sovrapposti, con buffer di spostamento 10–30 minuti tra slot consecutivi.
 - Indoor/outdoor: in ogni giorno almeno uno slot adatto alla pioggia e uno all'aperto.
@@ -223,15 +226,54 @@ ${usedZones}
 `.trim();
 }
 
+/** Riga del riepilogo "già pianificati": testo del modello su una riga, accorciato. */
+function plannedText(value: string): string {
+  const oneLine = value.replace(/\s+/g, " ").trim();
+  return oneLine.length > 80 ? `${oneLine.slice(0, 79)}…` : oneLine;
+}
+
+/**
+ * Blocco volatile: i giorni da generare in questa chiamata e, dal secondo
+ * blocco in poi, il riepilogo dei giorni già generati (zona, tappe,
+ * ristoranti) da non ripetere. Sta dopo il breakpoint di cache, come le zone
+ * già usate: il blocco stabile resta identico per tutti i blocchi.
+ */
+function buildChunkBlock(
+  range: DayRange,
+  numDays: number,
+  planned: readonly DayPlanExtended[],
+): string {
+  const count = range.lastDay - range.firstDay + 1;
+  const single = range.firstDay === range.lastDay;
+  const wholeTrip = range.firstDay === 1 && range.lastDay === numDays;
+  const lines = [
+    "SEZIONE — GIORNI DA GENERARE",
+    `${single ? `Genera solo il giorno ${range.firstDay}` : `Genera i giorni da ${range.firstDay} a ${range.lastDay}`} del viaggio (${numDays} giorni in tutto): "days" deve contenere esattamente ${count} ${count === 1 ? "oggetto" : "oggetti"}, con "dayNumber" ${single ? `= ${range.firstDay}` : `da ${range.firstDay} a ${range.lastDay}`}.${wholeTrip ? "" : " Gli altri giorni vengono generati con richieste separate."}`,
+  ];
+  if (planned.length > 0) {
+    lines.push(
+      "",
+      "SEZIONE — GIÀ PIANIFICATI (giorni precedenti dello stesso viaggio)",
+      "Non riproporre questi POI né questi ristoranti e varia le zone; il nuovo blocco deve proseguire il viaggio in modo coerente.",
+      ...planned.map(
+        (d) =>
+          `- Giorno ${d.dayNumber} — zona: ${plannedText(d.zoneFocus)}; tappe: ${[d.morning, d.afternoon, d.evening].map((slot) => plannedText(slot.title)).join(", ")}; ristoranti: ${d.restaurants.map((r) => plannedText(r.name)).join(", ")}`,
+      ),
+    );
+  }
+  return lines.join("\n");
+}
+
 const MAX_ATTEMPTS = 3;
 
 /**
- * Budget di output: ragionamento adattivo + JSON. Su Claude Sonnet 5 il
- * ragionamento è attivo di default (effort "high") e conta in `max_tokens`.
- * Misurato con l'API reale (3 giorni): ~12.800 token in uscita, di cui ~4.700
- * di JSON (~1.550 per giorno) e ~8.100 di ragionamento: il vecchio limite fisso
- * di 12.000 troncava la risposta senza lasciare alcun testo. Con effort
- * "medium" il ragionamento si dimezza ma è servito un giro di riparazione.
+ * Budget di output per una chiamata (i giorni di un blocco): ragionamento
+ * adattivo + JSON. Su Claude Sonnet 5 il ragionamento è attivo di default
+ * (effort "high") e conta in `max_tokens`. Misurato con l'API reale (3
+ * giorni): ~12.800 token in uscita, di cui ~4.700 di JSON (~1.550 per giorno)
+ * e ~8.100 di ragionamento: il vecchio limite fisso di 12.000 troncava la
+ * risposta senza lasciare alcun testo. Con effort "medium" il ragionamento si
+ * dimezza ma è servito un giro di riparazione.
  */
 function generationMaxTokens(numDays: number): number {
   return Math.min(64_000, 16_000 + numDays * 2_500);
@@ -327,11 +369,38 @@ export function nextGenerationCall(
     : null;
 }
 
-/** Errore finale quando nessuna chiamata ha prodotto un itinerario valido (senza dati personali). */
-export function generationExhaustedError(last: FailedGeneration | null): Error {
-  return new Error(
-    `Claude JSON non valido dopo ${MAX_ATTEMPTS} tentativi: ${last?.outcome.logReason ?? "errore sconosciuto"}`,
-  );
+/**
+ * Nessuna chiamata ha prodotto un blocco valido (messaggio senza dati
+ * personali). Rieseguire il job non serve: rigiocherebbe gli stessi esiti
+ * memorizzati, per questo il job Inngest la rende non ritentabile.
+ */
+export class GenerationExhaustedError extends Error {
+  constructor(last: FailedGeneration | null, range: DayRange) {
+    super(
+      `Claude JSON non valido dopo ${MAX_ATTEMPTS} tentativi (giorni ${range.firstDay}-${range.lastDay}): ${last?.outcome.logReason ?? "errore sconosciuto"}`,
+    );
+    this.name = "GenerationExhaustedError";
+  }
+}
+
+/**
+ * Esegue una chiamata al modello. Il job Inngest passa `step.run`, così ogni
+ * chiamata è uno step memorizzato (e una richiesta separata alla route);
+ * fuori da Inngest la chiamata parte e basta.
+ */
+export type GenerationStepRunner = (
+  id: string,
+  run: () => Promise<GenerationCallOutcome>,
+) => Promise<GenerationCallOutcome>;
+
+const runInline: GenerationStepRunner = (_id, run) => run();
+
+/** ID dello step Inngest di una chiamata: unico per blocco, tentativo e tipo. */
+export function generationStepId(
+  range: DayRange,
+  call: GenerationCall,
+): string {
+  return `${call.repair ? "ripara" : "genera"}-giorni-${range.firstDay}-${range.lastDay}-${call.attempt}`;
 }
 
 /** Lacune dietetiche: dettaglio per il modello, solo conteggi nel messaggio (che finisce nei log). */
@@ -385,8 +454,12 @@ export class ItineraryGenerationService {
     return result;
   }
 
-  /** Prompt (stabile + zone già usate) e vincoli della generazione: identici per ogni chiamata. */
-  private buildRequest(input: ItineraryGenerationInput) {
+  /** Prompt (stabile + zone già usate + giorni del blocco) e vincoli della generazione. */
+  private buildRequest(
+    input: ItineraryGenerationInput,
+    range: DayRange,
+    planned: readonly DayPlanExtended[],
+  ) {
     const locale = normalizeAiLocale(input.locale);
     const preferences = input.preferences ?? EMPTY_PREFERENCES;
     const requiredDiets = requiredDietFits(preferences);
@@ -414,12 +487,11 @@ export class ItineraryGenerationService {
 
     /**
      * Il blocco stabile (destinazione/date/stile/budget/output atteso/regole)
-     * è identico per lo stesso trip ad ogni rigenerazione e ad ogni tentativo
-     * di riparazione: marcarlo con `cache_control` lo rende leggibile dalla
-     * cache Anthropic invece di pagarlo per intero ogni volta. Il blocco
-     * "zone già usate" resta fuori dal breakpoint perché cambia ad ogni
-     * rigenerazione, ma è comunque comune a tutti i tentativi (main +
-     * riparazioni) di UNA stessa generazione.
+     * è identico per lo stesso trip in ogni blocco di giorni, ad ogni
+     * rigenerazione e ad ogni tentativo di riparazione: marcarlo con
+     * `cache_control` lo rende leggibile dalla cache Anthropic invece di
+     * pagarlo per intero ogni volta. "Zone già usate" (cambia ad ogni
+     * rigenerazione) e giorni del blocco restano fuori dal breakpoint.
      */
     const baseContent: Anthropic.TextBlockParam[] = [
       {
@@ -430,22 +502,31 @@ export class ItineraryGenerationService {
       ...(usedZonesBlock
         ? [{ type: "text" as const, text: usedZonesBlock }]
         : []),
+      { type: "text", text: buildChunkBlock(range, input.numDays, planned) },
     ];
 
     return { locale, requiredDiets, baseContent };
   }
 
   /**
-   * Una chiamata al modello (tentativo o riparazione) e la validazione della
-   * risposta. Non lancia per risposte non valide: le descrive nell'esito, così
-   * il chiamante decide la chiamata successiva (`nextGenerationCall`). Lancia
-   * solo per errori dell'API (li ritenta lo step Inngest).
+   * Una chiamata al modello (tentativo o riparazione) per i giorni di un
+   * blocco e la validazione della risposta. Non lancia per risposte non
+   * valide: le descrive nell'esito, così il chiamante decide la chiamata
+   * successiva (`nextGenerationCall`). Lancia solo per errori dell'API (li
+   * ritenta lo step Inngest).
    */
   async runGenerationCall(
     input: ItineraryGenerationInput,
     call: GenerationCall,
+    range: DayRange,
+    planned: readonly DayPlanExtended[],
   ): Promise<GenerationCallOutcome> {
-    const { locale, requiredDiets, baseContent } = this.buildRequest(input);
+    const { locale, requiredDiets, baseContent } = this.buildRequest(
+      input,
+      range,
+      planned,
+    );
+    const chunkDays = range.lastDay - range.firstDay + 1;
     const content: Anthropic.TextBlockParam[] = call.repair
       ? [
           ...baseContent,
@@ -457,8 +538,8 @@ export class ItineraryGenerationService {
       : baseContent;
 
     const outcome = await this.validateResponse(
-      await requestItinerary(locale, input.numDays, content),
-      input.numDays,
+      await requestItinerary(locale, chunkDays, content),
+      range,
       requiredDiets,
       // Riparazioni e ultimo tentativo accettano le lacune dietetiche (vincolo
       // morbido): un itinerario già pagato non deve fallire per questo.
@@ -466,10 +547,17 @@ export class ItineraryGenerationService {
         ? "lenient"
         : "strict",
     );
-    if (!outcome.ok) {
+    const logFields = {
+      firstDay: range.firstDay,
+      lastDay: range.lastDay,
+      attempt: call.attempt,
+      repair: call.repair !== null,
+    };
+    if (outcome.ok) {
+      logger.info("Generazione itinerario: blocco completato", logFields);
+    } else {
       logger.warn("Generazione itinerario: risposta non valida", {
-        attempt: call.attempt,
-        repair: call.repair !== null,
+        ...logFields,
         reason: outcome.logReason,
       });
     }
@@ -478,7 +566,7 @@ export class ItineraryGenerationService {
 
   private async validateResponse(
     response: Awaited<ReturnType<typeof requestItinerary>>,
-    numDays: number,
+    range: DayRange,
     requiredDiets: ReturnType<typeof requiredDietFits>,
     mode: "strict" | "lenient",
   ): Promise<GenerationCallOutcome> {
@@ -494,7 +582,11 @@ export class ItineraryGenerationService {
       return {
         ok: true,
         result: this.checkDietaryFit(
-          parseAndValidateModelJson(response.text, numDays),
+          parseAndValidateModelJson(
+            response.text,
+            range.lastDay - range.firstDay + 1,
+            range.firstDay,
+          ),
           requiredDiets,
           mode,
         ),
@@ -519,15 +611,40 @@ export class ItineraryGenerationService {
   }
 
   /**
-   * Genera e valida l'itinerario via Claude, con fino a `MAX_ATTEMPTS`
-   * tentativi: se il JSON restituito non supera `parseAndValidateModelJson`,
-   * tenta una riparazione (stesso prompt + frammento della risposta
-   * precedente + motivo dell'errore) prima di ripartire dal tentativo
-   * successivo. Il job Inngest esegue la stessa sequenza con uno step per
-   * chiamata.
+   * Genera e valida l'itinerario via Claude, un blocco di giorni alla volta
+   * (`generationChunks`): una chiamata per tutto un viaggio lungo supererebbe
+   * il limite di durata della route. Ogni blocco riceve il riepilogo dei
+   * giorni già generati, per non ripetere POI e ristoranti.
+   *
+   * Per ogni blocco, fino a `MAX_ATTEMPTS` tentativi: se il JSON restituito
+   * non supera `parseAndValidateModelJson`, tenta una riparazione (stesso
+   * prompt + frammento della risposta precedente + motivo dell'errore) prima
+   * di ripartire dal tentativo successivo. Il job Inngest passa `step.run`
+   * come `runStep`: uno step per chiamata.
    */
   async generate(
     input: ItineraryGenerationInput,
+    runStep: GenerationStepRunner = runInline,
+  ): Promise<ItineraryGenerationResult> {
+    const days: DayPlanExtended[] = [];
+    let weightedScore = 0;
+    for (const range of generationChunks(input.numDays)) {
+      const chunk = await this.generateChunk(input, range, [...days], runStep);
+      days.push(...chunk.days);
+      weightedScore += chunk.optimizationScore * chunk.days.length;
+    }
+    return {
+      // Media pesata sui giorni di ogni blocco.
+      optimizationScore: Math.round((weightedScore / days.length) * 100) / 100,
+      days,
+    };
+  }
+
+  private async generateChunk(
+    input: ItineraryGenerationInput,
+    range: DayRange,
+    planned: readonly DayPlanExtended[],
+    runStep: GenerationStepRunner,
   ): Promise<ItineraryGenerationResult> {
     let previous: FailedGeneration | null = null;
     for (
@@ -535,10 +652,13 @@ export class ItineraryGenerationService {
       call;
       call = nextGenerationCall(previous)
     ) {
-      const outcome = await this.runGenerationCall(input, call);
+      const current = call;
+      const outcome = await runStep(generationStepId(range, current), () =>
+        this.runGenerationCall(input, current, range, planned),
+      );
       if (outcome.ok) return outcome.result;
-      previous = { call, outcome };
+      previous = { call: current, outcome };
     }
-    throw generationExhaustedError(previous);
+    throw new GenerationExhaustedError(previous, range);
   }
 }

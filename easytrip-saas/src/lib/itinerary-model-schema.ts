@@ -83,9 +83,15 @@ export type DaySlot = z.infer<typeof DaySlotSchema>;
 export type RestaurantEntry = z.infer<typeof RestaurantEntrySchema>;
 export type DayPlanExtended = z.infer<typeof DayPlanExtendedSchema>;
 
+/**
+ * Valida la risposta del modello per i giorni `firstDay`..`firstDay + numDays - 1`
+ * del viaggio (un blocco della generazione a blocchi; di default tutto il
+ * viaggio da 1) e li restituisce in ordine.
+ */
 export function parseAndValidateModelJson(
   raw: string,
   numDays: number,
+  firstDay = 1,
 ): { optimizationScore: number; days: DayPlanExtended[] } {
   const text = extractJsonText(raw);
   let parsed: unknown;
@@ -114,12 +120,15 @@ export function parseAndValidateModelJson(
 
   const byNum = new Map<number, DayPlanExtended>();
   for (const d of days) byNum.set(d.dayNumber, d);
-  for (let i = 1; i <= numDays; i++) {
+  for (let i = firstDay; i < firstDay + numDays; i++) {
     if (!byNum.has(i)) throw new Error(`Manca dayNumber=${i}`);
   }
 
   return {
     optimizationScore,
-    days: Array.from({ length: numDays }, (_, idx) => byNum.get(idx + 1)!),
+    days: Array.from(
+      { length: numDays },
+      (_, idx) => byNum.get(firstDay + idx)!,
+    ),
   };
 }

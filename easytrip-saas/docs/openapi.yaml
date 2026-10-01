@@ -79,7 +79,11 @@ paths:
         "201":
           description: Trip creato
         "400":
-          description: Validazione fallita
+          description: |
+            Validazione fallita (`VALIDATION_ERROR`), data di fine prima
+            dell'inizio (`INVALID_DATE_RANGE`), viaggio oltre 30 giorni estremi
+            inclusi (`TRIP_TOO_LONG`), preferenze sensibili senza consenso
+            (`SENSITIVE_CONSENT_REQUIRED`).
         "401":
           description: Non autenticato
 
@@ -150,7 +154,7 @@ paths:
         "200":
           description: Aggiornato
         "400":
-          description: Validazione fallita
+          description: Validazione fallita (`VALIDATION_ERROR`) o preferenze sensibili senza consenso (`SENSITIVE_CONSENT_REQUIRED`)
         "401":
           description: Non autenticato
 
@@ -665,6 +669,7 @@ components:
         endDate:
           type: string
           format: date-time
+          description: Al massimo 29 giorni dopo `startDate` (viaggio di 30 giorni, estremi inclusi).
         tripType:
           type: string
           enum: [solo, coppia, gruppo]
@@ -706,6 +711,9 @@ components:
           items:
             $ref: "#/components/schemas/DietaryKey"
           description: Restrizioni alimentari e allergie (facoltativo). Dato potenzialmente sensibile; non inviato ad analytics né nei log.
+        sensitiveDataConsent:
+          type: boolean
+          description: Consenso esplicito (art. 9 GDPR), obbligatorio se ci sono restrizioni alimentari o esigenze di mobilità `limited_walking`, `avoid_stairs`, `wheelchair`.
 
     TripListItem:
       type: object
@@ -813,6 +821,9 @@ components:
           items:
             $ref: "#/components/schemas/DietaryKey"
           description: Restrizioni alimentari e allergie. Omesso = invariato; `[]` azzera. Dato potenzialmente sensibile; non inviato ad analytics né nei log.
+        sensitiveDataConsent:
+          type: boolean
+          description: Consenso esplicito (art. 9 GDPR) per le scelte sensibili. Omesso = vale il consenso già registrato; `false` lo nega.
 
     InterestKey:
       type: string

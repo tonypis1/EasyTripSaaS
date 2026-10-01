@@ -452,6 +452,7 @@
         "submit": "Reise erstellen",
         "submitting": "Wird erstellt…",
         "errorGeneric": "Reise konnte nicht erstellt werden",
+        "errorTooLong": "Eine Reise darf höchstens {max} Tage dauern.",
         "errorNetwork": "Netzwerkfehler. Bitte erneut versuchen."
       },
       "shared": {
@@ -500,8 +501,8 @@
           "inline": "Wird erstellt…",
           "title": "Wir erstellen deine Reiseroute",
           "titleRegen": "Wir generieren deine Reiseroute neu",
-          "description": "Das dauert in der Regel 1–2 Minuten. Du kannst auf dieser Seite warten oder später zurückkommen: sie wird automatisch aktualisiert, sobald sie fertig ist.",
-          "descriptionRegen": "Wir bereiten eine neue Version deiner Reise vor. Das dauert in der Regel 1–2 Minuten und die Seite aktualisiert sich von selbst.",
+          "description": "Für diese Reise dauert es etwa {minutes, plural, one {# Minute} other {# Minuten}}. Du kannst auf dieser Seite warten oder später zurückkommen: sie wird automatisch aktualisiert, sobald sie fertig ist.",
+          "descriptionRegen": "Wir bereiten eine neue Version deiner Reise vor. Das dauert etwa {minutes, plural, one {# Minute} other {# Minuten}} und die Seite aktualisiert sich von selbst.",
           "progressLabel": "Geschätzter Fortschritt",
           "refreshNow": "Jetzt aktualisieren",
           "steps": {

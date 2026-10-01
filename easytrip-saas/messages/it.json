@@ -452,6 +452,7 @@
         "submit": "Crea viaggio",
         "submitting": "Creazione…",
         "errorGeneric": "Impossibile creare il viaggio",
+        "errorTooLong": "Un viaggio può durare al massimo {max} giorni.",
         "errorNetwork": "Errore di rete. Riprova."
       },
       "shared": {
@@ -500,8 +501,8 @@
           "inline": "Generazione in corso…",
           "title": "Stiamo creando il tuo itinerario",
           "titleRegen": "Stiamo rigenerando il tuo itinerario",
-          "description": "Ci vogliono di solito 1–2 minuti. Puoi attendere su questa pagina o tornare più tardi: aggiorneremo automaticamente quando sarà pronto.",
-          "descriptionRegen": "Stiamo preparando una nuova versione del viaggio. Di solito ci vogliono 1–2 minuti: la pagina si aggiornerà da sola.",
+          "description": "Per questo viaggio ci vogliono circa {minutes, plural, one {# minuto} other {# minuti}}. Puoi attendere su questa pagina o tornare più tardi: aggiorneremo automaticamente quando sarà pronto.",
+          "descriptionRegen": "Stiamo preparando una nuova versione del viaggio. Ci vogliono circa {minutes, plural, one {# minuto} other {# minuti}}: la pagina si aggiornerà da sola.",
           "progressLabel": "Progresso stimato",
           "refreshNow": "Aggiorna ora",
           "steps": {

@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  estimateItineraryGenerationMinutes,
+  estimateItineraryGenerationMs,
   estimateItineraryGenerationProgress,
   ITINERARY_GENERATION_STEP_KEYS,
   ITINERARY_GENERATION_STEP_MS,
@@ -28,11 +30,14 @@ const STEP_ICONS: LucideIcon[] = [
 
 type Props = {
   variant: "first" | "regen";
+  /** Giorni del viaggio: la durata stimata cresce con i giorni. */
+  numDays: number;
   onRefresh: () => void;
 };
 
 export function ItineraryGenerationWaitingScreen({
   variant,
+  numDays,
   onRefresh,
 }: Props) {
   const td = useTranslations("app.trips.detail");
@@ -70,9 +75,14 @@ export function ItineraryGenerationWaitingScreen({
   }, [reducedMotion]);
 
   const progress = useMemo(
-    () => estimateItineraryGenerationProgress(elapsedMs),
-    [elapsedMs],
+    () =>
+      estimateItineraryGenerationProgress(
+        elapsedMs,
+        estimateItineraryGenerationMs(numDays),
+      ),
+    [elapsedMs, numDays],
   );
+  const minutes = estimateItineraryGenerationMinutes(numDays);
 
   const stepKey = ITINERARY_GENERATION_STEP_KEYS[stepIndex];
   const stepMessage = td(`generating.steps.${stepKey}`);
@@ -82,8 +92,8 @@ export function ItineraryGenerationWaitingScreen({
     variant === "regen" ? td("generating.titleRegen") : td("generating.title");
   const description =
     variant === "regen"
-      ? td("generating.descriptionRegen")
-      : td("generating.description");
+      ? td("generating.descriptionRegen", { minutes })
+      : td("generating.description", { minutes });
 
   return (
     <section

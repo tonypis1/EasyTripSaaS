@@ -1,3 +1,4 @@
+import { NonRetriableError } from "inngest";
 import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
 import {
@@ -11,10 +12,8 @@ import {
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
 import { dayContentForDb } from "@/lib/trip/day-slots";
 import {
-  generationExhaustedError,
+  GenerationExhaustedError,
   ItineraryGenerationService,
-  nextGenerationCall,
-  type FailedGeneration,
   type GenerationCallOutcome,
   type ItineraryGenerationResult,
 } from "@/server/services/trip/itineraryGenerationService";
@@ -64,7 +63,11 @@ export const generateItinerary = inngest.createFunction(
     name: "Genera itinerario EasyTrip",
     retries: 3,
     triggers: [{ event: "trip/generate.requested" }],
-    timeouts: { finish: "15m" },
+    /**
+     * Un viaggio di 30 giorni (il massimo) sono 8 blocchi da ~3 minuti più il
+     * grounding: ~25 minuti senza riparazioni.
+     */
+    timeouts: { finish: "45m" },
     /**
      * Belt-and-braces guard against duplicate itinerary versions for the same
      * trip. Even if multiple `trip/generate.requested` events leak through
@@ -155,37 +158,26 @@ export const generateItinerary = inngest.createFunction(
     };
 
     /**
-     * Uno step per chiamata al modello (tentativo o riparazione): ogni step è
-     * una richiesta separata alla route `/api/inngest`, e una generazione dura
-     * ~2 minuti per 3 giorni. Con tutti i tentativi nello stesso step una sola
-     * riparazione bastava a superare il `maxDuration` della route; un errore
-     * dell'API ritenta solo la chiamata fallita, non quelle già riuscite.
+     * Uno step per chiamata al modello (blocco di giorni, tentativo o
+     * riparazione; id `genera-giorni-X-Y-N` / `ripara-giorni-X-Y-N`): ogni
+     * step è una richiesta separata alla route `/api/inngest`, e una chiamata
+     * dura ~2,5 minuti per 3 giorni. Un errore dell'API ritenta solo la
+     * chiamata fallita, non quelle già riuscite. Se un blocco esaurisce i
+     * tentativi, rieseguire il job rigiocherebbe gli stessi esiti memorizzati:
+     * l'errore è definitivo.
      */
-    let gen: ItineraryGenerationResult | null = null;
-    let previous: FailedGeneration | null = null;
-    for (
-      let call = nextGenerationCall(null);
-      call;
-      call = nextGenerationCall(previous)
-    ) {
-      const current = call;
-      const outcome = (await step.run(
-        current.repair
-          ? `ripara-con-claude-${current.attempt}`
-          : `genera-con-claude-${current.attempt}`,
-        () =>
-          itineraryGenerationService.runGenerationCall(
-            generationInput,
-            current,
-          ),
-      )) as GenerationCallOutcome;
-      if (outcome.ok) {
-        gen = outcome.result;
-        break;
+    let gen: ItineraryGenerationResult;
+    try {
+      gen = await itineraryGenerationService.generate(
+        generationInput,
+        (id, run) => step.run(id, run) as Promise<GenerationCallOutcome>,
+      );
+    } catch (err) {
+      if (err instanceof GenerationExhaustedError) {
+        throw new NonRetriableError(err.message, { cause: err });
       }
-      previous = { call: current, outcome };
+      throw err;
     }
-    if (!gen) throw generationExhaustedError(previous);
 
     // Telemetria: quanti POI/ristoranti generati compaiono tra quelli verificati
     // (copertura bassa sui ristoranti = probabile invenzione di nomi).

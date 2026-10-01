@@ -121,6 +121,19 @@ describe("TripService.createTrip", () => {
     } as never;
   }
 
+  it("lancia 400 TRIP_TOO_LONG oltre i 30 giorni (estremi inclusi), senza creare nulla", async () => {
+    const create = vi.fn().mockResolvedValue(createdTrip());
+    const { service } = makeService({ create });
+
+    await expect(
+      service.createTrip(input({ endDate: new Date("2026-07-01") })), // 31 giorni
+    ).rejects.toMatchObject({ code: "TRIP_TOO_LONG", statusCode: 400 });
+    expect(create).not.toHaveBeenCalled();
+
+    await service.createTrip(input({ endDate: new Date("2026-06-30") })); // 30 giorni
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
   it("crea il trip per l'utente corrente (senza scelte sensibili: nessun consenso registrato)", async () => {
     const create = vi.fn().mockResolvedValue(createdTrip());
     const { service } = makeService({ create });

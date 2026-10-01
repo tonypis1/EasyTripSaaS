@@ -88,6 +88,7 @@ import { openCrispChat, isCrispEnabled } from "../../crisp-chat";
 import { ExpensePanel } from "./expense-panel";
 import { roundCoordForAi } from "@/lib/geo-privacy";
 import { ItineraryGenerationWaitingScreen } from "@/components/trips/itinerary-generation-waiting-screen";
+import { tripLengthDaysFromIso } from "@/lib/trip/trip-limits";
 
 const GPS_AI_CONSENT_KEY = "easytrip_gps_ai_consent_v1";
 
@@ -1487,6 +1488,7 @@ export function TripDetailClient({
       {isGeneratingItinerary ? (
         <ItineraryGenerationWaitingScreen
           variant={hasDays ? "regen" : "first"}
+          numDays={tripLengthDaysFromIso(trip.startDate, trip.endDate) ?? 3}
           onRefresh={handleGenerationRefresh}
         />
       ) : null}

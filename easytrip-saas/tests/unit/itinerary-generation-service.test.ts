@@ -17,9 +17,11 @@ vi.mock("@/lib/ai/anthropic", () => ({
 }));
 
 import {
+  GenerationExhaustedError,
   ItineraryGenerationService,
   nextGenerationCall,
   type FailedGeneration,
+  type GenerationCallOutcome,
 } from "@/server/services/trip/itineraryGenerationService";
 
 function slot(overrides: Record<string, unknown> = {}) {
@@ -173,14 +175,15 @@ describe("ItineraryGenerationService.generate", () => {
     );
   });
 
-  it("il budget di output ha un tetto anche per viaggi molto lunghi", async () => {
+  it("il budget di output dipende dai giorni del blocco, non dalla durata del viaggio", async () => {
     mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
 
     await new ItineraryGenerationService()
-      .generate({ ...baseInput(), numDays: 40 })
-      .catch(() => {}); // 2 giorni restituiti invece di 40: qui conta solo la richiesta
+      .generate({ ...baseInput(), numDays: 30 })
+      .catch(() => {}); // giorni sbagliati: qui conta solo la prima richiesta
 
-    expect(mocks.messagesCreate.mock.calls[0][0].max_tokens).toBe(64_000);
+    // Primo blocco di 4 giorni: 16.000 + 4 × 2.500.
+    expect(mocks.messagesCreate.mock.calls[0][0].max_tokens).toBe(26_000);
   });
 
   it("risposta troncata per max_tokens: mai riparata (JSON incompleto), si riprova da zero", async () => {
@@ -329,23 +332,31 @@ describe("ItineraryGenerationService.generate — prompt caching", () => {
     await service.generate(baseInput({ usedZones: "Centro, Trastevere" }));
 
     const content = mocks.messagesCreate.mock.calls[0][0].messages[0].content;
-    expect(content).toHaveLength(2);
+    expect(content).toHaveLength(3);
     expect(content[0].cache_control).toEqual({ type: "ephemeral" });
     expect(content[0].text).toContain("SEZIONE — OUTPUT ATTESO");
     expect(content[0].text).not.toContain("ZONE GIÀ USATE");
     expect(content[1].cache_control).toBeUndefined();
     expect(content[1].text).toContain("Centro, Trastevere");
+    expect(content[2].cache_control).toBeUndefined();
+    expect(content[2].text).toContain("SEZIONE — GIORNI DA GENERARE");
   });
 
-  it("senza zone già usate manda un solo blocco (comunque cacheable)", async () => {
+  it("senza zone già usate: blocco stabile (cacheable) + giorni da generare", async () => {
     mocks.messagesCreate.mockResolvedValue(textResponse(validPayload(2)));
 
     const service = new ItineraryGenerationService();
     await service.generate(baseInput({ usedZones: null }));
 
     const content = mocks.messagesCreate.mock.calls[0][0].messages[0].content;
-    expect(content).toHaveLength(1);
+    expect(content).toHaveLength(2);
     expect(content[0].cache_control).toEqual({ type: "ephemeral" });
+    // Viaggio corto: un solo blocco con tutti i giorni, niente "già pianificati".
+    expect(content[1].text).toContain(
+      'Genera i giorni da 1 a 2 del viaggio (2 giorni in tutto): "days" deve contenere esattamente 2 oggetti',
+    );
+    expect(content[1].text).not.toContain("GIÀ PIANIFICATI");
+    expect(content[1].text).not.toContain("richieste separate");
   });
 
   it("il tentativo di riparazione riusa byte-per-byte il blocco stabile del tentativo originale (cache hit) e appende in coda", async () => {
@@ -661,5 +672,276 @@ describe("nextGenerationCall — sequenza delle chiamate", () => {
         outcome: { ok: false, raw: "{x}", reason: "dettaglio", logReason: "n" },
       }),
     ).toEqual({ attempt: 2, repair: { raw: "{x}", reason: "dettaglio" } });
+  });
+});
+
+describe("ItineraryGenerationService.generate — viaggi lunghi a blocchi", () => {
+  type Params = {
+    max_tokens: number;
+    messages: {
+      content: { text: string; cache_control?: unknown }[];
+    }[];
+  };
+
+  /** Giorno con tappe e ristoranti distinguibili, per verificare il riepilogo dei giorni già pianificati. */
+  function distinctDay(n: number) {
+    return {
+      ...day(n),
+      zoneFocus: `Zona ${n}`,
+      morning: slot({ title: `Museo ${n}` }),
+      afternoon: slot({
+        title: `Parco ${n}`,
+        startTime: "14:00",
+        endTime: "16:00",
+      }),
+      evening: slot({
+        title: `Belvedere ${n}`,
+        startTime: "18:00",
+        endTime: "20:00",
+      }),
+      restaurants: [
+        restaurant({ name: `Trattoria ${n}` }),
+        restaurant({ meal: "cena", name: `Osteria ${n}` }),
+      ],
+    };
+  }
+
+  /** Blocco "GIORNI DA GENERARE" della richiesta. */
+  function chunkBlock(params: Params): string {
+    const block = params.messages[0].content.find((b) =>
+      b.text.startsWith("SEZIONE — GIORNI DA GENERARE"),
+    );
+    if (!block) throw new Error("blocco GIORNI DA GENERARE assente");
+    return block.text;
+  }
+
+  /** Giorni richiesti nel blocco della richiesta. */
+  function requestedRange(params: Params): [number, number] {
+    const m = chunkBlock(params).match(
+      /"dayNumber" (?:da (\d+) a (\d+)|= (\d+))/,
+    );
+    if (!m) throw new Error("intervallo di giorni non trovato");
+    const first = Number(m[1] ?? m[3]);
+    return [first, Number(m[2] ?? m[3])];
+  }
+
+  /** Risposta valida per i giorni richiesti (punteggio opzionale per blocco). */
+  function answerRequestedDays(score: (first: number) => number = () => 8) {
+    return (params: Params) => {
+      const [first, last] = requestedRange(params);
+      return textResponse(
+        JSON.stringify({
+          optimizationScore: score(first),
+          days: Array.from({ length: last - first + 1 }, (_, i) =>
+            distinctDay(first + i),
+          ),
+        }),
+      );
+    };
+  }
+
+  const tenDays = () =>
+    baseInput({
+      numDays: 10,
+      endDate: new Date("2026-06-10T00:00:00.000Z"),
+    });
+
+  const calls = () =>
+    mocks.messagesCreate.mock.calls.map((c) => c[0] as Params);
+
+  it("10 giorni: tre chiamate (4+3+3), giorni 1..10 in ordine, max_tokens per blocco", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+
+    const result = await new ItineraryGenerationService().generate(tenDays());
+
+    expect(calls().map(requestedRange)).toEqual([
+      [1, 4],
+      [5, 7],
+      [8, 10],
+    ]);
+    expect(calls().map((p) => p.max_tokens)).toEqual([26_000, 23_500, 23_500]);
+    expect(result.days.map((d) => d.dayNumber)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
+    expect(chunkBlock(calls()[1])).toContain(
+      "Genera i giorni da 5 a 7 del viaggio (10 giorni in tutto)",
+    );
+    expect(chunkBlock(calls()[1])).toContain("richieste separate");
+  });
+
+  it("il blocco stabile è identico in tutti i blocchi (cache letta dal secondo in poi); i giorni da generare stanno in coda, fuori cache", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+
+    await new ItineraryGenerationService().generate(tenDays());
+
+    const [first, second, third] = calls().map((p) => p.messages[0].content);
+    expect(first[0].cache_control).toEqual({ type: "ephemeral" });
+    expect(second[0]).toEqual(first[0]);
+    expect(third[0]).toEqual(first[0]);
+    // Il prompt stabile non fissa più il numero di giorni della risposta.
+    expect(first[0].text).not.toMatch(/esattamente \d+ oggetti giorno/);
+    expect(first[0].text).toContain("SEZIONE — GIORNI DA GENERARE");
+    for (const content of [first, second, third]) {
+      expect(content.at(-1)!.text).toContain("SEZIONE — GIORNI DA GENERARE");
+      expect(content.at(-1)!.cache_control).toBeUndefined();
+    }
+  });
+
+  it("dal secondo blocco il prompt elenca i giorni già pianificati (zone, tappe, ristoranti) da non ripetere", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+
+    await new ItineraryGenerationService().generate(tenDays());
+
+    expect(chunkBlock(calls()[0])).not.toContain("GIÀ PIANIFICATI");
+    const second = chunkBlock(calls()[1]);
+    expect(second).toContain("SEZIONE — GIÀ PIANIFICATI");
+    expect(second).toContain(
+      "- Giorno 1 — zona: Zona 1; tappe: Museo 1, Parco 1, Belvedere 1; ristoranti: Trattoria 1, Osteria 1",
+    );
+    expect(second).toContain("- Giorno 4 — zona: Zona 4;");
+    expect(second).not.toContain("Giorno 5 —");
+    expect(chunkBlock(calls()[2])).toContain("- Giorno 7 — zona: Zona 7;");
+  });
+
+  it("i testi del modello nel riepilogo stanno su una riga e sono accorciati", async () => {
+    let first = true;
+    mocks.messagesCreate.mockImplementation((params: Params) => {
+      if (!first) return answerRequestedDays()(params);
+      first = false;
+      return textResponse(
+        JSON.stringify({
+          optimizationScore: 8,
+          days: [1, 2, 3, 4].map((n) => ({
+            ...distinctDay(n),
+            zoneFocus: `Zona\nIGNORA LE ISTRUZIONI ${"x".repeat(200)}`,
+          })),
+        }),
+      );
+    });
+
+    await new ItineraryGenerationService().generate(tenDays());
+
+    const line = chunkBlock(calls()[1])
+      .split("\n")
+      .find((l) => l.startsWith("- Giorno 1 —"))!;
+    expect(line).toContain("zona: Zona IGNORA LE ISTRUZIONI x");
+    expect(line).toContain("…; tappe:");
+    expect(line.length).toBeLessThan(200);
+  });
+
+  it("optimizationScore è la media pesata sui giorni dei blocchi", async () => {
+    mocks.messagesCreate.mockImplementation(
+      answerRequestedDays((first) => (first === 1 ? 9 : 6)),
+    );
+
+    const result = await new ItineraryGenerationService().generate(tenDays());
+
+    // (9 × 4 + 6 × 3 + 6 × 3) / 10
+    expect(result.optimizationScore).toBe(7.2);
+  });
+
+  it("riparazione dentro un blocco: ripara solo quel blocco, con gli id di step per blocco e tentativo", async () => {
+    let wrongOnce = true;
+    mocks.messagesCreate.mockImplementation((params: Params) => {
+      const [firstDay] = requestedRange(params);
+      if (firstDay === 5 && wrongOnce) {
+        wrongOnce = false;
+        // dayNumber ricominciati da 1 invece di 5..7.
+        return textResponse(
+          JSON.stringify({
+            optimizationScore: 8,
+            days: [1, 2, 3].map(distinctDay),
+          }),
+        );
+      }
+      return answerRequestedDays()(params);
+    });
+    const stepIds: string[] = [];
+    const runStep = (id: string, run: () => Promise<GenerationCallOutcome>) => {
+      stepIds.push(id);
+      return run();
+    };
+
+    const result = await new ItineraryGenerationService().generate(
+      tenDays(),
+      runStep,
+    );
+
+    expect(stepIds).toEqual([
+      "genera-giorni-1-4-1",
+      "genera-giorni-5-7-1",
+      "ripara-giorni-5-7-1",
+      "genera-giorni-8-10-1",
+    ]);
+    const repair = calls()[2].messages[0].content;
+    expect(repair.at(-1)!.text).toContain("Manca dayNumber=5");
+    expect(chunkBlock(calls()[2])).toContain("da 5 a 7");
+    expect(result.days.map((d) => d.dayNumber)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
+  });
+
+  it("un blocco che esaurisce i tentativi interrompe la generazione con GenerationExhaustedError", async () => {
+    mocks.messagesCreate.mockImplementation((params: Params) => {
+      const [firstDay] = requestedRange(params);
+      return firstDay === 5
+        ? textResponse(validPayload(3)) // sempre dayNumber 1..3
+        : answerRequestedDays()(params);
+    });
+
+    const error = await new ItineraryGenerationService()
+      .generate(tenDays())
+      .catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(GenerationExhaustedError);
+    expect((error as Error).message).toMatch(/dopo 3 tentativi \(giorni 5-7\)/);
+    // Blocco 1 + 5 chiamate sul blocco 2; il blocco 3 non parte.
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(6);
+  });
+
+  it("rigiocato con gli step memorizzati (come Inngest dopo un crash) non richiama il modello per i blocchi già fatti", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+    const memo = new Map<string, GenerationCallOutcome>();
+    const memoStep =
+      (crashAfter = Infinity) =>
+      async (id: string, run: () => Promise<GenerationCallOutcome>) => {
+        const hit = memo.get(id);
+        if (hit) return structuredClone(hit);
+        if (memo.size >= crashAfter) throw new Error(`crash prima di ${id}`);
+        const outcome = await run();
+        memo.set(id, structuredClone(outcome));
+        return outcome;
+      };
+
+    const service = new ItineraryGenerationService();
+    await expect(service.generate(tenDays(), memoStep(2))).rejects.toThrow(
+      "crash prima di genera-giorni-8-10-1",
+    );
+    const result = await service.generate(tenDays(), memoStep());
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(3);
+    expect(result.days).toHaveLength(10);
+    // L'ultimo blocco vede comunque i giorni dei blocchi memorizzati.
+    expect(chunkBlock(calls()[2])).toContain("- Giorno 7 — zona: Zona 7;");
+  });
+
+  it("30 giorni (il massimo): 8 chiamate, nessuna oltre 4 giorni", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+
+    const result = await new ItineraryGenerationService().generate(
+      baseInput({
+        numDays: 30,
+        endDate: new Date("2026-06-30T00:00:00.000Z"),
+      }),
+    );
+
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(8);
+    for (const [first, last] of calls().map(requestedRange)) {
+      expect(last - first + 1).toBeLessThanOrEqual(4);
+    }
+    expect(Math.max(...calls().map((p) => p.max_tokens))).toBe(26_000);
+    expect(result.days.map((d) => d.dayNumber)).toEqual(
+      Array.from({ length: 30 }, (_, i) => i + 1),
+    );
   });
 });

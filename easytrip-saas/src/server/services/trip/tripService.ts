@@ -4,7 +4,11 @@ import { AuthService } from "@/server/services/auth/authService";
 import { TripRepository } from "@/server/repositories/TripRepository";
 import { CreateTripInput } from "@/server/validators/trip.schema";
 import { AppError } from "@/server/errors/AppError";
-import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
+import {
+  inclusiveCalendarDaysBetweenUtc,
+  toDateOnlyIsoUtc,
+} from "@/lib/calendar-date";
+import { MAX_TRIP_DAYS } from "@/lib/trip/trip-limits";
 import { getPostTripReferralWindow } from "@/lib/trip/post-trip-referral-window";
 import {
   cancelConfirmedHtml,
@@ -309,6 +313,16 @@ export class TripService {
         "La data di fine deve essere successiva alla data di inizio",
         400,
         "INVALID_DATE_RANGE",
+      );
+    }
+    if (
+      inclusiveCalendarDaysBetweenUtc(input.startDate, input.endDate) >
+      MAX_TRIP_DAYS
+    ) {
+      throw new AppError(
+        `Un viaggio può durare al massimo ${MAX_TRIP_DAYS} giorni`,
+        400,
+        "TRIP_TOO_LONG",
       );
     }
 
