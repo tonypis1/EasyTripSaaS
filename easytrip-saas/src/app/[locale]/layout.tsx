@@ -16,6 +16,7 @@ import {
   setRequestLocale,
 } from "next-intl/server";
 import PostHogProvider from "../posthog-provider";
+import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 import { SetDocumentLang } from "@/components/i18n/set-document-lang";
 import { getMetadataBaseUrl } from "@/lib/app-base-url";
 import { routing, type AppLocale } from "@/i18n/routing";
@@ -114,6 +115,7 @@ export default async function LocaleLayout({
         <Suspense fallback={null}>
           <PostHogProvider>{children}</PostHogProvider>
         </Suspense>
+        <CookieConsentBanner />
       </NextIntlClientProvider>
     </ClerkProvider>
   );

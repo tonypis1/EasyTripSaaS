@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const mocks = vi.hoisted(() => ({
   findFirst: vi.fn(),
+  findManyDays: vi.fn(async (): Promise<unknown[]> => []),
   updateDay: vi.fn(),
   messagesCreate: vi.fn(),
 }));
@@ -11,6 +12,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     day: {
       findFirst: mocks.findFirst,
+      findMany: mocks.findManyDays,
       update: mocks.updateDay,
     },
   },
@@ -36,6 +38,24 @@ vi.mock("@/lib/ai/anthropic", async (importOriginal) => {
 });
 
 import { SlotReplaceService } from "@/server/services/trip/slotReplaceService";
+import type { SlotProposalRepository } from "@/server/repositories/SlotProposalRepository";
+import type { GeoScoreService } from "@/server/services/trip/geoScoreService";
+
+function altSlot(title: string) {
+  return {
+    title,
+    place: "Centro",
+    why: "Alternativa valida",
+    startTime: "10:00",
+    endTime: "12:00",
+    durationMin: 120,
+    googleMapsQuery: `${title} Roma`,
+    bookingLink: null,
+    tips: ["Vai presto"],
+    lat: 41.91,
+    lng: 12.46,
+  };
+}
 
 function aiPayload() {
   return {
@@ -56,8 +76,8 @@ function aiPayload() {
     geoContinuityNote: "Resti in zona",
     dayRouteUpdated: "Mattina aggiornata",
     alternatives: [
-      { name: "Alt1", distance: "100m", note: "A" },
-      { name: "Alt2", distance: "200m", note: "B" },
+      { distance: "100m", note: "A", slot: altSlot("Alt1") },
+      { distance: "200m", note: "B", slot: altSlot("Alt2") },
     ],
   };
 }
@@ -84,6 +104,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
           destination: "Roma",
           budgetLevel: "moderate",
           style: null,
+          _count: { members: 1 },
         },
       },
     });
@@ -119,6 +140,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
           destination: "Roma",
           budgetLevel: "moderate",
           style: null,
+          _count: { members: 1 },
         },
       },
     });
@@ -144,11 +166,96 @@ describe("SlotReplaceService + mock Anthropic", () => {
 
     expect(result.replacement.title).toBe("Museo X");
     expect(mocks.updateDay).toHaveBeenCalled();
+    // Colonna jsonb: la sostituzione si scrive come oggetto, non come stringa JSON.
+    const written = mocks.updateDay.mock.calls[0][0].data.morning;
+    expect(typeof written).toBe("object");
+    expect(written).toMatchObject({ title: "Museo X", lat: 41.9, lng: 12.45 });
+  });
+
+  it("nel prompt include le preferenze del viaggio (mobilità, ritmo, restrizioni) così le alternative le rispettano", async () => {
+    const day = dayFixture();
+    mocks.findFirst.mockResolvedValue({
+      ...day,
+      tripVersion: {
+        trip: {
+          ...day.tripVersion.trip,
+          interests: ["art_museums"],
+          pace: "relaxed",
+          mobilityNeeds: ["wheelchair"],
+          dietaryRestrictions: ["vegetarian", "nut_allergy"],
+        },
+      },
+    });
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain("PREFERENZE DEL VIAGGIATORE");
+    expect(prompt).toContain("sedia a rotelle");
+    expect(prompt).toContain("RILASSATO");
+    expect(prompt).toContain("Restrizioni alimentari: vegetariano");
+    expect(prompt).toContain("allergia alla frutta a guscio");
+    // Non è la generazione completa: niente contratto sui ristoranti.
+    expect(prompt).not.toContain("dietaryFit");
+  });
+
+  it("senza preferenze il prompt di sostituzione non ha il blocco", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    expect(
+      mocks.messagesCreate.mock.calls[0][0].messages[0].content,
+    ).not.toContain("PREFERENZE DEL VIAGGIATORE");
+  });
+
+  it("nel prompt usa il contenuto degli slot letto dal jsonb (oggetti, non stringhe)", async () => {
+    mocks.findFirst.mockResolvedValue({
+      ...dayFixture(),
+      morning: {
+        title: "Vecchio museo",
+        place: "Centro",
+        startTime: "09:00",
+        endTime: "11:00",
+      },
+      afternoon: {
+        title: "Pranzo lungo",
+        place: "Trastevere",
+        startTime: "13:00",
+        endTime: "15:00",
+      },
+      evening: null,
+    });
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain('"title":"Vecchio museo"');
+    expect(prompt).toContain('Mattina: "Vecchio museo" — Centro (09:00–11:00)');
+    expect(prompt).toContain(
+      'Pomeriggio: "Pranzo lungo" — Trastevere (13:00–15:00)',
+    );
+    expect(prompt).toContain("Sera: vuoto");
   });
 
   function dayFixture() {
     return {
       id: "day1",
+      tripVersionId: "ver1",
       morning: JSON.stringify({ title: "Old", place: "Roma" }),
       afternoon: "{}",
       evening: "{}",
@@ -161,6 +268,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
           destination: "Roma",
           budgetLevel: "moderate",
           style: null,
+          _count: { members: 1 },
         },
       },
     };
@@ -177,7 +285,7 @@ describe("SlotReplaceService + mock Anthropic", () => {
     };
   }
 
-  it("passa timeout e maxRetries per-richiesta ad anthropic.messages.create", async () => {
+  it("passa timeout, maxRetries ed effort basso per-richiesta ad anthropic.messages.create", async () => {
     mocks.findFirst.mockResolvedValue(dayFixture());
     mocks.messagesCreate.mockResolvedValue({
       content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
@@ -188,9 +296,83 @@ describe("SlotReplaceService + mock Anthropic", () => {
     await svc.replaceSlot(callArgs());
 
     expect(mocks.messagesCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "claude-test" }),
-      { timeout: 20_000, maxRetries: 1 },
+      // effort "low": con il default (high) Sonnet 5 esauriva max_tokens nel ragionamento.
+      expect.objectContaining({
+        model: "claude-test",
+        output_config: { effort: "low" },
+      }),
+      { timeout: 35_000, maxRetries: 1 },
     );
+  });
+
+  it("passa all'AI i luoghi già in programma negli altri giorni (né sostituto né alternative li ripetono)", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.findManyDays.mockResolvedValueOnce([
+      {
+        morning: { title: "Palazzo Lanfranchi" },
+        afternoon: null,
+        evening: { title: "MUSMA" },
+      },
+    ]);
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+
+    await new SlotReplaceService().replaceSlot(callArgs());
+
+    expect(mocks.findManyDays).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tripVersionId: "ver1", id: { not: "day1" } },
+      }),
+    );
+    const prompt = mocks.messagesCreate.mock.calls[0][0].messages[0]
+      .content as string;
+    expect(prompt).toContain(
+      "GIÀ IN PROGRAMMA NEGLI ALTRI GIORNI (non riproporli):\n- Palazzo Lanfranchi\n- MUSMA",
+    );
+  });
+
+  it("dopo aver salvato lo slot riallinea il GeoScore della versione del giorno", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+    const geoScore = {
+      refreshForVersion: vi.fn().mockResolvedValue(8.4),
+    } as unknown as GeoScoreService;
+
+    const svc = new SlotReplaceService(
+      { createDraft: vi.fn() } as unknown as SlotProposalRepository,
+      geoScore,
+    );
+    await svc.replaceSlot(callArgs());
+
+    expect(geoScore.refreshForVersion).toHaveBeenCalledWith("ver1");
+    // Il ricalcolo legge i giorni da DB: deve avvenire DOPO l'update dello slot.
+    expect(mocks.updateDay.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(geoScore.refreshForVersion).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("non tocca il GeoScore se la sostituzione fallisce prima di salvare", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockRejectedValue(
+      new Anthropic.APIConnectionTimeoutError(),
+    );
+    const geoScore = {
+      refreshForVersion: vi.fn(),
+    } as unknown as GeoScoreService;
+
+    const svc = new SlotReplaceService(
+      { createDraft: vi.fn() } as unknown as SlotProposalRepository,
+      geoScore,
+    );
+    await expect(svc.replaceSlot(callArgs())).rejects.toBeDefined();
+
+    expect(mocks.updateDay).not.toHaveBeenCalled();
+    expect(geoScore.refreshForVersion).not.toHaveBeenCalled();
   });
 
   it("mappa un timeout Anthropic su AppError 503 AI_TIMEOUT (degradazione controllata)", async () => {
@@ -223,5 +405,165 @@ describe("SlotReplaceService + mock Anthropic", () => {
       code: "AI_UNAVAILABLE",
       statusCode: 502,
     });
+  });
+
+  it("ripara un primo JSON schema-non-conforme e persiste il risultato del secondo tentativo invece di fallire con 502", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: JSON.stringify({ replacement: {} }) }], // schema non conforme
+      })
+      .mockResolvedValueOnce({
+        content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+      });
+    mocks.updateDay.mockResolvedValue({});
+
+    const svc = new SlotReplaceService();
+    const result = await svc.replaceSlot(callArgs());
+
+    expect(result.replacement.title).toBe("Museo X");
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    // Il tentativo di riparazione appende il suffisso al prompt originale (stringa unica).
+    const repairContent = mocks.messagesCreate.mock.calls[1][0].messages[0]
+      .content as string;
+    expect(repairContent).toContain("non ha superato la validazione");
+  });
+
+  it("lancia AppError 502 AI_SCHEMA se anche il tentativo di riparazione resta non conforme", async () => {
+    mocks.findFirst.mockResolvedValue(dayFixture());
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify({ replacement: {} }) }],
+    });
+
+    const svc = new SlotReplaceService();
+    await expect(svc.replaceSlot(callArgs())).rejects.toMatchObject({
+      code: "AI_SCHEMA",
+      statusCode: 502,
+    });
+    expect(mocks.messagesCreate).toHaveBeenCalledTimes(2);
+    expect(mocks.updateDay).not.toHaveBeenCalled();
+  });
+});
+
+describe("SlotReplaceService — bozza di votazione di gruppo", () => {
+  function dayWithMembers(members: number) {
+    return {
+      id: "day1",
+      morning: JSON.stringify({ title: "Old", place: "Roma" }),
+      afternoon: "{}",
+      evening: "{}",
+      dayNumber: 1,
+      zoneFocus: "Centro",
+      tripVersion: {
+        trip: {
+          id: "trip1",
+          organizerId: "org1",
+          destination: "Roma",
+          budgetLevel: "moderate",
+          style: null,
+          _count: { members },
+        },
+      },
+    };
+  }
+
+  const input = {
+    organizerId: "org1",
+    tripId: "trip1",
+    dayId: "day1",
+    slot: "morning" as const,
+    lat: 41.9,
+    lng: 12.45,
+  };
+
+  function setup(
+    members: number,
+    createDraft = vi.fn().mockResolvedValue({ id: "prop1" }),
+  ) {
+    mocks.findFirst.mockResolvedValue(dayWithMembers(members));
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(aiPayload()) }],
+    });
+    mocks.updateDay.mockResolvedValue({});
+    const proposals = { createDraft } as unknown as SlotProposalRepository;
+    return { svc: new SlotReplaceService(proposals), createDraft };
+  }
+
+  beforeEach(() => {
+    mocks.findFirst.mockReset();
+    mocks.updateDay.mockReset();
+    mocks.messagesCreate.mockReset();
+  });
+
+  it("con almeno 2 membri salva una bozza [attuale, alt1, alt2] e ritorna il proposalId", async () => {
+    const { svc, createDraft } = setup(3);
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.proposalId).toBe("prop1");
+    const draft = createDraft.mock.calls[0][0];
+    expect(draft.dayId).toBe("day1");
+    expect(draft.slotKey).toBe("morning");
+    // Opzione 0 = lo slot appena applicato; 1..2 = le alternative complete dell'AI
+    expect(
+      draft.options.map((o: { slot: { title: string } }) => o.slot.title),
+    ).toEqual(["Museo X", "Alt1", "Alt2"]);
+    expect(draft.options[0]).toMatchObject({ distance: null, note: null });
+    expect(draft.options[1]).toMatchObject({ distance: "100m", note: "A" });
+  });
+
+  it("le alternative ritornate sono slot completi con `name` derivato dal titolo", async () => {
+    const { svc } = setup(3);
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.alternatives[0]).toMatchObject({
+      name: "Alt1",
+      distance: "100m",
+      note: "A",
+    });
+    expect(result.alternatives[0].slot.startTime).toBe("10:00");
+  });
+
+  it("con un solo membro (viaggio solo) non crea alcuna bozza", async () => {
+    const { svc, createDraft } = setup(1);
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.proposalId).toBeNull();
+    expect(createDraft).not.toHaveBeenCalled();
+  });
+
+  it("se la creazione della bozza fallisce la sostituzione è comunque applicata", async () => {
+    const { svc } = setup(3, vi.fn().mockRejectedValue(new Error("db down")));
+
+    const result = await svc.replaceSlot(input);
+
+    expect(result.proposalId).toBeNull();
+    expect(result.replacement.title).toBe("Museo X");
+    expect(mocks.updateDay).toHaveBeenCalled();
+  });
+
+  it("un'alternativa nel vecchio formato (solo nome/nota, senza slot) non passa la validazione", async () => {
+    mocks.findFirst.mockResolvedValue(dayWithMembers(3));
+    const legacy = {
+      ...aiPayload(),
+      alternatives: [
+        { name: "Alt1", distance: "100m", note: "A" },
+        { name: "Alt2", distance: "200m", note: "B" },
+      ],
+    };
+    mocks.messagesCreate.mockResolvedValue({
+      content: [{ type: "text", text: JSON.stringify(legacy) }],
+    });
+
+    const svc = new SlotReplaceService({
+      createDraft: vi.fn(),
+    } as unknown as SlotProposalRepository);
+
+    await expect(svc.replaceSlot(input)).rejects.toMatchObject({
+      code: "AI_SCHEMA",
+    });
+    expect(mocks.updateDay).not.toHaveBeenCalled();
   });
 });

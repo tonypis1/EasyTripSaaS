@@ -1,3 +1,4 @@
+import { NonRetriableError } from "inngest";
 import { inngest } from "../client";
 import { prisma } from "@/lib/prisma";
 import {
@@ -9,8 +10,26 @@ import {
   type SupportedAiLocale,
 } from "@/lib/ai/prompt-locale";
 import { resolveTripGeneratePayload } from "@/lib/inngest/trip-generate-payload";
-import { type DaySlot } from "@/lib/itinerary-model-schema";
-import { ItineraryGenerationService } from "@/server/services/trip/itineraryGenerationService";
+import { dayContentForDb } from "@/lib/trip/day-slots";
+import {
+  GenerationExhaustedError,
+  ItineraryGenerationService,
+  type GenerationCallOutcome,
+  type ItineraryGenerationResult,
+} from "@/server/services/trip/itineraryGenerationService";
+import { GroundingService } from "@/server/services/trip/groundingService";
+import { VerifiedPoiCacheRepository } from "@/server/repositories/VerifiedPoiCacheRepository";
+import { computeGroundingCoverage } from "@/lib/grounding/coverage";
+import {
+  findDietaryConflictSuspects,
+  findDietaryGaps,
+  hasPreferences,
+  preferencesFromTrip,
+  requiredDietFits,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
+import { analyzeItineraryGeo, resolveGeoScore } from "@/lib/geo-optimization";
+import { logger } from "@/lib/observability";
 import {
   itineraryReadyHtml,
   itineraryReadyMemberHtml,
@@ -34,23 +53,9 @@ type TripSnapshot = {
   localPassCityCount: number;
   /** Lingua preferita dell'organizer (passata ai prompt Claude). */
   organizerLanguage: SupportedAiLocale;
+  /** Preferenze strutturate scelte per il viaggio. */
+  preferences: TripPreferences;
 };
-
-function fallbackSlot(label: string): DaySlot {
-  return {
-    title: label,
-    place: "Da definire",
-    why: "Contenuto in rigenerazione",
-    startTime: "09:00",
-    endTime: "11:00",
-    durationMin: 120,
-    googleMapsQuery: label,
-    bookingLink: null,
-    tips: ["Riprova la generazione tra poco"],
-    lat: null,
-    lng: null,
-  };
-}
 
 export const generateItinerary = inngest.createFunction(
   {
@@ -58,7 +63,11 @@ export const generateItinerary = inngest.createFunction(
     name: "Genera itinerario EasyTrip",
     retries: 3,
     triggers: [{ event: "trip/generate.requested" }],
-    timeouts: { finish: "15m" },
+    /**
+     * Un viaggio di 30 giorni (il massimo) sono 8 blocchi da ~3 minuti più il
+     * grounding: ~25 minuti senza riparazioni.
+     */
+    timeouts: { finish: "45m" },
     /**
      * Belt-and-braces guard against duplicate itinerary versions for the same
      * trip. Even if multiple `trip/generate.requested` events leak through
@@ -98,6 +107,7 @@ export const generateItinerary = inngest.createFunction(
           localPassCityCount:
             (t as { localPassCityCount?: number }).localPassCityCount ?? 0,
           organizerLanguage: normalizeAiLocale(t.organizer?.language),
+          preferences: preferencesFromTrip(t),
         };
       },
     );
@@ -107,21 +117,135 @@ export const generateItinerary = inngest.createFunction(
     const numDays = inclusiveCalendarDaysBetweenUtc(startDate, endDate);
 
     const itineraryGenerationService = new ItineraryGenerationService();
-
-    const gen = await step.run("genera-con-claude", () =>
-      itineraryGenerationService.generate({
-        destination: trip.destination,
-        startDate,
-        endDate,
-        numDays,
-        tripType: trip.tripType,
-        style: trip.style,
-        budgetLevel: trip.budgetLevel,
-        usedZones: trip.usedZones,
-        localPassCityCount: trip.localPassCityCount,
-        locale: trip.organizerLanguage,
-      }),
+    const groundingService = new GroundingService(
+      new VerifiedPoiCacheRepository(),
+      {
+        enabled: config.ai.groundingEnabled,
+        ttlDays: config.ai.groundingTtlDays,
+      },
     );
+
+    /**
+     * "EasyTrip Verified": POI/ristoranti verificati via ricerca web, dalla
+     * cache condivisa per destinazione o da una nuova ricerca. Non fatale:
+     * `getGrounding` non lancia mai, e null = si genera come prima, dalla sola
+     * conoscenza del modello.
+     */
+    const grounding = await step.run("ground-destination", async () => {
+      const result = await groundingService.getGrounding(trip.destination);
+      logger.info("Grounding destinazione", {
+        tripId: trip.id,
+        grounded: result !== null,
+        source: result?.source ?? null,
+        areas: result?.grounding.areas.length ?? 0,
+      });
+      return result;
+    });
+
+    const generationInput = {
+      destination: trip.destination,
+      startDate,
+      endDate,
+      numDays,
+      tripType: trip.tripType,
+      style: trip.style,
+      preferences: trip.preferences,
+      budgetLevel: trip.budgetLevel,
+      usedZones: trip.usedZones,
+      localPassCityCount: trip.localPassCityCount,
+      locale: trip.organizerLanguage,
+      grounding,
+    };
+
+    /**
+     * Uno step per chiamata al modello (blocco di giorni, tentativo o
+     * riparazione; id `genera-giorni-X-Y-N` / `ripara-giorni-X-Y-N`): ogni
+     * step è una richiesta separata alla route `/api/inngest`, e una chiamata
+     * dura ~2,5 minuti per 3 giorni. Un errore dell'API ritenta solo la
+     * chiamata fallita, non quelle già riuscite. Se un blocco esaurisce i
+     * tentativi, rieseguire il job rigiocherebbe gli stessi esiti memorizzati:
+     * l'errore è definitivo.
+     */
+    let gen: ItineraryGenerationResult;
+    try {
+      gen = await itineraryGenerationService.generate(
+        generationInput,
+        (id, run) => step.run(id, run) as Promise<GenerationCallOutcome>,
+      );
+    } catch (err) {
+      if (err instanceof GenerationExhaustedError) {
+        throw new NonRetriableError(err.message, { cause: err });
+      }
+      throw err;
+    }
+
+    // Telemetria: quanti POI/ristoranti generati compaiono tra quelli verificati
+    // (copertura bassa sui ristoranti = probabile invenzione di nomi).
+    if (grounding) {
+      await step.run("log-grounding-coverage", () => {
+        const coverage = computeGroundingCoverage(
+          gen.days,
+          grounding.grounding,
+        );
+        logger.info("Copertura grounding itinerario", {
+          tripId: trip.id,
+          source: grounding.source,
+          ...coverage,
+        });
+        return coverage;
+      });
+    }
+
+    // Telemetria sulle restrizioni alimentari: quanto ci si può fidare di `dietaryFit`
+    // (auto-dichiarato dal modello) e quanti locali sembrano in conflitto. Solo conteggi:
+    // le restrizioni possono essere dati sensibili e non vanno nei log.
+    if (hasPreferences(trip.preferences)) {
+      await step.run("log-preferences-fit", () => {
+        const required = requiredDietFits(trip.preferences);
+        const summary = {
+          tripId: trip.id,
+          dietaryRestrictionsCount: trip.preferences.dietaryRestrictions.length,
+          restaurants: gen.days.reduce(
+            (n, d) => n + (d.restaurants?.length ?? 0),
+            0,
+          ),
+          restaurantsMissingFit: findDietaryGaps(gen.days, required).length,
+          restaurantsSuspectedConflict: findDietaryConflictSuspects(
+            gen.days,
+            required,
+          ).length,
+        };
+        logger.info("Copertura preferenze itinerario", summary);
+        return summary;
+      });
+    }
+
+    /**
+     * GeoScore calcolato dalle coordinate delle tappe (Haversine), non quello
+     * che il modello dichiara di sé: nessuno lo verifica e tende a essere
+     * ottimista. Il valore dichiarato resta come ripiego quando le coordinate
+     * non bastano e come termine di confronto nei log.
+     */
+    const geo = await step.run("calcola-geo-score", () => {
+      const analysis = analyzeItineraryGeo(gen.days);
+      const resolved = resolveGeoScore(analysis, gen.optimizationScore);
+      logger.info("GeoScore itinerario", {
+        tripId: trip.id,
+        source: resolved.source,
+        declared: gen.optimizationScore,
+        computed: analysis.score,
+        delta:
+          analysis.score != null
+            ? Math.round((analysis.score - gen.optimizationScore) * 10) / 10
+            : null,
+        scoredDays: analysis.scoredDays,
+        totalDays: analysis.totalDays,
+        totalKm: analysis.totalKm,
+        avoidableKm: analysis.avoidableKm,
+        improvableDays: analysis.days.filter((d) => d.isOrderImprovable).length,
+      });
+      return { geoScore: resolved.score ?? gen.optimizationScore };
+    });
 
     // -------------------------------------------------------------------
     // Persistenza versione + giorni — split in 4 step Inngest idempotenti.
@@ -175,7 +299,7 @@ export const generateItinerary = inngest.createFunction(
       if (existing) {
         await prisma.tripVersion.update({
           where: { id: existing.id },
-          data: { isActive: true, geoScore: gen.optimizationScore },
+          data: { isActive: true, geoScore: geo.geoScore },
         });
         return existing.id;
       }
@@ -186,7 +310,7 @@ export const generateItinerary = inngest.createFunction(
             tripId: trip.id,
             versionNum,
             isActive: true,
-            geoScore: gen.optimizationScore,
+            geoScore: geo.geoScore,
           },
           select: { id: true },
         });
@@ -205,7 +329,7 @@ export const generateItinerary = inngest.createFunction(
           });
           await prisma.tripVersion.update({
             where: { id: found.id },
-            data: { isActive: true, geoScore: gen.optimizationScore },
+            data: { isActive: true, geoScore: geo.geoScore },
           });
           return found.id;
         }
@@ -232,19 +356,8 @@ export const generateItinerary = inngest.createFunction(
             dayNumber: day.dayNumber,
             unlockDate,
             title: day.title || `Giorno ${day.dayNumber}`,
-            morning: JSON.stringify(
-              day.morning ?? fallbackSlot("Mattina libera"),
-            ),
-            afternoon: JSON.stringify(
-              day.afternoon ?? fallbackSlot("Pomeriggio libero"),
-            ),
-            evening: JSON.stringify(
-              day.evening ?? fallbackSlot("Serata libera"),
-            ),
-            restaurants:
-              day.restaurants && day.restaurants.length > 0
-                ? JSON.stringify(day.restaurants)
-                : null,
+            // Slot e ristoranti sono jsonb: oggetti, mai JSON.stringify (doppia serializzazione).
+            ...dayContentForDb(day),
             mapCenterLat: day.mapCenterLat != null ? day.mapCenterLat : null,
             mapCenterLng: day.mapCenterLng != null ? day.mapCenterLng : null,
             zoneFocus: day.zoneFocus || null,
@@ -279,7 +392,7 @@ export const generateItinerary = inngest.createFunction(
       return {
         versionNum,
         daysCreated: numDays,
-        optimizationScore: gen.optimizationScore,
+        geoScore: geo.geoScore,
       };
     });
 
@@ -299,7 +412,7 @@ export const generateItinerary = inngest.createFunction(
       if (!full?.organizer?.email) return;
 
       const tripUrl = `${config.app.baseUrl}/app/trips/${trip.id}`;
-      const label = formatGeoScoreLabel(result.optimizationScore);
+      const label = formatGeoScoreLabel(result.geoScore);
       const organizerLocale = normalizeEmailLocale(full.organizer.language);
 
       await sendTransactionalEmail({

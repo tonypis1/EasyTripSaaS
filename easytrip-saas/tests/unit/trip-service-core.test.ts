@@ -92,8 +92,8 @@ describe("TripService.createTrip", () => {
     ).rejects.toMatchObject({ code: "INVALID_DATE_RANGE", statusCode: 400 });
   });
 
-  it("crea il trip per l'utente corrente", async () => {
-    const create = vi.fn().mockResolvedValue({
+  function createdTrip() {
+    return {
       id: "trip1",
       status: "pending",
       destination: "Roma",
@@ -102,21 +102,97 @@ describe("TripService.createTrip", () => {
       startDate: new Date("2026-06-01"),
       endDate: new Date("2026-06-05"),
       accessExpiresAt: new Date("2026-06-06"),
-    });
-    const { service } = makeService({ create });
+    };
+  }
 
-    const result = await service.createTrip({
+  /** Input come esce da `createTripSchema` (elenchi vuoti di default). */
+  function input(overrides: Record<string, unknown> = {}) {
+    return {
       destination: "Roma",
       startDate: new Date("2026-06-01"),
       endDate: new Date("2026-06-05"),
       tripType: "solo",
       budgetLevel: "moderate",
-    } as never);
+      interests: [],
+      pace: null,
+      mobilityNeeds: [],
+      dietaryRestrictions: [],
+      ...overrides,
+    } as never;
+  }
+
+  it("lancia 400 TRIP_TOO_LONG oltre i 30 giorni (estremi inclusi), senza creare nulla", async () => {
+    const create = vi.fn().mockResolvedValue(createdTrip());
+    const { service } = makeService({ create });
+
+    await expect(
+      service.createTrip(input({ endDate: new Date("2026-07-01") })), // 31 giorni
+    ).rejects.toMatchObject({ code: "TRIP_TOO_LONG", statusCode: 400 });
+    expect(create).not.toHaveBeenCalled();
+
+    await service.createTrip(input({ endDate: new Date("2026-06-30") })); // 30 giorni
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it("crea il trip per l'utente corrente (senza scelte sensibili: nessun consenso registrato)", async () => {
+    const create = vi.fn().mockResolvedValue(createdTrip());
+    const { service } = makeService({ create });
+
+    const result = await service.createTrip(input());
 
     expect(result.id).toBe("trip1");
     expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({ organizerId: "user1", destination: "Roma" }),
+      expect.objectContaining({
+        organizerId: "user1",
+        destination: "Roma",
+        sensitivePrefsConsentAt: null,
+      }),
     );
+  });
+
+  it("400 SENSITIVE_CONSENT_REQUIRED con restrizioni alimentari senza consenso esplicito (nessun viaggio creato)", async () => {
+    const create = vi.fn();
+    const { service } = makeService({ create });
+
+    await expect(
+      service.createTrip(input({ dietaryRestrictions: ["halal"] })),
+    ).rejects.toMatchObject({
+      code: "SENSITIVE_CONSENT_REQUIRED",
+      statusCode: 400,
+    });
+    await expect(
+      service.createTrip(
+        input({ mobilityNeeds: ["wheelchair"], sensitiveDataConsent: false }),
+      ),
+    ).rejects.toMatchObject({ code: "SENSITIVE_CONSENT_REQUIRED" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("con il consenso esplicito registra la data del consenso", async () => {
+    const create = vi.fn().mockResolvedValue(createdTrip());
+    const { service } = makeService({ create });
+
+    await service.createTrip(
+      input({
+        dietaryRestrictions: ["gluten_free"],
+        sensitiveDataConsent: true,
+      }),
+    );
+
+    expect(create.mock.calls[0][0].sensitivePrefsConsentAt).toBeInstanceOf(
+      Date,
+    );
+  });
+
+  it("il passeggino e gli interessi non richiedono consenso", async () => {
+    const create = vi.fn().mockResolvedValue(createdTrip());
+    const { service } = makeService({ create });
+
+    await service.createTrip(
+      input({ mobilityNeeds: ["stroller"], interests: ["history"] }),
+    );
+
+    expect(create.mock.calls[0][0].sensitivePrefsConsentAt).toBeNull();
   });
 });
 
@@ -194,10 +270,41 @@ describe("TripService.requestItineraryGeneration", () => {
 });
 
 describe("TripService.updatePreferences", () => {
-  it("lancia 404 se il trip non viene aggiornato (non trovato/non organizzatore)", async () => {
+  const consentedAt = new Date("2026-09-01T10:00:00Z");
+
+  function stored(overrides: Record<string, unknown> = {}) {
+    return {
+      interests: [],
+      pace: null,
+      mobilityNeeds: [],
+      dietaryRestrictions: [],
+      sensitivePrefsConsentAt: null,
+      ...overrides,
+    };
+  }
+
+  function setup(storedPrefs: unknown = stored()) {
+    const updatePreferences = vi.fn().mockResolvedValue({ updated: true });
+    const findPreferencesForOrganizer = vi.fn().mockResolvedValue(storedPrefs);
     const { service } = makeService({
-      updatePreferences: vi.fn().mockResolvedValue({ updated: false }),
+      updatePreferences,
+      findPreferencesForOrganizer,
     });
+    return { service, updatePreferences };
+  }
+
+  it("lancia 404 se il trip non è dell'utente o non esiste (nessuna scrittura)", async () => {
+    const { service, updatePreferences } = setup(null);
+
+    await expect(
+      service.updatePreferences("trip1", { budgetLevel: "premium" }),
+    ).rejects.toMatchObject({ code: "TRIP_NOT_FOUND", statusCode: 404 });
+    expect(updatePreferences).not.toHaveBeenCalled();
+  });
+
+  it("lancia 404 se l'aggiornamento non trova il trip (cancellato nel frattempo)", async () => {
+    const { service, updatePreferences } = setup();
+    updatePreferences.mockResolvedValueOnce({ updated: false });
 
     await expect(
       service.updatePreferences("trip1", { budgetLevel: "premium" }),
@@ -205,8 +312,7 @@ describe("TripService.updatePreferences", () => {
   });
 
   it("aggiorna le preferenze con successo", async () => {
-    const updatePreferences = vi.fn().mockResolvedValue({ updated: true });
-    const { service } = makeService({ updatePreferences });
+    const { service, updatePreferences } = setup();
 
     const result = await service.updatePreferences("trip1", {
       style: "foodie",
@@ -217,7 +323,92 @@ describe("TripService.updatePreferences", () => {
     expect(updatePreferences).toHaveBeenCalledWith("trip1", "user1", {
       style: "foodie",
       budgetLevel: "premium",
+      sensitivePrefsConsentAt: null,
     });
+  });
+
+  it("aggiungere una restrizione alimentare senza consenso: 400, nessuna scrittura", async () => {
+    const { service, updatePreferences } = setup();
+
+    await expect(
+      service.updatePreferences("trip1", {
+        budgetLevel: "moderate",
+        dietaryRestrictions: ["kosher"],
+      }),
+    ).rejects.toMatchObject({ code: "SENSITIVE_CONSENT_REQUIRED" });
+    expect(updatePreferences).not.toHaveBeenCalled();
+  });
+
+  it("con il consenso nella richiesta registra la data", async () => {
+    const { service, updatePreferences } = setup();
+
+    await service.updatePreferences("trip1", {
+      budgetLevel: "moderate",
+      mobilityNeeds: ["limited_walking"],
+      sensitiveDataConsent: true,
+    });
+
+    expect(
+      updatePreferences.mock.calls[0][2].sensitivePrefsConsentAt,
+    ).toBeInstanceOf(Date);
+  });
+
+  it("consenso già dato e campo omesso: si conserva la data originale (anche se si cambia solo il budget)", async () => {
+    const { service, updatePreferences } = setup(
+      stored({
+        dietaryRestrictions: ["vegan"],
+        sensitivePrefsConsentAt: consentedAt,
+      }),
+    );
+
+    await service.updatePreferences("trip1", { budgetLevel: "premium" });
+
+    expect(updatePreferences.mock.calls[0][2].sensitivePrefsConsentAt).toBe(
+      consentedAt,
+    );
+  });
+
+  it("restrizioni salvate senza consenso (righe precedenti): anche cambiare solo il budget richiede il consenso", async () => {
+    const { service } = setup(stored({ dietaryRestrictions: ["halal"] }));
+
+    await expect(
+      service.updatePreferences("trip1", { budgetLevel: "premium" }),
+    ).rejects.toMatchObject({ code: "SENSITIVE_CONSENT_REQUIRED" });
+  });
+
+  it("togliere tutte le scelte sensibili revoca il consenso (data azzerata)", async () => {
+    const { service, updatePreferences } = setup(
+      stored({
+        dietaryRestrictions: ["vegan"],
+        mobilityNeeds: ["stroller"],
+        sensitivePrefsConsentAt: consentedAt,
+      }),
+    );
+
+    await service.updatePreferences("trip1", {
+      budgetLevel: "moderate",
+      dietaryRestrictions: [],
+    });
+
+    expect(
+      updatePreferences.mock.calls[0][2].sensitivePrefsConsentAt,
+    ).toBeNull();
+  });
+
+  it("consenso revocato esplicitamente (false) con scelte sensibili: 400", async () => {
+    const { service } = setup(
+      stored({
+        dietaryRestrictions: ["vegan"],
+        sensitivePrefsConsentAt: consentedAt,
+      }),
+    );
+
+    await expect(
+      service.updatePreferences("trip1", {
+        budgetLevel: "moderate",
+        sensitiveDataConsent: false,
+      }),
+    ).rejects.toMatchObject({ code: "SENSITIVE_CONSENT_REQUIRED" });
   });
 });
 

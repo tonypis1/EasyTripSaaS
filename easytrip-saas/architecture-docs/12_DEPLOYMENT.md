@@ -52,6 +52,37 @@ Altri workflow: `codeql.yml`. Segreti, DNS, post-deploy: [13_CICD_SECRETS_AND_DN
 - Vercel: promuovere deployment precedente.
 - Database: pianificare rollback migrazioni separatamente (non automatico nel repo).
 
+### Migrazione `20260929130000_add_trip_preferences` (Trip: preferenze strutturate)
+
+- Additiva: 4 colonne nuove su `Trip` con default (elenchi vuoti / NULL). Non riscrive la tabella e le righe esistenti risultano subito con elenchi vuoti (verificato inserendo un viaggio prima della migrazione).
+- **Ordine di deploy: applicare la migrazione PRIMA del nuovo codice** (a differenza della migrazione `day_slots_to_jsonb`, qui l'ordine conta). Il codice precedente funziona con lo schema nuovo (crea, legge e aggiorna viaggi normalmente); il codice nuovo su uno schema senza le colonne fallisce su ogni lettura di un viaggio (`The column Trip.interests does not exist`). Verificato con Prisma 6.19.3 e PostgreSQL 16.
+- Rollback: `ALTER TABLE "Trip" DROP COLUMN "interests", DROP COLUMN "pace", DROP COLUMN "mobility_needs", DROP COLUMN "dietary_restrictions";` (elimina le preferenze salvate) e cancellare la riga da `_prisma_migrations`.
+
+### Migrazione `20260929100000_day_slots_to_jsonb` (Day.morning/afternoon/evening/restaurants: testo → jsonb)
+
+- **Non rigenerarla con `prisma migrate dev`**: per questo cambio di tipo Prisma produce `DROP COLUMN` + `ADD COLUMN`, cioè cancella il contenuto di ogni itinerario. La migrazione nel repo converte sul posto (`ALTER COLUMN … TYPE JSONB USING …`).
+- **Prima di applicarla**: backup/snapshot del database. La tabella `Day` viene riscritta con un lock esclusivo per la durata della conversione (righe nell'ordine di poche migliaia: frazioni di secondo).
+- **Ordine di deploy: indifferente** (verificato con Prisma 6.19.3 e PostgreSQL 16). Il codice precedente (campi `String`) legge e scrive le colonne `jsonb` come testo JSON — e ciò che scrive viene salvato come oggetto, non come stringa — e il codice nuovo (campi `Json`) funziona anche sulle vecchie colonne testo. Si può quindi applicare `npx prisma migrate deploy` prima o dopo il deploy Vercel senza finestre di errore. Il codice nuovo tollera inoltre righe ancora salvate come stringa JSON.
+- **Righe anomale**: nessuna blocca la migrazione. `NULL`, stringa vuota e il testo `null` diventano `NULL`; testo che non è JSON valido (o non ammesso da jsonb) viene conservato come stringa JSON con il testo originale — l'app lo tratta come slot assente ma il dato resta ispezionabile (`SELECT id, morning FROM "Day" WHERE jsonb_typeof(morning) = 'string'`).
+- **Rollback dello schema** (solo se necessario; anche il codice precedente funziona con entrambi i tipi):
+
+  ```sql
+  ALTER TABLE "Day"
+    ALTER COLUMN "morning" TYPE TEXT USING "morning"::text,
+    ALTER COLUMN "afternoon" TYPE TEXT USING "afternoon"::text,
+    ALTER COLUMN "evening" TYPE TEXT USING "evening"::text,
+    ALTER COLUMN "restaurants" TYPE TEXT USING "restaurants"::text;
+  ```
+
+  Dopo la conversione inversa il testo è JSON normalizzato da PostgreSQL (chiavi riordinate, spazi dopo `:`), equivalente per il parsing. Poi eliminare la riga della migrazione da `_prisma_migrations` (`DELETE FROM "_prisma_migrations" WHERE migration_name = '20260929100000_day_slots_to_jsonb'`) così che `migrate deploy` non la consideri applicata: `prisma migrate resolve --rolled-back` non funziona su una migrazione riuscita (errore P3012). Le righe conservate come stringa JSON (vedi sopra) tornano come testo tra virgolette: il codice precedente le tratta, come prima, come slot illeggibili.
+
+### Stato migrazioni in produzione (Neon `production`)
+
+- **1 ottobre 2026: produzione allineata a tutte le 12 migrazioni del repo** (fino a `20260929130000_add_trip_preferences`). Prima lo schema era stato creato con `prisma db push` e un `migrate deploy` del 20 maggio aveva lasciato la prima migrazione registrata come fallita (P3009: errore 42710, oggetti già esistenti), bloccando ogni deploy successivo; lo schema reale corrispondeva esattamente alle migrazioni 1-3 (confronto di colonne, indici, vincoli ed enum). Mancavano 4-12, tra cui `add_user_clerk_name_synced_at`, già usata dal codice di `main`.
+- Procedura eseguita, equivalente a `prisma migrate resolve --applied` per 1-3 seguito da `prisma migrate deploy` (registrazioni in `_prisma_migrations` identiche a quelle della CLI, verificate riga per riga): snapshot `pre-migrate-deploy-20261001`, prova completa su un branch Neon copiato dalla produzione, poi un'unica transazione con controllo dello stato iniziale (rifiuta di ripartire) e verifica finale. Dati verificati invariati (stesso hash del contenuto dei giorni prima e dopo la conversione jsonb, stessi conteggi). Stessa operazione sul branch di preview `preview/claude/easytripssaas-competitive-roadmap-x2szj9`.
+- Da qui in avanti `npx prisma migrate deploy` funziona normalmente (P3009 risolto).
+- Lo schema Prisma dichiara il nome dell'indice di `TripVersion(tripId, versionNum)` creato dalla migrazione (`map: "TripVersion_tripId_versionNum_key"`): `prisma migrate diff` tra produzione e schema non mostra differenze.
+
 ## 5. Domini personalizzati
 
 - Configurazione DNS e Vercel Domains (documentazione operativa esterna; aggiornare `APP_BASE_URL`).

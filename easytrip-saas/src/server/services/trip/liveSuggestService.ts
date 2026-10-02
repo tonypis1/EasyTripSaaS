@@ -5,6 +5,7 @@ import {
   SYNC_REQUEST_OPTIONS,
   anthropic,
   toAiUnavailableError,
+  SYNC_OUTPUT_CONFIG,
 } from "@/lib/ai/anthropic";
 import {
   normalizeAiLocale,
@@ -18,6 +19,12 @@ import {
   type LiveSuggestResult,
 } from "@/lib/trip/liveSuggestModel";
 import { AppError } from "@/server/errors/AppError";
+import { generateWithRepair } from "@/lib/ai/repairLoop";
+import { plannedElsewherePromptBlock, slotSummary } from "@/lib/trip/day-slots";
+import {
+  buildPreferencesPromptBlock,
+  preferencesFromTrip,
+} from "@/lib/trip/preferences";
 
 const REASONS: Record<string, string> = {
   closed: "il posto previsto è chiuso o inaccessibile",
@@ -35,15 +42,30 @@ export {
   type LiveSuggestResult,
 } from "@/lib/trip/liveSuggestModel";
 
-function slotSummary(raw: string | null, label: string): string {
-  if (!raw || raw === "{}" || raw === "null") return `${label}: vuoto`;
+/** Traduce gli errori di `parseLiveSuggestModelJson` in AppError con lo status/code corretti per la risposta HTTP. */
+function parseAndMapLiveSuggest(raw: string): LiveSuggestResult {
+  const rawText = extractJsonText(raw);
   try {
-    const o = JSON.parse(raw) as Record<string, unknown>;
-    return `${label}: "${o.title ?? "?"}" — ${o.place ?? "?"} (${o.startTime ?? "?"}–${o.endTime ?? "?"})`;
-  } catch {
-    return `${label}: dati non leggibili`;
+    return parseLiveSuggestModelJson(rawText);
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e.message === "LIVE_SUGGEST_JSON_PARSE") {
+        throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
+      }
+      if (e.message.startsWith("Schema live suggest:")) {
+        throw new AppError(
+          `Schema non conforme: ${e.message.replace(/^Schema live suggest:\s*/, "")}`,
+          502,
+          "AI_SCHEMA",
+        );
+      }
+    }
+    throw e;
   }
 }
+
+/** Un solo tentativo di riparazione: sufficiente per gli errori di schema più comuni, e resta sotto il maxDuration della route (v. live-suggest/route.ts). */
+const MAX_ATTEMPTS = 2;
 
 function buildSystemPrompt(locale: SupportedAiLocale): string {
   return [
@@ -68,6 +90,10 @@ function buildUserPrompt(args: {
   allSlotsSummary: string;
   budgetLevel: string;
   style: string | null;
+  /** Preferenze strutturate del viaggio (mobilità, ritmo, restrizioni…) o null. */
+  preferencesBlock: string | null;
+  /** Luoghi già in programma negli altri giorni, o null. */
+  plannedElsewhereBlock: string | null;
   timeOfDay: string;
   locale: SupportedAiLocale;
 }): string {
@@ -80,14 +106,14 @@ Motivo della richiesta: ${args.reasonDetail}
 
 PROGRAMMA ORIGINALE DEL GIORNO:
 ${args.allSlotsSummary}
-
+${args.plannedElsewhereBlock ? `\n${args.plannedElsewhereBlock}\n` : ""}
 SLOT PROBLEMATICO (se applicabile):
 ${args.currentSlotSummary}
 
 PREFERENZE UTENTE:
 - Budget: ${args.budgetLevel}
 - Stile: ${args.style ?? "non specificato"}
-
+${args.preferencesBlock ? `\n${args.preferencesBlock}\n` : ""}
 OUTPUT ATTESO
 Rispondi con un unico oggetto JSON:
 {
@@ -140,6 +166,7 @@ export class LiveSuggestService {
     lng: number;
     reason: string;
     currentSlot: string | null;
+    localHour: number;
   }): Promise<LiveSuggestResult> {
     const day = await prisma.day.findFirst({
       where: { id: input.dayId },
@@ -186,8 +213,18 @@ export class LiveSuggestService {
         )
       : "Nessuno slot specifico — l'utente cerca suggerimenti generici";
 
-    const hour = new Date().getUTCHours() + 1;
-    const timeOfDay = hour < 12 ? "mattina" : hour < 17 ? "pomeriggio" : "sera";
+    const timeOfDay =
+      input.localHour < 12
+        ? "mattina"
+        : input.localHour < 17
+          ? "pomeriggio"
+          : "sera";
+
+    const otherDays = await prisma.day.findMany({
+      where: { tripVersionId: day.tripVersionId, id: { not: day.id } },
+      select: { morning: true, afternoon: true, evening: true },
+      orderBy: { dayNumber: "asc" },
+    });
 
     const locale = normalizeAiLocale(trip.organizer?.language);
     const prompt = buildUserPrompt({
@@ -201,47 +238,43 @@ export class LiveSuggestService {
       allSlotsSummary,
       budgetLevel: trip.budgetLevel ?? "moderate",
       style: trip.style,
+      preferencesBlock: buildPreferencesPromptBlock(
+        preferencesFromTrip(trip),
+        "slot",
+      ),
+      plannedElsewhereBlock: plannedElsewherePromptBlock(otherDays),
       timeOfDay,
       locale,
     });
 
-    let response;
-    try {
-      response = await anthropic.messages.create(
-        {
-          model: ANTHROPIC_MODEL,
-          max_tokens: 3000,
-          system: buildSystemPrompt(locale),
-          messages: [{ role: "user", content: prompt }],
-        },
-        SYNC_REQUEST_OPTIONS,
-      );
-    } catch (error) {
-      throw toAiUnavailableError(error);
-    }
+    return generateWithRepair({
+      maxAttempts: MAX_ATTEMPTS,
+      parse: parseAndMapLiveSuggest,
+      callModel: async (repairSuffix) => {
+        const content = repairSuffix ? `${prompt}\n\n${repairSuffix}` : prompt;
 
-    const textBlock = response.content.find((c) => c.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
-    }
-
-    const rawText = extractJsonText(textBlock.text);
-    try {
-      return parseLiveSuggestModelJson(rawText);
-    } catch (e) {
-      if (e instanceof Error) {
-        if (e.message === "LIVE_SUGGEST_JSON_PARSE") {
-          throw new AppError("JSON non valido dal modello", 502, "AI_PARSE");
-        }
-        if (e.message.startsWith("Schema live suggest:")) {
-          throw new AppError(
-            `Schema non conforme: ${e.message.replace(/^Schema live suggest:\s*/, "")}`,
-            502,
-            "AI_SCHEMA",
+        let response;
+        try {
+          response = await anthropic.messages.create(
+            {
+              model: ANTHROPIC_MODEL,
+              max_tokens: 3000,
+              output_config: SYNC_OUTPUT_CONFIG,
+              system: buildSystemPrompt(locale),
+              messages: [{ role: "user", content }],
+            },
+            SYNC_REQUEST_OPTIONS,
           );
+        } catch (error) {
+          throw toAiUnavailableError(error);
         }
-      }
-      throw e;
-    }
+
+        const textBlock = response.content.find((c) => c.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          throw new AppError("Risposta AI non valida", 502, "AI_ERROR");
+        }
+        return textBlock.text;
+      },
+    });
   }
 }

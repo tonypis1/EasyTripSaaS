@@ -65,6 +65,7 @@ Funzioni registrate:
 | `preTripReminders`      | `pre-trip-reminders.ts`                           | Pre-viaggio                                          |
 | `postTripFollowup`      | `post-trip-followup.ts`                           | Post-viaggio                                         |
 | `dataRetentionPurge`    | `data-retention.ts`                               | Retention versioni / soft-delete                     |
+| `slotProposalExpiry`    | `slot-proposal-expiry.ts`                         | Cron orario: chiude le votazioni slot scadute        |
 
 ## 4. Versioning itinerari
 

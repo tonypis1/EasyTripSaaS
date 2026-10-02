@@ -25,7 +25,7 @@ export class UserDataService {
           include: {
             versions: { include: { days: true } },
             members: { include: { user: true } },
-            expenses: true,
+            expenses: { include: { participants: true } },
             payments: true,
           },
         },
@@ -114,6 +114,10 @@ export class UserDataService {
           ...e,
           amount: serializeDecimal(e.amount),
           createdAt: e.createdAt.toISOString(),
+          participants: e.participants.map((p) => ({
+            ...p,
+            weight: serializeDecimal(p.weight),
+          })),
         })),
         payments: t.payments.map((p) => ({
           ...p,

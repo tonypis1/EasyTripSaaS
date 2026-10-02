@@ -79,7 +79,11 @@ paths:
         "201":
           description: Trip creato
         "400":
-          description: Validazione fallita
+          description: |
+            Validazione fallita (`VALIDATION_ERROR`), data di fine prima
+            dell'inizio (`INVALID_DATE_RANGE`), viaggio oltre 30 giorni estremi
+            inclusi (`TRIP_TOO_LONG`), preferenze sensibili senza consenso
+            (`SENSITIVE_CONSENT_REQUIRED`).
         "401":
           description: Non autenticato
 
@@ -150,7 +154,7 @@ paths:
         "200":
           description: Aggiornato
         "400":
-          description: Validazione fallita
+          description: Validazione fallita (`VALIDATION_ERROR`) o preferenze sensibili senza consenso (`SENSITIVE_CONSENT_REQUIRED`)
         "401":
           description: Non autenticato
 
@@ -267,6 +271,97 @@ paths:
           description: Risposta AI non valida o provider temporaneamente non disponibile
         "503":
           description: Il servizio AI non risponde (timeout)
+
+  /api/trips/{tripId}/slot-proposals/{proposalId}/open:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [trips]
+      summary: Apre al voto la bozza di uno slot
+      description: |
+        Solo l'organizzatore. Idempotente se già aperta; richiede almeno 2 membri. La votazione scade dopo 24h.
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: Proposta aperta
+        "400":
+          description: Validazione fallita
+        "403":
+          description: Non sei membro / non sei l'organizzatore
+        "404":
+          description: Proposta non trovata
+        "409":
+          description: La proposta non è nello stato richiesto (già chiusa / non aperta)
+
+  /api/trips/{tripId}/slot-proposals/{proposalId}/vote:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [trips]
+      summary: Vota (o cambia voto) su una proposta di slot
+      description: |
+        Un voto per membro. Se il voto raggiunge la maggioranza o completa i votanti, la votazione si chiude e l'opzione vincente viene applicata allo slot.
+      security: [{ clerkSession: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [optionIndex]
+              properties:
+                optionIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 3
+                  description: 0 = mantieni l'attuale, 1..3 = alternativa
+      responses:
+        "200":
+          description: "Esito del voto: resolved, winnerIndex e proposta aggiornata"
+        "400":
+          description: Validazione fallita
+        "403":
+          description: Non sei membro / non sei l'organizzatore
+        "404":
+          description: Proposta non trovata
+        "409":
+          description: La proposta non è nello stato richiesto (già chiusa / non aperta)
+
+  /api/trips/{tripId}/slot-proposals/{proposalId}/close:
+    parameters:
+      - $ref: "#/components/parameters/tripId"
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [trips]
+      summary: Chiude subito la votazione
+      description: |
+        Solo l'organizzatore. Vince l'opzione in testa; a parità o senza voti resta lo slot attuale.
+      security: [{ clerkSession: [] }]
+      responses:
+        "200":
+          description: "Esito della chiusura: resolved e winnerIndex"
+        "400":
+          description: Validazione fallita
+        "403":
+          description: Non sei membro / non sei l'organizzatore
+        "404":
+          description: Proposta non trovata
+        "409":
+          description: La proposta non è nello stato richiesto (già chiusa / non aperta)
 
   /api/trips/{tripId}/expenses:
     parameters:
@@ -574,6 +669,7 @@ components:
         endDate:
           type: string
           format: date-time
+          description: Al massimo 29 giorni dopo `startDate` (viaggio di 30 giorni, estremi inclusi).
         tripType:
           type: string
           enum: [solo, coppia, gruppo]
@@ -591,6 +687,33 @@ components:
           maximum: 30
           default: 0
           description: Add-on LocalPass — numero di città coperte (prezzo in checkout)
+        interests:
+          type: array
+          maxItems: 6
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/InterestKey"
+          description: Interessi scelti (facoltativo, max 6). Salvati in ordine canonico e senza duplicati.
+        pace:
+          allOf:
+            - $ref: "#/components/schemas/PaceKey"
+          nullable: true
+          description: Ritmo del viaggio (facoltativo).
+        mobilityNeeds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/MobilityKey"
+          description: Esigenze di mobilità (facoltativo).
+        dietaryRestrictions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DietaryKey"
+          description: Restrizioni alimentari e allergie (facoltativo). Dato potenzialmente sensibile; non inviato ad analytics né nei log.
+        sensitiveDataConsent:
+          type: boolean
+          description: Consenso esplicito (art. 9 GDPR), obbligatorio se ci sono restrizioni alimentari o esigenze di mobilità `limited_walking`, `avoid_stairs`, `wheelchair`.
 
     TripListItem:
       type: object
@@ -666,6 +789,7 @@ components:
 
     UpdatePreferencesBody:
       type: object
+      required: [budgetLevel]
       properties:
         style:
           type: string
@@ -673,6 +797,68 @@ components:
         budgetLevel:
           type: string
           enum: [economy, moderate, premium]
+        interests:
+          type: array
+          maxItems: 6
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/InterestKey"
+          description: Interessi scelti (max 6). Campo omesso = invariato; `[]` azzera.
+        pace:
+          allOf:
+            - $ref: "#/components/schemas/PaceKey"
+          nullable: true
+          description: Ritmo del viaggio. Omesso = invariato; `null` azzera.
+        mobilityNeeds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/MobilityKey"
+          description: Esigenze di mobilità. Omesso = invariato; `[]` azzera.
+        dietaryRestrictions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DietaryKey"
+          description: Restrizioni alimentari e allergie. Omesso = invariato; `[]` azzera. Dato potenzialmente sensibile; non inviato ad analytics né nei log.
+        sensitiveDataConsent:
+          type: boolean
+          description: Consenso esplicito (art. 9 GDPR) per le scelte sensibili. Omesso = vale il consenso già registrato; `false` lo nega.
+
+    InterestKey:
+      type: string
+      enum:
+        [
+          art_museums,
+          history,
+          food_wine,
+          nature,
+          architecture,
+          nightlife,
+          shopping,
+          local_life,
+          adventure,
+          wellness,
+        ]
+    PaceKey:
+      type: string
+      enum: [relaxed, balanced, packed]
+    MobilityKey:
+      type: string
+      enum: [limited_walking, avoid_stairs, wheelchair, stroller]
+    DietaryKey:
+      type: string
+      enum:
+        [
+          vegetarian,
+          vegan,
+          gluten_free,
+          lactose_free,
+          halal,
+          kosher,
+          nut_allergy,
+          shellfish_allergy,
+        ]
 
     ReplaceSlotBody:
       type: object

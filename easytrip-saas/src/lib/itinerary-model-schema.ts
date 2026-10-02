@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { httpUrlSchema } from "@/lib/safe-url";
+import { DIET_FIT_KEYS } from "@/lib/trip/preferences";
 
 /** Claude a volte avvolge il JSON in ```json ... ``` */
 export function extractJsonText(raw: string): string {
@@ -19,6 +20,12 @@ export const RestaurantEntrySchema = z.object({
   distance: z.string().min(1),
   reservationNeeded: z.boolean(),
   reservationTip: z.string().default(""),
+  /**
+   * Restrizioni alimentari dell'utente che il locale soddisfa davvero (auto-
+   * dichiarate dal modello, poi verificate contro le restrizioni richieste).
+   * Vuoto se l'utente non ne ha indicate o nessuna è soddisfatta.
+   */
+  dietaryFit: z.array(z.enum(DIET_FIT_KEYS)).default([]),
 });
 
 export const DaySlotSchema = z.object({
@@ -63,6 +70,11 @@ export const DayPlanExtendedSchema = z.object({
 });
 
 export const ModelResponseSchema = z.object({
+  /**
+   * Auto-valutazione del modello: NON è il GeoScore mostrato all'utente (quello
+   * si calcola dalle coordinate, vedi `geo-optimization.ts`). Resta come ripiego
+   * quando le coordinate non bastano e come termine di confronto nei log.
+   */
   optimizationScore: z.coerce.number().min(1).max(10),
   days: z.array(DayPlanExtendedSchema),
 });
@@ -71,9 +83,15 @@ export type DaySlot = z.infer<typeof DaySlotSchema>;
 export type RestaurantEntry = z.infer<typeof RestaurantEntrySchema>;
 export type DayPlanExtended = z.infer<typeof DayPlanExtendedSchema>;
 
+/**
+ * Valida la risposta del modello per i giorni `firstDay`..`firstDay + numDays - 1`
+ * del viaggio (un blocco della generazione a blocchi; di default tutto il
+ * viaggio da 1) e li restituisce in ordine.
+ */
 export function parseAndValidateModelJson(
   raw: string,
   numDays: number,
+  firstDay = 1,
 ): { optimizationScore: number; days: DayPlanExtended[] } {
   const text = extractJsonText(raw);
   let parsed: unknown;
@@ -102,12 +120,15 @@ export function parseAndValidateModelJson(
 
   const byNum = new Map<number, DayPlanExtended>();
   for (const d of days) byNum.set(d.dayNumber, d);
-  for (let i = 1; i <= numDays; i++) {
+  for (let i = firstDay; i < firstDay + numDays; i++) {
     if (!byNum.has(i)) throw new Error(`Manca dayNumber=${i}`);
   }
 
   return {
     optimizationScore,
-    days: Array.from({ length: numDays }, (_, idx) => byNum.get(idx + 1)!),
+    days: Array.from(
+      { length: numDays },
+      (_, idx) => byNum.get(firstDay + idx)!,
+    ),
   };
 }

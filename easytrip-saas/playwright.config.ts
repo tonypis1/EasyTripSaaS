@@ -49,6 +49,13 @@ const devServerEnv = {
     "ANTHROPIC_API_KEY",
     "sk-ant-api03-e2e-smoke-not-used-0000000000000000",
   ),
+  // Con una chiave PostHog il banner dei cookie compare (senza, non ci sono
+  // cookie di analisi da chiedere). Nei test PostHog non parte mai senza
+  // "Accetta", e i test che accettano bloccano le richieste verso PostHog.
+  NEXT_PUBLIC_POSTHOG_KEY: firstNonEmpty(
+    "NEXT_PUBLIC_POSTHOG_KEY",
+    "phc_e2e_placeholder_never_sent",
+  ),
 } satisfies NodeJS.ProcessEnv;
 
 export default defineConfig({

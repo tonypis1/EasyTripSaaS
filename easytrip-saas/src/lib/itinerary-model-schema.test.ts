@@ -96,6 +96,19 @@ describe("parseAndValidateModelJson", () => {
     expect(r.days[1].dayNumber).toBe(2);
   });
 
+  it("blocco della generazione a blocchi: valida e ordina i giorni da firstDay", () => {
+    const obj = { optimizationScore: 7, days: [day(6), day(5), day(7)] };
+    const r = parseAndValidateModelJson(JSON.stringify(obj), 3, 5);
+    expect(r.days.map((d) => d.dayNumber)).toEqual([5, 6, 7]);
+  });
+
+  it("blocco con dayNumber ricominciati da 1: rifiutato (manca il primo giorno del blocco)", () => {
+    const obj = { optimizationScore: 7, days: [day(1), day(2), day(3)] };
+    expect(() => parseAndValidateModelJson(JSON.stringify(obj), 3, 5)).toThrow(
+      /Manca dayNumber=5/,
+    );
+  });
+
   it("throws on invalid JSON", () => {
     expect(() => parseAndValidateModelJson("not json", 1)).toThrow(
       /JSON non valido/,

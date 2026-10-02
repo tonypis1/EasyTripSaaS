@@ -354,6 +354,75 @@
           "completed": "Completato"
         }
       },
+      "preferences": {
+        "title": "Personalizza il viaggio",
+        "optional": "facoltativo",
+        "hint": "Aiutano l'AI a creare un itinerario su misura. Puoi cambiarle in qualsiasi momento.",
+        "selectedCount": "{count} scelte",
+        "interests": {
+          "label": "Interessi",
+          "hint": "Fino a {max}",
+          "options": {
+            "art_museums": "Arte e musei",
+            "history": "Storia",
+            "food_wine": "Cibo e vino",
+            "nature": "Natura",
+            "architecture": "Architettura",
+            "nightlife": "Vita notturna",
+            "shopping": "Shopping",
+            "local_life": "Vita locale",
+            "adventure": "Avventura e sport",
+            "wellness": "Relax e benessere"
+          }
+        },
+        "pace": {
+          "label": "Ritmo",
+          "options": {
+            "relaxed": "Rilassato",
+            "balanced": "Equilibrato",
+            "packed": "Intenso"
+          },
+          "hints": {
+            "relaxed": "Pochi impegni, tanto tempo libero",
+            "balanced": "Un po' di tutto",
+            "packed": "Più tappe possibili"
+          }
+        },
+        "mobility": {
+          "label": "Mobilità",
+          "options": {
+            "limited_walking": "Cammino poco",
+            "avoid_stairs": "Niente scale",
+            "wheelchair": "Sedia a rotelle",
+            "stroller": "Passeggino"
+          }
+        },
+        "dietary": {
+          "label": "Esigenze alimentari",
+          "options": {
+            "vegetarian": "Vegetariano",
+            "vegan": "Vegano",
+            "gluten_free": "Senza glutine",
+            "lactose_free": "Senza lattosio",
+            "halal": "Halal",
+            "kosher": "Kosher",
+            "nut_allergy": "Allergia frutta a guscio",
+            "shellfish_allergy": "Allergia crostacei e molluschi"
+          },
+          "privacy": "Facoltative: le usiamo solo per scegliere i ristoranti e non le condividiamo con strumenti di analisi.",
+          "allergyDisclaimer": "L'AI non può garantire l'assenza di allergeni: conferma sempre con il locale."
+        },
+        "consent": {
+          "label": "Acconsento al trattamento di queste informazioni, che possono rivelare dati sulla salute o convinzioni religiose, solo per costruire il mio itinerario (<link>informativa privacy</link>).",
+          "hint": "Puoi revocarlo in ogni momento togliendo queste preferenze.",
+          "required": "Per salvare esigenze alimentari o di mobilità serve il tuo consenso: spunta la casella."
+        },
+        "restaurant": {
+          "fit": "Adatto: {diets}",
+          "unverified": "Da verificare: {diets}",
+          "allergyNotice": "Hai indicato un'allergia ({allergies}): conferma sempre con il locale prima di ordinare."
+        }
+      },
       "create": {
         "title": "Nuovo viaggio",
         "subtitle": "Dopo la creazione potrai pagare e avviare la generazione AI dell'itinerario.",
@@ -383,6 +452,7 @@
         "submit": "Crea viaggio",
         "submitting": "Creazione…",
         "errorGeneric": "Impossibile creare il viaggio",
+        "errorTooLong": "Un viaggio può durare al massimo {max} giorni.",
         "errorNetwork": "Errore di rete. Riprova."
       },
       "shared": {
@@ -431,8 +501,8 @@
           "inline": "Generazione in corso…",
           "title": "Stiamo creando il tuo itinerario",
           "titleRegen": "Stiamo rigenerando il tuo itinerario",
-          "description": "Ci vogliono di solito 1–2 minuti. Puoi attendere su questa pagina o tornare più tardi: aggiorneremo automaticamente quando sarà pronto.",
-          "descriptionRegen": "Stiamo preparando una nuova versione del viaggio. Di solito ci vogliono 1–2 minuti: la pagina si aggiornerà da sola.",
+          "description": "Per questo viaggio ci vogliono circa {minutes, plural, one {# minuto} other {# minuti}}. Puoi attendere su questa pagina o tornare più tardi: aggiorneremo automaticamente quando sarà pronto.",
+          "descriptionRegen": "Stiamo preparando una nuova versione del viaggio. Ci vogliono circa {minutes, plural, one {# minuto} other {# minuti}}: la pagina si aggiornerà da sola.",
           "progressLabel": "Progresso stimato",
           "refreshNow": "Aggiorna ora",
           "steps": {
@@ -482,6 +552,12 @@
           "preparing": "Preparazione card in corso…",
           "errorGeneric": "Impossibile condividere la card. Riprova."
         },
+        "calendarExport": {
+          "buttonLabel": "Esporta calendario (.ics)",
+          "preparing": "Preparazione file calendario…",
+          "downloadDone": "Calendario scaricato!",
+          "errorGeneric": "Impossibile esportare il calendario. Riprova."
+        },
         "expenses": {
           "title": "Split spese",
           "subtitle": "Registra le spese e scopri chi deve cosa a chi"
@@ -495,6 +571,33 @@
           "moderate": "Standard",
           "premium": "Premium"
         },
+        "geo": {
+          "detailsSummary": "Come viene calcolato il GeoScore",
+          "totalKm": "Spostamenti tra le tappe: {km} km in totale",
+          "avoidableKm": "Risparmiabili riordinando le tappe: {km} km",
+          "daysAnalyzed": "Giorni analizzati: {scored} su {total}",
+          "method": "Calcolato dalle coordinate delle tappe (distanze in linea d'aria), non stimato dall'AI.",
+          "dayRoute": "{km} km tra le tappe",
+          "dayWalk": "≈ {min} min a piedi",
+          "betterOrder": "Ordine più efficiente: {order} (−{km} km)"
+        },
+        "slotVote": {
+          "title": "Votazione del gruppo",
+          "progress": "{voted} di {total} hanno votato",
+          "closesIn": "si chiude tra {hours} h",
+          "closesSoon": "sta per chiudersi",
+          "keepCurrent": "Mantieni l'attuale",
+          "yourVote": "Il tuo voto",
+          "votes": "{count, plural, one {# voto} other {# voti}}",
+          "closeNow": "Chiudi ora",
+          "closeHint": "Applica subito l'opzione in testa (a parità resta l'attuale).",
+          "errorGeneric": "Voto non registrato. Riprova.",
+          "opened": "Votazione aperta: il gruppo può scegliere tra lo slot attuale e le alternative.",
+          "closedKept": "Votazione conclusa: il gruppo mantiene lo slot attuale.",
+          "closedApplied": "Votazione conclusa: applicata l'alternativa scelta dal gruppo.",
+          "proposeButton": "Fai votare il gruppo",
+          "proposeHint": "Il gruppo sceglie tra lo slot attuale e le alternative. Si chiude con una maggioranza, quando hanno votato tutti o dopo 24 ore."
+        },
         "slot": {
           "morning": "Mattina",
           "afternoon": "Pomeriggio",
@@ -502,7 +605,9 @@
           "morningShort": "M",
           "afternoonShort": "P",
           "eveningShort": "S",
-          "changePrefix": "Cambia"
+          "changePrefix": "Cambia",
+          "addToGoogleCalendar": "Aggiungi a Google Calendar",
+          "unverifiedLink": "Link esterno non verificato"
         },
         "errors": {
           "generic": "Operazione non riuscita",
@@ -691,6 +796,22 @@
         "groupBalance": "Bilancio del gruppo",
         "paidTotal": "Pagato: €{amount}",
         "whoOwesWho": "Chi deve cosa a chi",
+        "splitLabel": "Divisione",
+        "splitAll": "Tra tutti (equa)",
+        "splitCustom": "Personalizza",
+        "splitCustomHint": "Scegli chi partecipa e assegna le quote: chi ha 2 quote paga il doppio di chi ne ha 1.",
+        "splitWeightLabel": "Quote",
+        "splitNeedOne": "Seleziona almeno un partecipante con una quota valida (0,01–100).",
+        "splitPreviewTitle": "Anteprima ripartizione",
+        "splitAmong": "Diviso tra {names}",
+        "budgetTitle": "Budget indicativo",
+        "budgetSpent": "Speso €{spent} su ~€{budget}",
+        "budgetHint": "Fascia {level} · {people} persone · {days} giorni. Stima orientativa, non un limite.",
+        "budgetOver": "Sopra il budget indicativo",
+        "budgetDetailToggle": "Dettaglio budget",
+        "budgetByCategory": "Per categoria",
+        "budgetByDay": "Per giorno",
+        "budgetNoDay": "Senza giorno",
         "categories": {
           "cibo": "Cibo",
           "trasporti": "Trasporti",
@@ -758,5 +879,297 @@
     "joinCta": "Unisciti al viaggio",
     "joining": "Accesso in corso...",
     "footerNote": "Avrai accesso in sola lettura all'itinerario e potrai partecipare allo split delle spese."
+  },
+  "legal": {
+    "privacyLink": "Informativa privacy",
+    "supportChat": "Chat di assistenza",
+    "cookieBanner": {
+      "title": "Cookie di analisi",
+      "body": "Con il tuo consenso usiamo cookie di analisi (PostHog, server nell'UE) per capire come migliorare EasyTrip. Senza consenso usiamo solo i cookie tecnici necessari al servizio. Dettagli nell’<link>informativa privacy</link>.",
+      "accept": "Accetta",
+      "reject": "Rifiuta",
+      "close": "Chiudi e rifiuta",
+      "preferences": "Preferenze cookie"
+    },
+    "privacy": {
+      "metaTitle": "Informativa privacy — EasyTrip",
+      "metaDescription": "Quali dati personali tratta EasyTrip, perché, per quanto tempo e come esercitare i tuoi diritti.",
+      "title": "Informativa privacy",
+      "updated": "Ultimo aggiornamento: 1 ottobre 2026",
+      "intro": "Questa informativa spiega quali dati personali tratta EasyTrip (easytripsaas.com), perché, per quanto tempo e quali sono i tuoi diritti, ai sensi degli artt. 13 e 14 del Regolamento UE 2016/679 (GDPR).",
+      "languageNote": "In caso di differenze tra le versioni linguistiche prevale quella italiana.",
+      "controller": {
+        "heading": "Titolare del trattamento",
+        "body": "Titolare del trattamento è {company}, con sede in {address}, P.IVA {vat}.",
+        "contact": "Per qualsiasi richiesta sulla privacy puoi scrivere a <email>{address}</email>.",
+        "missing": "I dati identificativi del titolare e l'indirizzo per le richieste sulla privacy sono in corso di pubblicazione."
+      },
+      "data": {
+        "heading": "Quali dati trattiamo, perché e su quale base",
+        "columns": {
+          "data": "Dati",
+          "purpose": "Perché li usiamo",
+          "basis": "Base giuridica"
+        },
+        "rows": [
+          {
+            "data": "Account: email, nome, lingua preferita",
+            "purpose": "Creare l'account e farti accedere",
+            "basis": "Esecuzione del contratto (art. 6.1.b)"
+          },
+          {
+            "data": "Viaggio: destinazione, date, tipo di viaggio, budget, stile scritto da te",
+            "purpose": "Generare e mostrare l'itinerario",
+            "basis": "Esecuzione del contratto"
+          },
+          {
+            "data": "Preferenze: interessi, ritmo, passeggino",
+            "purpose": "Adattare l'itinerario",
+            "basis": "Esecuzione del contratto"
+          },
+          {
+            "data": "Restrizioni alimentari ed esigenze di mobilità legate alla salute",
+            "purpose": "Scegliere ristoranti e tappe adatti",
+            "basis": "Consenso esplicito (art. 9.2.a), vedi sotto"
+          },
+          {
+            "data": "Gruppo: membri del viaggio, spese condivise, voti sulle alternative",
+            "purpose": "Dividere le spese e decidere insieme",
+            "basis": "Esecuzione del contratto"
+          },
+          {
+            "data": "Pagamenti: importi, stato, identificativo cliente Stripe",
+            "purpose": "Incassare, rimborsare, adempiere agli obblighi fiscali",
+            "basis": "Esecuzione del contratto; obbligo legale (art. 6.1.c)"
+          },
+          {
+            "data": "Posizione approssimativa (circa 110 m), solo quando chiedi un'alternativa o un suggerimento sul momento",
+            "purpose": "Proporre luoghi vicini a te",
+            "basis": "Esecuzione del contratto. La posizione non viene salvata"
+          },
+          {
+            "data": "Email di servizio; email promozionali solo se le attivi",
+            "purpose": "Avvisi su pagamenti e viaggi; promemoria e offerte",
+            "basis": "Esecuzione del contratto; consenso (Account → Privacy)"
+          },
+          {
+            "data": "Messaggi all'assistenza (chat o richieste di supporto)",
+            "purpose": "Rispondere alle tue richieste",
+            "basis": "Esecuzione del contratto"
+          },
+          {
+            "data": "Eventi d'uso e pagine visitate, solo se accetti i cookie di analisi",
+            "purpose": "Capire come migliorare il servizio",
+            "basis": "Consenso (art. 6.1.a)"
+          },
+          {
+            "data": "Dati tecnici: indirizzo IP, log, contatori anti-abuso",
+            "purpose": "Sicurezza e prevenzione degli abusi",
+            "basis": "Legittimo interesse (art. 6.1.f)"
+          }
+        ],
+        "partners": "I link ai partner (ad esempio per prenotare) portano su siti che trattano i tuoi dati come titolari autonomi: EasyTrip registra solo il clic.",
+        "ai": "L'itinerario è generato da un sistema di intelligenza artificiale: è un suggerimento, e orari, aperture e ingredienti vanno verificati sul posto. Non prendiamo decisioni automatizzate che producano effetti giuridici su di te."
+      },
+      "preferences": {
+        "heading": "Preferenze di viaggio e dati particolari",
+        "paragraphs": [
+          {
+            "title": "Facoltative.",
+            "text": "Le preferenze servono solo a costruire il tuo itinerario: senza, il viaggio funziona lo stesso."
+          },
+          {
+            "title": "Dati particolari.",
+            "text": "Le restrizioni alimentari (vegetariano, vegano, senza glutine, senza lattosio, halal, kosher, allergie) e le esigenze di mobilità come «cammino poco», «evito le scale» o la sedia a rotelle possono rivelare dati sulla salute o convinzioni religiose: sono categorie particolari di dati (art. 9 GDPR). Le trattiamo solo con il tuo consenso esplicito, che dai spuntando l'apposita casella quando le scegli, e registriamo la data del consenso."
+          },
+          {
+            "title": "Revoca.",
+            "text": "Puoi revocare il consenso in ogni momento togliendo queste preferenze dal viaggio: da quel momento non vengono più usate e la data del consenso viene cancellata."
+          },
+          {
+            "title": "Come le usiamo.",
+            "text": "Vengono inviate al fornitore del modello di intelligenza artificiale insieme ai dati del viaggio, solo per generare l'itinerario, sostituire una tappa o darti un suggerimento sul momento."
+          },
+          {
+            "title": "Limiti.",
+            "text": "La compatibilità di un ristorante con una dieta è indicata dall'intelligenza artificiale e non è garantita: i locali non confermati sono segnalati come «da verificare». Per le allergie non indichiamo mai un locale come sicuro: verifica sempre con il ristorante."
+          },
+          {
+            "title": "Cosa non facciamo.",
+            "text": "Non le inviamo agli strumenti di analisi e non le scriviamo nei log (al più registriamo quante ne hai scelte), e non le usiamo per profilazione o pubblicità. Le vedono l'organizzatore e i membri del viaggio; fanno parte dell'esportazione dei tuoi dati e vengono cancellate con il viaggio."
+          }
+        ]
+      },
+      "cookies": {
+        "heading": "Cookie e memoria del browser",
+        "lead": "Usiamo cookie e memoria locale del browser di tipo tecnico, necessari al funzionamento del servizio, e cookie di analisi solo se li accetti.",
+        "columns": {
+          "name": "Cosa",
+          "purpose": "A cosa serve",
+          "type": "Tipo"
+        },
+        "rows": [
+          {
+            "name": "Accesso (Clerk)",
+            "purpose": "Mantenere la sessione dopo il login",
+            "type": "Tecnico, sempre attivo"
+          },
+          {
+            "name": "Lingua (NEXT_LOCALE)",
+            "purpose": "Ricordare la lingua scelta",
+            "type": "Tecnico, sempre attivo"
+          },
+          {
+            "name": "Codice invito (memoria del browser)",
+            "purpose": "Attribuire il programma inviti quando arrivi da un link",
+            "type": "Tecnico, sempre attivo"
+          },
+          {
+            "name": "Scelta sui cookie (memoria del browser)",
+            "purpose": "Ricordare per 6 mesi se hai accettato o rifiutato i cookie di analisi",
+            "type": "Tecnico, sempre attivo"
+          },
+          {
+            "name": "Analisi (PostHog, server nell'UE)",
+            "purpose": "Statistiche d'uso per migliorare il servizio",
+            "type": "Solo con il tuo consenso"
+          },
+          {
+            "name": "Chat di assistenza (Crisp)",
+            "purpose": "Conversare con l'assistenza",
+            "type": "Solo quando apri la chat"
+          }
+        ],
+        "change": "Puoi cambiare la scelta in ogni momento da «Preferenze cookie», in fondo alla pagina. Le statistiche di prestazione dell'hosting (Vercel) non usano cookie."
+      },
+      "processors": {
+        "heading": "Fornitori e trasferimenti fuori dall'UE",
+        "lead": "Questi fornitori trattano i dati per conto di EasyTrip come responsabili del trattamento (art. 28 GDPR), ciascuno solo per il proprio servizio.",
+        "columns": {
+          "provider": "Fornitore",
+          "service": "Servizio",
+          "data": "Dati che riceve",
+          "location": "Dove"
+        },
+        "rows": [
+          {
+            "provider": "Anthropic",
+            "service": "Modello di intelligenza artificiale (itinerari, sostituzioni, suggerimenti)",
+            "data": "Dati del viaggio, preferenze (comprese quelle particolari, se le hai indicate), posizione approssimativa",
+            "location": "USA"
+          },
+          {
+            "provider": "Vercel",
+            "service": "Hosting dell'app, statistiche di prestazione",
+            "data": "Indirizzo IP, log tecnici",
+            "location": "Funzioni eseguite nell'UE (Parigi); società con sede negli USA"
+          },
+          {
+            "provider": "Neon",
+            "service": "Database",
+            "data": "Dati dell'account e dei viaggi",
+            "location": "UE (Francoforte)"
+          },
+          {
+            "provider": "Clerk",
+            "service": "Registrazione e accesso",
+            "data": "Email, nome, sessioni",
+            "location": "USA"
+          },
+          {
+            "provider": "Stripe",
+            "service": "Pagamenti",
+            "data": "Dati di pagamento (la carta la gestisce solo Stripe)",
+            "location": "UE e USA"
+          },
+          {
+            "provider": "Resend",
+            "service": "Invio delle email",
+            "data": "Indirizzo email, contenuto dei messaggi",
+            "location": "USA"
+          },
+          {
+            "provider": "Inngest",
+            "service": "Processi in background (generazione, promemoria)",
+            "data": "Dati del viaggio, preferenze e itinerario generato, come stato temporaneo dei processi",
+            "location": "USA"
+          },
+          {
+            "provider": "Upstash",
+            "service": "Limiti anti-abuso",
+            "data": "Identificativo utente o indirizzo IP",
+            "location": "UE o USA"
+          },
+          {
+            "provider": "PostHog",
+            "service": "Analisi d'uso, solo con il tuo consenso",
+            "data": "Eventi d'uso, identificativo, indirizzo IP",
+            "location": "UE"
+          },
+          {
+            "provider": "Crisp",
+            "service": "Chat di assistenza, solo quando la apri",
+            "data": "Messaggi, email se la fornisci, indirizzo IP",
+            "location": "UE"
+          },
+          {
+            "provider": "CARTO",
+            "service": "Immagini delle mappe",
+            "data": "Indirizzo IP del tuo dispositivo",
+            "location": "UE, con rete di distribuzione globale"
+          }
+        ],
+        "transfers": "Quando i dati sono trattati fuori dallo Spazio economico europeo, il trasferimento avviene con le garanzie previste dagli artt. 44-49 GDPR: decisione di adeguatezza (EU-US Data Privacy Framework, per i fornitori certificati) o clausole contrattuali tipo della Commissione europea.",
+        "grounding": "La ricerca dei luoghi verificati invia al fornitore di intelligenza artificiale solo il nome della destinazione, mai dati personali."
+      },
+      "retention": {
+        "heading": "Per quanto tempo conserviamo i dati",
+        "columns": {
+          "data": "Dati",
+          "period": "Per quanto tempo"
+        },
+        "rows": [
+          {
+            "data": "Account",
+            "period": "Finché non lo cancelli da Account → Privacy (cancellazione coordinata di database, pagamenti e accesso)"
+          },
+          {
+            "data": "Viaggi, con preferenze e restrizioni",
+            "period": "Finché restano nel tuo account; un viaggio eliminato viene cancellato definitivamente dopo 90 giorni"
+          },
+          {
+            "data": "Versioni precedenti di un itinerario",
+            "period": "365 giorni dalla generazione"
+          },
+          {
+            "data": "Data del consenso alle preferenze particolari",
+            "period": "Finché quelle preferenze restano nel viaggio"
+          },
+          {
+            "data": "Registrazioni dei pagamenti",
+            "period": "10 anni, per gli obblighi fiscali e contabili"
+          },
+          {
+            "data": "Log tecnici",
+            "period": "Per un periodo limitato, secondo le impostazioni dei fornitori di hosting"
+          }
+        ]
+      },
+      "rights": {
+        "heading": "I tuoi diritti",
+        "body": "Puoi chiedere l'accesso ai tuoi dati, la rettifica, la cancellazione, la limitazione e l'opposizione al trattamento, e revocare un consenso in ogni momento, senza effetti sui trattamenti già svolti.",
+        "portability": "La portabilità è immediata: da Account → Privacy puoi esportare i tuoi dati in un file JSON e cancellare l'account.",
+        "contact": "Per tutto il resto scrivi all'indirizzo indicato sopra: rispondiamo entro un mese.",
+        "complaint": "Puoi anche presentare reclamo al Garante per la protezione dei dati personali (www.garanteprivacy.it)."
+      },
+      "age": {
+        "heading": "Età minima",
+        "body": "Il servizio è destinato a persone maggiorenni."
+      },
+      "changes": {
+        "heading": "Modifiche",
+        "body": "Pubblichiamo qui ogni aggiornamento, con la data in alto; per i cambiamenti importanti ti avvisiamo via email."
+      }
+    }
   }
 }

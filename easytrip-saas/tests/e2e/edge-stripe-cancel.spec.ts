@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const authState = process.env.E2E_AUTH_STORAGE_STATE;
 const tripId = process.env.E2E_TRIP_ID;

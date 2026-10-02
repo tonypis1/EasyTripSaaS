@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -11,8 +13,31 @@ import { SYNC_REQUEST_OPTIONS, toAiUnavailableError } from "@/lib/ai/anthropic";
 
 describe("SYNC_REQUEST_OPTIONS", () => {
   it("usa un timeout e un numero di retry bassi, coerenti con una richiesta sincrona user-facing", () => {
-    expect(SYNC_REQUEST_OPTIONS).toEqual({ timeout: 20_000, maxRetries: 1 });
+    expect(SYNC_REQUEST_OPTIONS).toEqual({ timeout: 35_000, maxRetries: 1 });
   });
+
+  it.each(["replace-slot", "live-suggest"])(
+    "il caso peggiore (tentativo + riparazione, ciascuno con timeout + retry) sta nel maxDuration della route %s",
+    (route) => {
+      const source = readFileSync(
+        path.join(
+          process.cwd(),
+          `src/app/api/trips/[tripId]/${route}/route.ts`,
+        ),
+        "utf8",
+      );
+      const maxDurationSeconds = Number(
+        /export const maxDuration = (\d+);/.exec(source)?.[1],
+      );
+      const worstCaseMs =
+        2 *
+        (SYNC_REQUEST_OPTIONS.maxRetries + 1) *
+        SYNC_REQUEST_OPTIONS.timeout;
+
+      expect(maxDurationSeconds).toBeGreaterThan(0);
+      expect(worstCaseMs).toBeLessThan(maxDurationSeconds * 1000);
+    },
+  );
 });
 
 describe("toAiUnavailableError", () => {

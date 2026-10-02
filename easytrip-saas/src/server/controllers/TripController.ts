@@ -131,6 +131,7 @@ export class TripController extends BaseController {
         lng: parsed.lng,
         reason: parsed.reason,
         currentSlot: parsed.currentSlot ?? null,
+        localHour: parsed.localHour,
       });
       return this.ok(result);
     } catch (error) {

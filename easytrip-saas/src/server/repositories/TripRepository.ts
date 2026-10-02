@@ -4,6 +4,8 @@ import { CreateTripInput } from "@/server/validators/trip.schema";
 
 type CreateTripDbInput = CreateTripInput & {
   organizerId: string;
+  /** Consenso art. 9 alle preferenze sensibili (null se non ce ne sono). */
+  sensitivePrefsConsentAt?: Date | null;
 };
 
 function generateToken(): string {
@@ -47,6 +49,10 @@ async function findActiveVersionDays(activeVersionId: string | undefined) {
   return prisma.day.findMany({
     where: { tripVersionId: activeVersionId },
     orderBy: { dayNumber: "asc" },
+    // Votazioni di gruppo aperte sugli slot del giorno (con i voti, per i conteggi).
+    include: {
+      proposals: { where: { status: "open" }, include: { votes: true } },
+    },
   });
 }
 
@@ -66,6 +72,11 @@ export class TripRepository {
         accessExpiresAt,
         tripType: input.tripType,
         style: input.style,
+        interests: input.interests,
+        pace: input.pace,
+        mobilityNeeds: input.mobilityNeeds,
+        dietaryRestrictions: input.dietaryRestrictions,
+        sensitivePrefsConsentAt: input.sensitivePrefsConsentAt ?? null,
         budgetLevel: input.budgetLevel ?? "moderate",
         localPassCityCount: input.localPassCityCount ?? 0,
         status: "pending",
@@ -222,16 +233,44 @@ export class TripRepository {
     });
   }
 
+  /** Preferenze salvate e consenso, solo per l'organizzatore (null se il viaggio non è suo o non esiste). */
+  async findPreferencesForOrganizer(tripId: string, organizerId: string) {
+    return prisma.trip.findFirst({
+      where: { id: tripId, organizerId, deletedAt: null },
+      select: {
+        interests: true,
+        pace: true,
+        mobilityNeeds: true,
+        dietaryRestrictions: true,
+        sensitivePrefsConsentAt: true,
+      },
+    });
+  }
+
   async updatePreferences(
     tripId: string,
     organizerId: string,
-    data: { style?: string | null; budgetLevel: string },
+    data: {
+      style?: string | null;
+      budgetLevel: string;
+      interests?: string[];
+      pace?: string | null;
+      mobilityNeeds?: string[];
+      dietaryRestrictions?: string[];
+      sensitivePrefsConsentAt?: Date | null;
+    },
   ) {
+    // I campi omessi (undefined) restano invariati: Prisma ignora le chiavi undefined.
     const result = await prisma.trip.updateMany({
       where: { id: tripId, organizerId, deletedAt: null },
       data: {
         style: data.style,
         budgetLevel: data.budgetLevel,
+        interests: data.interests,
+        pace: data.pace,
+        mobilityNeeds: data.mobilityNeeds,
+        dietaryRestrictions: data.dietaryRestrictions,
+        sensitivePrefsConsentAt: data.sensitivePrefsConsentAt,
         prefChangedAfterGen: true,
       },
     });
@@ -438,5 +477,26 @@ export class TripRepository {
     });
     if (result.count === 0) return null;
     return token;
+  }
+
+  /** Slot (JSON) di tutti i giorni di una versione: input dell'analisi geografica. */
+  async findVersionDaySlots(tripVersionId: string) {
+    return prisma.day.findMany({
+      where: { tripVersionId },
+      orderBy: { dayNumber: "asc" },
+      select: {
+        dayNumber: true,
+        morning: true,
+        afternoon: true,
+        evening: true,
+      },
+    });
+  }
+
+  async updateVersionGeoScore(tripVersionId: string, geoScore: number) {
+    await prisma.tripVersion.update({
+      where: { id: tripVersionId },
+      data: { geoScore },
+    });
   }
 }

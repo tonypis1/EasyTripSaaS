@@ -4,7 +4,11 @@ import { AuthService } from "@/server/services/auth/authService";
 import { TripRepository } from "@/server/repositories/TripRepository";
 import { CreateTripInput } from "@/server/validators/trip.schema";
 import { AppError } from "@/server/errors/AppError";
-import { toDateOnlyIsoUtc } from "@/lib/calendar-date";
+import {
+  inclusiveCalendarDaysBetweenUtc,
+  toDateOnlyIsoUtc,
+} from "@/lib/calendar-date";
+import { MAX_TRIP_DAYS } from "@/lib/trip/trip-limits";
 import { getPostTripReferralWindow } from "@/lib/trip/post-trip-referral-window";
 import {
   cancelConfirmedHtml,
@@ -22,6 +26,32 @@ import {
   isPaidRegeneration,
   nextVersionNum,
 } from "@/lib/trip-regen-rules";
+import {
+  buildTripIcsCalendar,
+  icsFilenameForDestination,
+} from "@/lib/ics-export";
+import { toSlotProposalDto, type SlotProposalDto } from "@/lib/slot-vote";
+import {
+  readStoredList,
+  readStoredSlot,
+  type StoredSlot,
+} from "@/lib/trip/day-slots";
+import {
+  DIET_FIT_KEYS,
+  preferencesFromTrip,
+  resolveSensitiveConsent,
+  type DietFitKey,
+  type DietaryKey,
+  type InterestKey,
+  type MobilityKey,
+  type PaceKey,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
+import {
+  analyzeItineraryGeo,
+  geoInputFromStoredDay,
+  type ItineraryGeoAnalysis,
+} from "@/lib/geo-optimization";
 
 /** Throttle sync nomi membri da Clerk (vedi syncMemberNamesFromClerkForTrip). */
 const CLERK_NAME_SYNC_TTL_MS = 15 * 60 * 1000;
@@ -35,6 +65,8 @@ export type RestaurantSuggestDto = {
   distance: string;
   reservationNeeded: boolean;
   reservationTip: string;
+  /** Restrizioni alimentari che il locale dichiara di soddisfare (vuoto per gli itinerari precedenti alla funzione). */
+  dietaryFit: DietFitKey[];
 };
 
 export type TripDayDto = {
@@ -42,9 +74,10 @@ export type TripDayDto = {
   dayNumber: number;
   unlockDate: string;
   title: string | null;
-  morning: string | null;
-  afternoon: string | null;
-  evening: string | null;
+  /** Slot come oggetto (già letto dal jsonb); null se assente, vuoto o illeggibile. */
+  morning: StoredSlot | null;
+  afternoon: StoredSlot | null;
+  evening: StoredSlot | null;
   restaurants: RestaurantSuggestDto[] | null;
   mapCenterLat: number | null;
   mapCenterLng: number | null;
@@ -83,6 +116,10 @@ export type TripDetailDto = {
   status: string;
   regenCount: number;
   currentVersion: number;
+  /** Preferenze strutturate scelte per il viaggio (vuote se non indicate). */
+  preferences: TripPreferences;
+  /** true se c'è un consenso art. 9 registrato per le preferenze sensibili. */
+  sensitivePrefsConsent: boolean;
   isPaid: boolean;
   userCreditBalanceCents: number;
   tripPriceCents: number;
@@ -91,8 +128,13 @@ export type TripDetailDto = {
   isOrganizer: boolean;
   members: TripMemberDto[];
   days: TripDayDto[];
+  /** Votazioni di gruppo aperte sugli slot dei giorni della versione attiva. */
+  slotProposals: SlotProposalDto[];
   versions: TripVersionSummaryDto[];
+  /** Calcolato dalle coordinate delle tappe; ripiega sul valore salvato se non bastano. */
   activeGeoScore: number | null;
+  /** Analisi geografica della versione attiva (null se nessun giorno ha coordinate sufficienti). */
+  geo: ItineraryGeoAnalysis | null;
   prefChangedAfterGen: boolean;
   isAccessExpired: boolean;
   postTripReferralWindowActive: boolean;
@@ -143,75 +185,79 @@ type TripListItemDb = {
   versions: { days: { id: string }[] }[];
 };
 
-function parseRestaurants(raw: string | null): RestaurantSuggestDto[] | null {
-  if (!raw || raw === "null") return null;
-  try {
-    const j = JSON.parse(raw) as unknown;
-    if (!Array.isArray(j)) return null;
-    const out: RestaurantSuggestDto[] = [];
-    for (const item of j) {
-      if (!item || typeof item !== "object") continue;
-      const o = item as Record<string, unknown>;
+/** `dietaryFit` salvato → chiavi note (ignora valori sconosciuti o un tipo inatteso). */
+function readDietaryFit(value: unknown): DietFitKey[] {
+  if (!Array.isArray(value)) return [];
+  return DIET_FIT_KEYS.filter((key) => value.includes(key));
+}
 
-      // Nuovo formato (A2)
-      if (
-        (o.meal === "pranzo" || o.meal === "cena") &&
-        typeof o.name === "string" &&
-        typeof o.cuisine === "string" &&
-        typeof o.why === "string" &&
-        typeof o.budgetHint === "string" &&
-        typeof o.distance === "string" &&
-        typeof o.reservationNeeded === "boolean"
-      ) {
-        out.push({
-          meal: o.meal,
-          name: o.name,
-          cuisine: o.cuisine,
-          why: o.why,
-          budgetHint: o.budgetHint,
-          distance: o.distance,
-          reservationNeeded: o.reservationNeeded,
-          reservationTip:
-            typeof o.reservationTip === "string" ? o.reservationTip : "",
-        });
-        continue;
-      }
+/** Ristoranti salvati (jsonb) → DTO; accetta sia il formato attuale sia quello storico pre-A2. Non lancia mai. */
+function parseRestaurants(value: unknown): RestaurantSuggestDto[] | null {
+  const j = readStoredList(value);
+  if (!j) return null;
+  const out: RestaurantSuggestDto[] = [];
+  for (const item of j) {
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
 
-      // Vecchio formato (pre-A2): { name, why, budgetHint }
-      if (
-        typeof o.name === "string" &&
-        typeof o.why === "string" &&
-        typeof o.budgetHint === "string"
-      ) {
-        out.push({
-          meal: "pranzo",
-          name: o.name,
-          cuisine: "ristorante",
-          why: o.why,
-          budgetHint: o.budgetHint,
-          distance: "",
-          reservationNeeded: false,
-          reservationTip: "",
-        });
-      }
+    // Nuovo formato (A2)
+    if (
+      (o.meal === "pranzo" || o.meal === "cena") &&
+      typeof o.name === "string" &&
+      typeof o.cuisine === "string" &&
+      typeof o.why === "string" &&
+      typeof o.budgetHint === "string" &&
+      typeof o.distance === "string" &&
+      typeof o.reservationNeeded === "boolean"
+    ) {
+      out.push({
+        meal: o.meal,
+        name: o.name,
+        cuisine: o.cuisine,
+        why: o.why,
+        budgetHint: o.budgetHint,
+        distance: o.distance,
+        reservationNeeded: o.reservationNeeded,
+        reservationTip:
+          typeof o.reservationTip === "string" ? o.reservationTip : "",
+        dietaryFit: readDietaryFit(o.dietaryFit),
+      });
+      continue;
     }
 
-    // Se arrivano record vecchi, assegna pranzo/cena in modo deterministico:
-    // - 2 elementi: 1° pranzo, 2° cena
-    // - >2 elementi: alterna pranzo/cena per index
-    const hasAnyLegacy = out.some(
-      (r) => r.cuisine === "ristorante" && r.distance === "",
-    );
-    if (hasAnyLegacy && out.length >= 2) {
-      for (let i = 0; i < out.length; i++) {
-        out[i] = { ...out[i], meal: i % 2 === 0 ? "pranzo" : "cena" };
-      }
+    // Vecchio formato (pre-A2): { name, why, budgetHint }
+    if (
+      typeof o.name === "string" &&
+      typeof o.why === "string" &&
+      typeof o.budgetHint === "string"
+    ) {
+      out.push({
+        meal: "pranzo",
+        name: o.name,
+        cuisine: "ristorante",
+        why: o.why,
+        budgetHint: o.budgetHint,
+        distance: "",
+        reservationNeeded: false,
+        reservationTip: "",
+        dietaryFit: [],
+      });
     }
-
-    return out.length > 0 ? out : null;
-  } catch {
-    return null;
   }
+
+  // Se arrivano record vecchi, assegna pranzo/cena in modo deterministico:
+  // - 2 elementi: 1° pranzo, 2° cena
+  // - >2 elementi: alterna pranzo/cena per index
+  const hasAnyLegacy = out.some(
+    (r) => r.cuisine === "ristorante" && r.distance === "",
+  );
+  if (hasAnyLegacy && out.length >= 2) {
+    for (let i = 0; i < out.length; i++) {
+      out[i] = { ...out[i], meal: i % 2 === 0 ? "pranzo" : "cena" };
+    }
+  }
+
+  return out.length > 0 ? out : null;
 }
 
 function decToNumber(v: unknown): number | null {
@@ -222,6 +268,37 @@ function decToNumber(v: unknown): number | null {
     return Number.isFinite(n) ? n : null;
   }
   return null;
+}
+
+/**
+ * GeoScore della versione attiva: calcolato dalle coordinate correnti degli
+ * slot (quindi sempre coerente con ciò che l'utente vede, anche per versioni
+ * generate prima che il punteggio fosse calcolato). Ripiega sul valore salvato
+ * se le coordinate non bastano.
+ */
+function activeVersionGeo(active: {
+  geoScore: unknown;
+  days: {
+    dayNumber: number;
+    morning: unknown;
+    afternoon: unknown;
+    evening: unknown;
+  }[];
+}) {
+  const analysis = analyzeItineraryGeo(active.days.map(geoInputFromStoredDay));
+  return {
+    analysis,
+    score: analysis.score ?? decToNumber(active.geoScore),
+  };
+}
+
+/** Preferenze sensibili (art. 9) senza consenso esplicito: la scrittura viene rifiutata. */
+function sensitiveConsentRequired(): AppError {
+  return new AppError(
+    "Per salvare restrizioni alimentari o esigenze di mobilità serve il consenso esplicito al loro trattamento",
+    400,
+    "SENSITIVE_CONSENT_REQUIRED",
+  );
 }
 
 export class TripService {
@@ -238,11 +315,30 @@ export class TripService {
         "INVALID_DATE_RANGE",
       );
     }
+    if (
+      inclusiveCalendarDaysBetweenUtc(input.startDate, input.endDate) >
+      MAX_TRIP_DAYS
+    ) {
+      throw new AppError(
+        `Un viaggio può durare al massimo ${MAX_TRIP_DAYS} giorni`,
+        400,
+        "TRIP_TOO_LONG",
+      );
+    }
+
+    const consent = resolveSensitiveConsent({
+      prefs: input,
+      consent: input.sensitiveDataConsent,
+      storedAt: null,
+      now: new Date(),
+    });
+    if (!consent.ok) throw sensitiveConsentRequired();
 
     const user = await this.authService.getOrCreateCurrentUser();
     const trip = await this.tripRepository.create({
       ...input,
       organizerId: user.id,
+      sensitivePrefsConsentAt: consent.consentAt,
     });
 
     return {
@@ -281,16 +377,18 @@ export class TripService {
       trip.members,
     );
 
+    const active = trip.versions.find((v) => v.isActive);
+    const days = active?.days ?? [];
+    const activeGeo = active ? activeVersionGeo(active) : null;
+    const activeGeoScore = activeGeo?.score ?? null;
+
     const versions = trip.versions.map((v) => ({
       versionNum: v.versionNum,
-      geoScore: decToNumber(v.geoScore),
+      // Le versioni non attive non hanno i giorni caricati: restano col valore salvato.
+      geoScore: v.isActive ? activeGeoScore : decToNumber(v.geoScore),
       generatedAt: v.generatedAt.toISOString(),
       isActive: v.isActive,
     }));
-
-    const active = trip.versions.find((v) => v.isActive);
-    const days = active?.days ?? [];
-    const activeGeoScore = active ? decToNumber(active.geoScore) : null;
 
     const rc = trip.regenCount;
     const nextV = nextVersionNum(rc);
@@ -322,6 +420,19 @@ export class TripService {
           }[])
         : [];
 
+    const myMemberId =
+      membersRaw.find((m) => m.user.id === user.id)?.id ?? null;
+    const slotProposals = days.flatMap((d) =>
+      d.proposals.flatMap((proposal) => {
+        const dto = toSlotProposalDto({
+          proposal,
+          totalMembers: membersRaw.length,
+          myMemberId,
+        });
+        return dto ? [dto] : [];
+      }),
+    );
+
     const membersDto: TripMemberDto[] = membersRaw.map((m) => ({
       id: m.id,
       userId: m.user.id,
@@ -346,6 +457,8 @@ export class TripService {
       status: trip.status,
       regenCount: trip.regenCount,
       currentVersion: trip.currentVersion,
+      preferences: preferencesFromTrip(trip),
+      sensitivePrefsConsent: trip.sensitivePrefsConsentAt != null,
       isPaid: trip.amountPaid != null,
       userCreditBalanceCents,
       localPassCityCount:
@@ -373,10 +486,10 @@ export class TripService {
           dayNumber: number;
           unlockDate: Date;
           title: string | null;
-          morning: string | null;
-          afternoon: string | null;
-          evening: string | null;
-          restaurants: string | null;
+          morning: unknown;
+          afternoon: unknown;
+          evening: unknown;
+          restaurants: unknown;
           mapCenterLat: unknown;
           mapCenterLng: unknown;
           zoneFocus: string | null;
@@ -388,9 +501,9 @@ export class TripService {
           dayNumber: d.dayNumber,
           unlockDate: toDateOnlyIsoUtc(d.unlockDate),
           title: d.title,
-          morning: d.morning,
-          afternoon: d.afternoon,
-          evening: d.evening,
+          morning: readStoredSlot(d.morning),
+          afternoon: readStoredSlot(d.afternoon),
+          evening: readStoredSlot(d.evening),
           restaurants: parseRestaurants(d.restaurants),
           mapCenterLat: decToNumber(d.mapCenterLat),
           mapCenterLng: decToNumber(d.mapCenterLng),
@@ -400,8 +513,13 @@ export class TripService {
           dayTips: d.tips,
         }),
       ),
+      slotProposals,
       versions,
       activeGeoScore,
+      geo:
+        activeGeo && activeGeo.analysis.scoredDays > 0
+          ? activeGeo.analysis
+          : null,
       regen: {
         nextVersion: nextV,
         atMax,
@@ -409,6 +527,39 @@ export class TripService {
         needsPaidCheckout,
         freeRegenFromPrefChange,
       },
+    };
+  }
+
+  /**
+   * Esportazione calendario (.ics) dell'itinerario attivo. Stessa visibilità
+   * del dettaglio (organizzatore o membro) ma senza il resto del dettaglio:
+   * niente sincronizzazione dei nomi con Clerk, crediti, GeoScore o votazioni
+   * a ogni download, servono solo i giorni.
+   */
+  async getTripIcsExport(
+    tripId: string,
+  ): Promise<{ filename: string; content: string }> {
+    const user = await this.authService.getOrCreateCurrentUser();
+    const trip =
+      (await this.tripRepository.findDetailForOrganizer(tripId, user.id)) ??
+      (await this.tripRepository.findDetailForMember(tripId, user.id));
+    if (!trip) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    const days = trip.versions.find((v) => v.isActive)?.days ?? [];
+    return {
+      filename: icsFilenameForDestination(trip.destination),
+      content: buildTripIcsCalendar(
+        trip.destination,
+        days.map((d) => ({
+          id: d.id,
+          unlockDate: toDateOnlyIsoUtc(d.unlockDate),
+          morning: d.morning,
+          afternoon: d.afternoon,
+          evening: d.evening,
+        })),
+      ),
     };
   }
 
@@ -427,7 +578,7 @@ export class TripService {
     }
 
     const active = trip.versions.find((v) => v.isActive);
-    const geoScore = active ? decToNumber(active.geoScore) : null;
+    const geoScore = active ? activeVersionGeo(active).score : null;
     if (geoScore == null) {
       throw new AppError(
         "GeoScore non disponibile per questo viaggio",
@@ -511,13 +662,43 @@ export class TripService {
 
   async updatePreferences(
     tripId: string,
-    data: { style?: string | null; budgetLevel: string },
+    data: {
+      style?: string | null;
+      budgetLevel: string;
+      interests?: InterestKey[];
+      pace?: PaceKey | null;
+      mobilityNeeds?: MobilityKey[];
+      dietaryRestrictions?: DietaryKey[];
+      sensitiveDataConsent?: boolean;
+    },
   ): Promise<{ ok: true }> {
     const user = await this.authService.getOrCreateCurrentUser();
+    const stored = await this.tripRepository.findPreferencesForOrganizer(
+      tripId,
+      user.id,
+    );
+    if (!stored) {
+      throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");
+    }
+
+    // Le preferenze come saranno dopo la scrittura: i campi omessi restano quelli salvati.
+    const current = preferencesFromTrip(stored);
+    const consent = resolveSensitiveConsent({
+      prefs: {
+        mobilityNeeds: data.mobilityNeeds ?? current.mobilityNeeds,
+        dietaryRestrictions:
+          data.dietaryRestrictions ?? current.dietaryRestrictions,
+      },
+      consent: data.sensitiveDataConsent,
+      storedAt: stored.sensitivePrefsConsentAt,
+      now: new Date(),
+    });
+    if (!consent.ok) throw sensitiveConsentRequired();
+
     const result = await this.tripRepository.updatePreferences(
       tripId,
       user.id,
-      data,
+      { ...data, sensitivePrefsConsentAt: consent.consentAt },
     );
     if (!result.updated) {
       throw new AppError("Trip non trovato", 404, "TRIP_NOT_FOUND");

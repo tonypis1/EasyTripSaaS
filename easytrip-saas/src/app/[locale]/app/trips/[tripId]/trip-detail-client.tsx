@@ -1,6 +1,7 @@
 "use client";
 
 import type { TripDetailDto } from "@/server/services/trip/tripService";
+import { slotEndDate } from "@/lib/ics-export";
 import { isDayUnlocked, daysUntilUnlock, tripPhase } from "@/lib/day-unlock";
 import {
   tripStatusDisplayLabel,
@@ -10,7 +11,23 @@ import { DEV_PREVIEW_UNLOCK_CONTENT } from "@/lib/dev-flags";
 import { PostTripScreen } from "./post-trip-screen";
 import { PostTripReferralPromo } from "@/components/referral/post-trip-referral-promo";
 import { formatGeoScoreLabel } from "@/lib/geo-score-ui";
+import type { StoredSlot } from "@/lib/trip/day-slots";
 import { ShareButton } from "@/components/trips/ShareButton";
+import { CalendarExportButton } from "@/components/trips/CalendarExportButton";
+import { SlotVotePanel } from "@/components/trips/SlotVotePanel";
+import { PreferencesFields } from "@/components/trips/PreferencesFields";
+import {
+  AllergyNotice,
+  RestaurantDietBadges,
+} from "@/components/trips/DietBadges";
+import {
+  requiresSensitiveConsent,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
+import {
+  DayRouteSummary,
+  GeoScoreDetails,
+} from "@/components/trips/GeoScoreDetails";
 import dynamic from "next/dynamic";
 import posthog from "posthog-js";
 import { useCallback, useEffect, useState } from "react";
@@ -66,10 +83,12 @@ import {
   theForkUrl,
   viatorUrl,
 } from "@/lib/affiliate";
+import { isKnownBookingDomain } from "@/lib/safe-url";
 import { openCrispChat, isCrispEnabled } from "../../crisp-chat";
 import { ExpensePanel } from "./expense-panel";
 import { roundCoordForAi } from "@/lib/geo-privacy";
 import { ItineraryGenerationWaitingScreen } from "@/components/trips/itinerary-generation-waiting-screen";
+import { tripLengthDaysFromIso } from "@/lib/trip/trip-limits";
 
 const GPS_AI_CONSENT_KEY = "easytrip_gps_ai_consent_v1";
 
@@ -117,6 +136,8 @@ type SlotReplaceResult = {
   geoContinuityNote: string;
   dayRouteUpdated: string;
   alternatives: { name: string; distance: string; note: string }[];
+  /** Bozza di votazione di gruppo con le alternative (null per i viaggi con un solo membro). */
+  proposalId: string | null;
 };
 
 type LiveSuggestion = {
@@ -207,47 +228,42 @@ function buildGoogleSearchQuery(
   return `${t} ${city}`;
 }
 
-function parseSlot(raw: string | null): Slot | null {
-  if (!raw || raw === "{}" || raw === "null") return null;
-  try {
-    const o = JSON.parse(raw) as Record<string, unknown> | null;
-    if (!o || typeof o !== "object") return null;
-    if (
-      typeof o.title !== "string" ||
-      typeof o.place !== "string" ||
-      typeof o.why !== "string" ||
-      typeof o.startTime !== "string" ||
-      typeof o.endTime !== "string" ||
-      !Array.isArray(o.tips)
-    )
-      return null;
-    return {
-      title: o.title,
-      place: o.place,
-      why: o.why,
-      startTime: o.startTime,
-      endTime: o.endTime,
-      durationMin:
-        typeof o.durationMin === "number" && Number.isFinite(o.durationMin)
-          ? o.durationMin
-          : null,
-      googleMapsQuery:
-        typeof o.googleMapsQuery === "string" && o.googleMapsQuery.length > 0
-          ? o.googleMapsQuery
-          : null,
-      bookingLink:
-        typeof o.bookingLink === "string" && o.bookingLink.length > 0
-          ? o.bookingLink
-          : null,
-      tips: (o.tips as unknown[]).filter(
-        (t): t is string => typeof t === "string",
-      ),
-      lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
-      lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
-    };
-  } catch {
+/** Valida la forma di uno slot già letto dal server (nessun JSON.parse: il DTO porta l'oggetto). */
+function parseSlot(o: StoredSlot | null): Slot | null {
+  if (!o) return null;
+  if (
+    typeof o.title !== "string" ||
+    typeof o.place !== "string" ||
+    typeof o.why !== "string" ||
+    typeof o.startTime !== "string" ||
+    typeof o.endTime !== "string" ||
+    !Array.isArray(o.tips)
+  )
     return null;
-  }
+  return {
+    title: o.title,
+    place: o.place,
+    why: o.why,
+    startTime: o.startTime,
+    endTime: o.endTime,
+    durationMin:
+      typeof o.durationMin === "number" && Number.isFinite(o.durationMin)
+        ? o.durationMin
+        : null,
+    googleMapsQuery:
+      typeof o.googleMapsQuery === "string" && o.googleMapsQuery.length > 0
+        ? o.googleMapsQuery
+        : null,
+    bookingLink:
+      typeof o.bookingLink === "string" && o.bookingLink.length > 0
+        ? o.bookingLink
+        : null,
+    tips: (o.tips as unknown[]).filter(
+      (t): t is string => typeof t === "string",
+    ),
+    lat: typeof o.lat === "number" && Number.isFinite(o.lat) ? o.lat : null,
+    lng: typeof o.lng === "number" && Number.isFinite(o.lng) ? o.lng : null,
+  };
 }
 
 function formatDuration(min: number): string {
@@ -260,6 +276,90 @@ function formatDuration(min: number): string {
 
 function googleMapsUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/**
+ * Link "quick add" di Google Calendar per un singolo slot: nessuna
+ * autenticazione richiesta (a differenza di un feed .ics da sottoscrivere),
+ * apre GCal precompilato e l'utente conferma il salvataggio. Orario passato
+ * come wall-clock "flottante" (nessun suffisso Z/ctz): rappresenta l'ora
+ * locale della destinazione, non va convertita al fuso del viewer.
+ */
+function googleCalendarAddEventUrl(params: {
+  title: string;
+  location: string;
+  details: string;
+  dateStr: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+}): string {
+  const toGCalDateTime = (dateStr: string, timeStr: string) =>
+    `${dateStr.replace(/-/g, "")}T${timeStr.replace(":", "")}00`;
+  // Slot che passa la mezzanotte (es. 22:00–01:00): la fine è il giorno dopo.
+  const endDateStr = slotEndDate(
+    params.dateStr,
+    params.startTime,
+    params.endTime,
+  );
+
+  const u = new URL("https://calendar.google.com/calendar/render");
+  u.searchParams.set("action", "TEMPLATE");
+  u.searchParams.set("text", params.title);
+  u.searchParams.set(
+    "dates",
+    `${toGCalDateTime(params.dateStr, params.startTime)}/${toGCalDateTime(endDateStr, params.endTime)}`,
+  );
+  u.searchParams.set("location", params.location);
+  if (params.details) u.searchParams.set("details", params.details);
+  return u.toString();
+}
+
+/**
+ * Un bookingLink generato dal modello passa `httpUrlSchema` (schema http/s
+ * sicuro) ma può comunque puntare a una pagina inventata: qui riceve un
+ * trattamento visivo diverso a seconda che il dominio sia una piattaforma di
+ * prenotazione nota (CTA piena) o no (link cliccabile ma etichettato come
+ * non verificato), invece di essere nascosto — un dominio non elencato è
+ * spesso il sito ufficiale legittimo di un singolo POI.
+ */
+function BookingLinkPill({
+  url,
+  activityName,
+  tripId,
+  unverifiedLabel,
+}: {
+  url: string;
+  activityName: string;
+  tripId: string;
+  unverifiedLabel: string;
+}) {
+  const verified = isKnownBookingDomain(url);
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      onClick={() =>
+        posthog.capture("affiliate_click", {
+          partner: verified ? "direct" : "unverified",
+          activity: activityName,
+          tripId,
+        })
+      }
+      className={
+        verified
+          ? "inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
+          : "border-et-border text-et-ink/50 hover:text-et-ink/70 hover:border-et-ink/30 inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border bg-transparent px-2.5 py-1 text-xs font-medium transition-colors duration-200"
+      }
+    >
+      {verified ? (
+        <ExternalLink className="h-3 w-3" />
+      ) : (
+        <ShieldAlert className="h-3 w-3" />
+      )}
+      {verified ? "Prenota / Biglietti" : unverifiedLabel}
+    </a>
+  );
 }
 
 const SLOT_KEYS = {
@@ -287,6 +387,7 @@ export function TripDetailClient({
   const td = useTranslations("app.trips.detail");
   const locale = useLocale() as AppLocale;
   const tShared = useTranslations("app.trips.shared");
+  const tp = useTranslations("app.trips.preferences");
   const [trip, setTrip] = useState(initialTrip);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -296,6 +397,13 @@ export function TripDetailClient({
   const [prefOpen, setPrefOpen] = useState(false);
   const [prefStyle, setPrefStyle] = useState(initialTrip.style ?? "");
   const [prefBudget, setPrefBudget] = useState(initialTrip.budgetLevel);
+  const [prefStructured, setPrefStructured] = useState<TripPreferences>(
+    initialTrip.preferences,
+  );
+  /** Consenso art. 9 già registrato per il viaggio (la casella parte spuntata solo in quel caso). */
+  const [prefConsent, setPrefConsent] = useState(
+    initialTrip.sensitivePrefsConsent,
+  );
   const [replaceResult, setReplaceResult] = useState<{
     key: string;
     data: SlotReplaceResult;
@@ -549,6 +657,7 @@ export function TripDetailClient({
             geoContinuityNote: d.geoContinuityNote,
             dayRouteUpdated: d.dayRouteUpdated,
             alternatives: d.alternatives as SlotReplaceResult["alternatives"],
+            proposalId: typeof d.proposalId === "string" ? d.proposalId : null,
           },
         });
       }
@@ -559,6 +668,47 @@ export function TripDetailClient({
     } finally {
       setBusy(null);
     }
+  }
+
+  /** L'organizzatore apre al voto del gruppo la bozza generata dalla sostituzione. */
+  async function onOpenVote(proposalId: string) {
+    setBusy(`open-vote-${proposalId}`);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        `/api/trips/${trip.id}/slot-proposals/${proposalId}/open`,
+        { method: "POST" },
+      );
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setMsg(apiMsg(json));
+        return;
+      }
+      posthog.capture("slot_vote_opened", { tripId: trip.id, proposalId });
+      setReplaceResult(null);
+      setMsg(td("slotVote.opened"));
+      await refreshTrip();
+      router.refresh();
+    } catch {
+      setMsg(td("errors.network"));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function onVoteChanged(outcome: {
+    resolved: boolean;
+    winnerIndex: number | null;
+  }) {
+    if (outcome.resolved) {
+      setMsg(
+        outcome.winnerIndex === 0
+          ? td("slotVote.closedKept")
+          : td("slotVote.closedApplied"),
+      );
+    }
+    void refreshTrip();
+    router.refresh();
   }
 
   async function onLiveSuggest(dayId: string) {
@@ -601,6 +751,7 @@ export function TripDetailClient({
           lat: coords.lat,
           lng: coords.lng,
           reason: "other",
+          localHour: new Date().getHours(),
         }),
       });
       const json = await res.json();
@@ -642,6 +793,10 @@ export function TripDetailClient({
   }
 
   async function onSavePreferences() {
+    if (requiresSensitiveConsent(prefStructured) && !prefConsent) {
+      setMsg(tp("consent.required"));
+      return;
+    }
     setBusy("pref");
     setMsg(null);
     try {
@@ -651,6 +806,11 @@ export function TripDetailClient({
         body: JSON.stringify({
           style: prefStyle.trim().length >= 2 ? prefStyle.trim() : null,
           budgetLevel: prefBudget,
+          interests: prefStructured.interests,
+          pace: prefStructured.pace,
+          mobilityNeeds: prefStructured.mobilityNeeds,
+          dietaryRestrictions: prefStructured.dietaryRestrictions,
+          sensitiveDataConsent: prefConsent,
         }),
       });
       const json = await res.json();
@@ -663,6 +823,11 @@ export function TripDetailClient({
         destination: trip.destination,
         budgetLevel: prefBudget,
         style: prefStyle.trim() || null,
+        // Solo conteggi/flag: le restrizioni alimentari possono essere dati sensibili.
+        interests_count: prefStructured.interests.length,
+        pace: prefStructured.pace,
+        mobility_needs_count: prefStructured.mobilityNeeds.length,
+        has_dietary_restrictions: prefStructured.dietaryRestrictions.length > 0,
       });
       setPrefOpen(false);
       setMsg(td("status.prefsUpdated"));
@@ -774,23 +939,32 @@ export function TripDetailClient({
           <span>{trip.isPaid ? td("paid") : td("unpaid")}</span>
         </div>
 
-        {/* Geo-score nell'header quando disponibile */}
-        {trip.activeGeoScore != null ? (
+        {/* Geo-score, condivisione ed export calendario nell'header */}
+        {hasDays ? (
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <div className="border-et-accent/25 bg-et-accent/8 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
-              <Star className="text-et-accent h-4 w-4" />
-              <span className="text-et-accent text-sm font-medium">
-                {formatGeoScoreLabel(trip.activeGeoScore)}
-              </span>
-            </div>
-            <ShareButton
+            {trip.activeGeoScore != null ? (
+              <>
+                <div className="border-et-accent/25 bg-et-accent/8 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5">
+                  <Star className="text-et-accent h-4 w-4" />
+                  <span className="text-et-accent text-sm font-medium">
+                    {formatGeoScoreLabel(trip.activeGeoScore)}
+                  </span>
+                </div>
+                <ShareButton
+                  tripId={trip.id}
+                  destination={trip.destination}
+                  geoScore={trip.activeGeoScore}
+                  locale={locale}
+                />
+              </>
+            ) : null}
+            <CalendarExportButton
               tripId={trip.id}
               destination={trip.destination}
-              geoScore={trip.activeGeoScore}
-              locale={locale}
             />
           </div>
         ) : null}
+        {hasDays && trip.geo ? <GeoScoreDetails geo={trip.geo} /> : null}
       </header>
 
       {/* ── Countdown banner ── */}
@@ -1133,6 +1307,14 @@ export function TripDetailClient({
                     </div>
                   </fieldset>
 
+                  <PreferencesFields
+                    value={prefStructured}
+                    onChange={setPrefStructured}
+                    consent={prefConsent}
+                    onConsentChange={setPrefConsent}
+                    disabled={busy !== null}
+                  />
+
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -1306,6 +1488,7 @@ export function TripDetailClient({
       {isGeneratingItinerary ? (
         <ItineraryGenerationWaitingScreen
           variant={hasDays ? "regen" : "first"}
+          numDays={tripLengthDaysFromIso(trip.startDate, trip.endDate) ?? 3}
           onRefresh={handleGenerationRefresh}
         />
       ) : null}
@@ -1335,6 +1518,9 @@ export function TripDetailClient({
               const afternoon = parseSlot(day.afternoon);
               const evening = parseSlot(day.evening);
               const hasAnySlot = Boolean(morning || afternoon || evening);
+              const dayGeo = trip.geo?.days.find(
+                (g) => g.dayNumber === day.dayNumber,
+              );
 
               return (
                 <li
@@ -1383,6 +1569,9 @@ export function TripDetailClient({
 
                   {open ? (
                     <div className="space-y-4 px-5 pb-5">
+                      {/* Percorso del giorno (km, a piedi, riordino suggerito) */}
+                      {dayGeo ? <DayRouteSummary day={dayGeo} /> : null}
+
                       {/* Day-of-week warning */}
                       {day.dowWarning ? (
                         <div className="flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-500/8 px-3.5 py-2.5">
@@ -1471,23 +1660,40 @@ export function TripDetailClient({
                                   </p>
                                   {/* Affiliate + booking links */}
                                   <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                    {slot.bookingLink ? (
-                                      <a
-                                        href={slot.bookingLink}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        onClick={() =>
-                                          posthog.capture("affiliate_click", {
-                                            partner: "direct",
+                                    <a
+                                      href={googleCalendarAddEventUrl({
+                                        title: slot.title,
+                                        location: `${slot.place}, ${trip.destination}`,
+                                        details: slot.why,
+                                        dateStr: day.unlockDate,
+                                        startTime: slot.startTime,
+                                        endTime: slot.endTime,
+                                      })}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={() =>
+                                        posthog.capture(
+                                          "slot_calendar_add_clicked",
+                                          {
                                             activity: slot.title,
                                             tripId: trip.id,
-                                          })
-                                        }
-                                        className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
-                                      >
-                                        <ExternalLink className="h-3 w-3" />
-                                        Prenota / Biglietti
-                                      </a>
+                                          },
+                                        )
+                                      }
+                                      className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-sky-400/25 bg-sky-500/8 px-2.5 py-1 text-xs font-medium text-sky-300 transition-colors duration-200 hover:border-sky-400/40 hover:bg-sky-500/15"
+                                    >
+                                      <Calendar className="h-3 w-3" />
+                                      {td("slot.addToGoogleCalendar")}
+                                    </a>
+                                    {slot.bookingLink ? (
+                                      <BookingLinkPill
+                                        url={slot.bookingLink}
+                                        activityName={slot.title}
+                                        tripId={trip.id}
+                                        unverifiedLabel={td(
+                                          "slot.unverifiedLink",
+                                        )}
+                                      />
                                     ) : null}
                                     {(() => {
                                       const gygUrl = getYourGuideUrl(
@@ -1591,6 +1797,21 @@ export function TripDetailClient({
                               </div>
                             ) : null}
 
+                            {/* Votazione di gruppo aperta su questo slot */}
+                            {(() => {
+                              const proposal = trip.slotProposals.find(
+                                (p) => p.dayId === day.id && p.slotKey === key,
+                              );
+                              return proposal ? (
+                                <SlotVotePanel
+                                  tripId={trip.id}
+                                  proposal={proposal}
+                                  isOrganizer={trip.isOrganizer}
+                                  onChanged={onVoteChanged}
+                                />
+                              ) : null;
+                            })()}
+
                             {/* Enriched replacement result panel */}
                             {replaceResult?.key === `${day.id}-${key}` ? (
                               <div className="to-et-accent/5 mt-3 space-y-3 rounded-xl border-2 border-purple-400/30 bg-gradient-to-br from-purple-500/8 p-4">
@@ -1669,6 +1890,33 @@ export function TripDetailClient({
                                         ),
                                       )}
                                     </div>
+                                    {replaceResult.data.proposalId &&
+                                    trip.isOrganizer ? (
+                                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-et-ink/50 max-w-md text-xs">
+                                          {td("slotVote.proposeHint")}
+                                        </p>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            void onOpenVote(
+                                              replaceResult.data
+                                                .proposalId as string,
+                                            )
+                                          }
+                                          disabled={busy !== null}
+                                          className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-sky-400/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-300 transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                          {busy ===
+                                          `open-vote-${replaceResult.data.proposalId}` ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <Users className="h-4 w-4" />
+                                          )}
+                                          {td("slotVote.proposeButton")}
+                                        </button>
+                                      </div>
+                                    ) : null}
                                   </div>
                                 ) : null}
                               </div>
@@ -1703,6 +1951,7 @@ export function TripDetailClient({
                               {td("restaurants.lunchDinnerSeparated")}
                             </p>
                           </div>
+                          <AllergyNotice prefs={trip.preferences} />
 
                           {(() => {
                             const lunch = day.restaurants.filter(
@@ -1790,6 +2039,10 @@ export function TripDetailClient({
                                       <p className="text-et-ink/70 mt-2 text-sm leading-relaxed">
                                         {r.why}
                                       </p>
+                                      <RestaurantDietBadges
+                                        prefs={trip.preferences}
+                                        dietaryFit={r.dietaryFit}
+                                      />
 
                                       {r.reservationNeeded &&
                                       r.reservationTip ? (
@@ -2042,25 +2295,14 @@ export function TripDetailClient({
                                       </div>
                                       <div className="mt-2 flex flex-wrap gap-1.5">
                                         {sug.bookingLink ? (
-                                          <a
-                                            href={sug.bookingLink}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            onClick={() =>
-                                              posthog.capture(
-                                                "affiliate_click",
-                                                {
-                                                  partner: "direct",
-                                                  activity: sug.name,
-                                                  tripId: trip.id,
-                                                },
-                                              )
-                                            }
-                                            className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-500/8 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors duration-200 hover:border-amber-400/40 hover:bg-amber-500/15"
-                                          >
-                                            <ExternalLink className="h-3 w-3" />
-                                            Prenota / Biglietti
-                                          </a>
+                                          <BookingLinkPill
+                                            url={sug.bookingLink}
+                                            activityName={sug.name}
+                                            tripId={trip.id}
+                                            unverifiedLabel={td(
+                                              "slot.unverifiedLink",
+                                            )}
+                                          />
                                         ) : null}
                                         {(() => {
                                           const gygUrl = getYourGuideUrl(
@@ -2295,7 +2537,11 @@ export function TripDetailClient({
               </p>
             </div>
           </div>
-          <ExpensePanel tripId={trip.id} totalDays={trip.days.length} />
+          <ExpensePanel
+            tripId={trip.id}
+            totalDays={trip.days.length}
+            budgetLevel={trip.budgetLevel}
+          />
         </section>
       ) : null}
 

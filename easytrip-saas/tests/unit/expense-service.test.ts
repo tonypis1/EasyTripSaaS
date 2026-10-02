@@ -110,6 +110,7 @@ describe("ExpenseService.addExpense", () => {
       dayNumber: 1,
       createdAt: new Date("2026-06-01T20:00:00Z"),
       paidBy: { id: "m1", user: { name: "Anna", email: "anna@example.com" } },
+      participants: [],
     });
     // getMembers() per trovare il memberId di user1
     mocks.tripMemberFindMany.mockResolvedValueOnce([
@@ -122,7 +123,13 @@ describe("ExpenseService.addExpense", () => {
       member({ id: "m2", userId: "user2" }),
     ]);
     mocks.expenseFindMany.mockResolvedValue([
-      { id: "exp1", amount: 40, paidById: "m1", splitEqually: true },
+      {
+        id: "exp1",
+        amount: 40,
+        paidById: "m1",
+        splitEqually: true,
+        participants: [],
+      },
     ]);
 
     const { service } = makeService();
@@ -158,6 +165,67 @@ describe("ExpenseService.addExpense", () => {
     });
   });
 
+  it("spesa personale (splitEqually:false) non genera credito/debito di gruppo", async () => {
+    mocks.tripMemberFindMany.mockResolvedValue([
+      member({ id: "m1", userId: "user1" }),
+      member({
+        id: "m2",
+        userId: "user2",
+        user: { id: "user2", name: "Bob", email: "bob@example.com" },
+      }),
+    ]);
+    mocks.expenseCreate.mockResolvedValue({
+      id: "exp1",
+      amount: 40,
+      description: "Souvenir personale",
+      category: "altro",
+      splitEqually: false,
+      dayNumber: 1,
+      createdAt: new Date("2026-06-01T20:00:00Z"),
+      paidBy: { id: "m1", user: { name: "Anna", email: "anna@example.com" } },
+      participants: [],
+    });
+    // getMembers() per trovare il memberId di user1
+    mocks.tripMemberFindMany.mockResolvedValueOnce([
+      member({ id: "m1", userId: "user1" }),
+      member({ id: "m2", userId: "user2" }),
+    ]);
+    // recalculateBalances() rilegge i membri una seconda volta
+    mocks.tripMemberFindMany.mockResolvedValueOnce([
+      member({ id: "m1", userId: "user1" }),
+      member({ id: "m2", userId: "user2" }),
+    ]);
+    mocks.expenseFindMany.mockResolvedValue([
+      {
+        id: "exp1",
+        amount: 40,
+        paidById: "m1",
+        splitEqually: false,
+        participants: [],
+      },
+    ]);
+
+    const { service } = makeService();
+    await service.addExpense("trip1", {
+      amount: 40,
+      description: "Souvenir personale",
+      category: "altro",
+      splitEqually: false,
+      dayNumber: 1,
+    });
+
+    // Non deve comparire alcun credito fantasma per m1 né debito per m2:
+    // una spesa non condivisa è esclusa sia da totalPaid sia da balance.
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m1" },
+      data: { totalPaid: 0, balance: 0 },
+    });
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m2" },
+      data: { totalPaid: 0, balance: 0 },
+    });
+  });
+
   it("lancia 404 MEMBER_NOT_FOUND se l'utente membro del trip non ha una riga TripMember", async () => {
     mocks.tripMemberFindMany.mockResolvedValue([]); // getMembers() vuoto
 
@@ -171,6 +239,163 @@ describe("ExpenseService.addExpense", () => {
         splitEqually: true,
       }),
     ).rejects.toMatchObject({ code: "MEMBER_NOT_FOUND", statusCode: 404 });
+  });
+});
+
+describe("ExpenseService — split personalizzato (sottoinsieme e quote pesate)", () => {
+  const threeMembers = () => [
+    member({ id: "m1", userId: "user1" }),
+    member({
+      id: "m2",
+      userId: "user2",
+      user: { id: "user2", name: "Bob", email: "bob@example.com" },
+    }),
+    member({
+      id: "m3",
+      userId: "user3",
+      user: { id: "user3", name: "Chiara", email: "chiara@example.com" },
+    }),
+  ];
+
+  function createdRow(participants: unknown[]) {
+    return {
+      id: "exp1",
+      amount: 90,
+      description: "Cena",
+      category: "cibo",
+      splitEqually: true,
+      dayNumber: null,
+      createdAt: new Date("2026-06-01T20:00:00Z"),
+      paidBy: { id: "m1", user: { name: "Anna", email: "anna@example.com" } },
+      participants,
+    };
+  }
+
+  it("passa i partecipanti al repository e ricalcola i saldi con quote pesate", async () => {
+    // getMembers (trovare il membro dell'utente + validare i partecipanti), poi recalculateBalances
+    mocks.tripMemberFindMany
+      .mockResolvedValueOnce(threeMembers())
+      .mockResolvedValueOnce(threeMembers());
+    mocks.expenseCreate.mockResolvedValue(
+      createdRow([
+        {
+          memberId: "m2",
+          weight: 1,
+          member: { user: { name: "Bob", email: "bob@example.com" } },
+        },
+        {
+          memberId: "m3",
+          weight: 2,
+          member: { user: { name: "Chiara", email: "chiara@example.com" } },
+        },
+      ]),
+    );
+    mocks.expenseFindMany.mockResolvedValue([
+      {
+        id: "exp1",
+        amount: 90,
+        paidById: "m1",
+        splitEqually: true,
+        participants: [
+          { memberId: "m2", weight: 1 },
+          { memberId: "m3", weight: 2 },
+        ],
+      },
+    ]);
+
+    const { service } = makeService();
+    const dto = await service.addExpense("trip1", {
+      amount: 90,
+      description: "Cena",
+      category: "cibo",
+      splitEqually: true,
+      participants: [
+        { memberId: "m2", weight: 1 },
+        { memberId: "m3", weight: 2 },
+      ],
+    });
+
+    expect(mocks.expenseCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          participants: {
+            create: [
+              { memberId: "m2", weight: 1 },
+              { memberId: "m3", weight: 2 },
+            ],
+          },
+        }),
+      }),
+    );
+    expect(dto.participants).toEqual([
+      { memberId: "m2", name: "Bob", email: "bob@example.com", weight: 1 },
+      {
+        memberId: "m3",
+        name: "Chiara",
+        email: "chiara@example.com",
+        weight: 2,
+      },
+    ]);
+
+    // Anna ha pagato 90 ma NON è tra i partecipanti: recupera l'intero importo.
+    // Bob deve 30 (1/3), Chiara 60 (2/3).
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m1" },
+      data: { totalPaid: 90, balance: 90 },
+    });
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m2" },
+      data: { totalPaid: 0, balance: -30 },
+    });
+    expect(mocks.tripMemberUpdate).toHaveBeenCalledWith({
+      where: { id: "m3" },
+      data: { totalPaid: 0, balance: -60 },
+    });
+  });
+
+  it("rifiuta un partecipante che non è membro di questo viaggio (400 INVALID_PARTICIPANT)", async () => {
+    mocks.tripMemberFindMany.mockResolvedValueOnce(threeMembers());
+
+    const { service } = makeService();
+
+    await expect(
+      service.addExpense("trip1", {
+        amount: 10,
+        description: "x",
+        category: "altro",
+        splitEqually: true,
+        participants: [{ memberId: "membro-di-un-altro-viaggio", weight: 1 }],
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_PARTICIPANT", statusCode: 400 });
+    expect(mocks.expenseCreate).not.toHaveBeenCalled();
+    expect(mocks.tripMemberUpdate).not.toHaveBeenCalled();
+  });
+
+  it("listExpenses espone i partecipanti (null quando la spesa è divisa tra tutti)", async () => {
+    mocks.expenseFindMany.mockResolvedValue([
+      {
+        ...createdRow([]),
+        id: "e-all",
+      },
+      {
+        ...createdRow([
+          {
+            memberId: "m2",
+            weight: 1.5,
+            member: { user: { name: "Bob", email: "bob@example.com" } },
+          },
+        ]),
+        id: "e-some",
+      },
+    ]);
+
+    const { service } = makeService();
+    const list = await service.listExpenses("trip1");
+
+    expect(list[0].participants).toBeNull();
+    expect(list[1].participants).toEqual([
+      { memberId: "m2", name: "Bob", email: "bob@example.com", weight: 1.5 },
+    ]);
   });
 });
 

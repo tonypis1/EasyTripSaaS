@@ -1,4 +1,9 @@
 ﻿import { z } from "zod";
+import {
+  preferencesCreateShape,
+  preferencesUpdateShape,
+  sensitiveConsentShape,
+} from "@/lib/trip/preferences";
 
 export const BUDGET_LEVELS = ["economy", "moderate", "premium"] as const;
 export type BudgetLevel = (typeof BUDGET_LEVELS)[number];
@@ -10,6 +15,10 @@ export const createTripSchema = z.object({
   tripType: z.enum(["solo", "coppia", "gruppo"]),
   style: z.string().min(2).max(120).optional(),
   budgetLevel: z.enum(BUDGET_LEVELS).default("moderate"),
+  /** Preferenze strutturate (facoltative): interessi, ritmo, mobilità, restrizioni alimentari. */
+  ...preferencesCreateShape,
+  /** Consenso esplicito (art. 9) se tra le preferenze ci sono scelte sensibili. */
+  ...sensitiveConsentShape,
   /** Add-on LocalPass: numero di città (0 = nessun add-on). */
   localPassCityCount: z.coerce.number().int().min(0).max(30).default(0),
 });
@@ -34,6 +43,10 @@ export const replaceSlotSchema = z.object({
 export const updatePreferencesSchema = z.object({
   style: z.string().min(2).max(120).optional().nullable(),
   budgetLevel: z.enum(BUDGET_LEVELS),
+  /** Campo omesso = invariato; `[]` / `null` = azzera. */
+  ...preferencesUpdateShape,
+  /** Omesso = resta il consenso già dato (se le scelte restano sensibili). */
+  ...sensitiveConsentShape,
 });
 
 export const liveSuggestSchema = z.object({
@@ -47,4 +60,10 @@ export const liveSuggestSchema = z.object({
     .enum(["morning", "afternoon", "evening"])
     .optional()
     .nullable(),
+  /**
+   * Ora locale del dispositivo dell'utente (0-23), NON quella del server.
+   * L'utente è fisicamente sul posto: solo il client conosce l'ora reale
+   * della destinazione (gestisce fuso e ora legale nativamente via `Date`).
+   */
+  localHour: z.number().int().min(0).max(23),
 });

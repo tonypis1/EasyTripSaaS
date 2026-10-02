@@ -5,6 +5,7 @@ import { IconGlobe } from "@/components/home/icons";
 import { AppHeaderUserSection } from "./app-header-user-section";
 import { CrispChat } from "./crisp-chat";
 import { ReferralTracker } from "@/app/referral-tracker";
+import { CookiePreferencesLink } from "@/components/consent/CookieConsentBanner";
 
 export default async function AppLayout({
   children,
@@ -13,6 +14,7 @@ export default async function AppLayout({
 }) {
   const t = await getTranslations("app.nav");
   const tCommon = await getTranslations("common");
+  const tLegal = await getTranslations("legal");
 
   return (
     <div className="bg-et-deep text-et-ink min-h-screen">
@@ -49,10 +51,16 @@ export default async function AppLayout({
         </div>
       </header>
       <main className="mx-auto max-w-4xl px-4 py-12">{children}</main>
+      <footer className="border-et-border text-et-ink/45 mx-auto flex max-w-4xl flex-wrap gap-x-4 gap-y-2 border-t px-4 py-6 text-xs">
+        <Link href="/privacy" className="hover:text-et-ink/80">
+          {tLegal("privacyLink")}
+        </Link>
+        <CookiePreferencesLink className="hover:text-et-ink/80 cursor-pointer" />
+      </footer>
       <Suspense fallback={null}>
         <ReferralTracker />
       </Suspense>
-      <CrispChat />
+      <CrispChat label={tLegal("supportChat")} />
     </div>
   );
 }

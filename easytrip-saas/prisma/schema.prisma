@@ -75,32 +75,42 @@ model User {
   referralsReceived Referral[]      @relation("ReferredUser")
 }
 
-/// purpose: generazione e consultazione itinerari, spese di gruppo
+/// purpose: generazione e consultazione itinerari, spese di gruppo; preferenze di viaggio facoltative (interessi, ritmo, mobilità, restrizioni alimentari — restrizioni ed esigenze di mobilità sanitarie sono dati particolari art. 9: trattate solo con consenso esplicito registrato in sensitive_prefs_consent_at, usate unicamente per generare l'itinerario, mai inviate ad analytics né nei log)
 /// retention: soft-delete + hard-delete dopo RETENTION_SOFT_DELETED_TRIP_DAYS; versioni non attive secondo policy Inngest
 model Trip {
-  id                  String     @id @default(cuid())
-  organizerId         String     @map("organizer_id")
-  destination         String
-  startDate           DateTime   @map("start_date") @db.Date
-  endDate             DateTime   @map("end_date") @db.Date
-  accessExpiresAt     DateTime   @map("access_expires_at") @db.Date
-  tripType            TripType   @map("trip_type")
-  style               String? // foodie, cultura, ecc.
-  budgetLevel         String     @default("moderate") @map("budget_level") // economy | moderate | premium
-  status              TripStatus @default(pending)
-  regenCount          Int        @default(0) @map("regen_count") // 0..7
-  currentVersion      Int        @default(1) @map("current_version") // carosello
-  usedZones           String?    @map("used_zones") // zone_focus concatenate per rigenera
-  prefChangedAfterGen Boolean    @default(false) @map("pref_changed_after_gen")
+  id                      String     @id @default(cuid())
+  organizerId             String     @map("organizer_id")
+  destination             String
+  startDate               DateTime   @map("start_date") @db.Date
+  endDate                 DateTime   @map("end_date") @db.Date
+  accessExpiresAt         DateTime   @map("access_expires_at") @db.Date
+  tripType                TripType   @map("trip_type")
+  style                   String? // foodie, cultura, ecc. (testo libero; le scelte strutturate sono nei campi sotto)
+  /// Interessi scelti (chiavi di src/lib/trip/preferences.ts, max 6). Elenco di testo, non enum DB: aggiungere un'opzione non richiede migrazioni.
+  interests               String[]   @default([])
+  /// Ritmo: relaxed | balanced | packed (null = nessuna preferenza).
+  pace                    String?
+  /// Esigenze di mobilità: limited_walking | avoid_stairs | wheelchair | stroller.
+  mobilityNeeds           String[]   @default([]) @map("mobility_needs")
+  /// Restrizioni alimentari e allergie (vedi purpose sopra: dato potenzialmente sensibile).
+  dietaryRestrictions     String[]   @default([]) @map("dietary_restrictions")
+  /// Consenso esplicito (art. 9.2.a GDPR) alle scelte sensibili: valorizzato solo finché ce ne sono, null quando vengono tolte.
+  sensitivePrefsConsentAt DateTime?  @map("sensitive_prefs_consent_at")
+  budgetLevel             String     @default("moderate") @map("budget_level") // economy | moderate | premium
+  status                  TripStatus @default(pending)
+  regenCount              Int        @default(0) @map("regen_count") // 0..7
+  currentVersion          Int        @default(1) @map("current_version") // carosello
+  usedZones               String?    @map("used_zones") // zone_focus concatenate per rigenera
+  prefChangedAfterGen     Boolean    @default(false) @map("pref_changed_after_gen")
   /// Add-on LocalPass: numero di città coperte (€3,99/città in checkout).
-  localPassCityCount  Int        @default(0) @map("local_pass_city_count")
-  inviteToken         String?    @unique @map("invite_token") // token unico per link invito gruppo
-  paymentId           String?    @map("payment_id") // Stripe payment/session
-  amountPaid          Decimal?   @map("amount_paid") @db.Decimal(10, 2)
+  localPassCityCount      Int        @default(0) @map("local_pass_city_count")
+  inviteToken             String?    @unique @map("invite_token") // token unico per link invito gruppo
+  paymentId               String?    @map("payment_id") // Stripe payment/session
+  amountPaid              Decimal?   @map("amount_paid") @db.Decimal(10, 2)
   /// Soft-delete lato utente: il record resta in DB (pagamenti, versioni, audit / fiscale).
-  deletedAt           DateTime?  @map("deleted_at")
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
+  deletedAt               DateTime?  @map("deleted_at")
+  createdAt               DateTime   @default(now()) @map("created_at")
+  updatedAt               DateTime   @updatedAt @map("updated_at")
 
   organizer      User            @relation("OrganizerTrips", fields: [organizerId], references: [id], onDelete: Cascade)
   versions       TripVersion[]
@@ -129,7 +139,7 @@ model TripVersion {
   // Garantisce che non possano esistere due righe con lo stesso (trip, versionNum).
   // Protegge da race condition / retry Inngest in cui versionNum era derivato da
   // trip.regenCount + 1 senza atomicità. Vedi `dedupe-trip-versions.mjs`.
-  @@unique([tripId, versionNum])
+  @@unique([tripId, versionNum], map: "TripVersion_tripId_versionNum_key")
 }
 
 model Day {
@@ -138,10 +148,12 @@ model Day {
   dayNumber     Int      @map("day_number")
   unlockDate    DateTime @map("unlock_date") @db.Date
   title         String?
-  morning       String? // JSON attività
-  afternoon     String?
-  evening       String?
-  restaurants   String? // JSON
+  /// Slot come oggetto JSON (jsonb): { title, place, why, startTime, endTime, durationMin, googleMapsQuery, bookingLink, tips[], lat, lng } (vedi DaySlotSchema).
+  morning       Json?    @db.JsonB
+  afternoon     Json?    @db.JsonB
+  evening       Json?    @db.JsonB
+  /// Array di ristoranti (jsonb): [{ meal, name, cuisine, why, budgetHint, distance, reservationNeeded, reservationTip }] (vedi RestaurantEntrySchema).
+  restaurants   Json?    @db.JsonB
   mapCenterLat  Decimal? @map("map_center_lat") @db.Decimal(10, 7)
   mapCenterLng  Decimal? @map("map_center_lng") @db.Decimal(10, 7)
   zoneFocus     String?  @map("zone_focus") // per used_zones rigenera
@@ -149,9 +161,62 @@ model Day {
   localGem      String?  @map("local_gem")
   tips          String?
 
-  tripVersion TripVersion @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+  tripVersion TripVersion    @relation(fields: [tripVersionId], references: [id], onDelete: Cascade)
+  /// Votazioni di gruppo sulle alternative dei tre slot del giorno.
+  proposals   SlotProposal[]
 
   @@index([tripVersionId])
+}
+
+enum SlotProposalStatus {
+  draft // generata dalla sostituzione dello slot, non ancora aperta al voto
+  open // il gruppo sta votando
+  resolved // chiusa: l'opzione vincente è stata applicata (o l'attuale mantenuta)
+  cancelled // superata da una nuova sostituzione dello stesso slot
+}
+
+/// purpose: votazione di gruppo sulle alternative generate dalla sostituzione di uno slot
+/// retention: eliminata in cascata con il giorno (rigenerazione o eliminazione del trip); i voti seguono la proposta e il membro
+model SlotProposal {
+  id          String             @id @default(cuid())
+  dayId       String             @map("day_id")
+  /// morning | afternoon | evening
+  slotKey     String             @map("slot_key")
+  status      SlotProposalStatus @default(draft)
+  /// [{ slot, distance, note }]: indice 0 = contenuto attuale dello slot, 1.. = alternative generate dall'AI (forma: SlotProposalOptionsSchema).
+  options     Json
+  winnerIndex Int?               @map("winner_index")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  openedAt    DateTime?          @map("opened_at")
+  /// Fine della finestra di voto: oltre questo istante un job chiude la proposta con l'opzione in testa.
+  expiresAt   DateTime?          @map("expires_at")
+  resolvedAt  DateTime?          @map("resolved_at")
+
+  day   Day        @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  votes SlotVote[]
+
+  @@index([dayId, slotKey])
+  @@index([status, expiresAt])
+  @@map("slot_proposal")
+}
+
+/// purpose: voto di un membro su una proposta di sostituzione slot (uno per membro)
+/// retention: come SlotProposal e TripMember (eliminato in cascata); non incluso in altri trattamenti
+model SlotVote {
+  id          String   @id @default(cuid())
+  proposalId  String   @map("proposal_id")
+  memberId    String   @map("member_id")
+  optionIndex Int      @map("option_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  proposal SlotProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  member   TripMember   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // proposalId è già coperto (come colonna sinistra) da questo vincolo; memberId no.
+  @@unique([proposalId, memberId])
+  @@index([memberId])
+  @@map("slot_vote")
 }
 
 model TripMember {
@@ -163,9 +228,13 @@ model TripMember {
   totalPaid Decimal  @default(0) @map("total_paid") @db.Decimal(10, 2) // totale pagato per spese condivise
   joinedAt  DateTime @default(now()) @map("joined_at")
 
-  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses Expense[] @relation("ExpensePaidBy")
+  trip          Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses      Expense[]            @relation("ExpensePaidBy")
+  /// Quote di spese di gruppo attribuite a questo membro (split personalizzato).
+  expenseShares ExpenseParticipant[]
+  /// Voti espressi dal membro sulle alternative di uno slot.
+  slotVotes     SlotVote[]
 
   // tripId è già coperto (come colonna sinistra) da questo vincolo; userId no.
   @@unique([tripId, userId])
@@ -191,11 +260,31 @@ model Expense {
   dayNumber    Int?            @map("day_number")
   createdAt    DateTime        @default(now()) @map("created_at")
 
-  trip   Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  paidBy TripMember @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+  trip         Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  paidBy       TripMember           @relation("ExpensePaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+  /// Vuoto = spesa divisa in parti uguali tra tutti i membri (comportamento storico).
+  participants ExpenseParticipant[]
 
   @@index([tripId])
   @@index([paidById])
+}
+
+/// purpose: attribuzione di una spesa di gruppo ai membri che la condividono (split tra sottoinsieme / quote pesate)
+/// retention: come Expense e TripMember (eliminata in cascata con la spesa o il membro); inclusa nell'export dati utente
+model ExpenseParticipant {
+  id        String  @id @default(cuid())
+  expenseId String  @map("expense_id")
+  memberId  String  @map("member_id")
+  /// Peso relativo della quota (1 = quota intera); max 2 decimali. Le quote sono proporzionali ai pesi.
+  weight    Decimal @default(1) @db.Decimal(6, 2)
+
+  expense Expense    @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member  TripMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  // expenseId è già coperto (come colonna sinistra) da questo vincolo; memberId no.
+  @@unique([expenseId, memberId])
+  @@index([memberId])
+  @@map("expense_participant")
 }
 
 model Payment {
@@ -311,6 +400,25 @@ model Referral {
   @@index([referredUserId])
   @@index([rewardCreditId])
   @@map("referral")
+}
+
+/// purpose: cache condivisa tra utenti di POI/ristoranti verificati via ricerca web, per destinazione (grounding della generazione itinerari)
+/// retention: solo dati pubblici, nessun dato personale; una riga per destinazione, sovrascritta al refresh; le righe scadute (expires_at) non vengono più lette
+model VerifiedPoiCache {
+  id               String   @id @default(cuid())
+  /// Destinazione normalizzata (minuscolo, senza diacritici/punteggiatura): chiave di lookup condivisa tra utenti.
+  destinationKey   String   @unique @map("destination_key")
+  /// Destinazione come digitata dall'utente che ha popolato la cache (solo per diagnostica).
+  destinationLabel String   @map("destination_label")
+  /// Aree, attrazioni e ristoranti verificati (forma: GroundedDestinationSchema).
+  payload          Json
+  /// Pagine web consultate dalla ricerca: [{ url, title }] (provenienza; base per le citazioni future).
+  sources          Json     @default("[]")
+  fetchedAt        DateTime @default(now()) @map("fetched_at")
+  expiresAt        DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("verified_poi_cache")
 }
 
 /// Dedup webhook (Stripe event id, Clerk svix id) per idempotenza invii email.

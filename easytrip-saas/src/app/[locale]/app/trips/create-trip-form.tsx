@@ -4,6 +4,20 @@ import posthog from "posthog-js";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import {
+  PreferencesFields,
+  countPreferences,
+} from "@/components/trips/PreferencesFields";
+import {
+  EMPTY_PREFERENCES,
+  requiresSensitiveConsent,
+  type TripPreferences,
+} from "@/lib/trip/preferences";
+import {
+  MAX_TRIP_DAYS,
+  maxTripEndIso,
+  tripLengthDaysFromIso,
+} from "@/lib/trip/trip-limits";
 
 type TripType = "solo" | "coppia" | "gruppo";
 type BudgetLevel = "economy" | "moderate" | "premium";
@@ -11,10 +25,16 @@ type BudgetLevel = "economy" | "moderate" | "premium";
 export function CreateTripForm() {
   const router = useRouter();
   const t = useTranslations("app.trips.create");
+  const tp = useTranslations("app.trips.preferences");
   const [loading, setLoading] = useState(false);
+  const [prefs, setPrefs] = useState<TripPreferences>(EMPTY_PREFERENCES);
+  /** Consenso art. 9: mai preselezionato. */
+  const [sensitiveConsent, setSensitiveConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [budgetLevel, setBudgetLevel] = useState<BudgetLevel>("moderate");
   const [localPassCities, setLocalPassCities] = useState(0);
+  /** Data di inizio scelta: limita la data di fine a `MAX_TRIP_DAYS` giorni. */
+  const [startDateValue, setStartDateValue] = useState("");
 
   // Le opzioni di budget vengono tradotte dinamicamente: label e hint provengono
   // dai file messages/*.json sotto `trips.create.budget.*`.
@@ -40,13 +60,21 @@ export function CreateTripForm() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    if (requiresSensitiveConsent(prefs) && !sensitiveConsent) {
+      setError(tp("consent.required"));
+      return;
+    }
     const form = e.currentTarget;
     const fd = new FormData(form);
 
     const destination = String(fd.get("destination") ?? "").trim();
     const startDate = String(fd.get("startDate") ?? "");
     const endDate = String(fd.get("endDate") ?? "");
+    if ((tripLengthDaysFromIso(startDate, endDate) ?? 0) > MAX_TRIP_DAYS) {
+      setError(t("errorTooLong", { max: MAX_TRIP_DAYS }));
+      return;
+    }
+    setLoading(true);
     const tripType = String(fd.get("tripType") ?? "solo") as TripType;
     const styleRaw = String(fd.get("style") ?? "").trim();
 
@@ -62,6 +90,11 @@ export function CreateTripForm() {
           budgetLevel,
           localPassCityCount: Math.min(30, Math.max(0, localPassCities)),
           ...(styleRaw.length >= 2 ? { style: styleRaw } : {}),
+          interests: prefs.interests,
+          pace: prefs.pace,
+          mobilityNeeds: prefs.mobilityNeeds,
+          dietaryRestrictions: prefs.dietaryRestrictions,
+          sensitiveDataConsent: sensitiveConsent,
         }),
       });
       const json = await res.json();
@@ -69,14 +102,23 @@ export function CreateTripForm() {
         setError(json.error?.message ?? t("errorGeneric"));
         return;
       }
+      // Solo conteggi/flag: le restrizioni alimentari possono essere dati sensibili
+      // (religione, salute) e non vanno negli analytics.
       posthog.capture("trip_created", {
         destination,
         tripType,
         budgetLevel,
         startDate,
         endDate,
+        interests_count: prefs.interests.length,
+        pace: prefs.pace,
+        mobility_needs_count: prefs.mobilityNeeds.length,
+        has_dietary_restrictions: prefs.dietaryRestrictions.length > 0,
       });
       form.reset();
+      setStartDateValue("");
+      setPrefs(EMPTY_PREFERENCES);
+      setSensitiveConsent(false);
       router.push(`/app/trips/${json.data.id}`);
       router.refresh();
     } catch {
@@ -129,6 +171,8 @@ export function CreateTripForm() {
             name="startDate"
             type="date"
             required
+            value={startDateValue}
+            onChange={(e) => setStartDateValue(e.target.value)}
             className="border-et-border bg-et-deep text-et-ink focus:border-et-accent/50 mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
           />
         </div>
@@ -144,6 +188,8 @@ export function CreateTripForm() {
             name="endDate"
             type="date"
             required
+            min={startDateValue || undefined}
+            max={maxTripEndIso(startDateValue) ?? undefined}
             className="border-et-border bg-et-deep text-et-ink focus:border-et-accent/50 mt-1.5 w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
           />
         </div>
@@ -210,6 +256,35 @@ export function CreateTripForm() {
             {BUDGET_OPTIONS.find((o) => o.value === budgetLevel)?.hint}
           </p>
         </fieldset>
+
+        <details
+          className="border-et-border/70 bg-et-deep/40 rounded-xl border sm:col-span-2"
+          data-testid="create-preferences"
+        >
+          <summary className="text-et-ink/80 flex cursor-pointer list-none flex-wrap items-center gap-2 px-4 py-3 text-sm font-medium">
+            {tp("title")}
+            <span className="text-et-ink/40 text-xs font-normal">
+              ({tp("optional")})
+            </span>
+            {countPreferences(prefs) > 0 ? (
+              <span className="border-et-accent/30 bg-et-accent/10 text-et-accent rounded-full border px-2 py-0.5 text-xs font-normal">
+                {tp("selectedCount", { count: countPreferences(prefs) })}
+              </span>
+            ) : null}
+          </summary>
+          <div className="border-et-border/60 border-t px-4 py-4">
+            <p className="text-et-ink/50 mb-4 text-xs leading-relaxed">
+              {tp("hint")}
+            </p>
+            <PreferencesFields
+              value={prefs}
+              onChange={setPrefs}
+              consent={sensitiveConsent}
+              onConsentChange={setSensitiveConsent}
+              disabled={loading}
+            />
+          </div>
+        </details>
 
         <div className="sm:col-span-2">
           <label
