@@ -1,5 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { logger } from "@/lib/observability";
 
 /**
  * Rate limiting via Upstash Redis. `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
@@ -75,6 +76,12 @@ export function getClientIp(req: Request): string {
 
 /**
  * @returns `Response` 429 se limitato, altrimenti `null` (procedi).
+ *
+ * Fail-open: se Upstash non risponde (token errato, quota esaurita, rete) la
+ * richiesta passa e l'errore va nei log. Le route chiamano questa funzione
+ * fuori dal try/catch del controller: un'eccezione qui diventava un 500 con
+ * body vuoto, che il client mostrava come "Errore di rete durante il
+ * checkout" bloccando i pagamenti.
  */
 export async function enforceRateLimit(
   limiter: Ratelimit | null,
@@ -82,7 +89,19 @@ export async function enforceRateLimit(
 ): Promise<Response | null> {
   if (!limiter) return null;
 
-  const { success, limit, remaining, reset } = await limiter.limit(key);
+  let result: Awaited<ReturnType<Ratelimit["limit"]>>;
+  try {
+    result = await limiter.limit(key);
+  } catch (error) {
+    logger.error(
+      "Rate limiter non disponibile: richiesta lasciata passare (fail-open)",
+      error,
+      { key },
+    );
+    return null;
+  }
+
+  const { success, limit, remaining, reset } = result;
   if (success) return null;
 
   const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));

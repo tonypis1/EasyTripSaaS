@@ -38,17 +38,18 @@ export function PostTripScreen({ trip }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId: trip.id }),
       });
-      const json = (await res.json()) as {
+      // Body non JSON (500/504 della piattaforma) → errore server, non di rete.
+      const json = (await res.json().catch(() => null)) as {
         ok?: boolean;
         data?: { checkoutUrl?: string };
         error?: { message?: string };
-      };
-      const url = json.data?.checkoutUrl;
+      } | null;
+      const url = json?.data?.checkoutUrl;
       if (res.ok && url) {
         window.location.href = url;
         return;
       }
-      window.alert(json.error?.message ?? t("reactivateError"));
+      window.alert(json?.error?.message ?? t("reactivateError"));
     } catch {
       window.alert(t("reactivateNetworkError"));
     } finally {
