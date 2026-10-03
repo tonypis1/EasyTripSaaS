@@ -44,17 +44,18 @@ export function SubscribeCtaButton({ className, children, errorLabel }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const json = (await res.json()) as {
+      // Body non JSON (500/504 della piattaforma) → errore server, non di rete.
+      const json = (await res.json().catch(() => null)) as {
         ok?: boolean;
         data?: { checkoutUrl?: string };
         error?: { message?: string };
-      };
-      const url = json.data?.checkoutUrl;
+      } | null;
+      const url = json?.data?.checkoutUrl;
       if (res.ok && url) {
         window.location.href = url;
         return;
       }
-      window.alert(json.error?.message ?? errorLabel ?? t("checkoutFailed"));
+      window.alert(json?.error?.message ?? errorLabel ?? t("checkoutFailed"));
     } catch {
       window.alert(errorLabel ?? t("networkError"));
     } finally {

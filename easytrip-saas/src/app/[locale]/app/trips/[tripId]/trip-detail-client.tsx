@@ -471,9 +471,11 @@ export function TripDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId: trip.id }),
       });
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        setMsg(json.error?.message ?? td("errors.checkoutUnavailable"));
+      // Un 500/504 della piattaforma ha un body non JSON: non è un errore di
+      // rete, quindi non deve finire nel catch con `networkCheckout`.
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        setMsg(json?.error?.message ?? td("errors.checkoutUnavailable"));
         return;
       }
 
@@ -494,13 +496,18 @@ export function TripDetailClient({
         return;
       }
 
+      if (!d.checkoutUrl) {
+        setMsg(td("errors.checkoutUnavailable"));
+        return;
+      }
+
       posthog.capture("checkout_started", {
         tripId: trip.id,
         destination: trip.destination,
         tripType: trip.tripType,
         creditAppliedCents: d.creditAppliedCents ?? 0,
       });
-      window.location.href = d.checkoutUrl as string;
+      window.location.href = d.checkoutUrl;
     } catch {
       setMsg(td("errors.networkCheckout"));
     } finally {
@@ -547,9 +554,9 @@ export function TripDetailClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tripId: trip.id }),
       });
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        setMsg(apiMsg(json));
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok || !json.data?.checkoutUrl) {
+        setMsg(apiMsg(json ?? {}));
         return;
       }
       posthog.capture("regen_checkout_started", {
