@@ -69,18 +69,17 @@ export const generateItinerary = inngest.createFunction(
      */
     timeouts: { finish: "45m" },
     /**
-     * Belt-and-braces guard against duplicate itinerary versions for the same
-     * trip. Even if multiple `trip/generate.requested` events leak through
-     * (e.g. webhook re-delivery, frontend bug, manual replay), Inngest will
-     * execute them serially per `tripId` instead of in parallel. The original
-     * cause is now fixed upstream (URL strip + version guard in billing), so
-     * this is purely a safety net; replays/retries for the same event are
-     * already handled by Inngest's own retry semantics.
+     * Al massimo uno step alla volta per `tripId`. Attenzione: Inngest limita
+     * gli step in esecuzione, non le esecuzioni intere: due run per lo stesso
+     * viaggio si alternano tra uno step e l'altro e ognuna salverebbe la sua
+     * versione. Contro i duplicati della prima generazione valgono l'id fisso
+     * di `initialTripGenerateEvent` e la prenotazione condizionale della v1
+     * in `riserva-version-num`.
      */
     concurrency: { key: "event.data.tripId", limit: 1 },
   },
   async ({ event, events, step }) => {
-    const { tripId } = resolveTripGeneratePayload(event, events);
+    const { tripId, initial } = resolveTripGeneratePayload(event, events);
 
     const trip = await step.run(
       "carica-trip",
@@ -111,6 +110,16 @@ export const generateItinerary = inngest.createFunction(
         };
       },
     );
+
+    // Prima generazione già fatta (es. reinvio dal ramo di recupero di un
+    // webhook duplicato oltre la finestra di dedup di Inngest): niente AI.
+    if (initial && trip.regenCount > 0) {
+      logger.info(
+        "Prima generazione già eseguita da un'altra esecuzione: nessuna nuova versione",
+        { tripId: trip.id, regenCount: trip.regenCount },
+      );
+      return { tripId: trip.id, skipped: "initial_already_generated" as const };
+    }
 
     const startDate = new Date(trip.startDateIso);
     const endDate = new Date(trip.endDateIso);
@@ -269,6 +278,15 @@ export const generateItinerary = inngest.createFunction(
      * grazie alla memoizzazione di Inngest.
      */
     const versionNum = await step.run("riserva-version-num", async () => {
+      if (initial) {
+        // Prima generazione dopo l'acquisto: prenota la v1 solo se nessun'altra
+        // esecuzione l'ha già fatto (UPDATE condizionale, atomico).
+        const reserved = await prisma.trip.updateMany({
+          where: { id: trip.id, regenCount: 0 },
+          data: { regenCount: 1 },
+        });
+        return reserved.count === 1 ? 1 : null;
+      }
       const updated = await prisma.trip.update({
         where: { id: trip.id },
         data: { regenCount: { increment: 1 } },
@@ -276,6 +294,14 @@ export const generateItinerary = inngest.createFunction(
       });
       return updated.regenCount;
     });
+
+    if (versionNum === null) {
+      logger.info(
+        "Prima generazione già eseguita da un'altra esecuzione: nessuna nuova versione",
+        { tripId: trip.id },
+      );
+      return { tripId: trip.id, skipped: "initial_already_generated" as const };
+    }
 
     /**
      * Step 2 — prepara la riga TripVersion (find-or-create) per la coppia
