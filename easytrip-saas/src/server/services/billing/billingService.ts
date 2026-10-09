@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { inngest } from "@/lib/inngest/client";
+import { initialTripGenerateEvent } from "@/lib/inngest/trip-generate-payload";
 import { stripe } from "@/lib/billing/stripe";
 import { config } from "@/config/unifiedConfig";
 import { AppError } from "@/server/errors/AppError";
@@ -246,10 +247,7 @@ export class BillingService {
         /* email failure does not block */
       }
 
-      await inngest.send({
-        name: "trip/generate.requested",
-        data: { tripId: trip.id },
-      });
+      await inngest.send(initialTripGenerateEvent(trip.id));
 
       logger.info("Acquisto completato con crediti (nessun Stripe)", {
         tripId: trip.id,
@@ -706,6 +704,11 @@ export class BillingService {
        * stato è ancora "pending" per qualche motivo. Senza questo controllo,
        * una riconsegna del webhook (o un page-refresh che richiama il sync)
        * potrebbe generare nuove versioni AI duplicate.
+       *
+       * Il guard non copre i ~90s di generazione in corso (versioni ancora 0):
+       * webhook e sync al ritorno da Checkout arrivano quasi insieme e qui si
+       * reinvia mentre la prima generazione gira. L'id fisso di
+       * `initialTripGenerateEvent` fa scartare il duplicato a Inngest.
        */
       if (paymentType === "purchase") {
         const t = await this.tripRepository.findById(tripId);
@@ -724,10 +727,7 @@ export class BillingService {
             );
           } else {
             try {
-              await inngest.send({
-                name: "trip/generate.requested",
-                data: { tripId },
-              });
+              await inngest.send(initialTripGenerateEvent(tripId));
               logger.info(
                 "trip/generate.requested reinviato (trip pending senza versioni dopo webhook duplicato)",
                 { tripId },
@@ -926,10 +926,7 @@ export class BillingService {
       }
     }
 
-    await inngest.send({
-      name: "trip/generate.requested",
-      data: { tripId },
-    });
+    await inngest.send(initialTripGenerateEvent(tripId));
 
     try {
       const { container } = await import("@/server/di/container");

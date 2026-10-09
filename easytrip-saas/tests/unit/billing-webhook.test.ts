@@ -224,7 +224,8 @@ describe("BillingService — checkout.session.completed (purchase)", () => {
     expect(mocks.sendTransactionalEmail).toHaveBeenCalledTimes(1);
     expect(mocks.inngestSend).toHaveBeenCalledWith({
       name: "trip/generate.requested",
-      data: { tripId: "trip1" },
+      id: "trip-generate-initial-trip1",
+      data: { tripId: "trip1", initial: true },
     });
   });
 
@@ -256,7 +257,37 @@ describe("BillingService — checkout.session.completed (purchase)", () => {
     });
     expect(mocks.inngestSend).toHaveBeenCalledWith({
       name: "trip/generate.requested",
-      data: { tripId: "trip1" },
+      id: "trip-generate-initial-trip1",
+      data: { tripId: "trip1", initial: true },
+    });
+  });
+
+  it("pagamento già registrato mentre la prima generazione è in corso: il reinvio usa lo stesso id evento (Inngest lo scarta)", async () => {
+    // Regressione (viaggio con v1 e v2 senza rigenerazione): webhook e sync al
+    // ritorno da Checkout arrivano quasi insieme. Il secondo trova il Payment
+    // già scritto e il viaggio pagato ma ancora senza versioni (la generazione
+    // dura ~90s) e reinvia l'evento: deve avere l'id della prima generazione.
+    mocks.stripeConstructEvent.mockReturnValue(checkoutCompletedEvent());
+    mocks.paymentFindFirst.mockResolvedValue({ id: "pay1" });
+
+    const { service, fakeTripRepository } = makeService({
+      findById: vi
+        .fn()
+        .mockResolvedValue(
+          baseTrip({ paymentId: "pi_123", amountPaid: 3.99, regenCount: 0 }),
+        ),
+      countVersions: vi.fn().mockResolvedValue(0),
+    });
+
+    await service.handleStripeWebhook("{}", "sig_ok");
+
+    expect(mocks.paymentCreate).not.toHaveBeenCalled();
+    expect(fakeTripRepository.markAsPaid).not.toHaveBeenCalled();
+    expect(mocks.inngestSend).toHaveBeenCalledTimes(1);
+    expect(mocks.inngestSend).toHaveBeenCalledWith({
+      name: "trip/generate.requested",
+      id: "trip-generate-initial-trip1",
+      data: { tripId: "trip1", initial: true },
     });
   });
 

@@ -1,5 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   UserRepository,
   normalizeLanguage,
@@ -21,11 +21,7 @@ export class AuthService {
       throw new AppError("Email utente mancante", 400, "MISSING_EMAIL");
     }
 
-    // Leggi la lingua corrente dal cookie NEXT_LOCALE scritto da next-intl.
-    // Viene applicata SOLO alla prima creazione dell'utente (vedi UserRepository).
-    const cookieStore = await cookies();
-    const localeCookie = cookieStore.get("NEXT_LOCALE")?.value;
-    const language = normalizeLanguage(localeCookie);
+    const language = await currentUiLanguage();
 
     const user = await this.userRepository.upsertByClerkId({
       clerkUserId: clerkUser.id,
@@ -34,16 +30,36 @@ export class AuthService {
       language,
     });
 
-    // Allinea il profilo al cookie NEXT_LOCALE se l'utente ha cambiato lingua
-    // nello switcher ma il salvataggio PATCH non è arrivato (navigazione interrotta, ecc.).
-    const cookieLang = normalizeLanguage(localeCookie);
-    if (cookieLang && cookieLang !== user.language) {
+    // Allinea il profilo alla lingua in cui l'utente sta usando l'app: le
+    // email (inviate anche a utente offline) leggono `User.language`.
+    if (language && language !== user.language) {
       return this.userRepository.updateLanguageByClerkId(
         clerkUser.id,
-        cookieLang,
+        language,
       );
     }
 
     return user;
   }
+}
+
+/**
+ * Lingua dell'interfaccia per la richiesta corrente. Stessa precedenza di
+ * `resolveRootHtmlLang` (src/app/layout.tsx):
+ * 1. `x-easytrip-locale` — lingua dell'URL `/[locale]/…`, impostata dal
+ *    middleware sulle pagine;
+ * 2. cookie `NEXT_LOCALE` — per le chiamate `/api`, che non hanno prefisso.
+ *
+ * Il solo cookie non basta: next-intl lo scrive soltanto quando la lingua
+ * dell'URL differisce da quella del browser, quindi un utente che naviga
+ * sempre nella lingua del browser non lo riceve mai e la lingua scelta in
+ * passato su un altro dispositivo restava nel profilo (email in tedesco a
+ * un utente che usa l'app in italiano).
+ */
+async function currentUiLanguage() {
+  const headerStore = await headers();
+  const fromUrl = normalizeLanguage(headerStore.get("x-easytrip-locale"));
+  if (fromUrl) return fromUrl;
+  const cookieStore = await cookies();
+  return normalizeLanguage(cookieStore.get("NEXT_LOCALE")?.value);
 }

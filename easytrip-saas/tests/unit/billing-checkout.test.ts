@@ -180,7 +180,8 @@ describe("BillingService.createCheckoutSession", () => {
     expect(fakeTripRepository.markAsPaid).toHaveBeenCalledTimes(1);
     expect(mocks.inngestSend).toHaveBeenCalledWith({
       name: "trip/generate.requested",
-      data: { tripId: "trip1" },
+      id: "trip-generate-initial-trip1",
+      data: { tripId: "trip1", initial: true },
     });
   });
 

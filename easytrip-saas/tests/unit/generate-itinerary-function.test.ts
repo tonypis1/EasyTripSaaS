@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   messagesCreate: vi.fn(),
   tripFindUnique: vi.fn(),
   tripUpdate: vi.fn(),
+  tripUpdateMany: vi.fn(),
   versionUpdateMany: vi.fn(),
   versionFindFirst: vi.fn(),
   versionCreate: vi.fn(),
@@ -33,7 +34,11 @@ vi.mock("@/lib/ai/anthropic", () => ({
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    trip: { findUnique: mocks.tripFindUnique, update: mocks.tripUpdate },
+    trip: {
+      findUnique: mocks.tripFindUnique,
+      update: mocks.tripUpdate,
+      updateMany: mocks.tripUpdateMany,
+    },
     tripVersion: {
       updateMany: mocks.versionUpdateMany,
       findFirst: mocks.versionFindFirst,
@@ -275,5 +280,89 @@ describe("generate-itinerary — viaggio lungo a blocchi", () => {
 
     expect(error).not.toBeInstanceOf(NonRetriableError);
     expect((error as Error).message).toBe("overloaded_error");
+  });
+});
+
+describe("generate-itinerary — prima generazione dopo l'acquisto (evento initial)", () => {
+  const initialEvent = {
+    name: "trip/generate.requested",
+    id: "trip-generate-initial-trip1",
+    data: { tripId: "trip1", initial: true },
+  };
+
+  async function run(evt: unknown) {
+    const { generateItinerary } =
+      await import("@/lib/inngest/functions/generate-itinerary");
+    const { step } = makeStep();
+    return getHandler(generateItinerary)({ event: evt, events: [evt], step });
+  }
+
+  it("prenota la v1 con un UPDATE condizionale (regenCount 0 → 1) e la crea", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+    mocks.tripUpdateMany.mockResolvedValue({ count: 1 });
+
+    const result = await run(initialEvent);
+
+    expect(mocks.tripUpdateMany).toHaveBeenCalledWith({
+      where: { id: "trip1", regenCount: 0 },
+      data: { regenCount: 1 },
+    });
+    expect(mocks.versionCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ tripId: "trip1", versionNum: 1 }),
+      }),
+    );
+    expect(result).toMatchObject({ tripId: "trip1", daysCreated: 10 });
+  });
+
+  it("se un'altra esecuzione ha già prenotato la v1 non crea una seconda versione", async () => {
+    // Regressione: webhook + sync al ritorno da Checkout avviavano due
+    // generazioni che si alternavano e salvavano v1 e v2 per un solo acquisto.
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+    mocks.tripUpdateMany.mockResolvedValue({ count: 0 });
+
+    const result = await run(initialEvent);
+
+    expect(result).toEqual({
+      tripId: "trip1",
+      skipped: "initial_already_generated",
+    });
+    expect(mocks.versionCreate).not.toHaveBeenCalled();
+    expect(mocks.versionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.dayCreate).not.toHaveBeenCalled();
+    expect(mocks.sendTransactionalEmail).not.toHaveBeenCalled();
+  });
+
+  it("se il viaggio ha già una versione esce prima di chiamare il modello", async () => {
+    mocks.tripFindUnique.mockResolvedValue({ ...trip(), regenCount: 1 });
+
+    const result = await run(initialEvent);
+
+    expect(result).toEqual({
+      tripId: "trip1",
+      skipped: "initial_already_generated",
+    });
+    expect(mocks.messagesCreate).not.toHaveBeenCalled();
+    expect(mocks.tripUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.versionCreate).not.toHaveBeenCalled();
+  });
+
+  it("le rigenerazioni (evento senza initial) incrementano come prima", async () => {
+    mocks.messagesCreate.mockImplementation(answerRequestedDays());
+    mocks.tripFindUnique.mockResolvedValue({ ...trip(), regenCount: 2 });
+    mocks.tripUpdate.mockResolvedValue({ regenCount: 3 });
+
+    const result = await run(event);
+
+    expect(mocks.tripUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.tripUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { regenCount: { increment: 1 } } }),
+    );
+    expect(mocks.versionCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ versionNum: 3 }),
+      }),
+    );
+    expect(result).toMatchObject({ tripId: "trip1", daysCreated: 10 });
   });
 });

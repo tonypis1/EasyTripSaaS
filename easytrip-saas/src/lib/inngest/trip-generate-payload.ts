@@ -1,21 +1,39 @@
 export const TRIP_GENERATE_EVENT = "trip/generate.requested" as const;
 
+/**
+ * Evento della prima generazione dopo l'acquisto. Webhook Stripe e sync al
+ * ritorno da Checkout arrivano quasi insieme e possono inviarlo entrambi (il
+ * secondo vede il viaggio pagato ma ancora senza versioni, perché la
+ * generazione dura ~90s): con lo stesso `id` Inngest scarta i duplicati entro
+ * 24h. `initial` fa prenotare al generatore solo la v1 (vedi
+ * `riserva-version-num` in generate-itinerary.ts).
+ */
+export function initialTripGenerateEvent(tripId: string) {
+  return {
+    name: TRIP_GENERATE_EVENT,
+    id: `trip-generate-initial-${tripId}`,
+    data: { tripId, initial: true },
+  };
+}
+
 type MinimalEvt = {
   name?: string;
   data?: unknown;
 };
 
 /**
- * Legge tripId / userId da event.data, incluso il caso raro data.data (SDK/executor legacy).
+ * Legge tripId / userId / initial da event.data, incluso il caso raro data.data (SDK/executor legacy).
  */
 function readTripGenerateFields(data: unknown): {
   tripId?: string;
   userId?: string;
+  initial?: boolean;
 } {
   if (!data || typeof data !== "object") return {};
   const o = data as Record<string, unknown>;
   let tripId: string | undefined;
   let userId: string | undefined;
+  let initial = o.initial === true;
 
   const t0 = o.tripId ?? o.trip_id;
   const u0 = o.userId ?? o.user_id;
@@ -28,9 +46,10 @@ function readTripGenerateFields(data: unknown): {
     const u1 = n.userId ?? n.user_id;
     if (typeof t1 === "string" && t1.length > 0) tripId = t1;
     if (typeof u1 === "string" && u1.length > 0) userId = u1;
+    initial ||= n.initial === true;
   }
 
-  return { tripId, userId };
+  return { tripId, userId, initial };
 }
 
 /**
@@ -41,7 +60,7 @@ function readTripGenerateFields(data: unknown): {
 export function resolveTripGeneratePayload(
   event: MinimalEvt,
   events: readonly MinimalEvt[],
-): { tripId: string; userId?: string } {
+): { tripId: string; userId?: string; initial: boolean } {
   const chain: MinimalEvt[] = [event, ...events];
 
   const preferGenerate = chain.filter((e) => e?.name === TRIP_GENERATE_EVENT);
@@ -49,8 +68,8 @@ export function resolveTripGeneratePayload(
   const ordered = [...preferGenerate, ...rest];
 
   for (const e of ordered) {
-    const { tripId, userId } = readTripGenerateFields(e?.data);
-    if (tripId) return { tripId, userId };
+    const { tripId, userId, initial } = readTripGenerateFields(e?.data);
+    if (tripId) return { tripId, userId, initial: initial === true };
   }
 
   throw new Error(
